@@ -1,5 +1,5 @@
 import { SidebarContext } from "../../context";
-import SideBar from "../../components/SideBar";
+import SideBar from "../../components/sideBar";
 import Navbar from "../../components/navbar";
 import { Outlet } from "react-router-dom";
 import { useState } from "react";
