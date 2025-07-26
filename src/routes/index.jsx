@@ -37,6 +37,7 @@ import Employees from "../pages/employees";
 import Messenger from "../pages/messenger";
 import InfoPortal from "../pages/info-portal";
 import Activity from "../pages/employees/activity";
+import Profile from "../pages/employees/profile";
 
 export const router = createBrowserRouter([
   {
@@ -45,7 +46,7 @@ export const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <AppLayout />, 
+        element: <AppLayout />,
         children: [
           { path: "", element: <Home /> },
           { path: "projects", element: <Projects /> },
@@ -53,7 +54,8 @@ export const router = createBrowserRouter([
           { path: "employees", element: <Employees /> },
           { path: "messenger", element: <Messenger /> },
           { path: "info-portal", element: <InfoPortal /> },
-          {path: "activity", element: <Activity />}, 
+          { path: "activity", element: <Activity /> },
+          {path: "profile/:id", element: <Profile/>}
         ],
       },
     ],
