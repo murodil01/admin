@@ -429,7 +429,6 @@ import {
   ArrowUp,
 } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useSidebar } from "../../context";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 
@@ -575,51 +574,41 @@ const Employees = () => {
   };
 
   const [activeTab, setActiveTab] = useState("list");
-  const navigate = useNavigate();
-
-  const handleTabClick = (tab) => {
-    setActiveTab(tab);
-    if (tab === "activity") {
-      navigate("/activity");
-    }
-  };
 
   return (
-    <div>
+    <div className="pl-3 pr-2">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <h1 className="text-[#1F2937] font-bold text-3xl sm:text-4xl">
+        <h1 className="text-[#1F2937] font-bold text-3xl sm:text-xl  xl:text-4xl">
           Employees ({employees.length})
         </h1>
 
-        <div className="flex items-center bg-[#DBDBDB] p-[3px] rounded-4xl w-full m-auto md:w-[350px]">
+        <div className="flex items-center bg-[#DBDBDB] xl:p-[3px] rounded-4xl w-full m-auto md:w-[250px] xl:w-[350px]">
           <button
-            onClick={() => handleTabClick("list")}
-            className={`py-[9px] rounded-4xl w-1/2 text-[16px] font-bold transition-all duration-200 ${
-              activeTab === "list"
+            onClick={() => setActiveTab("list")}
+            className={`py-[5px] xl:py-[9px] rounded-4xl w-1/2 text-[16px] font-bold transition-all duration-200 ${activeTab === "list"
                 ? "bg-[#1F2937] text-white"
                 : "bg-[#DBDBDB] text-[#1F2937]"
-            }`}
+              }`}
           >
             List
           </button>
 
           <button
-            onClick={() => handleTabClick("activity")}
-            className={`py-[9px] rounded-4xl w-1/2 text-[16px] font-bold transition-all duration-200 ${
-              activeTab === "activity"
+            onClick={() => setActiveTab("activity")}
+            className={`py-[5px] xl:py-[9px] rounded-4xl w-1/2 text-[16px] md:text-[14px] lg:text-[16px] font-bold transition-all duration-200 ${activeTab === "activity"
                 ? "bg-[#1F2937] text-white"
                 : "bg-[#DBDBDB] text-[#1F2937]"
-            }`}
+              }`}
           >
             Activity
           </button>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex w-12 h-12 bg-white shadow rounded-2xl items-center justify-center">
-            <Funnel className="text-[24px] text-[#1F2937]" />
+          <div className="hidden md:flex w-10 h-10 xl:w-12 xl:h-12 bg-white shadow rounded-xl xl:rounded-2xl items-center justify-center">
+            <Funnel className="!text-[18px] !xl:text-[24px] text-[#1F2937]" />
           </div>
-          <button className="hidden md:flex bg-[#1F2937] text-white text-[16px] rounded-2xl items-center gap-2 py-3 px-5">
+          <button className="hidden md:flex bg-[#1F2937] text-white text-sm lg:text-base rounded-2xl items-center gap-2 py-2 px-3 xl:py-3 xl:px-5">
             <Plus /> Add Employee
           </button>
         </div>
@@ -629,14 +618,13 @@ const Employees = () => {
         {currentEmployees.map((emp) => (
           <div
             key={emp.id}
-            className="bg-white rounded-3xl lg:rounded-2xl shadow p-4 flex flex-col gap-4"
+            className="max-w-full bg-white rounded-3xl lg:rounded-2xl shadow p-4 flex flex-col gap-4"
           >
             <div
-              className={`hidden lg:grid items-center transition-all duration-300 ${
-                collapsed
-                  ? "grid-cols-[1fr_1fr_1fr_0.5fr_0.8fr_40px] gap-10"
-                  : "grid-cols-[270px_290px_150px_100px_120px_40px] gap-10"
-              }`}
+              className={`hidden lg:flex items-center justify-between transition-all duration-300 ${collapsed
+                  ? "flex"
+                  : "flex"
+                }`}
             >
               <div className="flex items-center gap-4">
                 <img
@@ -648,7 +636,7 @@ const Employees = () => {
                   <p className="text-[#1F2937] font-semibold text-base truncate max-w-[180px]">
                     {emp.name} {emp.surname}
                   </p>
-                  <p className="text-gray-500 text-sm truncate">{emp.phone}</p>
+                  <p className="text-gray-500 text-sm truncate  max-lg:text-sm">{emp.phone}</p>
                 </div>
               </div>
 
@@ -659,15 +647,14 @@ const Employees = () => {
                     {emp.role}
                   </div>
                   <div
-                    className={`min-w-[70px] h-[26px] flex items-center justify-center rounded-md px-3 text-xs font-medium ${
-                      emp.positionLevel === "Junior"
+                    className={`min-w-[70px] h-[26px] flex items-center justify-center rounded-md px-3 text-xs font-medium ${emp.positionLevel === "Junior"
                         ? "border border-blue-500 text-blue-600"
                         : emp.positionLevel === "Middle"
-                        ? "border border-yellow-500 text-yellow-600"
-                        : emp.positionLevel === "Senior"
-                        ? "border border-green-500 text-green-600"
-                        : "border border-gray-300 text-gray-600"
-                    }`}
+                          ? "border border-yellow-500 text-yellow-600"
+                          : emp.positionLevel === "Senior"
+                            ? "border border-green-500 text-green-600"
+                            : "border border-gray-300 text-gray-600"
+                      }`}
                   >
                     {emp.positionLevel}
                   </div>
@@ -691,11 +678,10 @@ const Employees = () => {
               <div className="flex flex-col">
                 <span className="text-gray-400 text-sm mb-1">Status</span>
                 <span
-                  className={`text-xs font-medium px-4 py-[3px] rounded-lg border w-fit ${
-                    emp.status === "Free"
+                  className={`text-xs font-medium px-4 py-[3px] rounded-lg border w-fit ${emp.status === "Free"
                       ? "border-green-400 text-green-600"
                       : "border-yellow-400 text-yellow-600"
-                  }`}
+                    }`}
                 >
                   {emp.status}
                 </span>
@@ -767,11 +753,10 @@ const Employees = () => {
                   <div>
                     <p className="text-gray-400">Status</p>
                     <span
-                      className={`inline-block mt-1 text-xs font-medium px-4 py-[3px] rounded-lg border ${
-                        emp.status === "Free"
+                      className={`inline-block mt-1 text-xs font-medium px-4 py-[3px] rounded-lg border ${emp.status === "Free"
                           ? "border-green-400 text-green-600"
                           : "border-yellow-400 text-yellow-600"
-                      }`}
+                        }`}
                     >
                       {emp.status}
                     </span>
@@ -800,11 +785,10 @@ const Employees = () => {
           <button
             onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
             disabled={currentPage === 1}
-            className={`px-2 py-1 rounded-full ${
-              currentPage === 1
+            className={`px-2 py-1 rounded-full ${currentPage === 1
                 ? "text-gray-400 cursor-not-allowed"
                 : "hover:bg-gray-200"
-            }`}
+              }`}
           >
             <ArrowLeft />
           </button>
@@ -814,11 +798,10 @@ const Employees = () => {
               currentPage < totalPages && setCurrentPage(currentPage + 1)
             }
             disabled={currentPage === totalPages}
-            className={`px-2 py-1 rounded-full ${
-              currentPage === totalPages
+            className={`px-2 py-1 rounded-full ${currentPage === totalPages
                 ? "text-gray-400 cursor-not-allowed"
                 : "hover:bg-gray-200"
-            }`}
+              }`}
           >
             <ArrowRight />
           </button>
