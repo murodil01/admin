@@ -418,7 +418,6 @@ export default Employees;*/
 
 
 
-
 import {
   Funnel,
   Plus,
@@ -586,8 +585,8 @@ const Employees = () => {
           <button
             onClick={() => setActiveTab("list")}
             className={`py-[5px] xl:py-[9px] rounded-4xl w-1/2 text-[16px] font-bold transition-all duration-200 ${activeTab === "list"
-                ? "bg-[#1F2937] text-white"
-                : "bg-[#DBDBDB] text-[#1F2937]"
+              ? "bg-[#1F2937] text-white"
+              : "bg-[#DBDBDB] text-[#1F2937]"
               }`}
           >
             List
@@ -596,8 +595,8 @@ const Employees = () => {
           <button
             onClick={() => setActiveTab("activity")}
             className={`py-[5px] xl:py-[9px] rounded-4xl w-1/2 text-[16px] md:text-[14px] lg:text-[16px] font-bold transition-all duration-200 ${activeTab === "activity"
-                ? "bg-[#1F2937] text-white"
-                : "bg-[#DBDBDB] text-[#1F2937]"
+              ? "bg-[#1F2937] text-white"
+              : "bg-[#DBDBDB] text-[#1F2937]"
               }`}
           >
             Activity
@@ -621,64 +620,52 @@ const Employees = () => {
             className="max-w-full bg-white rounded-3xl lg:rounded-2xl shadow p-4 flex flex-col gap-4"
           >
             <div
-              className={`hidden lg:flex items-center justify-between transition-all duration-300 ${collapsed
-                  ? "flex"
-                  : "flex"
-                }`}
+              className={`hidden lg:grid grid-cols-[2fr_1.8fr_1fr_1fr_0.5fr_0.5fr] items-center transition-all duration-300 rounded-2xl gap-4`}
             >
               <div className="flex items-center gap-4">
                 <img
                   src={emp.image}
                   alt={emp.name}
-                  className="w-16 h-16 rounded-full object-cover"
+                  className="w-12 h-12 rounded-full object-cover"
                 />
                 <div>
                   <p className="text-[#1F2937] font-semibold text-base truncate max-w-[180px]">
                     {emp.name} {emp.surname}
                   </p>
-                  <p className="text-gray-500 text-sm truncate  max-lg:text-sm">{emp.phone}</p>
-                </div>
-              </div>
-
-              <div className="flex flex-col">
-                <span className="text-gray-400 text-sm mb-1">Role</span>
-                <div className="flex items-center justify-between gap-4">
-                  <div className="text-[#1F2937] font-medium truncate">
-                    {emp.role}
-                  </div>
-                  <div
-                    className={`min-w-[70px] h-[26px] flex items-center justify-center rounded-md px-3 text-xs font-medium ${emp.positionLevel === "Junior"
-                        ? "border border-blue-500 text-blue-600"
+                  <div className="flex items-center gap-2">
+                    <div className="text-gray-500 text-sm truncate">{emp.role}</div>
+                    <div
+                      className={`mt-1 inline-block px-3 py-[3px] rounded-md text-xs font-medium border ${emp.positionLevel === "Junior"
+                        ? "border-blue-500 text-blue-600"
                         : emp.positionLevel === "Middle"
-                          ? "border border-yellow-500 text-yellow-600"
+                          ? "border-yellow-500 text-yellow-600"
                           : emp.positionLevel === "Senior"
-                            ? "border border-green-500 text-green-600"
-                            : "border border-gray-300 text-gray-600"
-                      }`}
-                  >
-                    {emp.positionLevel}
+                            ? "border-green-500 text-green-600"
+                            : "border-gray-300 text-gray-600"
+                        }`}
+                    >
+                      {emp.positionLevel}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="flex flex-col">
-                <span className="text-gray-400 text-sm mb-1">Department</span>
-                <span className="text-[#1F2937] font-medium truncate ">
-                  {emp.department}
-                </span>
+              <div className="text-[#1F2937] font-medium truncate flex flex-col text-center">
+                <span className="text-gray-500 text-sm truncate">Phone number</span>
+                {emp.phone}
               </div>
-
-              <div className="flex flex-col">
-                <span className="text-gray-400 text-sm mb-1">Tasks</span>
-                <span className="text-[#1F2937] font-medium">
-                  {emp.taskCount}
-                </span>
+              <div className="text-[#1F2937] font-medium truncate flex flex-col text-center">
+                <span className="text-gray-500 text-sm truncate">Department</span>
+                {emp.department}
               </div>
-
-              <div className="flex flex-col">
-                <span className="text-gray-400 text-sm mb-1">Status</span>
+              <div className="text-[#1F2937] font-medium truncate flex flex-col text-center">
+                <span className="text-gray-500 text-sm truncate">Tasks</span>
+                {emp.taskCount}
+              </div>
+              <div className="text-[#1F2937] font-medium truncate flex flex-col text-center">
+                <span className="text-gray-500 text-sm truncate">Status</span>
                 <span
-                  className={`text-xs font-medium px-4 py-[3px] rounded-lg border w-fit ${emp.status === "Free"
+                  className={`inline-block py-[3px] rounded-lg text-xs font-medium border ${emp.status === "Free"
                       ? "border-green-400 text-green-600"
                       : "border-yellow-400 text-yellow-600"
                     }`}
@@ -686,7 +673,6 @@ const Employees = () => {
                   {emp.status}
                 </span>
               </div>
-
               <div className="relative flex justify-end">
                 <button onClick={() => toggleDropdown(emp.id)}>
                   <MoreVertical size={20} className="text-[#1F2937]" />
@@ -754,8 +740,8 @@ const Employees = () => {
                     <p className="text-gray-400">Status</p>
                     <span
                       className={`inline-block mt-1 text-xs font-medium px-4 py-[3px] rounded-lg border ${emp.status === "Free"
-                          ? "border-green-400 text-green-600"
-                          : "border-yellow-400 text-yellow-600"
+                        ? "border-green-400 text-green-600"
+                        : "border-yellow-400 text-yellow-600"
                         }`}
                     >
                       {emp.status}
@@ -786,8 +772,8 @@ const Employees = () => {
             onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
             disabled={currentPage === 1}
             className={`px-2 py-1 rounded-full ${currentPage === 1
-                ? "text-gray-400 cursor-not-allowed"
-                : "hover:bg-gray-200"
+              ? "text-gray-400 cursor-not-allowed"
+              : "hover:bg-gray-200"
               }`}
           >
             <ArrowLeft />
@@ -799,8 +785,8 @@ const Employees = () => {
             }
             disabled={currentPage === totalPages}
             className={`px-2 py-1 rounded-full ${currentPage === totalPages
-                ? "text-gray-400 cursor-not-allowed"
-                : "hover:bg-gray-200"
+              ? "text-gray-400 cursor-not-allowed"
+              : "hover:bg-gray-200"
               }`}
           >
             <ArrowRight />
