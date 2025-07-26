@@ -3,7 +3,7 @@ import { Menu, Bell, User } from "lucide-react";
 const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
 
   return (
-    <header className="bg-[#F2F2F2] pl-6 pr-6 md:pr-11 py-4 flex items-center justify-between w-full">
+    <header className="bg-[#F2F2F2] pl-6 pr-6 md:pr-11 py-4 gap-4 flex items-center justify-between w-full">
       <div className="flex items-center gap-3">
         <button onClick={onToggleMobile} className="md:hidden">
           <Menu size={28} className="text-[#7D8592]"/>
@@ -18,7 +18,7 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
         <input
           type="text"
           placeholder="Search..."
-          className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-blue-500 hidden sm:block"
+          className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-blue-500 flex sm:block max-lg:ml-3 max-lg:py-1"
         />
       </div>
 
