@@ -565,7 +565,7 @@ const Employees = () => {
   const [activeTab, setActiveTab] = useState("list");
 
   return (
-    <div className="pl-3 pr-2">
+    <div>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <h1 className="text-[#1F2937] font-bold text-3xl sm:text-4xl">
           Employees ({employees.length})
