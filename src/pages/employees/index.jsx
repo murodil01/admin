@@ -620,9 +620,9 @@ const Employees = () => {
             className="max-w-full bg-white rounded-3xl lg:rounded-2xl shadow p-4 flex flex-col gap-4"
           >
             <div
-              className={`hidden lg:grid grid-cols-[2fr_1.8fr_1fr_1fr_0.5fr_0.5fr] items-center transition-all duration-300 rounded-2xl gap-4`}
+              className={`hidden lg:grid grid-cols-[2fr_1.8fr_1fr_1fr_0.5fr_0.2fr] items-center transition-all duration-300 rounded-2xl`}
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 lg:gap-2">
                 <img
                   src={emp.image}
                   alt={emp.name}
@@ -650,19 +650,19 @@ const Employees = () => {
                 </div>
               </div>
 
-              <div className="text-[#1F2937] font-medium truncate flex flex-col text-center">
+              <div className="text-[#1F2937] font-medium truncate flex flex-col text-center md:text-[13px] xl:text-base">
                 <span className="text-gray-500 text-sm truncate">Phone number</span>
                 {emp.phone}
               </div>
-              <div className="text-[#1F2937] font-medium truncate flex flex-col text-center">
+              <div className="text-[#1F2937] font-medium truncate flex flex-col text-center md:text-[13px] xl:text-base">
                 <span className="text-gray-500 text-sm truncate">Department</span>
                 {emp.department}
               </div>
-              <div className="text-[#1F2937] font-medium truncate flex flex-col text-center">
+              <div className="text-[#1F2937] font-medium truncate flex flex-col text-center md:text-[13px] xl:text-base">
                 <span className="text-gray-500 text-sm truncate">Tasks</span>
                 {emp.taskCount}
               </div>
-              <div className="text-[#1F2937] font-medium truncate flex flex-col text-center">
+              <div className="text-[#1F2937] font-medium truncate flex flex-col text-center md:text-[13px] xl:text-base">
                 <span className="text-gray-500 text-sm truncate">Status</span>
                 <span
                   className={`inline-block py-[3px] rounded-lg text-xs font-medium border ${emp.status === "Free"
