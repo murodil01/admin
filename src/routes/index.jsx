@@ -36,6 +36,7 @@ import Vacations from "../pages/vacations";
 import Employees from "../pages/employees";
 import Messenger from "../pages/messenger";
 import InfoPortal from "../pages/info-portal";
+import Activity from "../pages/employees/activity";
 
 export const router = createBrowserRouter([
   {
@@ -52,6 +53,7 @@ export const router = createBrowserRouter([
           { path: "employees", element: <Employees /> },
           { path: "messenger", element: <Messenger /> },
           { path: "info-portal", element: <InfoPortal /> },
+          {path: "activity", element: <Activity />}, 
         ],
       },
     ],
