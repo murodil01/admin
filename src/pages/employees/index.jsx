@@ -418,6 +418,7 @@ import {
   ArrowUp,
 } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSidebar } from "../../context";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 
@@ -563,6 +564,14 @@ const Employees = () => {
   };
 
   const [activeTab, setActiveTab] = useState("list");
+  const navigate = useNavigate();
+
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
+    if (tab === "activity") {
+      navigate("/activity");
+    }
+  };
 
   return (
     <div>
@@ -573,7 +582,7 @@ const Employees = () => {
 
         <div className="flex items-center bg-[#DBDBDB] p-[3px] rounded-4xl w-full m-auto md:w-[350px]">
           <button
-            onClick={() => setActiveTab("list")}
+            onClick={() => handleTabClick("list")}
             className={`py-[9px] rounded-4xl w-1/2 text-[16px] font-bold transition-all duration-200 ${
               activeTab === "list"
                 ? "bg-[#1F2937] text-white"
@@ -584,7 +593,7 @@ const Employees = () => {
           </button>
 
           <button
-            onClick={() => setActiveTab("activity")}
+            onClick={() => handleTabClick("activity")}
             className={`py-[9px] rounded-4xl w-1/2 text-[16px] font-bold transition-all duration-200 ${
               activeTab === "activity"
                 ? "bg-[#1F2937] text-white"
