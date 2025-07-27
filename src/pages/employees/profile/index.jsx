@@ -1,4 +1,4 @@
-import { DatePicker, Form, Input, Upload, Pagination } from "antd";
+import React, { useState } from "react";
 import {
   Download as DownloadIcon,
   Calendar,
@@ -6,8 +6,8 @@ import {
   ChevronDown,
   Filter,
   ChevronDown as DropdownArrow,
+  Upload as UploadIcon,
 } from "lucide-react";
-import { useState } from "react";
 
 const mockProjects = [
   {
@@ -65,26 +65,135 @@ const mockProjects = [
   },
 ];
 
+const SidebarInfo = [
+  { label: "Department", value: "M Technologies" },
+  { label: "Status", value: "Working" },
+  { label: "Join Date", value: "May 01, 2025" },
+  { label: "Birthday Date", value: "May 19, 1996" },
+  { label: "Email", value: "evanyates@gmail.com" },
+  { label: "Mobile Number", value: "+998 94 123 45-67" },
+  { label: "Telegram username", value: "@boburallayorov" },
+  { label: "Serial Number", value: "AD 1114567" },
+  { label: "PINFL", value: "45245875495734" },
+];
+
+// Custom Upload Component
+const CustomUpload = ({ fileList, onChange }) => {
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    const newFileList = files.map((file, index) => ({
+      uid: `${Date.now()}-${index}`,
+      name: file.name,
+      status: "done",
+      originFileObj: file,
+    }));
+    onChange({ fileList: [...fileList, ...newFileList] });
+  };
+
+  const removeFile = (uid) => {
+    onChange({ fileList: fileList.filter((file) => file.uid !== uid) });
+  };
+
+  return (
+    <div className="w-full">
+      <input
+        type="file"
+        multiple
+        onChange={handleFileChange}
+        className="hidden"
+        id="file-upload"
+      />
+      <label
+        htmlFor="file-upload"
+        className="w-full h-[48px] bg-[#1F2937] text-white text-sm font-medium px-6 rounded-[14px] hover:bg-[#111827] transition-all flex items-center justify-center gap-2 cursor-pointer"
+      >
+        <UploadIcon size={18} />
+        <span>Upload File</span>
+      </label>
+
+      {fileList.length > 0 && (
+        <div className="mt-3 space-y-2">
+          {fileList.map((file) => (
+            <div
+              key={file.uid}
+              className="flex items-center justify-between bg-gray-50 p-2 rounded-lg"
+            >
+              <span className="text-sm text-gray-600 truncate flex-1">
+                📄 {file.name}
+              </span>
+              <button
+                onClick={() => removeFile(file.uid)}
+                className="text-red-500 hover:text-red-700 text-sm ml-2"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Custom Pagination Component
+const CustomPagination = ({ current, total, pageSize, onChange }) => {
+  const totalPages = Math.ceil(total / pageSize);
+
+  if (totalPages <= 1) return null;
+
+  return (
+    <div className="flex items-center justify-center gap-2 mt-6">
+      <button
+        onClick={() => onChange(current - 1)}
+        disabled={current === 1}
+        className="px-3 py-1 rounded border border-gray-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+      >
+        Previous
+      </button>
+
+      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+        <button
+          key={page}
+          onClick={() => onChange(page)}
+          className={`px-3 py-1 rounded text-sm ${
+            current === page
+              ? "bg-blue-500 text-white"
+              : "border border-gray-300 hover:bg-gray-50"
+          }`}
+        >
+          {page}
+        </button>
+      ))}
+
+      <button
+        onClick={() => onChange(current + 1)}
+        disabled={current === totalPages}
+        className="px-3 py-1 rounded border border-gray-300 text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+      >
+        Next
+      </button>
+    </div>
+  );
+};
+
 const Profile = () => {
-  const [fileList, setFileList] = useState([]);
   const [activeTab, setActiveTab] = useState("Projects");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 2;
+  const [fileList, setFileList] = useState([]);
+  const [showDetails, setShowDetails] = useState(false);
 
-  const handleChange = ({ fileList }) => {
-    setFileList(fileList);
-  };
+  const itemsPerPage = 2;
 
   const getPriorityColor = (priority) => {
     switch (priority) {
       case "High":
-        return "text-red-500";
+        return "text-red-500 bg-red-50";
       case "Medium":
-        return "text-yellow-500";
+        return "text-yellow-600 bg-yellow-50";
       case "Low":
-        return "text-green-500";
+        return "text-green-600 bg-green-50";
       default:
-        return "text-gray-500";
+        return "text-gray-500 bg-gray-50";
     }
   };
 
@@ -99,184 +208,246 @@ const Profile = () => {
   );
 
   return (
-    <div>
-      <h1 className="text-[#0A1629] font-bold text-[36px] text-left">
-        Employee's Profile
-      </h1>
-
-      <div className="mt-4 flex flex-col lg:flex-row gap-6">
-        <div className="md:w-[264px] w-full bg-white shadow-md rounded-[24px] p-4 space-y-6">
-          <div className="border-b border-[#E5E5E5] pb-4 text-center">
-            <img
-              src="https://randomuser.me/api/portraits/men/1.jpg"
-              alt="Profile"
-              className="w-20 h-20 rounded-full object-cover mx-auto mb-2"
-            />
-            <h3 className="text-lg font-semibold text-[#1F2937]">
-              Allen Perkins
-            </h3>
-            <p className="text-sm text-gray-500">UI/UX Designer</p>
-          </div>
-
-          <Form layout="vertical">
-            {[{ label: "Department", name: "department", placeholder: "M Technologies" },
-              { label: "Status", name: "status", placeholder: "Working" },
-              { label: "Join Date", name: "joindate", placeholder: "May 01, 2025" },
-            ].map((field) => (
-              <Form.Item
-                key={field.name}
-                label={<span className="text-sm font-medium text-[#4B5563]">{field.label}</span>}
-                name={field.name}
-                rules={[{ required: true, message: `Iltimos, ${field.label} kiriting!` }]}
-              >
-                <Input placeholder={field.placeholder} className="text-[#1F2937] h-[48px] px-4" style={{ borderRadius: "14px" }} />
-              </Form.Item>
-            ))}
-            <Form.Item
-              label={<span className="text-sm font-medium text-[#4B5563]">Birthday Date</span>}
-              name="birthDate"
-              rules={[{ required: true, message: "Iltimos, tug‘ilgan sanani tanlang!" }]}
-            >
-              <DatePicker format="DD-MM-YYYY" placeholder="May 19, 1996" className="text-[#1F2937] h-[48px] px-4 w-full" style={{ borderRadius: "14px" }} />
-            </Form.Item>
-          </Form>
-
-          <Form layout="vertical">
-            {[{ label: "Email", name: "email", placeholder: "evanyates@gmail.com" },
-              { label: "Mobile Number", name: "mobile", placeholder: "+998 94 123 45-67" },
-              { label: "Telegram username", name: "username", placeholder: "@boburallayorov" },
-            ].map((field) => (
-              <Form.Item
-                key={field.name}
-                label={<span className="text-sm font-medium text-[#4B5563]">{field.label}</span>}
-                name={field.name}
-                rules={[{ required: true, message: `Iltimos, ${field.label} kiriting!` }]}
-              >
-                <Input placeholder={field.placeholder} className="text-[#1F2937] h-[48px] px-4" style={{ borderRadius: "14px" }} />
-              </Form.Item>
-            ))}
-          </Form>
-
-          <Form layout="vertical">
-            {[{ label: "Serial Number", name: "serialNumber", placeholder: "AD 1114567" },
-              { label: "PINFL", name: "pinfl", placeholder: "45245875495734" },
-            ].map((field) => (
-              <Form.Item
-                key={field.name}
-                label={<span className="text-sm font-medium text-[#4B5563]">{field.label}</span>}
-                name={field.name}
-                rules={[{ required: true, message: `Iltimos, ${field.label} kiriting!` }]}
-              >
-                <Input placeholder={field.placeholder} className="text-[#1F2937] h-[48px] px-4" style={{ borderRadius: "14px" }} />
-              </Form.Item>
-            ))}
-            <Form.Item
-              label={<span className="text-sm font-medium text-[#4B5563]">Photo / File</span>}
-              name="file"
-              rules={[{ required: true, message: "Iltimos, faylni yuklang!" }]}
-            >
-              <Upload
-                name="file"
-                fileList={fileList}
-                onChange={handleChange}
-                showUploadList={false}
-                beforeUpload={() => false}
-                className="w-full"
-              >
-                <button type="button" className="w-full h-[48px] bg-[#1F2937] text-white text-sm font-medium px-6 rounded-[14px] hover:bg-[#111827] transition-all flex items-center justify-center gap-2">
-                  <DownloadIcon size={18} />
-                  <span>Upload File</span>
-                </button>
-              </Upload>
-            </Form.Item>
-          </Form>
+    <div className="min-h-screen">
+      {/* Container with responsive padding */}
+      <div className="px-3  py-4 md:py-6 lg:py-8">
+        {/* Page Title */}
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-[#0A1629] font-bold text-2xl sm:text-3xl md:text-4xl lg:text-[36px] text-left">
+            Employee's Profile
+          </h1>
         </div>
 
-        <div className="flex-1 w-full">
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-8 gap-4">
-            <div className="flex bg-gray-200 rounded-full p-1">
-              {["Projects", "Team", "Notes"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-13 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
-                    activeTab === tab
-                      ? "bg-gray-800 text-white shadow-sm"
-                      : "text-gray-600 hover:text-gray-800"
+        {/* Main Layout */}
+        <div className="flex flex-col xl:flex-row gap-4 md:gap-6 w-full">
+          {/* Sidebar */}
+          <div className="w-full xl:w-[280px] 2xl:w-[320px] bg-white shadow-sm border border-gray-100 rounded-2xl md:rounded-3xl p-4 md:p-6">
+            {/* Profile Header */}
+            <div className="flex flex-row xl:flex-col items-center justify-between xl:justify-start gap-3 md:gap-4">
+              {/* Profile Info */}
+              <div className="flex items-center gap-3 md:gap-4 xl:flex-col xl:items-center w-full xl:border-b xl:border-gray-200 xl:pb-6">
+                <div className="relative">
+                  <img
+                    src="https://randomuser.me/api/portraits/men/1.jpg"
+                    alt="Profile"
+                    className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 xl:w-20 xl:h-20 rounded-full object-cover ring-4 ring-gray-100"
+                  />
+                </div>
+                <div className="text-left xl:text-center flex-1 xl:flex-none">
+                  <h3 className="text-base md:text-lg xl:text-xl font-semibold text-[#1F2937]">
+                    Allen Perkins
+                  </h3>
+                  <p className="text-sm md:text-base text-gray-500 mt-1">
+                    UI/UX Designer
+                  </p>
+                </div>
+              </div>
+
+              {/* Mobile Toggle Button */}
+              <button
+                className="xl:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                onClick={() => setShowDetails((prev) => !prev)}
+              >
+                <DropdownArrow
+                  className={`w-5 h-5 md:w-6 md:h-6 text-gray-600 transition-transform duration-300 ${
+                    showDetails ? "rotate-180" : ""
                   }`}
-                >
-                  {tab}
-                </button>
-              ))}
+                />
+              </button>
             </div>
 
-            <div className="flex items-center gap-5">
-              <button className="p-[15px] bg-white hover:bg-gray-200 rounded-[14px] transition-colors">
-                <Filter className="w-5 h-5 text-gray-600" />
-              </button>
-              <div className="flex items-center gap-2 bg-white px-6 py-[15px] rounded-[14px] cursor-pointer">
-                <span className="text-sm font-medium text-gray-700">Current Projects</span>
-                <DropdownArrow className="w-4 h-4 text-gray-500" />
+            {/* Details Section */}
+            <div
+              className={`mt-4 md:mt-6 transition-all duration-300 ease-in-out ${
+                showDetails ? "block opacity-100" : "hidden opacity-0"
+              } xl:block xl:opacity-100 space-y-4 md:space-y-5`}
+            >
+              {/* Sidebar Info */}
+              <div className="space-y-3 md:space-y-4">
+                {SidebarInfo.map((item) => (
+                  <div key={item.label}>
+                    <div className="text-sm md:text-base font-medium text-[#4B5563] mb-2">
+                      {item.label}
+                    </div>
+                    <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl md:rounded-2xl px-3 md:px-4 h-[44px] md:h-[48px] flex items-center text-[#1F2937] text-sm md:text-base hover:border-gray-300 transition-colors">
+                      {item.value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Upload Section */}
+              <div className="w-full">
+                <div className="text-sm md:text-base font-medium text-[#4B5563] mb-2">
+                  Photo / File
+                </div>
+                <CustomUpload
+                  fileList={fileList}
+                  onChange={({ fileList }) => setFileList(fileList)}
+                />
               </div>
             </div>
           </div>
 
-          <div className="space-y-4">
-            {paginatedProjects.map((project) => (
-              <div key={project.id} className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 hover:shadow-lg transition-all duration-200 hover:border-gray-300">
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                  <div className="flex flex-col sm:flex-row items-start gap-4 flex-1">
-                    <div className={`w-12 h-12 rounded-xl ${project.iconBg} flex items-center justify-center text-lg`}>
-                      {project.icon}
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-500 mb-1">{project.number}</div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{project.title}</h3>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Calendar className="w-4 h-4" />
-                        <span>Created {project.createdDate}</span>
-                      </div>
-                    </div>
-                    <div className={`flex items-center gap-1 px-3 py-1 rounded-full ${getPriorityColor(project.priority)}`}>
-                      {getPriorityIcon(project.priority)}
-                      <span className="text-sm font-medium">{project.priority}</span>
-                    </div>
-                  </div>
+          {/* Main Content */}
+          <div className="flex-1 w-full min-w-0">
+            {/* Controls Header */}
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6 md:mb-8 gap-4 lg:gap-6">
+              {/* Tab Navigation */}
+              <div className="flex bg-[#DBDBDB] rounded-full p-1 w-full sm:w-auto">
+                {["Projects", "Team", "Notes"].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`px-4 md:px-10 py-2 md:py-3 rounded-full text-sm md:text-base font-medium transition-all duration-200 flex-1 sm:flex-none ${
+                      activeTab === tab
+                        ? "bg-gray-800 text-white shadow-sm"
+                        : "text-gray-600 hover:text-gray-800 hover:bg-gray-200"
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
 
-                  <div className="bg-gray-50 rounded-lg p-4 w-full md:w-[400px]">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-3">Project Data</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                      <div>
-                        <div className="text-xs text-gray-500 mb-1">All tasks</div>
-                        <div className="text-2xl font-bold text-gray-900">{project.allTasks}</div>
+              {/* Filter Controls */}
+              <div className="flex items-center gap-3 md:gap-4 w-full lg:w-auto">
+                <button className="p-3 md:p-4 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl md:rounded-2xl transition-colors">
+                  <Filter className="w-5 h-5 md:w-6 md:h-6 text-gray-600" />
+                </button>
+                <div className="flex items-center gap-2 md:gap-3 bg-white border border-gray-200 px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-2xl cursor-pointer hover:bg-gray-50 transition-colors flex-1 lg:flex-none">
+                  <span className="text-sm md:text-base font-medium text-gray-700">
+                    Current Projects
+                  </span>
+                  <DropdownArrow className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />
+                </div>
+              </div>
+            </div>
+
+            {/* Projects List */}
+            <div className="space-y-4 md:space-y-6">
+              {paginatedProjects.map((project) => (
+                <div
+                  key={project.id}
+                  className="bg-white rounded-xl md:rounded-2xl border border-gray-200 p-4 md:p-6 lg:p-8 hover:shadow-lg hover:border-gray-300 transition-all duration-200"
+                >
+                  <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 md:gap-6">
+                    {/* Project Info */}
+                    <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6 flex-1 min-w-0">
+                      {/* Project Icon */}
+                      <div
+                        className={`w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-xl md:rounded-2xl ${project.iconBg} flex items-center justify-center text-lg md:text-xl lg:text-2xl shadow-lg`}
+                      >
+                        {project.icon}
                       </div>
-                      <div>
-                        <div className="text-xs text-gray-500 mb-1">Active tasks</div>
-                        <div className="text-2xl font-bold text-gray-900">{project.activeTasks}</div>
+
+                      {/* Project Details */}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-[400] md:text-sm text-[#91929E] mb-1 md:mb-2">
+                          {project.number}
+                        </div>
+                        <h3 className="text-lg text-[18px] md:text-xl lg:text-2xl font-bold text-[#0A1629] mb-2 md:mb-3 line-clamp-2">
+                          {project.title}
+                        </h3>
+                        <div className="flex items-center gap-2 text-sm md:text-base text-gray-500 mb-3 md:mb-4">
+                          <Calendar className="w-4 h-4 md:w-5 md:h-5 flex-shrink-0" />
+                          <span>Created {project.createdDate}</span>
+                        </div>
+
+                        {/* Priority Badge - Mobile */}
+                        <div className="block lg:hidden">
+                          <div
+                            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full ${getPriorityColor(
+                              project.priority
+                            )}`}
+                          >
+                            {getPriorityIcon(project.priority)}
+                            <span className="text-sm font-medium">
+                              {project.priority}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-xs text-gray-500 mb-2">Assignees</div>
-                        <div className="flex -space-x-2">
-                          {project.assignees.map((a, idx) => (
-                            <div
-                              key={a.id}
-                              className={`w-8 h-8 rounded-full ${a.color} border-2 border-white flex items-center justify-center text-white text-xs font-medium hover:scale-110 transition-transform cursor-pointer`}
-                              title={a.name}
-                              style={{ zIndex: project.assignees.length - idx }}
-                            >
-                              {a.name.split(" ").map((n) => n[0]).join("")}
-                            </div>
-                          ))}
+
+                      {/* Priority Badge - Desktop */}
+                      <div className="hidden lg:block">
+                        <div
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-full ${getPriorityColor(
+                            project.priority
+                          )}`}
+                        >
+                          {getPriorityIcon(project.priority)}
+                          <span className="text-sm font-medium">
+                            {project.priority}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Project Stats */}
+                    <div className=" w-full lg:w-[360px] xl:w-[400px]">
+                      <h4 className="text-sm md:text-base font-semibold text-gray-900 mb-3 md:mb-4">
+                        Project Data
+                      </h4>
+                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                        {/* All Tasks */}
+                        <div>
+                          <div className="text-xs md:text-sm text-gray-500 mb-1 md:mb-2">
+                            All tasks
+                          </div>
+                          <div className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
+                            {project.allTasks}
+                          </div>
+                        </div>
+
+                        {/* Active Tasks */}
+                        <div>
+                          <div className="text-xs md:text-sm text-gray-500 mb-1 md:mb-2">
+                            Active tasks
+                          </div>
+                          <div className="text-xl md:text-2xl lg:text-3xl font-bold text-blue-600">
+                            {project.activeTasks}
+                          </div>
+                        </div>
+
+                        {/* Assignees */}
+                        <div className="col-span-2 lg:col-span-1">
+                          <div className="text-xs md:text-sm text-gray-500 mb-2 md:mb-3">
+                            Assignees
+                          </div>
+                          <div className="flex -space-x-2">
+                            {project.assignees
+                              .slice(0, 4)
+                              .map((assignee, idx) => (
+                                <div
+                                  key={assignee.id}
+                                  className={`w-8 h-8 md:w-10 md:h-10 rounded-full ${assignee.color} border-2 md:border-3 border-white flex items-center justify-center text-white text-xs md:text-sm font-medium hover:scale-110 hover:z-10 transition-all cursor-pointer shadow-md`}
+                                  title={assignee.name}
+                                  style={{
+                                    zIndex: project.assignees.length - idx,
+                                  }}
+                                >
+                                  {assignee.name
+                                    .split(" ")
+                                    .map((n) => n[0])
+                                    .join("")}
+                                </div>
+                              ))}
+                            {project.assignees.length > 4 && (
+                              <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-400 border-2 md:border-3 border-white flex items-center justify-center text-white text-xs md:text-sm font-medium shadow-md">
+                                +{project.assignees.length - 4}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
 
-            <div className="flex justify-end mt-6">
-              <Pagination
+              {/* Pagination */}
+              <CustomPagination
                 current={currentPage}
                 total={mockProjects.length}
                 pageSize={itemsPerPage}
