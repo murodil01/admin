@@ -130,7 +130,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
       {isMobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div
-            className="absolute inset-0 bg-black bg-opacity-50"
+            className="absolute inset-0 backdrop-blur-sm bg-blue-100/10 opacity-100 transition-opacity duration-500"
             onClick={() => setIsMobileOpen(false)}
           ></div>
           <div className="relative z-50 w-64 bg-[#1F2937] text-white h-full flex flex-col justify-between p-4">
