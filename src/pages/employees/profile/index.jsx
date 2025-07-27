@@ -1,6 +1,5 @@
-import { DatePicker, Form, Input, Upload } from "antd";
+import { DatePicker, Form, Input, Upload, Pagination } from "antd";
 import {
-  Funnel,
   Download as DownloadIcon,
   Calendar,
   ChevronUp,
@@ -67,7 +66,14 @@ const mockProjects = [
 ];
 
 const Profile = () => {
+  const [fileList, setFileList] = useState([]);
   const [activeTab, setActiveTab] = useState("Projects");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 2;
+
+  const handleChange = ({ fileList }) => {
+    setFileList(fileList);
+  };
 
   const getPriorityColor = (priority) => {
     switch (priority) {
@@ -87,15 +93,19 @@ const Profile = () => {
     return <ChevronUp className="w-4 h-4" />;
   };
 
+  const paginatedProjects = mockProjects.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
     <div>
       <h1 className="text-[#0A1629] font-bold text-[36px] text-left">
         Employee's Profile
       </h1>
 
-      <div className="flex flex-wrap gap-4 sm:gap-5 md:gap-6 lg:gap-8 mt-4 justify-center">
-        <div className="w-[264px] bg-white shadow-md rounded-[24px] p-4 space-y-6">
-          {/* Profile Header */}
+      <div className="mt-4 flex flex-col lg:flex-row gap-6">
+        <div className="md:w-[264px] w-full bg-white shadow-md rounded-[24px] p-4 space-y-6">
           <div className="border-b border-[#E5E5E5] pb-4 text-center">
             <img
               src="https://randomuser.me/api/portraits/men/1.jpg"
@@ -108,202 +118,88 @@ const Profile = () => {
             <p className="text-sm text-gray-500">UI/UX Designer</p>
           </div>
 
-          {/* Main Info */}
-          <div>
-            <h3 className="text-[#1F2937] text-base font-semibold mb-2">
-              Main Info
-            </h3>
-            <Form layout="vertical">
-              {[
-                {
-                  label: "Department",
-                  name: "department",
-                  placeholder: "M Technologies",
-                },
-                { label: "Status", name: "status", placeholder: "Working" },
-                {
-                  label: "Join Date",
-                  name: "joindate",
-                  placeholder: "May 01, 2025",
-                },
-              ].map((field) => (
-                <Form.Item
-                  key={field.name}
-                  label={
-                    <span className="text-sm font-medium text-[#4B5563]">
-                      {field.label}
-                    </span>
-                  }
-                  name={field.name}
-                  rules={[
-                    {
-                      required: true,
-                      message: `Iltimos, ${field.label} kiriting!`,
-                    },
-                  ]}
-                >
-                  <Input
-                    placeholder={field.placeholder}
-                    className="text-[#1F2937] h-[48px] px-4"
-                    style={{ borderRadius: "14px" }}
-                  />
-                </Form.Item>
-              ))}
+          <Form layout="vertical">
+            {[{ label: "Department", name: "department", placeholder: "M Technologies" },
+              { label: "Status", name: "status", placeholder: "Working" },
+              { label: "Join Date", name: "joindate", placeholder: "May 01, 2025" },
+            ].map((field) => (
               <Form.Item
-                label={
-                  <span className="text-sm font-medium text-[#4B5563]">
-                    Birthday Date
-                  </span>
-                }
-                name="birthDate"
-                rules={[
-                  {
-                    required: true,
-                    message: "Iltimos, tug‘ilgan sanani tanlang!",
-                  },
-                ]}
+                key={field.name}
+                label={<span className="text-sm font-medium text-[#4B5563]">{field.label}</span>}
+                name={field.name}
+                rules={[{ required: true, message: `Iltimos, ${field.label} kiriting!` }]}
               >
-                <DatePicker
-                  format="DD-MM-YYYY"
-                  placeholder="May 19, 1996"
-                  className="text-[#1F2937] h-[48px] px-4 w-full"
-                  style={{ borderRadius: "14px" }}
-                />
+                <Input placeholder={field.placeholder} className="text-[#1F2937] h-[48px] px-4" style={{ borderRadius: "14px" }} />
               </Form.Item>
-            </Form>
-          </div>
+            ))}
+            <Form.Item
+              label={<span className="text-sm font-medium text-[#4B5563]">Birthday Date</span>}
+              name="birthDate"
+              rules={[{ required: true, message: "Iltimos, tug‘ilgan sanani tanlang!" }]}
+            >
+              <DatePicker format="DD-MM-YYYY" placeholder="May 19, 1996" className="text-[#1F2937] h-[48px] px-4 w-full" style={{ borderRadius: "14px" }} />
+            </Form.Item>
+          </Form>
 
-          {/* Contact Info */}
-          <div>
-            <h3 className="text-[#1F2937] text-base font-semibold mb-2">
-              Contact Info
-            </h3>
-            <Form layout="vertical">
-              {[
-                {
-                  label: "Email",
-                  name: "email",
-                  placeholder: "evanyates@gmail.com",
-                },
-                {
-                  label: "Mobile Number",
-                  name: "mobile",
-                  placeholder: "+998 94 123 45-67",
-                },
-                {
-                  label: "Telegram username",
-                  name: "username",
-                  placeholder: "@boburallayorov",
-                },
-              ].map((field) => (
-                <Form.Item
-                  key={field.name}
-                  label={
-                    <span className="text-sm font-medium text-[#4B5563]">
-                      {field.label}
-                    </span>
-                  }
-                  name={field.name}
-                  rules={[
-                    {
-                      required: true,
-                      message: `Iltimos, ${field.label} kiriting!`,
-                    },
-                  ]}
-                >
-                  <Input
-                    placeholder={field.placeholder}
-                    className="text-[#1F2937] h-[48px] px-4"
-                    style={{ borderRadius: "14px" }}
-                  />
-                </Form.Item>
-              ))}
-            </Form>
-          </div>
-
-          {/* Passport Detail */}
-          <div>
-            <h3 className="text-[#1F2937] text-base font-semibold mb-2">
-              Passport Detail
-            </h3>
-            <Form layout="vertical">
-              {[
-                {
-                  label: "Serial Number",
-                  name: "serialNumber",
-                  placeholder: "AD 1114567",
-                },
-                {
-                  label: "PINFL",
-                  name: "pinfl",
-                  placeholder: "45245875495734",
-                },
-              ].map((field) => (
-                <Form.Item
-                  key={field.name}
-                  label={
-                    <span className="text-sm font-medium text-[#4B5563]">
-                      {field.label}
-                    </span>
-                  }
-                  name={field.name}
-                  rules={[
-                    {
-                      required: true,
-                      message: `Iltimos, ${field.label} kiriting!`,
-                    },
-                  ]}
-                >
-                  <Input
-                    placeholder={field.placeholder}
-                    className="text-[#1F2937] h-[48px] px-4"
-                    style={{ borderRadius: "14px" }}
-                  />
-                </Form.Item>
-              ))}
+          <Form layout="vertical">
+            {[{ label: "Email", name: "email", placeholder: "evanyates@gmail.com" },
+              { label: "Mobile Number", name: "mobile", placeholder: "+998 94 123 45-67" },
+              { label: "Telegram username", name: "username", placeholder: "@boburallayorov" },
+            ].map((field) => (
               <Form.Item
-                label={
-                  <span className="text-sm font-medium text-[#4B5563]">
-                    Photo / File
-                  </span>
-                }
+                key={field.name}
+                label={<span className="text-sm font-medium text-[#4B5563]">{field.label}</span>}
+                name={field.name}
+                rules={[{ required: true, message: `Iltimos, ${field.label} kiriting!` }]}
+              >
+                <Input placeholder={field.placeholder} className="text-[#1F2937] h-[48px] px-4" style={{ borderRadius: "14px" }} />
+              </Form.Item>
+            ))}
+          </Form>
+
+          <Form layout="vertical">
+            {[{ label: "Serial Number", name: "serialNumber", placeholder: "AD 1114567" },
+              { label: "PINFL", name: "pinfl", placeholder: "45245875495734" },
+            ].map((field) => (
+              <Form.Item
+                key={field.name}
+                label={<span className="text-sm font-medium text-[#4B5563]">{field.label}</span>}
+                name={field.name}
+                rules={[{ required: true, message: `Iltimos, ${field.label} kiriting!` }]}
+              >
+                <Input placeholder={field.placeholder} className="text-[#1F2937] h-[48px] px-4" style={{ borderRadius: "14px" }} />
+              </Form.Item>
+            ))}
+            <Form.Item
+              label={<span className="text-sm font-medium text-[#4B5563]">Photo / File</span>}
+              name="file"
+              rules={[{ required: true, message: "Iltimos, faylni yuklang!" }]}
+            >
+              <Upload
                 name="file"
-                rules={[
-                  { required: true, message: "Iltimos, faylni yuklang!" },
-                ]}
+                fileList={fileList}
+                onChange={handleChange}
+                showUploadList={false}
+                beforeUpload={() => false}
+                className="w-full"
               >
-                <Upload
-                  name="file"
-                  showUploadList={false}
-                  beforeUpload={() => false}
-                  className="w-full"
-                  style={{ width: "100%" }}
-                >
-                  <div className="w-full">
-                    <button
-                      type="button"
-                      className="w-full h-[48px] bg-[#1F2937] text-white text-sm font-medium px-6 rounded-[14px] hover:bg-[#111827] transition-all flex items-center justify-center gap-2"
-                    >
-                      <DownloadIcon size={18} />
-                      <span>Upload File</span>
-                    </button>
-                  </div>
-                </Upload>
-              </Form.Item>
-            </Form>
-          </div>
+                <button type="button" className="w-full h-[48px] bg-[#1F2937] text-white text-sm font-medium px-6 rounded-[14px] hover:bg-[#111827] transition-all flex items-center justify-center gap-2">
+                  <DownloadIcon size={18} />
+                  <span>Upload File</span>
+                </button>
+              </Upload>
+            </Form.Item>
+          </Form>
         </div>
 
-        {/* Projects Section */}
         <div className="flex-1 w-full">
-          {/* Header */}
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-8 gap-4">
             <div className="flex bg-gray-200 rounded-full p-1">
               {["Projects", "Team", "Notes"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                  className={`px-13 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
                     activeTab === tab
                       ? "bg-gray-800 text-white shadow-sm"
                       : "text-gray-600 hover:text-gray-800"
@@ -314,89 +210,52 @@ const Profile = () => {
               ))}
             </div>
 
-            <div className="flex items-center gap-4">
-              <button className="p-2 hover:bg-gray-200 rounded-lg transition-colors">
+            <div className="flex items-center gap-5">
+              <button className="p-[15px] bg-white hover:bg-gray-200 rounded-[14px] transition-colors">
                 <Filter className="w-5 h-5 text-gray-600" />
               </button>
-              <div className="flex items-center gap-2 bg-white px-4 py-[10px] rounded-[14px] border border-gray-200 hover:border-gray-300 cursor-pointer">
-                <span className="text-sm font-medium text-gray-700">
-                  Current Projects
-                </span>
+              <div className="flex items-center gap-2 bg-white px-6 py-[15px] rounded-[14px] cursor-pointer">
+                <span className="text-sm font-medium text-gray-700">Current Projects</span>
                 <DropdownArrow className="w-4 h-4 text-gray-500" />
               </div>
             </div>
           </div>
 
-          {/* Projects Grid */}
           <div className="space-y-4">
-            {mockProjects.map((project) => (
-              <div
-                key={project.id}
-                className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 hover:shadow-lg transition-all duration-200 hover:border-gray-300"
-              >
+            {paginatedProjects.map((project) => (
+              <div key={project.id} className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 hover:shadow-lg transition-all duration-200 hover:border-gray-300">
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                  {/* Left Section */}
                   <div className="flex flex-col sm:flex-row items-start gap-4 flex-1">
-                    {/* Icon */}
-                    <div
-                      className={`w-12 h-12 rounded-xl ${project.iconBg} flex items-center justify-center text-lg`}
-                    >
+                    <div className={`w-12 h-12 rounded-xl ${project.iconBg} flex items-center justify-center text-lg`}>
                       {project.icon}
                     </div>
-
-                    {/* Project Info */}
                     <div>
-                      <div className="text-sm text-gray-500 mb-1">
-                        {project.number}
-                      </div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {project.title}
-                      </h3>
+                      <div className="text-sm text-gray-500 mb-1">{project.number}</div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{project.title}</h3>
                       <div className="flex items-center gap-2 text-sm text-gray-500">
                         <Calendar className="w-4 h-4" />
                         <span>Created {project.createdDate}</span>
                       </div>
                     </div>
-
-                    {/* Priority */}
-                    <div
-                      className={`flex items-center gap-1 px-3 py-1 rounded-full ${getPriorityColor(
-                        project.priority
-                      )}`}
-                    >
+                    <div className={`flex items-center gap-1 px-3 py-1 rounded-full ${getPriorityColor(project.priority)}`}>
                       {getPriorityIcon(project.priority)}
-                      <span className="text-sm font-medium">
-                        {project.priority}
-                      </span>
+                      <span className="text-sm font-medium">{project.priority}</span>
                     </div>
                   </div>
 
-                  {/* Right Section - Project Data */}
-                  <div className="bg-gray-50 rounded-lg p-4 w-full md:w-[300px]">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                      Project Data
-                    </h4>
+                  <div className="bg-gray-50 rounded-lg p-4 w-full md:w-[400px]">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3">Project Data</h4>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                       <div>
-                        <div className="text-xs text-gray-500 mb-1">
-                          All tasks
-                        </div>
-                        <div className="text-2xl font-bold text-gray-900">
-                          {project.allTasks}
-                        </div>
+                        <div className="text-xs text-gray-500 mb-1">All tasks</div>
+                        <div className="text-2xl font-bold text-gray-900">{project.allTasks}</div>
                       </div>
                       <div>
-                        <div className="text-xs text-gray-500 mb-1">
-                          Active tasks
-                        </div>
-                        <div className="text-2xl font-bold text-gray-900">
-                          {project.activeTasks}
-                        </div>
+                        <div className="text-xs text-gray-500 mb-1">Active tasks</div>
+                        <div className="text-2xl font-bold text-gray-900">{project.activeTasks}</div>
                       </div>
                       <div>
-                        <div className="text-xs text-gray-500 mb-2">
-                          Assignees
-                        </div>
+                        <div className="text-xs text-gray-500 mb-2">Assignees</div>
                         <div className="flex -space-x-2">
                           {project.assignees.map((a, idx) => (
                             <div
@@ -405,10 +264,7 @@ const Profile = () => {
                               title={a.name}
                               style={{ zIndex: project.assignees.length - idx }}
                             >
-                              {a.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
+                              {a.name.split(" ").map((n) => n[0]).join("")}
                             </div>
                           ))}
                         </div>
@@ -418,6 +274,15 @@ const Profile = () => {
                 </div>
               </div>
             ))}
+
+            <div className="flex justify-end mt-6">
+              <Pagination
+                current={currentPage}
+                total={mockProjects.length}
+                pageSize={itemsPerPage}
+                onChange={(page) => setCurrentPage(page)}
+              />
+            </div>
           </div>
         </div>
       </div>
