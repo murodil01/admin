@@ -105,11 +105,11 @@ const activity = [
 
 const Activity = () => {
   return (
-    <div className="w-full flex justify-center md:justify-start gap-[30px] items-center py-6 flex-wrap">
+    <div className="w-full flex justify-center md:justify-start gap-[25px] items-center py-6 flex-wrap">
       {activity.map((user) => (
         <div
           key={user.id}
-          className="md:w-[265px] w-full bg-white rounded-[24px] shadow-md px-[8px] pt-[10px] md:pb-[10px] pb-[25px] flex flex-col gap-[16px] justify-center items-center"
+          className="md:w-[280px] w-full bg-white rounded-[24px] shadow-md px-[8px] pt-[10px] md:pb-[10px] pb-[25px] flex flex-col gap-[16px] justify-center items-center"
         >
           {/* User Info */}
           <div className="bg-[#EEEEEE] py-4 px-4 flex flex-col items-center gap-2 rounded-[24px] w-full">

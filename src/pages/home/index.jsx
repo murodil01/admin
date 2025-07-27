@@ -15,6 +15,8 @@ import {
   Bar,
 } from "recharts";
 import { Loader } from "lucide-react";
+import { useResizeDetector } from "react-resize-detector";
+import { useSidebar } from "../../context"; 
 
 const mockData = [
   { name: "Jan", value1: 400, value2: 300, value3: 200, value4: 500 },
@@ -34,10 +36,18 @@ const mockData = [
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff7300"];
 
 const Home = () => {
+  const { collapsed } = useSidebar(); // <-- sidebar collapsed context
   const [loading, setLoading] = useState(true);
   const [chartData, setChartData] = useState([]);
+  const { width, ref } = useResizeDetector();
 
-  // Pie chart uchun summalarni hisoblash
+  useEffect(() => {
+    setTimeout(() => {
+      setChartData(mockData);
+      setLoading(false);
+    }, 1000);
+  }, []);
+
   const pieData = [
     {
       name: "Sales",
@@ -57,33 +67,16 @@ const Home = () => {
     },
   ];
 
-  useEffect(() => {
-    setTimeout(() => {
-      setChartData(mockData);
-      setLoading(false);
-    }, 1500);
-  }, []);
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" ref={ref}>
       <h1 className="text-xl text-[36px] font-bold text-gray-900 mb-4">Home</h1>
 
       {/* Statistic Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          {
-            title: "Total Sales",
-            value: "$24,000",
-            change: "+15%",
-            color: "green",
-          },
+          { title: "Total Sales", value: "$24,000", change: "+15%", color: "green" },
           { title: "Visitors", value: "8,500", change: "-8%", color: "red" },
-          {
-            title: "Revenue",
-            value: "$18,200",
-            change: "+10%",
-            color: "green",
-          },
+          { title: "Revenue", value: "$18,200", change: "+10%", color: "green" },
           { title: "Orders", value: "1,240", change: "+6%", color: "green" },
         ].map((item, i) => (
           <div key={i} className="bg-white rounded-xl shadow p-4">
@@ -96,60 +89,27 @@ const Home = () => {
         ))}
       </div>
 
-      {/* Line Chart */}
+      {/* Charts Section */}
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Line Chart */}
         <div className="bg-white rounded-xl shadow p-6 w-full lg:w-1/2">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Monthly Overview
-          </h2>
-          {loading ? (
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Monthly Overview</h2>
+          {loading || !width ? (
             <div className="text-center py-16 flex justify-center items-center">
               <Loader className="animate-spin text-cyan-950" size={50} />
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={400}>
-              <LineChart
-                data={chartData}
-                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
-              >
+            <ResponsiveContainer width="100%" height={400} key={collapsed}>
+              <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
                 <Legend verticalAlign="top" height={36} />
-                <Line
-                  type="monotone"
-                  dataKey="value1"
-                  name="Sales"
-                  stroke="#8884d8"
-                  strokeWidth={2}
-                  dot={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="value2"
-                  name="Visitors"
-                  stroke="#82ca9d"
-                  strokeWidth={2}
-                  dot={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="value3"
-                  name="Revenue"
-                  stroke="#ffc658"
-                  strokeWidth={2}
-                  dot={false}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="value4"
-                  name="Orders"
-                  stroke="#ff7300"
-                  strokeWidth={2}
-                  dot={false}
-                />
+                <Line type="monotone" dataKey="value1" name="Sales" stroke="#8884d8" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="value2" name="Visitors" stroke="#82ca9d" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="value3" name="Revenue" stroke="#ffc658" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="value4" name="Orders" stroke="#ff7300" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -157,30 +117,17 @@ const Home = () => {
 
         {/* Pie Chart */}
         <div className="bg-white rounded-xl shadow p-6 w-full lg:w-1/2">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Overall Distribution
-          </h2>
-          {loading ? (
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Overall Distribution</h2>
+          {loading || !width ? (
             <div className="text-center py-16 flex justify-center items-center">
               <Loader className="animate-spin text-cyan-950" size={50} />
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={400}>
+            <ResponsiveContainer width="100%" height={400} key={collapsed + "-pie"}>
               <PieChart>
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={100}
-                  label
-                >
+                <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
                   {pieData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                    />
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -192,20 +139,15 @@ const Home = () => {
       </div>
 
       {/* Bar Chart */}
-      <div className="bg-white rounded-xl shadow p-6 w-full lg:w-1/2">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Monthly Bar Overview
-        </h2>
-        {loading ? (
+      <div className="bg-white rounded-xl shadow p-6 w-full">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Monthly Bar Overview</h2>
+        {loading || !width ? (
           <div className="text-center py-16 flex justify-center items-center">
             <Loader className="animate-spin text-cyan-950" size={50} />
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart
-              data={chartData}
-              margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
-            >
+          <ResponsiveContainer width="100%" height={400} key={collapsed + "-bar"}>
+            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />

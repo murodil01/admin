@@ -1,8 +1,5 @@
 import { useState } from "react";
 import {
-  MoreHorizontal,
-  Grid3X3,
-  Calendar,
   Filter,
   ChevronDown,
   ArrowDown,
@@ -173,15 +170,6 @@ const Projects = () => {
             <div className="flex items-center justify-between flex-wrap gap-4">
               <h2 className="text-lg font-semibold text-gray-900">Tasks</h2>
               <div className="flex items-center gap-3 flex-wrap">
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <MoreHorizontal className="w-5 h-5 text-gray-600" />
-                </button>
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Grid3X3 className="w-5 h-5 text-gray-600" />
-                </button>
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Calendar className="w-5 h-5 text-gray-600" />
-                </button>
                 <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                   <Filter className="w-5 h-5 text-gray-600" />
                 </button>           

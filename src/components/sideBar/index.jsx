@@ -6,6 +6,7 @@ import {
   LogOut,
   X,
   MessageCircle,
+  Calendar,
 } from "lucide-react";
 import adminPanel from "../../assets/adminPanel.png";
 import support from "../../assets/support.png";
@@ -15,6 +16,7 @@ import { BsFillGridFill, BsStack } from "react-icons/bs";
 const menuItems = [
   { label: "Dashboard", icon: <BsFillGridFill size={20} />, path: "/" },
   { label: "Projects", icon: <BsStack size={20} />, path: "/projects" },
+  { label: "Calendar", icon: <Calendar size={20} />, path: "/calendar" },
   { label: "Vacations", icon: <Plane size={20} />, path: "/vacations" },
   { label: "Employees", icon: <Users size={20} />, path: "/employees" },
   { label: "Messenger", icon: <MessageSquare size={20} />, path: "/messenger" },
@@ -58,7 +60,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
             </div>
 
             <nav
-              className={`flex flex-col gap-2 ${
+              className={`flex flex-col gap-[3px] ${
                 collapsed ? "items-center" : " p-4"
               }`}
             >
