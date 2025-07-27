@@ -36,12 +36,12 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
   return (
     <>
       <aside
-        className={`hidden md:flex h-screen transition-all duration-300 
-        ${
-          collapsed
-            ? "w-20 px-2"
-            : "w-64 pt-[20px] pr-[15px] pb-[5px] pl-[15px]"
-        } bg-[#F2F2F2]`}
+        className={`hidden md:flex h-screen transition-all duration-300 bg-[#F2F2F2]
+    ${
+      collapsed
+        ? "w-20 px-2 pt-[20px] pb-[10px]" 
+        : "w-64 pt-[20px] pr-[15px] pb-[5px] pl-[15px]"
+    }`}
       >
         <div className="w-full h-full bg-white rounded-2xl shadow-xl flex flex-col justify-between overflow-hidden">
           <div>
@@ -61,7 +61,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
 
             <nav
               className={`flex flex-col gap-[3px] ${
-                collapsed ? "items-center" : " p-4"
+                collapsed ? "items-center py-2" : "p-4"
               }`}
             >
               {menuItems.map((item) => {
@@ -71,10 +71,14 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                   <button
                     key={item.label}
                     onClick={() => handleNavigate(item.path)}
-                    className={`flex items-center gap-3 px-4 py-2 rounded-md hover:bg-[#DBDBDB] transition w-full text-left
-    ${collapsed ? "justify-center px-0" : ""}
-    ${isActive ? "bg-[#DBDBDB] font-semibold text-[#1F2937]" : "text-[#7D8592]"}
-  `}
+                    className={`flex items-center gap-3 py-2 rounded-md transition text-left
+          ${collapsed ? "justify-center px-2 w-[48px]" : "px-4 w-full"}
+          ${
+            isActive
+              ? "bg-[#DBDBDB] font-semibold text-[#1F2937]"
+              : "text-[#7D8592]"
+          }
+          hover:bg-[#DBDBDB]`}
                   >
                     {item.icon}
                     {!collapsed && (

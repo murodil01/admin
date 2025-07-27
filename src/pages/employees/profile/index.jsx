@@ -210,7 +210,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen">
       {/* Container with responsive padding */}
-      <div className="px-3  py-4 md:py-6 lg:py-8">
+      <div className="pl-3  py-4 md:py-6 lg:py-8">
         {/* Page Title */}
         <div className="mb-6 md:mb-8">
           <h1 className="text-[#0A1629] font-bold text-2xl sm:text-3xl md:text-4xl lg:text-[36px] text-left">
@@ -336,7 +336,7 @@ const Profile = () => {
                     <div className="flex flex-col sm:flex-row items-start gap-4 md:gap-6 flex-1 min-w-0">
                       {/* Project Icon */}
                       <div
-                        className={`w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-xl md:rounded-2xl ${project.iconBg} flex items-center justify-center text-lg md:text-xl lg:text-2xl shadow-lg`}
+                        className={`w-[48px] h-[48px] md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-xl md:rounded-2xl ${project.iconBg} flex items-center justify-center text-lg md:text-xl lg:text-2xl shadow-lg`}
                       >
                         {project.icon}
                       </div>
@@ -386,7 +386,7 @@ const Profile = () => {
 
                     {/* Project Stats */}
                     <div className=" w-full lg:w-[360px] xl:w-[400px]">
-                      <h4 className="text-sm md:text-base font-semibold text-gray-900 mb-3 md:mb-4">
+                      <h4 className="text-sm text-[16px] md:text-base font-bold text-[#0A1629] mb-3 md:mb-4">
                         Project Data
                       </h4>
                       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
@@ -395,7 +395,7 @@ const Profile = () => {
                           <div className="text-xs md:text-sm text-gray-500 mb-1 md:mb-2">
                             All tasks
                           </div>
-                          <div className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
+                          <div className="text-xl text-[16px] md:text-2xl lg:text-3xl font-bold text-[#0A1629]">
                             {project.allTasks}
                           </div>
                         </div>
@@ -405,7 +405,7 @@ const Profile = () => {
                           <div className="text-xs md:text-sm text-gray-500 mb-1 md:mb-2">
                             Active tasks
                           </div>
-                          <div className="text-xl md:text-2xl lg:text-3xl font-bold text-blue-600">
+                          <div className="text-xl text-[16px] md:text-2xl lg:text-3xl font-bold text-[#0A1629]">
                             {project.activeTasks}
                           </div>
                         </div>
