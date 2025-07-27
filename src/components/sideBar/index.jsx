@@ -35,28 +35,32 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
     <>
       <aside
         className={`hidden md:flex h-screen transition-all duration-300 
-        ${collapsed
+        ${
+          collapsed
             ? "w-20 px-2"
             : "w-64 pt-[20px] pr-[15px] pb-[5px] pl-[15px]"
-          } bg-[#F2F2F2]`}
+        } bg-[#F2F2F2]`}
       >
         <div className="w-full h-full bg-white rounded-2xl shadow-xl flex flex-col justify-between overflow-hidden">
           <div>
             <div
-              className={`flex justify-center ${collapsed ? "pt-6 pb-3" : "p-6"
-                }`}
+              className={`flex justify-center ${
+                collapsed ? "pt-6 pb-3" : "p-6"
+              }`}
             >
               <img
                 src={adminPanel}
                 alt="Logo"
-                className={`transition-all duration-300 ${collapsed ? "w-10" : "w-[60px]"
-                  }`}
+                className={`transition-all duration-300 ${
+                  collapsed ? "w-10" : "w-[60px]"
+                }`}
               />
             </div>
 
             <nav
-              className={`flex flex-col gap-2 ${collapsed ? "items-center" : " p-4"
-                }`}
+              className={`flex flex-col gap-2 ${
+                collapsed ? "items-center" : " p-4"
+              }`}
             >
               {menuItems.map((item) => {
                 const isActive = location.pathname === item.path;
@@ -81,8 +85,9 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
           </div>
 
           <div
-            className={`flex flex-col gap-4 ${collapsed ? "px-2 py-4" : "px-4 py-6"
-              }`}
+            className={`flex flex-col gap-4 ${
+              collapsed ? "px-2 py-4" : "px-4 py-6"
+            }`}
           >
             {!collapsed ? (
               <div className="bg-gray-100 rounded-2xl py-4 px-3 w-[180px] m-auto">
@@ -109,8 +114,9 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 localStorage.removeItem("token");
                 navigate("/login");
               }}
-              className={`flex items-center gap-3 px-4 py-2 rounded-md hover:bg-[#f3f4f6] transition text-[#7D8592] w-full ${collapsed ? "justify-center px-0" : "text-left"
-                }`}
+              className={`flex items-center gap-3 px-4 py-2 rounded-md hover:bg-[#f3f4f6] transition text-[#7D8592] w-full ${
+                collapsed ? "justify-center px-0" : "text-left"
+              }`}
             >
               <LogOut size={20} />
               {!collapsed && <span className="text-sm">Logout</span>}
