@@ -354,7 +354,8 @@ const Employees = () => {
                       </div>
 
                       <div className="col-span-2 mt-3">
-                        <button className="bg-[#1F2937] text-white px-10 py-2 rounded-2xl text-[16px] text-sm font-bold block m-auto">
+                        <button className="bg-[#1F2937] text-white px-10 py-2 rounded-2xl text-[16px] text-sm font-bold block m-auto"  onClick={() => navigate(`/profile/${emp.id}`)}>
+                    
                           More
                         </button>
                       </div>
