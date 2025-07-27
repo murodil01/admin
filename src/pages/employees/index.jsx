@@ -6,7 +6,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useState } from "react";
-import { useSidebar } from "../../context";
+// import { useSidebar } from "../../context";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import Activity from "./activity";
 import { useNavigate } from "react-router-dom";
@@ -137,7 +137,7 @@ const employees = [
 ];
 
 const Employees = () => {
-  const { collapsed } = useSidebar();
+  // const { collapsed } = useSidebar();
   const [openDropdown, setOpenDropdown] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState(() => {

@@ -1,6 +1,4 @@
 import {
-  Home,
-  Folder,
   Plane,
   Users,
   MessageSquare,
@@ -12,10 +10,11 @@ import {
 import adminPanel from "../../assets/adminPanel.png";
 import support from "../../assets/support.png";
 import { useNavigate, useLocation } from "react-router-dom";
+import { BsFillGridFill, BsStack } from "react-icons/bs";
 
 const menuItems = [
-  { label: "Dashboard", icon: <Home size={20} />, path: "/" },
-  { label: "Projects", icon: <Folder size={20} />, path: "/projects" },
+  { label: "Dashboard", icon: <BsFillGridFill size={20} />, path: "/" },
+  { label: "Projects", icon: <BsStack size={20} />, path: "/projects" },
   { label: "Vacations", icon: <Plane size={20} />, path: "/vacations" },
   { label: "Employees", icon: <Users size={20} />, path: "/employees" },
   { label: "Messenger", icon: <MessageSquare size={20} />, path: "/messenger" },
@@ -36,7 +35,11 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
     <>
       <aside
         className={`hidden md:flex h-screen transition-all duration-300 
-        ${collapsed ? "w-20 px-2" : "w-64 p-[20px]"} bg-[#F2F2F2]`}
+        ${
+          collapsed
+            ? "w-20 px-2"
+            : "w-64 pt-[20px] pr-[15px] pb-[5px] pl-[15px]"
+        } bg-[#F2F2F2]`}
       >
         <div className="w-full h-full bg-white rounded-2xl shadow-xl flex flex-col justify-between overflow-hidden">
           <div>
@@ -56,7 +59,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
 
             <nav
               className={`flex flex-col gap-2 ${
-                collapsed ? "items-center" : "px-2 py-4"
+                collapsed ? "items-center" : " p-4"
               }`}
             >
               {menuItems.map((item) => {
@@ -67,9 +70,9 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                     key={item.label}
                     onClick={() => handleNavigate(item.path)}
                     className={`flex items-center gap-3 px-4 py-2 rounded-md hover:bg-[#DBDBDB] transition w-full text-left
-        ${collapsed ? "justify-center px-0" : ""}
-        ${isActive ? "bg-[#DBDBDB] font-semibold text-[#1F2937]" : ""}
-      `}
+    ${collapsed ? "justify-center px-0" : ""}
+    ${isActive ? "bg-[#DBDBDB] font-semibold text-[#1F2937]" : "text-[#7D8592]"}
+  `}
                   >
                     {item.icon}
                     {!collapsed && (
