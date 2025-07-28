@@ -43,9 +43,9 @@ const Tasks = () => {
   const [selectedProject, setSelectedProject] = useState(
     "Medical App (iOS native)"
   );
-  const [currentTasksOpen, setCurrentTasksOpen] = useState(false);
+  const [currentProjectsOpen, setCurrentProjectsOpen] = useState(false);
 
-  const Tasks = [
+  const projects = [
     { id: "PN0001265", name: "Medical App (iOS native)", status: "active" },
     { id: "PN0001246", name: "Food Delivery Service", status: "inactive" },
     { id: "PN0001245", name: "Fortune website", status: "inactive" },
@@ -147,25 +147,172 @@ const Tasks = () => {
 
   return (
     <div>
-      <h3 className="text-[#0A1629] text-[36px] font-bold mb-[28px]">Tasks</h3>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-0 mb-[28px]">
+        <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold text-center sm:text-left">
+          Projects
+        </h3>
+        <button
+          onClick={showModal}
+          className="capitalize w-full sm:max-w-[182px] py-[13px] px-[22px] bg-[#1F2937] rounded-2xl text-white gap-[10px] flex items-center justify-center cursor-pointer shadow shadow-blue-300"
+        >
+          <span className="flex items-center text-xl">+</span>
+          <span className="">Add Project</span>
+        </button>
+
+        <Modal
+          title={<h2 className="px-10 text-2xl font-semibold text-[#1F2937]">Add Project</h2>}
+          open={isModalOpen}
+          onCancel={handleCancel}
+          footer={null}
+          centered
+          width={1000}
+          bodyStyle={{ padding: 0 }}
+          wrapClassName="custom-modal-wrapper"
+        >
+          <div className="px-6 sm:px-10 py-8">
+            <div className="grid grid-cols-1 xl:grid-cols-5 gap-10">
+
+              {/* LEFT SIDE - FORM */}
+              <div className="xl:col-span-[3] space-y-6">
+                {/* Project Name */}
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">Project Name</label>
+                  <input
+                    type="text"
+                    placeholder="Project Name"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+
+                {/* Dates */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-sm text-gray-700 mb-2">Starts</label>
+                    <DatePicker className="w-full border border-gray-300 rounded-lg px-4 py-3" />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-700 mb-2">Deadline</label>
+                    <DatePicker className="w-full border border-gray-300 rounded-lg px-4 py-3" />
+                  </div>
+                </div>
+
+                {/* Priority */}
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">Priority</label>
+                  <Select
+                    defaultValue="Medium"
+                    options={[
+                      { value: "Low", label: "Low" },
+                      { value: "Medium", label: "Medium" },
+                      { value: "High", label: "High" },
+                    ]}
+                    className="w-full"
+                    popupClassName="rounded-lg"
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm text-gray-700 mb-2">Description</label>
+                  <textarea
+                    rows={4}
+                    placeholder="Brief summary of the project..."
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* RIGHT SIDE - IMAGE SELECTOR */}
+              <div className="border border-gray-200 rounded-2xl p-6 col-span-2">
+                <h3 className="text-lg font-semibold text-gray-800 mb-1">Select image</h3>
+                <p className="text-sm text-gray-500 mb-5">
+                  Select or upload an avatar for the project (available formats: jpg, png)
+                </p>
+
+                <div className="grid grid-cols-4 gap-3">
+                  {[...Array(11)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="w-14 h-14 rounded-lg border border-gray-300 flex items-center justify-center hover:ring-2 hover:ring-blue-400 transition cursor-pointer"
+                    >
+                      <img
+                        src={`/img/avatar-${i + 1}.png`}
+                        alt={`avatar-${i + 1}`}
+                        className="w-6 h-6 object-contain"
+                      />
+                    </div>
+                  ))}
+                </div>
+                {/* Upload */}
+                  <div className="mt-5 flex gap-3">
+                    {/* Upload from Computer */}
+                    <label className="flex items-center gap-2 p-[10px] bg-[#e3ebf8] text-white text-sm font-medium rounded-lg hover:opacity-80 transition cursor-pointer">
+                      <AiOutlinePaperClip color="#6D5DD3" size={24} />
+                      <input
+                        type="file"
+                        accept=".jpg, .jpeg, .png"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            const imageUrl = URL.createObjectURL(file);
+                            console.log('Uploaded file image URL:', imageUrl);
+                            // Use the URL in your app state
+                          }
+                        }}
+                      />
+                    </label>
+
+                    {/* Upload from Link */}
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 p-[10px] bg-[#e3ebf8] text-gray-800 text-sm font-medium rounded-lg hover:opacity-80 transition cursor-pointer"
+                      onClick={() => {
+                        const url = prompt("Enter image URL:");
+                        if (url) {
+                          console.log('Image URL entered:', url);
+                          // Use the URL in your app state
+                        }
+                      }}
+                    >
+                      <BiLink color="#15C0E6" size={24} />
+                    </button>
+                  </div>
+              </div>
+            </div>
+
+            {/* FOOTER */}
+            <div className="flex justify-end pt-10">
+              <Button
+                type="primary"
+                onClick={handleSave}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-6 py-3 rounded-lg"
+              >
+                Save Project
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-5 min-h-screen">
         {/* Sidebar */}
         <div className="w-full sm:w-64 bg-white flex flex-col rounded-[24px]">
           <div className="p-6 border-b border-gray-200">
             <h1 className="text-xl font-semibold text-gray-900 mb-4">
-              Tasks
+              Projects
             </h1>
             <div className="relative">
               <button
-                onClick={() => setCurrentTasksOpen(!currentTasksOpen)}
+                onClick={() => setCurrentProjectsOpen(!currentProjectsOpen)}
                 className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <span className="text-sm font-medium text-gray-700">
-                  Current Tasks
+                  Current Projects
                 </span>
                 <ChevronDown
                   className={`w-4 h-4 text-gray-500 transition-transform ${
-                    currentTasksOpen ? "rotate-180" : ""
+                    currentProjectsOpen ? "rotate-180" : ""
                   }`}
                 />
               </button>
@@ -174,7 +321,7 @@ const Tasks = () => {
 
           <div className="flex-1 overflow-y-auto p-4">
             <div className="space-y-2">
-              {Tasks.map((project) => (
+              {projects.map((project) => (
                 <div
                   key={project.id}
                   onClick={() => setSelectedProject(project.name)}
