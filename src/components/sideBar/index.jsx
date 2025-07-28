@@ -136,11 +136,15 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
 
       {isMobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
+          {/* Background Overlay */}
           <div
             className="absolute inset-0 backdrop-blur-sm bg-blue-100/10 opacity-100 transition-opacity duration-500"
             onClick={() => setIsMobileOpen(false)}
           ></div>
-          <div className="relative z-50 w-64 bg-[#1F2937] text-white h-full flex flex-col justify-between p-4">
+
+          {/* Sidebar Panel */}
+          <div className="relative z-50 w-64 bg-[#1F2937] text-white h-screen flex flex-col p-4 max-h-screen overflow-y-auto rounded-r-2xl">
+            {/* Header */}
             <div className="flex justify-between items-center mb-6">
               <img src={adminPanel} alt="Logo" className="w-24 m-auto" />
               <button onClick={() => setIsMobileOpen(false)}>
@@ -148,6 +152,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
               </button>
             </div>
 
+            {/* Navigation */}
             <nav className="flex flex-col gap-4">
               {menuItems.map((item) => (
                 <button
@@ -161,6 +166,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
               ))}
             </nav>
 
+            {/* Footer */}
             <div className="mt-10 flex flex-col gap-4">
               <button className="flex items-center justify-center gap-2 bg-white text-[#1F2937] rounded-2xl text-[18px] px-6 py-3 text-sm w-full">
                 <BiSupport size={18} />
