@@ -62,17 +62,17 @@ const Login = () => {
             style={{ color: "#000", fontSize: "28px", fontWeight: 600 }}
             className="text-center mb-8"
           >
-            PROTOTYPE Tizimiga kirish
+            Login to the PROTOTYPE System{" "}
           </h2>
 
           <Form name="login" layout="vertical" onFinish={handleLogin}>
             <Form.Item
-              label="Pochta"
+              label="Email"
               name="email"
-              rules={[{ required: true, message: "Iltimos, email kiriting!" }]}
+              rules={[{ required: true, message: "Please enter your email!" }]}
             >
               <Input
-                placeholder="Pochta kiriting"
+                placeholder="Enter your email"
                 style={inputStyle}
                 onFocus={(e) =>
                   (e.target.style.borderColor = inputFocusStyle.borderColor)
@@ -84,14 +84,14 @@ const Login = () => {
             </Form.Item>
 
             <Form.Item
-              label="Parol"
+              label="Password"
               name="password"
               rules={[
-                { required: true, message: "Iltimos, parolni kiriting!" },
+                { required: true, message: "Please enter your password!" },
               ]}
             >
               <Input.Password
-                placeholder="Parol kiriting"
+                placeholder="Enter your password"
                 style={inputStyle}
                 onFocus={(e) =>
                   (e.target.style.borderColor = inputFocusStyle.borderColor)
@@ -128,7 +128,7 @@ const Login = () => {
                 {loading ? (
                   <Loader className="animate-spin mx-auto" size={22} />
                 ) : (
-                  "Kirish"
+                  "Enter"
                 )}
               </Button>
             </Form.Item>
