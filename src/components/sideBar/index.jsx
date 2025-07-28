@@ -143,7 +143,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
           ></div>
 
           {/* Sidebar Panel */}
-          <div className="relative z-50 w-64 bg-[#1F2937] text-white h-screen flex flex-col p-4 max-h-screen overflow-y-auto rounded-r-2xl">
+          <div className="relative z-50 w-64 bg-[#1F2937] text-white h-screen flex flex-col p-4 max-h-screen overflow-y-auto">
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
               <img src={adminPanel} alt="Logo" className="w-24 m-auto" />
