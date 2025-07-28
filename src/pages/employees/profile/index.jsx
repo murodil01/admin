@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Download as DownloadIcon,
   Calendar,
@@ -7,7 +7,9 @@ import {
   Filter,
   ChevronDown as DropdownArrow,
   Upload as UploadIcon,
+  ChevronLeft,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const mockProjects = [
   {
@@ -207,15 +209,28 @@ const Profile = () => {
     currentPage * itemsPerPage
   );
 
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen">
       {/* Container with responsive padding */}
       <div className="pl-3  py-4 md:py-6 lg:py-8">
         {/* Page Title */}
         <div className="mb-6 md:mb-8">
-          <h1 className="text-[#0A1629] font-bold text-2xl sm:text-3xl md:text-4xl lg:text-[36px] text-left">
-            Employee's Profile
-          </h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-[#0A1629] font-bold text-2xl sm:text-3xl md:text-4xl lg:text-[36px] text-left">
+              Employee's Profile
+            </h1>
+
+            {/* Back button */}
+            <button
+              onClick={() => navigate("/employees")}
+              className="flex items-center gap-2 text-[#0A1629] hover:text-[#6b82a8] transition-colors font-semibold text-sm sm:text-base"
+            >
+              <ChevronLeft size={20} />
+              Back
+            </button>
+          </div>
         </div>
 
         {/* Main Layout */}
@@ -223,7 +238,14 @@ const Profile = () => {
           {/* Sidebar */}
           <div className="w-full xl:w-[280px] 2xl:w-[320px] bg-white shadow-sm border border-gray-100 rounded-2xl md:rounded-3xl p-4 md:p-6">
             {/* Profile Header */}
-            <div className="flex flex-row xl:flex-col items-center justify-between xl:justify-start gap-3 md:gap-4">
+            <div
+              className="flex flex-row xl:flex-col items-center justify-between xl:justify-start gap-3 md:gap-4 cursor-pointer xl:cursor-default"
+              onClick={() => {
+                if (window.innerWidth < 1280) {
+                  setShowDetails((prev) => !prev);
+                }
+              }}
+            >
               {/* Profile Info */}
               <div className="flex items-center gap-3 md:gap-4 xl:flex-col xl:items-center w-full xl:border-b xl:border-gray-200 xl:pb-6">
                 <div className="relative">
@@ -243,17 +265,12 @@ const Profile = () => {
                 </div>
               </div>
 
-              {/* Mobile Toggle Button */}
-              <button
-                className="xl:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                onClick={() => setShowDetails((prev) => !prev)}
-              >
-                <DropdownArrow
-                  className={`w-5 h-5 md:w-6 md:h-6 text-gray-600 transition-transform duration-300 ${
-                    showDetails ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
+              {/* Mobile Toggle Icon (faqat ko‘rsatish uchun) */}
+              <DropdownArrow
+                className={`w-5 h-5 md:w-6 md:h-6 text-gray-600 transition-transform duration-300 xl:hidden ${
+                  showDetails ? "rotate-180" : ""
+                }`}
+              />
             </div>
 
             {/* Details Section */}

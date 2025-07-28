@@ -170,20 +170,22 @@ const Employees = () => {
         <div className="flex items-center bg-[#DBDBDB] xl:p-[3px] rounded-4xl w-full m-auto md:w-[250px] xl:w-[350px]">
           <button
             onClick={() => handleTabClick("list")}
-            className={`py-[5px] xl:py-[9px] rounded-4xl w-1/2 text-[16px] font-bold transition-all duration-200 ${activeTab === "list"
-              ? "bg-[#1F2937] text-white"
-              : "bg-[#DBDBDB] text-[#1F2937]"
-              }`}
+            className={`py-[5px] xl:py-[9px] rounded-4xl w-1/2 text-[16px] font-bold transition-all duration-200 ${
+              activeTab === "list"
+                ? "bg-[#1F2937] text-white"
+                : "bg-[#DBDBDB] text-[#1F2937]"
+            }`}
           >
             List
           </button>
 
           <button
             onClick={() => handleTabClick("activity")}
-            className={`py-[5px] xl:py-[9px] rounded-4xl w-1/2 text-[16px] md:text-[14px] lg:text-[16px] font-bold transition-all duration-200 ${activeTab === "activity"
-              ? "bg-[#1F2937] text-white"
-              : "bg-[#DBDBDB] text-[#1F2937]"
-              }`}
+            className={`py-[5px] xl:py-[9px] rounded-4xl w-1/2 text-[16px] md:text-[14px] lg:text-[16px] font-bold transition-all duration-200 ${
+              activeTab === "activity"
+                ? "bg-[#1F2937] text-white"
+                : "bg-[#DBDBDB] text-[#1F2937]"
+            }`}
           >
             Activity
           </button>
@@ -229,16 +231,19 @@ const Employees = () => {
                         {emp.name} {emp.surname}
                       </p>
                       <div className="flex items-center gap-2">
-                        <div className="text-gray-500 text-sm truncate">{emp.role}</div>
+                        <div className="text-gray-500 text-sm truncate">
+                          {emp.role}
+                        </div>
                         <div
-                          className={`mt-1 inline-block px-3 py-[3px] rounded-md text-xs font-medium border ${emp.positionLevel === "Junior"
-                            ? "border-blue-500 text-blue-600"
-                            : emp.positionLevel === "Middle"
+                          className={`mt-1 inline-block px-3 py-[3px] rounded-md text-xs font-medium border ${
+                            emp.positionLevel === "Junior"
+                              ? "border-blue-500 text-blue-600"
+                              : emp.positionLevel === "Middle"
                               ? "border-yellow-500 text-yellow-600"
                               : emp.positionLevel === "Senior"
-                                ? "border-green-500 text-green-600"
-                                : "border-gray-300 text-gray-600"
-                            }`}
+                              ? "border-green-500 text-green-600"
+                              : "border-gray-300 text-gray-600"
+                          }`}
                         >
                           {emp.positionLevel}
                         </div>
@@ -247,24 +252,33 @@ const Employees = () => {
                   </div>
 
                   <div className="text-[#1F2937] font-medium truncate flex flex-col text-center md:text-[13px] xl:text-base">
-                    <span className="text-gray-500 text-sm truncate">Phone number</span>
+                    <span className="text-gray-500 text-sm truncate">
+                      Phone number
+                    </span>
                     {emp.phone}
                   </div>
                   <div className="text-[#1F2937] font-medium truncate flex flex-col text-center md:text-[13px] xl:text-base">
-                    <span className="text-gray-500 text-sm truncate">Department</span>
+                    <span className="text-gray-500 text-sm truncate">
+                      Department
+                    </span>
                     {emp.department}
                   </div>
                   <div className="text-[#1F2937] font-medium truncate flex flex-col text-center md:text-[13px] xl:text-base">
-                    <span className="text-gray-500 text-sm truncate">Tasks</span>
+                    <span className="text-gray-500 text-sm truncate">
+                      Tasks
+                    </span>
                     {emp.taskCount}
                   </div>
                   <div className="text-[#1F2937] font-medium truncate flex flex-col text-center md:text-[13px] xl:text-base">
-                    <span className="text-gray-500 text-sm truncate">Status</span>
+                    <span className="text-gray-500 text-sm truncate">
+                      Status
+                    </span>
                     <span
-                      className={`inline-block py-[3px] rounded-lg text-xs font-medium border ${emp.status === "Free"
-                        ? "border-green-400 text-green-600"
-                        : "border-yellow-400 text-yellow-600"
-                        }`}
+                      className={`inline-block py-[3px] rounded-lg text-xs font-medium border ${
+                        emp.status === "Free"
+                          ? "border-green-400 text-green-600"
+                          : "border-yellow-400 text-yellow-600"
+                      }`}
                     >
                       {emp.status}
                     </span>
@@ -294,7 +308,10 @@ const Employees = () => {
                 </div>
 
                 {/* Mobile Layout */}
-                <div className="flex flex-col lg:hidden gap-3">
+                <div
+                  className="flex flex-col lg:hidden gap-3 cursor-pointer"
+                  onClick={() => toggleDropdown(emp.id)}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <img
@@ -309,13 +326,14 @@ const Employees = () => {
                         <p className="text-gray-500 text-sm">{emp.role}</p>
                       </div>
                     </div>
-                    <button onClick={() => toggleDropdown(emp.id)}>
+                    {/* Faqat vizual icon uchun */}
+                    <div>
                       {openDropdown === emp.id ? (
                         <FaChevronUp className="text-[#1F2937]" />
                       ) : (
                         <FaChevronDown className="text-[#1F2937]" />
                       )}
-                    </button>
+                    </div>
                   </div>
 
                   {openDropdown === emp.id && (
@@ -344,18 +362,24 @@ const Employees = () => {
                       <div>
                         <p className="text-gray-400">Status</p>
                         <span
-                          className={`inline-block mt-1 text-xs font-medium px-4 py-[3px] rounded-lg border ${emp.status === "Free"
-                            ? "border-green-400 text-green-600"
-                            : "border-yellow-400 text-yellow-600"
-                            }`}
+                          className={`inline-block mt-1 text-xs font-medium px-4 py-[3px] rounded-lg border ${
+                            emp.status === "Free"
+                              ? "border-green-400 text-green-600"
+                              : "border-yellow-400 text-yellow-600"
+                          }`}
                         >
                           {emp.status}
                         </span>
                       </div>
 
                       <div className="col-span-2 mt-3">
-                        <button className="bg-[#1F2937] text-white px-10 py-2 rounded-2xl text-[16px] text-sm font-bold block m-auto"  onClick={() => navigate(`/profile/${emp.id}`)}>
-                    
+                        <button
+                          className="bg-[#1F2937] text-white px-10 py-2 rounded-2xl text-[16px] text-sm font-bold block m-auto"
+                          onClick={(e) => {
+                            e.stopPropagation(); // dropdown yopilib ketmasligi uchun
+                            navigate(`/profile/${emp.id}`);
+                          }}
+                        >
                           More
                         </button>
                       </div>
@@ -380,10 +404,11 @@ const Employees = () => {
                   currentPage > 1 && setCurrentPage(currentPage - 1)
                 }
                 disabled={currentPage === 1}
-                className={`px-2 py-1 rounded-full ${currentPage === 1
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "hover:bg-gray-200"
-                  }`}
+                className={`px-2 py-1 rounded-full ${
+                  currentPage === 1
+                    ? "text-gray-400 cursor-not-allowed"
+                    : "hover:bg-gray-200"
+                }`}
               >
                 <ArrowLeft />
               </button>
@@ -393,10 +418,11 @@ const Employees = () => {
                   currentPage < totalPages && setCurrentPage(currentPage + 1)
                 }
                 disabled={currentPage === totalPages}
-                className={`px-2 py-1 rounded-full ${currentPage === totalPages
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "hover:bg-gray-200"
-                  }`}
+                className={`px-2 py-1 rounded-full ${
+                  currentPage === totalPages
+                    ? "text-gray-400 cursor-not-allowed"
+                    : "hover:bg-gray-200"
+                }`}
               >
                 <ArrowRight />
               </button>
@@ -420,10 +446,3 @@ const Employees = () => {
 };
 
 export default Employees;
-
-
-
-
-
-
-
