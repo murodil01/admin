@@ -110,7 +110,7 @@ const CustomUpload = ({ fileList, onChange }) => {
         className="w-full h-[48px] bg-[#1F2937] text-white text-sm font-medium px-6 rounded-[14px] hover:bg-[#111827] transition-all flex items-center justify-center gap-2 cursor-pointer"
       >
         <UploadIcon size={18} />
-        <span>Upload File</span>
+        <span>Download</span>
       </label>
 
       {fileList.length > 0 && (
@@ -214,7 +214,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen">
       {/* Container with responsive padding */}
-      <div className="pl-3  py-4 md:py-6 lg:py-8">
+      <div className="py-4 md:py-6 lg:py-8">
         {/* Page Title */}
         <div className="mb-6 md:mb-8">
           <div className="flex items-center justify-between">

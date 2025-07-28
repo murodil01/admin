@@ -16,7 +16,7 @@ import {
 } from "recharts";
 import { Loader } from "lucide-react";
 import { useResizeDetector } from "react-resize-detector";
-import { useSidebar } from "../../context"; 
+import { useSidebar } from "../../context";
 
 const mockData = [
   { name: "Jan", value1: 400, value2: 300, value3: 200, value4: 500 },

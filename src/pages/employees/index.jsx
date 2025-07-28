@@ -161,7 +161,7 @@ const Employees = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="pl-3">
+    <div>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <h1 className="text-[#1F2937] font-bold text-3xl sm:text-xl  xl:text-4xl">
           Employees ({employees.length})
