@@ -15,9 +15,9 @@ const Tasks = () => {
   const showModal = () => {
     setIsModalOpen(true);
   };
-  const handleOk = () => {
-    setIsModalOpen(false);
-  };
+  // const handleOk = () => {
+  //   setIsModalOpen(false);
+  // };
   const handleCancel = () => {
     setIsModalOpen(false);
   };

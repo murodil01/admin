@@ -3,7 +3,6 @@ import {
   Users,
   MessageSquare,
   Info,
-  LogOut,
   X,
   MessageCircle,
   Calendar,
