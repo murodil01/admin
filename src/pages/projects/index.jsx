@@ -221,28 +221,26 @@ const Projects = () => {
             </div>
 
             {/* Active Tasks */}
-            <div className="mb-8 px-4 sm:px-6">
+            <div className="mb-8">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                 {taskColumns.map((column) => (
-                  <div key={column.id} className="space-y-4">
+                  <div key={column.id} className="space-y-3">
                     {getTasksByColumn(column.id).map((task) => (
                       <div
                         key={task.id}
-                        className="w-full bg-white rounded-3xl p-5 hover:shadow-md transition-shadow flex flex-col gap-8"
+                        className="w-full bg-white rounded-3xl p-[20px] hover:shadow-md transition-shadow flex flex-col gap-[38px]"
                       >
-                        {/* Top: ID + Title */}
-                        <div className="flex flex-col gap-1">
-                          <div className="text-xs text-gray-500">{task.id}</div>
+                        <div className="flex flex-col gap-[3px]">
+                          <div className="text-xs text-gray-500">
+                            {task.id}
+                          </div>
                           <div className="text-sm font-medium text-gray-900">
                             {task.title}
                           </div>
                         </div>
-
-                        {/* Bottom: Time + Avatar */}
                         <div className="flex items-center justify-between">
-                          {/* Time + Arrow */}
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-[#7D8592] font-semibold px-3 py-1.5 bg-[#F2F2F2] rounded-lg">
+                          <div className="flex items-center gap-[10px]">
+                            <span className="text-xs text-[#7D8592] font-semibold px-[10px] py-[6px] bg-[#F2F2F2] rounded-lg">
                               {task.time}
                             </span>
                             {parseTimeToHours(task.time) < 24 ? (
@@ -252,7 +250,6 @@ const Projects = () => {
                             )}
                           </div>
 
-                          {/* Assignee */}
                           <div
                             className={`w-6 h-6 rounded-full ${task.assignee.avatar} flex items-center justify-center text-white text-xs font-medium`}
                           >
