@@ -149,7 +149,7 @@ const Tasks = () => {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-0 mb-[28px]">
         <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold text-center sm:text-left">
-          Projects
+          Tasks
         </h3>
         <button
           onClick={showModal}
@@ -299,24 +299,9 @@ const Tasks = () => {
         {/* Sidebar */}
         <div className="w-full sm:w-64 bg-white flex flex-col rounded-[24px]">
           <div className="p-6 border-b border-gray-200">
-            <h1 className="text-xl font-semibold text-gray-900 mb-4">
-              Projects
+            <h1 className="text-xl font-semibold text-gray-900 text-center">
+              All Projects
             </h1>
-            <div className="relative">
-              <button
-                onClick={() => setCurrentProjectsOpen(!currentProjectsOpen)}
-                className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <span className="text-sm font-medium text-gray-700">
-                  Current Projects
-                </span>
-                <ChevronDown
-                  className={`w-4 h-4 text-gray-500 transition-transform ${
-                    currentProjectsOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
@@ -340,126 +325,6 @@ const Tasks = () => {
                   )}
                 </div>
               ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          {/* Top Bar */}
-          <div className="px-4 sm:px-6">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <h2 className="text-lg font-semibold text-gray-900">Tasks</h2>
-              <div className="flex items-center gap-3 flex-wrap">
-                <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                  <Filter className="w-5 h-5 text-gray-600" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Task Board */}
-          <div className="flex-1 p-4 sm:p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
-              {taskColumns.map((column) => (
-                <>
-                  <div className="flex flex-col gap-[10px]">
-                    <div
-                      key={column.id}
-                      className={`${column.color} rounded-[24px] p-4 text-center border-4 border-white`}
-                    >
-                      <h3 className="font-medium text-gray-800">{column.title}</h3>
-                    </div>
-                    <div className="bg-[#DBDBDB] w-full h-[30px] flex items-center justify-center">
-                      <span className="font-medium">+ add card</span>
-                    </div>
-                  </div>
-                </>
-              ))}
-            </div>
-
-            {/* Active Tasks */}
-            <div className="mb-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 max-lg:grid-cols-4 gap-4 sm:gap-6">
-                {taskColumns.map((column) => (
-                  <div key={column.id} className="space-y-3">
-                    {getTasksByColumn(column.id).map((task) => (
-                      <div
-                        key={task.id}
-                        className="w-full bg-white rounded-3xl p-[20px] hover:shadow-md transition-shadow flex flex-col gap-[38px]"
-                      >
-                        <div className="flex flex-col gap-[3px]">
-                          <div className="text-xs text-gray-500">
-                            {task.id}
-                          </div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {task.title}
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-[10px]">
-                            <span className="text-xs text-[#7D8592] font-semibold px-[10px] py-[6px] bg-[#F2F2F2] rounded-lg">
-                              {task.time}
-                            </span>
-                            {parseTimeToHours(task.time) < 24 ? (
-                              <BsArrowDown className="text-[#0AC947]" />
-                            ) : (
-                              <BsArrowUp className="text-[#FFBD21]" />
-                            )}
-                          </div>
-
-                          <div
-                            className={`w-6 h-6 rounded-full ${task.assignee.avatar} flex items-center justify-center text-white text-xs font-medium`}
-                          >
-                            {task.assignee.name[0]}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Backlog */}
-            <div className="bg-[#DBDBDB] px-[32px] py-[16px] rounded-xl">
-              <h3 className="text-sm font-semibold text-[#0A1629] mb-4 text-center">
-                Backlog
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 max-lg:flex flex-col">
-                {backlogTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="bg-white rounded-3xl p-[20px] border border-gray-200 hover:shadow-md transition-shadow flex flex-col justify-between h-[146px]"
-                  >
-                    <div className="flex flex-col gap-[3px]">
-                      <div className="text-xs text-gray-500">{task.id}</div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {task.title}
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-[10px]">
-                          <span className="text-xs text-[#7D8592] font-semibold px-[10px] py-[6px] bg-[#F2F2F2] rounded-lg">
-                            {task.time}
-                          </span>
-                          {parseTimeToHours(task.time) < 24 ? (
-                              <BsArrowDown className="text-[#0AC947]" />
-                            ) : (
-                              <BsArrowUp className="text-[#FFBD21]" />
-                            )}
-                        </div>
-                      </div>
-                      <div
-                        className={`w-6 h-6 rounded-full ${task.assignee.avatar} flex items-center justify-center text-white text-xs font-medium`}
-                      >
-                        {task.assignee.name[0]}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </div>
