@@ -10,7 +10,7 @@ import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import Activity from "./activity";
 import { useNavigate } from "react-router-dom";
 
-const itemsPerPage = 5;
+const itemsPerPage = 7;
 
 const employees = [
   {

@@ -12,6 +12,7 @@ import adminPanel from "../../assets/adminPanel.png";
 import support from "../../assets/support.png";
 import { useNavigate, useLocation } from "react-router-dom";
 import { BsFillGridFill, BsStack } from "react-icons/bs";
+import { IoIosLogOut } from "react-icons/io";
 
 const menuItems = [
   { label: "Dashboard", icon: <BsFillGridFill size={20} />, path: "/" },
@@ -39,7 +40,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
         className={`hidden md:flex h-screen transition-all duration-300 bg-[#F2F2F2]
     ${
       collapsed
-        ? "w-20 px-2 pt-[20px] pb-[10px]" 
+        ? "w-20 px-2 pt-[20px] pb-[10px]"
         : "w-64 pt-[20px] pr-[15px] pb-[5px] pl-[15px]"
     }`}
       >
@@ -124,7 +125,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 collapsed ? "justify-center px-0" : "text-left"
               }`}
             >
-              <LogOut size={20} />
+              <IoIosLogOut size={20} />
               {!collapsed && <span className="text-sm">Logout</span>}
             </button>
           </div>
@@ -173,7 +174,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 }}
                 className="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-[#374151] w-full transition"
               >
-                <LogOut size={20} />
+                <IoIosLogOut size={20} />
                 <span className="text-sm">Logout</span>
               </button>
             </div>
