@@ -2,7 +2,7 @@
 const Vacations = () => {
   return (
     <div>
-      Vacations
+      sales
     </div>
   )
 }

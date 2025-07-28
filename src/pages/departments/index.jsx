@@ -1,7 +1,7 @@
 import React from "react";
 
 const InfoPortal = () => {
-  return <div>InfoPortal</div>;
+  return <div>Departments</div>;
 };
 
 export default InfoPortal;
