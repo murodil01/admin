@@ -15,12 +15,12 @@ import { BsFillGridFill, BsStack } from "react-icons/bs";
 
 const menuItems = [
   { label: "Dashboard", icon: <BsFillGridFill size={20} />, path: "/" },
-  { label: "Projects", icon: <BsStack size={20} />, path: "/projects" },
+  { label: "Sales", icon: <Plane size={20} />, path: "/sales" },
+  { label: "Tasks", icon: <BsStack size={20} />, path: "/tasks" },
   { label: "Calendar", icon: <Calendar size={20} />, path: "/calendar" },
-  { label: "Vacations", icon: <Plane size={20} />, path: "/vacations" },
   { label: "Employees", icon: <Users size={20} />, path: "/employees" },
   { label: "Messenger", icon: <MessageSquare size={20} />, path: "/messenger" },
-  { label: "Info Portal", icon: <Info size={20} />, path: "/info-portal" },
+  { label: "Departments", icon: <Info size={20} />, path: "/departments" },
 ];
 
 const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { X } from 'lucide-react';
+import { toLocalDateInputValue } from '../../utils/calendar';
 
 const AddEventModal = ({
   isOpen,
@@ -12,13 +13,23 @@ const AddEventModal = ({
   const [duration, setDuration] = useState(1);
   const [type, setType] = useState('other');
   const [direction, setDirection] = useState('down');
-  const [date, setDate] = useState(selectedDate || new Date());
+  const [date, setDate] = useState(selectedDate || new Date()); // ✅ boshlanishda Date obyekt
 
   useEffect(() => {
+    console.log('Selected Date (raw):', selectedDate);
     if (selectedDate) {
-      setDate(selectedDate);
+      const parsed =
+        typeof selectedDate === 'string'
+          ? new Date(selectedDate + 'T12:00:00')
+          : selectedDate;
+  
+      console.log('Parsed Date:', parsed);
+      setDate(parsed);
     }
   }, [selectedDate]);
+  
+  
+
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -41,7 +52,7 @@ const AddEventModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/40 bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg w-full max-w-md">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-800">Add Event</h2>
@@ -73,9 +84,9 @@ const AddEventModal = ({
               Date
             </label>
             <input
-              type="date"
-              value={date.toISOString().split('T')[0]}
-              onChange={(e) => setDate(new Date(e.target.value))}
+                type="date"
+                value={date ? toLocalDateInputValue(date) : ''}
+                onChange={(e) => setDate(new Date(e.target.value + 'T12:00:00'))}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -148,7 +159,8 @@ AddEventModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onAddEvent: PropTypes.func.isRequired,
-  selectedDate: PropTypes.instanceOf(Date)
+   selectedDate: PropTypes.instanceOf(Date), // ✅ type = Date
 };
+
 
 export default AddEventModal;

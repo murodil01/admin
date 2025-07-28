@@ -1,8 +1,13 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { getMonthData, formatMonth, isSameDay } from '../../utils/calendar';
-import AddEventModal from '../../components/calendar/AddEventModal';
-import EventCard from '../../components/calendar/EventCard';
+import React, { useState, useMemo } from "react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import {
+  getMonthData,
+  formatMonth,
+  isSameDay,
+  isSameMonth,
+} from "../../utils/calendar";
+import AddEventModal from "../../components/calendar/AddEventModal";
+import EventCard from "../../components/calendar/EventCard";
 
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -10,64 +15,61 @@ const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState(undefined);
   const [events, setEvents] = useState([
     {
-      id: '1',
+      id: "1",
       title: "Anna's Birthday",
       date: new Date(2020, 8, 8),
       duration: 3,
-      type: 'birthday',
-      direction: 'down'
+      type: "birthday",
+      direction: "down",
     },
     {
-      id: '2',
+      id: "2",
       title: "Presentation of the new product",
       date: new Date(2020, 8, 16),
       duration: 2,
-      type: 'presentation',
-      direction: 'up'
+      type: "presentation",
+      direction: "up",
     },
     {
-      id: '3',
+      id: "3",
       title: "Ray's Birthday",
       date: new Date(2020, 8, 28),
       duration: 3,
-      type: 'birthday',
-      direction: 'down'
-    }
+      type: "birthday",
+      direction: "down",
+    },
   ]);
 
-  useEffect(() => {
-    setCurrentDate(new Date(2020, 8, 1));
-  }, []);
-
-  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
   const monthData = useMemo(() => {
     return getMonthData(currentDate.getFullYear(), currentDate.getMonth());
   }, [currentDate]);
 
   const getEventsForDate = (date) => {
-    return events.filter(event => isSameDay(event.date, date));
+    return events.filter((event) => isSameDay(event.date, date));
   };
 
   const handlePreviousMonth = () => {
-    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1));
+    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1));
   };
 
   const handleNextMonth = () => {
-    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1));
+    setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1));
   };
 
   const handleAddEvent = (eventData) => {
     const newEvent = {
       ...eventData,
-      id: Math.random().toString(36).substr(2, 9)
+      id: Math.random().toString(36).slice(2, 11),
+      // date: new Date(eventData.date) // date string → Date object
     };
-    setEvents(prev => [...prev, newEvent]);
+    setEvents((prev) => [...prev, newEvent]);
   };
 
   const handleCellClick = (date) => {
     if (date) {
-      setSelectedDate(date);
+      setSelectedDate(date); // ✅ Date object bo‘lib qoladi
       setIsModalOpen(true);
     }
   };
@@ -79,7 +81,9 @@ const Calendar = () => {
           <h1 className="text-3xl font-bold text-gray-900">Calendar</h1>
           <button
             onClick={() => {
-              setSelectedDate(undefined);
+              // setSelectedDate(undefined);
+              // setIsModalOpen(true);
+              setSelectedDate(new Date()); // ✅ Default bugungi sana
               setIsModalOpen(true);
             }}
             className="flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors"
@@ -111,7 +115,7 @@ const Calendar = () => {
 
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="grid grid-cols-7 bg-gray-100">
-            {weekDays.map(day => (
+            {weekDays.map((day) => (
               <div key={day} className="p-4 text-center">
                 <span className="text-sm font-medium text-gray-600 bg-gray-200 px-3 py-1 rounded-full">
                   {day}
@@ -125,7 +129,13 @@ const Calendar = () => {
               week.map((date, dayIndex) => (
                 <div
                   key={`${weekIndex}-${dayIndex}`}
-                  className="border-b border-r border-gray-200 h-32 p-2 cursor-pointer hover:bg-gray-50 transition-colors"
+                  className={`border-b border-r border-gray-200 h-32 p-2 cursor-pointer hover:bg-gray-50 transition-colors
+                   ${
+                     !isSameMonth(date, currentDate)
+                       ? "bg-gray-50 text-gray-400"
+                       : ""
+                   } 
+                    `}
                   onClick={() => handleCellClick(date)}
                 >
                   {date && (
@@ -134,7 +144,7 @@ const Calendar = () => {
                         {date.getDate()}
                       </div>
                       <div className="space-y-1">
-                        {getEventsForDate(date).map(event => (
+                        {getEventsForDate(date).map((event) => (
                           <EventCard key={event.id} event={event} />
                         ))}
                       </div>
@@ -154,11 +164,10 @@ const Calendar = () => {
           setSelectedDate(undefined);
         }}
         onAddEvent={handleAddEvent}
-        selectedDate={selectedDate}
+        selectedDate={selectedDate} // string 'yyyy-MM-dd'
       />
     </div>
   );
 };
 
 export default Calendar;
-

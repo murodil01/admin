@@ -16,7 +16,7 @@ const AppLayout = () => {
           setIsMobileOpen={setIsMobileOpen}
           isMobileOpen={isMobileOpen}
         />
-        <div className="flex flex-col flex-1">
+        <div className="flex flex-col flex-1 bg-[#F2F2F2]">
           <Navbar
             onToggleDesktop={() => setCollapsed(!collapsed)}
             onToggleMobile={() => setIsMobileOpen(true)}

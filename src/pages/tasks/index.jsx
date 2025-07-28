@@ -5,13 +5,13 @@ import {
   ArrowDown,
 } from "lucide-react";
 
-const Projects = () => {
+const Tasks = () => {
   const [selectedProject, setSelectedProject] = useState(
     "Medical App (iOS native)"
   );
-  const [currentProjectsOpen, setCurrentProjectsOpen] = useState(false);
+  const [currentTasksOpen, setCurrentTasksOpen] = useState(false);
 
-  const projects = [
+  const Tasks = [
     { id: "PN0001265", name: "Medical App (iOS native)", status: "active" },
     { id: "PN0001246", name: "Food Delivery Service", status: "inactive" },
     { id: "PN0001245", name: "Fortune website", status: "inactive" },
@@ -113,25 +113,25 @@ const Projects = () => {
 
   return (
     <div>
-      <h3 className="text-[#0A1629] text-[36px] font-bold mb-[28px]">Projects</h3>
+      <h3 className="text-[#0A1629] text-[36px] font-bold mb-[28px]">Tasks</h3>
       <div className="flex flex-col sm:flex-row gap-5 min-h-screen">
         {/* Sidebar */}
         <div className="w-full sm:w-64 bg-white flex flex-col rounded-[24px]">
           <div className="p-6 border-b border-gray-200">
             <h1 className="text-xl font-semibold text-gray-900 mb-4">
-              Projects
+              Tasks
             </h1>
             <div className="relative">
               <button
-                onClick={() => setCurrentProjectsOpen(!currentProjectsOpen)}
+                onClick={() => setCurrentTasksOpen(!currentTasksOpen)}
                 className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 <span className="text-sm font-medium text-gray-700">
-                  Current Projects
+                  Current Tasks
                 </span>
                 <ChevronDown
                   className={`w-4 h-4 text-gray-500 transition-transform ${
-                    currentProjectsOpen ? "rotate-180" : ""
+                    currentTasksOpen ? "rotate-180" : ""
                   }`}
                 />
               </button>
@@ -140,7 +140,7 @@ const Projects = () => {
 
           <div className="flex-1 overflow-y-auto p-4">
             <div className="space-y-2">
-              {projects.map((project) => (
+              {Tasks.map((project) => (
                 <div
                   key={project.id}
                   onClick={() => setSelectedProject(project.name)}
@@ -265,4 +265,4 @@ const Projects = () => {
   );
 };
 
-export default Projects;
+export default Tasks;

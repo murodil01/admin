@@ -31,11 +31,11 @@ import VerifyPassword from "../pages/verify-password";
 import PrivateRoute from "../components/private-route";
 import AppLayout from "../components/home";
 
-import Projects from "../pages/projects";
-import Vacations from "../pages/vacations";
+import Tasks from "../pages/tasks";
+import Sales from "../pages/sales";
 import Employees from "../pages/employees";
 import Messenger from "../pages/messenger";
-import InfoPortal from "../pages/info-portal";
+import Departments from "../pages/departments";
 import Calendar from "../pages/calendar";
 import Activity from "../pages/employees/activity";
 import Profile from "../pages/employees/profile";
@@ -50,11 +50,11 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: "", element: <Home /> },
-          { path: "projects", element: <Projects /> },
-          { path: "vacations", element: <Vacations /> },
+          { path: "tasks", element: <Tasks /> },
+          { path: "sales", element: <Sales /> },
           { path: "employees", element: <Employees /> },
           { path: "messenger", element: <Messenger /> },
-          { path: "info-portal", element: <InfoPortal /> },
+          { path: "departments", element: <Departments /> },
           { path: "calendar", element: <Calendar /> },
           { path: "activity", element: <Activity /> },
           { path: "profile/:id", element: <Profile /> },

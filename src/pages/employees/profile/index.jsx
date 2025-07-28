@@ -9,7 +9,7 @@ import {
   Upload as UploadIcon,
 } from "lucide-react";
 
-const mockProjects = [
+const mockTasks = [
   {
     id: "1",
     number: "PN0001265",
@@ -177,7 +177,7 @@ const CustomPagination = ({ current, total, pageSize, onChange }) => {
 };
 
 const Profile = () => {
-  const [activeTab, setActiveTab] = useState("Projects");
+  const [activeTab, setActiveTab] = useState("Tasks");
   const [currentPage, setCurrentPage] = useState(1);
   const [fileList, setFileList] = useState([]);
   const [showDetails, setShowDetails] = useState(false);
@@ -202,7 +202,7 @@ const Profile = () => {
     return <ChevronUp className="w-4 h-4" />;
   };
 
-  const paginatedProjects = mockProjects.slice(
+  const paginatedTasks = mockTasks.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -295,7 +295,7 @@ const Profile = () => {
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6 md:mb-8 gap-4 lg:gap-6">
               {/* Tab Navigation */}
               <div className="flex bg-[#DBDBDB] rounded-full p-1 w-full sm:w-auto">
-                {["Projects", "Team", "Notes"].map((tab) => (
+                {["Tasks", "Team", "Notes"].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -317,16 +317,16 @@ const Profile = () => {
                 </button>
                 <div className="flex items-center gap-2 md:gap-3 bg-white border border-gray-200 px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-2xl cursor-pointer hover:bg-gray-50 transition-colors flex-1 lg:flex-none">
                   <span className="text-sm md:text-base font-medium text-gray-700">
-                    Current Projects
+                    Current Tasks
                   </span>
                   <DropdownArrow className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />
                 </div>
               </div>
             </div>
 
-            {/* Projects List */}
+            {/* Tasks List */}
             <div className="space-y-4 md:space-y-6">
-              {paginatedProjects.map((project) => (
+              {paginatedTasks.map((project) => (
                 <div
                   key={project.id}
                   className="bg-white rounded-xl md:rounded-2xl border border-gray-200 p-4 md:p-6 lg:p-8 hover:shadow-lg hover:border-gray-300 transition-all duration-200"
@@ -449,7 +449,7 @@ const Profile = () => {
               {/* Pagination */}
               <CustomPagination
                 current={currentPage}
-                total={mockProjects.length}
+                total={mockTasks.length}
                 pageSize={itemsPerPage}
                 onChange={(page) => setCurrentPage(page)}
               />
