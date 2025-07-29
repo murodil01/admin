@@ -1,9 +1,15 @@
 import React from 'react'
+import { useParams } from "react-router-dom";
 
 const TaskDetails = () => {
-    return (
-        <div>TaskDetails</div>
-    )
-}
+    const { id } = useParams();
 
-export default TaskDetails
+    return (
+        <div>
+            <h1>Details for Project ID: {id}</h1>
+            {/* You can render project details based on ID here */}
+        </div>
+    );
+};
+
+export default TaskDetails;

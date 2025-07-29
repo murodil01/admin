@@ -52,15 +52,8 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: "", element: <Home /> },
-          {
-            path: "tasks", element: <Tasks />,
-            children: [
-              {
-                path: "tasks/:projectId",
-                element: <TaskDetails />
-              },
-            ]
-          },
+          { path: "tasks", element: <Tasks />,},
+          { path: "tasks/:id", element: <TaskDetails />,},
           { path: "sales", element: <Sales /> },
           { path: "employees", element: <Employees /> },
           { path: "messenger", element: <Messenger /> },

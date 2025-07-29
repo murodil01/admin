@@ -30,6 +30,7 @@ const TaskProjectDropdown = ({ selectedProject, setSelectedProject }) => {
         setSelectedProject(project.name);
         setOpen(false);
         navigate(`/tasks/${project.id}`);
+        console.log("Navigating to:", project.id);
     };
 
     const handlePrev = () => {
