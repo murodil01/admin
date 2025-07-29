@@ -4,11 +4,17 @@ import {
   MoreVertical,
   ArrowRight,
   ArrowLeft,
+  X,
+  ChevronUp,
+  ChevronDown,
+  Eye,
+  Paperclip,
 } from "lucide-react";
 import { useState } from "react";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import Activity from "./activity";
 import { useNavigate } from "react-router-dom";
+import { useRef, useEffect } from "react";
 
 const itemsPerPage = 7;
 
@@ -160,6 +166,105 @@ const Employees = () => {
 
   const navigate = useNavigate();
 
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const modalRef = useRef(null);
+
+  // Modal tashqarisiga bosilganda yopish uchun effect
+  useEffect(() => {
+    const savedFilterModalState = localStorage.getItem("filterModalOpen");
+    if (savedFilterModalState === "true") {
+      setIsFilterModalOpen(true);
+    }
+  }, []);
+
+  // 2. Har safar modal ochilishi/yopilishi bilan localStorage'ga yozish
+  useEffect(() => {
+    localStorage.setItem("filterModalOpen", isFilterModalOpen);
+  }, [isFilterModalOpen]);
+
+  // 3. Tashqariga bosilganda modal yopilsin
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (modalRef.current && !modalRef.current.contains(e.target)) {
+        setIsFilterModalOpen(false);
+      }
+    };
+
+    if (isFilterModalOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isFilterModalOpen]);
+
+  const [showAllDepartments, setShowAllDepartments] = useState(false);
+
+  const allDepartments = [
+    { name: "M Tech Department", icon: "💼" },
+    { name: "M Sales Department", icon: "💲" },
+    { name: "Marketing Department", icon: "📢" },
+    { name: "M Academy Department", icon: "🎓" },
+    { name: "Human Resources", icon: "🧑‍💼" },
+    { name: "Customer Support", icon: "🎧" },
+    { name: "Legal Department", icon: "⚖️" },
+  ];
+
+  const visibleDepartments = showAllDepartments
+    ? allDepartments
+    : allDepartments.slice(0, 4);
+
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  // 1. Brauzer yangilansa, localStorage'dan o'qib olish
+  useEffect(() => {
+    const savedState = localStorage.getItem("addModalOpen");
+    if (savedState === "true") {
+      setIsAddModalOpen(true);
+    }
+  }, []);
+
+  // 2. Holat o'zgarsa, localStorage'ga yozish
+  useEffect(() => {
+    localStorage.setItem("addModalOpen", isAddModalOpen);
+  }, [isAddModalOpen]);
+
+  // 3. Modal tashqarisiga bosilganda yopish + localStorage'ni yangilash
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (modalRef.current && !modalRef.current.contains(e.target)) {
+        setIsAddModalOpen(false);
+        localStorage.setItem("addModalOpen", "false");
+      }
+    };
+
+    if (isAddModalOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isAddModalOpen]);
+
+  const [avatar, setAvatar] = useState(null);
+
+  const handleAvatarUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setAvatar(URL.createObjectURL(file));
+    }
+  };
+
+  const [passportName, setPassportName] = useState("Upload Passport");
+
+  const handlePassportUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setPassportName(file.name);
+    }
+  };
+
   return (
     <div>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -192,10 +297,17 @@ const Employees = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="hidden md:flex w-10 h-10 xl:w-12 xl:h-12 bg-white shadow rounded-xl xl:rounded-2xl items-center justify-center">
+          <div
+            onClick={() => setIsFilterModalOpen(true)}
+            className="hidden md:flex w-10 h-10 xl:w-12 xl:h-12 bg-white shadow rounded-xl xl:rounded-2xl items-center justify-center cursor-pointer"
+          >
             <Funnel className="!text-[18px] !xl:text-[24px] text-[#1F2937]" />
           </div>
-          <button className="hidden md:flex bg-[#1F2937] text-white text-sm lg:text-base rounded-2xl items-center gap-2 py-2 px-3 xl:py-3 xl:px-5">
+
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="hidden md:flex bg-[#1F2937] text-white text-sm lg:text-base rounded-2xl items-center gap-2 py-2 px-3 xl:py-3 xl:px-5"
+          >
             <Plus /> Add Employee
           </button>
         </div>
@@ -441,10 +553,377 @@ const Employees = () => {
           <Plus size={28} />
         </button>
       </div>
+
+      {isFilterModalOpen && (
+        <div className="fixed top-5 bottom-5 inset-0 z-50 bg-gray bg-opacity-30 flex items-center justify-end">
+          <div
+            ref={modalRef}
+            className="bg-white h-full w-[380px] max-w-full p-6 rounded-[24px] shadow-xl overflow-y-auto relative"
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setIsFilterModalOpen(false)}
+              className="absolute top-6 right-6 text-[#0A1629] hover:text-gray-800 bg-[#DBDBDB] rounded-[14px] p-[10px]"
+            >
+              <X size={22} />
+            </button>
+
+            {/* Title */}
+            <h2 className="text-[22px] font-bold text-[#0A1629] mb-6 border-b border-[#DBDBDB] pb-5">
+              Filters
+            </h2>
+
+            {/* Inputs */}
+            <div className="space-y-6 text-[#0A1629]">
+              <div>
+                <label className="text-sm font-medium block mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Allayorov Boburjon"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-gray-400"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium block mb-1">
+                  Phone Number
+                </label>
+                <input
+                  type="text"
+                  placeholder="+998991234567"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-gray-400"
+                />
+              </div>
+
+              {/* Departments */}
+              <div>
+                <label className="text-sm font-medium block mb-3">
+                  Departments
+                </label>
+                <div className="space-y-3">
+                  {visibleDepartments.map((dept, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id={`dept-${index}`}
+                        className="w-4 h-4"
+                      />
+                      <label
+                        htmlFor={`dept-${index}`}
+                        className="flex items-center gap-2"
+                      >
+                        <span>{dept.icon}</span> <span>{dept.name}</span>
+                      </label>
+                    </div>
+                  ))}
+
+                  <button
+                    onClick={() => setShowAllDepartments(!showAllDepartments)}
+                    className="text-[#3F8CFF] font-semibold text-[16px] mt-1"
+                  >
+                    {showAllDepartments ? (
+                      <div className="flex items-center gap-2">
+                        View less <ChevronUp size={16} />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        View more <ChevronDown size={16} />
+                      </div>
+                    )}{" "}
+                  </button>
+                </div>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="text-sm font-medium block mb-1">Status</label>
+                <select className="w-full border border-gray-300 rounded-lg px-4 py-2 text-gray-700">
+                  <option value="all">All</option>
+                  <option value="free">Free</option>
+                  <option value="busy">Busy</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="mt-8 border-t border-[#DBDBDB] pt-5 flex items-center justify-between text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <span className="text-[16px]">ℹ️</span>
+                <span>10 matches found</span>
+              </div>
+              <button className="bg-[#0A1629] text-white text-sm font-semibold px-4 py-2 rounded-lg">
+                Save Filters (3)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex justify-center items-start bg-black/30 py-10 px-4 overflow-y-auto">
+          <div
+            ref={modalRef}
+            className="bg-white w-full max-w-[934px] rounded-2xl shadow-xl p-6 md:p-[50px]"
+          >
+            {/* Header: Title + Close Button */}
+            <div className="flex justify-between items-start mb-8">
+              <h2 className="text-2xl font-semibold text-[#1F2937]">
+                Add Employee
+              </h2>
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                className="text-[#0A1629] hover:text-gray-800 bg-[#DBDBDB] rounded-[14px] p-[10px]"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form className="flex  flex-col lg:flex-row gap-[50px]">
+              {/* LEFT SIDE */}
+              <div className="flex-1 space-y-[19px] max-w-[464px] w-full">
+                <div className="flex gap-4">
+                  <div className="w-1/2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
+                      placeholder="First Name"
+                    />
+                  </div>
+
+                  <div className="w-1/2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
+                      placeholder="Last Name"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
+                    placeholder="Email"
+                  />
+                </div>
+
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 pr-10"
+                    placeholder="Password"
+                  />
+                  <Eye
+                    className="absolute right-3 top-[43px] text-gray-400"
+                    size={20}
+                  />
+                </div>
+
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Confirm Password
+                  </label>
+                  <input
+                    type="password"
+                    className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 pr-10"
+                    placeholder="Confirm Password"
+                  />
+                  <Eye
+                    className="absolute right-3 top-[43px] text-gray-400"
+                    size={20}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Role
+                  </label>
+                  <select className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1">
+                    <option>Select role</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Department
+                  </label>
+                  <select className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1">
+                    <option>Select department</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Profession
+                  </label>
+                  <input
+                    type="text"
+                    defaultValue="Backend Developer"
+                    className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
+                  />
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="w-1/2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Phone Number
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue="+998991234567"
+                      className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
+                    />
+                  </div>
+                  <div className="w-1/2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Telegram Username
+                    </label>
+                    <input
+                      type="text"
+                      defaultValue="@username"
+                      className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT SIDE */}
+              <div className="flex-1 space-y-5 max-w-[320px] w-full">
+                {/* Avatar */}
+                <div className="flex flex-col items-center justify-center border border-gray-300 rounded-[24px] p-6 h-[230px]">
+                  {/* Avatar Image Preview */}
+                  <div className="w-28 h-28 bg-[#DBDBDB] rounded-full overflow-hidden flex justify-center items-center">
+                    {avatar ? (
+                      <img
+                        src={avatar}
+                        alt="Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-3xl text-gray-400">👤</span>
+                    )}
+                  </div>
+
+                  {/* Upload Button */}
+                  <label
+                    htmlFor="avatarUpload"
+                    className="cursor-pointer w-full mt-3 text-[18px] font-bold flex items-center gap-8 justify-between"
+                  >
+                    Upload Avatar
+                    <div className="w-[48px] h-[48px] bg-[#DBDBDB] rounded-[14px] text-[#1F2937] justify-center flex items-center">
+                      <Paperclip size={24} />
+                    </div>
+                  </label>
+                  <input
+                    type="file"
+                    id="avatarUpload"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                  />
+                </div>
+
+                {/* Passport */}
+                <div>
+                  <label
+                    htmlFor="passportUpload"
+                    className="cursor-pointer mt-3 w-full h-[68px] border border-[#CED5E0] rounded-[24px] px-7 py-2 text-[18px] font-bold flex items-center justify-between"
+                  >
+                    {passportName.length > 25
+                      ? `${passportName.slice(0, 22)}...`
+                      : passportName}
+
+                    <div className="w-[48px] h-[48px] bg-[#DBDBDB] rounded-[14px] text-[#1F2937] justify-center flex items-center">
+                      <Paperclip size={24} />
+                    </div>
+                  </label>
+
+                  <input
+                    type="file"
+                    id="passportUpload"
+                    accept=".pdf,image/*"
+                    className="hidden"
+                    onChange={handlePassportUpload}
+                  />
+                </div>
+
+                {/* Date of Birth */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Birth Date
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full border border-[#D8E0F0] rounded-[14px] px-3 py-2 mt-1"
+                    placeholder="Select Date"
+                  />
+                </div>
+
+                {/* Level */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Level
+                  </label>
+                  <select className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1">
+                    <option>Select level</option>
+                  </select>
+                </div>
+
+                {/* Passport Serial Number */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Passport Serial Number
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="AD1234567"
+                    className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
+                  />
+                </div>
+
+                {/* PINFL */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    PINFL
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="12345678901234"
+                    className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
+                  />
+                </div>
+              </div>
+            </form>
+
+            {/* Save Button */}
+            <div className="pt-6 flex justify-end">
+              <button
+                type="submit"
+                className="bg-[#1F2937] hover:bg-[#111827] text-white px-[40px] py-[13px] rounded-[14px]"
+              >
+                Save Employee
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-
 export default Employees;
-
