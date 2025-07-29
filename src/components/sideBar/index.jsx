@@ -7,7 +7,6 @@ import {
   ChartNoAxesCombined,
   Landmark,
 } from "lucide-react";
-import { AiOutlineArrowRight } from "react-icons/ai";
 import adminPanel from "../../assets/adminPanel.png";
 import support from "../../assets/support.png";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -16,6 +15,8 @@ import { IoIosLogOut } from "react-icons/io";
 import { BiSupport } from "react-icons/bi";
 import { SiGoogleads } from "react-icons/si";
 import { useState } from "react";
+
+import TaskProjectDropdown from "./TaskProjectDropdown";
 
 const menuItems = [
   { label: "Dashboard", icon: <BsFillGridFill size={20} />, path: "/" },
@@ -37,6 +38,8 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
     navigate(path);
     if (isMobileOpen) setIsMobileOpen(false);
   };
+
+  const [selectedProject, setSelectedProject] = useState();
 
   // const [selectedProject, setSelectedProject] = useState(
   //     "Medical App (iOS native)"
@@ -95,19 +98,13 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                       <div className="w-full flex items-center justify-between">
                         <span className="text-sm">{item.label}</span>
 
-                        {item.arrow && (
-                          <button
-                            onClick={() => setCurrentProjectsOpen(!currentProjectsOpen)}
-                            className="w-8 h-8 flex items-center justify-center bg-gray-50 rounded-lg hover:bg-gray-100 transition"
-                          >
-                            <span
-                              className={`w-4 h-4 text-gray-500 transition-transform duration-300 cursor-pointer ${currentProjectsOpen ? "rotate-180" : ""
-                                }`}
-                            >
-                              {item.arrow}
-                            </span>
-                          </button>
+                        {item.path === "/tasks" && (
+                          <TaskProjectDropdown
+                            selectedProject={selectedProject}
+                            setSelectedProject={setSelectedProject}
+                          />
                         )}
+
                       </div>
                     )}
                   </button>
