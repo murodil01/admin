@@ -22,7 +22,7 @@ const AppLayout = () => {
             onToggleDesktop={() => setCollapsed(!collapsed)}
             onToggleMobile={() => setIsMobileOpen(true)}
           />
-          <main className="flex-1 overflow-y-auto bg-gray-100 p-4 pr-4">
+          <main className="flex-1 overflow-y-scroll bg-gray-100 p-4 pr-4">
             <Outlet />
           </main>
         </div>

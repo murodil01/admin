@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
+    "@lottiefiles/dotlottie-react": "^0.14.4",
     "@tailwindcss/vite": "^4.1.11",
     "antd": "^5.26.6",
     "axios": "^1.10.0",

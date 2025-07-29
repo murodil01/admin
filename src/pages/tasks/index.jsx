@@ -508,8 +508,5 @@ const Tasks = () => {
           ))}
         </div>
       </div>
-    </div>
-  );
-};
 
-export default Tasks;
+export default Tasks
