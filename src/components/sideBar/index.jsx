@@ -181,14 +181,14 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
           }`}
                   >
                     {item.icon}
-                    <span className="text-sm">{item.label}</span>
+                    <span className="text-[16px] font-semibold">{item.label}</span>
                   </button>
                 );
               })}
             </nav>
 
             {/* Footer */}
-            <div className="mt-10 flex flex-col gap-4">
+            <div className="mt-4 flex flex-col gap-4">
               <button
                 onClick={() =>
                   window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
