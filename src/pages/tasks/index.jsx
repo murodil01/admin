@@ -15,7 +15,7 @@ import { Button, Modal, Select, DatePicker, Input, Checkbox } from 'antd';
 import { Outlet } from "react-router-dom";
 import dayjs from "dayjs";
 
-const Tasks = ({completed, total}) => {
+const Tasks = ({ completed, total }) => {
   const activityData = [
     {
       name: "Rovshan Egamov",
@@ -88,11 +88,11 @@ const Tasks = ({completed, total}) => {
   // }
 
   const taskColumns = [
-    { id: "todo", title: "To Do"},
-    { id: "gotIt", title: "Got It"},
-    { id: "process", title: "Process"},
-    { id: "completed", title: "Completed"},
-    { id: "backlog", title: "Backlog"},
+    { id: "todo", title: "To Do" },
+    { id: "gotIt", title: "Got It" },
+    { id: "process", title: "Process" },
+    { id: "completed", title: "Completed" },
+    { id: "backlog", title: "Backlog" },
   ];
 
   // const initialChecklist = [
@@ -280,40 +280,40 @@ const Tasks = ({completed, total}) => {
                   ))}
                 </div>
                 {/* Upload */}
-                  <div className="mt-5 flex gap-3">
-                    {/* Upload from Computer */}
-                    <label className="flex items-center gap-2 p-[10px] bg-[#e3ebf8] text-white text-sm font-medium rounded-lg hover:opacity-80 transition cursor-pointer">
-                      <AiOutlinePaperClip color="#6D5DD3" size={24} />
-                      <input
-                        type="file"
-                        accept=".jpg, .jpeg, .png"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files[0];
-                          if (file) {
-                            const imageUrl = URL.createObjectURL(file);
-                            console.log('Uploaded file image URL:', imageUrl);
-                            // Use the URL in your app state
-                          }
-                        }}
-                      />
-                    </label>
-
-                    {/* Upload from Link */}
-                    <button
-                      type="button"
-                      className="flex items-center gap-2 p-[10px] bg-[#e3ebf8] text-gray-800 text-sm font-medium rounded-lg hover:opacity-80 transition cursor-pointer"
-                      onClick={() => {
-                        const url = prompt("Enter image URL:");
-                        if (url) {
-                          console.log('Image URL entered:', url);
+                <div className="mt-5 flex gap-3">
+                  {/* Upload from Computer */}
+                  <label className="flex items-center gap-2 p-[10px] bg-[#e3ebf8] text-white text-sm font-medium rounded-lg hover:opacity-80 transition cursor-pointer">
+                    <AiOutlinePaperClip color="#6D5DD3" size={24} />
+                    <input
+                      type="file"
+                      accept=".jpg, .jpeg, .png"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const imageUrl = URL.createObjectURL(file);
+                          console.log('Uploaded file image URL:', imageUrl);
                           // Use the URL in your app state
                         }
                       }}
-                    >
-                      <BiLink color="#15C0E6" size={24} />
-                    </button>
-                  </div>
+                    />
+                  </label>
+
+                  {/* Upload from Link */}
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 p-[10px] bg-[#e3ebf8] text-gray-800 text-sm font-medium rounded-lg hover:opacity-80 transition cursor-pointer"
+                    onClick={() => {
+                      const url = prompt("Enter image URL:");
+                      if (url) {
+                        console.log('Image URL entered:', url);
+                        // Use the URL in your app state
+                      }
+                    }}
+                  >
+                    <BiLink color="#15C0E6" size={24} />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -346,176 +346,175 @@ const Tasks = ({completed, total}) => {
                 <span className="font-semibold text-lg text-gray-800">{column.title}</span>
               </div>
 
-       
-
-                {/* Scrollable task list area */}
-                <div className="space-y-3 pr-1">
-                  {getTasksByColumn(column.id).map((task) => (
-                    <div key={task.id} className="bg-white rounded-xl shadow p-4 w-full h-[220px] flex flex-col justify-between">
-                      {/* Avatar yoki default rasm (bo'lmasa chiqarilmaydi) */}
-                      {task.assignee?.avatarUrl ? (
-                        <img
-                          src={task.assignee.avatarUrl}
-                          alt={task.assignee.name}
-                          className="w-16 h-16 rounded-full mx-auto mb-3 object-cover"
-                        />
-                      ) : null}
-
-                      {/* Task title */}
-                      <h4 className="text-center text-gray-800 font-semibold">{task.title}</h4>
 
 
-                      {/* Task info row */}
-                      <div className="flex justify-between items-center text-sm text-gray-600 mt-4 px-2">
-                        <div className="flex items-center gap-1">
-                          <span>🕒</span>
-                          <span>Jul 23</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <HiOutlineMenuAlt2 />
-                          <BiComment />
-                        </div>
-                        <div
-                          className={`flex items-center gap-1 ${completed === total ? "bg-[#64C064]" : "bg-[#DDDDDD]"
-                            } text-white px-2 py-[2px] rounded-md text-xs font-medium`}
-                        >
-                          <BsCheck2Square />
-                          <span>{completed} / {total}</span>
-                        </div>
+              {/* Scrollable task list area */}
+              <div className="space-y-3 pr-1">
+                {getTasksByColumn(column.id).map((task) => (
+                  <div key={task.id} className="bg-white rounded-xl shadow p-4 w-full h-[220px] flex flex-col justify-between">
+                    {/* Avatar yoki default rasm (bo'lmasa chiqarilmaydi) */}
+                    {task.assignee?.avatarUrl ? (
+                      <img
+                        src={task.assignee.avatarUrl}
+                        alt={task.assignee.name}
+                        className="w-16 h-16 rounded-full mx-auto mb-3 object-cover"
+                      />
+                    ) : null}
 
+                    {/* Task title */}
+                    <h4 className="text-center text-gray-800 font-semibold">{task.title}</h4>
+
+
+                    {/* Task info row */}
+                    <div className="flex justify-between items-center text-sm text-gray-600 mt-4 px-2">
+                      <div className="flex items-center gap-1">
+                        <span>🕒</span>
+                        <span>Jul 23</span>
                       </div>
+                      <div className="flex items-center gap-1">
+                        <HiOutlineMenuAlt2 />
+                        <BiComment />
+                      </div>
+                      <div
+                        className={`flex items-center gap-1 ${completed === total ? "bg-[#64C064]" : "bg-[#DDDDDD]"
+                          } text-white px-2 py-[2px] rounded-md text-xs font-medium`}
+                      >
+                        <BsCheck2Square />
+                        <span>{completed} / {total}</span>
+                      </div>
+
                     </div>
-                  ))}
+                  </div>
+                ))}
 
-                  {/* Add card button */}
-                  <button
-                    className="mt-2 w-full text-left text-sm text-blue-700 hover:underline cursor-pointer"
-                    onClick={showCardModal}
-                  >
-                    + Add a card
-                  </button>
+                {/* Add card button */}
+                <button
+                  className="mt-2 w-full text-left text-sm text-blue-700 hover:underline cursor-pointer"
+                  onClick={showCardModal}
+                >
+                  + Add a card
+                </button>
 
-                  <Modal
-                    title="Add a card"
-                    open={isCardModalOpen}
-                    onOk={handleOk}
-                    onCancel={handleCancel}
-                    width={1196}
-                    footer={null}
-                  >
-                    <div className="grid grid-cols-18 gap-6">
-                      {/* Left Panel */}
-                      <div className="col-span-10">
-                        {/* Actions */}
-                        <div className="grid grid-cols-5 mb-4 gap-4">
-                          <Button><AiOutlinePlus /> Add</Button>
-                          <Button><AiOutlineTags /> Labels</Button>
-                          <Button>
-                            <MdOutlineChecklist className="bg-black text-white rounded-[3px]" size={14} /> Checklist
-                          </Button>
-                          <Button><RiUserAddFill /> Members</Button>
-                          <Button><ImAttachment /> Attachment</Button>
-                        </div>
+                <Modal
+                  title="Add a card"
+                  open={isCardModalOpen}
+                  onOk={handleOk}
+                  onCancel={handleCancel}
+                  width={1196}
+                  footer={null}
+                >
+                  <div className="grid grid-cols-18 gap-6">
+                    {/* Left Panel */}
+                    <div className="col-span-10">
+                      {/* Actions */}
+                      <div className="grid grid-cols-5 mb-4 gap-4">
+                        <Button><AiOutlinePlus /> Add</Button>
+                        <Button><AiOutlineTags /> Labels</Button>
+                        <Button>
+                          <MdOutlineChecklist className="bg-black text-white rounded-[3px]" size={14} /> Checklist
+                        </Button>
+                        <Button><RiUserAddFill /> Members</Button>
+                        <Button><ImAttachment /> Attachment</Button>
+                      </div>
 
-                        {/* Due Date */}
-                        <div className="mt-10 mb-4 flex flex-col gap-[10px]">
-                          <label className="font-medium mr-2">Due date:</label>
-                          <div className="flex items-center gap-2 max-w-[300px]">
-                            <DatePicker
-                              showTime
-                              value={dueDate}
-                              onChange={(value) => setDueDate(value)}
-                              format="MMM DD, h:mm A"
-                              className="w-[200px]"
-                            />
-                            <span className="w-[100px] flex items-center justify-center px-[6px] py-[2px] rounded-sm bg-yellow-300 text-xs font-medium">
-                              (Due soon)
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Description */}
-                        <div className="flex flex-col mb-4 gap-[10px]">
-                          <label className="flex font-medium mb-1 items-center gap-2">
-                            <HiOutlineMenuAlt2 /> <span>Description</span>
-                          </label>
-                          <textarea
-                            placeholder="Add a more detailed description..."
-                            className="w-full border-2 border-gray-300 rounded p-2 h-[100px]"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
+                      {/* Due Date */}
+                      <div className="mt-10 mb-4 flex flex-col gap-[10px]">
+                        <label className="font-medium mr-2">Due date:</label>
+                        <div className="flex items-center gap-2 max-w-[300px]">
+                          <DatePicker
+                            showTime
+                            value={dueDate}
+                            onChange={(value) => setDueDate(value)}
+                            format="MMM DD, h:mm A"
+                            className="w-[200px]"
                           />
+                          <span className="w-[100px] flex items-center justify-center px-[6px] py-[2px] rounded-sm bg-yellow-300 text-xs font-medium">
+                            (Due soon)
+                          </span>
                         </div>
-
-                        {/* Checklist */}
-                        <div className="mb-4">
-                          <div className="flex items-center justify-between">
-                            <label className="flex items-center gap-1 font-medium mb-1"><BiCheckSquare size={18} /> <span>Checklist</span></label>
-                            <div className="flex gap-2 mt-2">
-                              <button size="small" className="bg-[#EBEBEB] px-[10px] py-[3px] rounded-sm cursor-pointer hover:bg-[#f4f3f3]">Hide checked items</button>
-                              <button size="small" className="bg-[#EBEBEB] px-[10px] py-[3px] rounded-sm cursor-pointer hover:bg-[#f4f3f3]">Delete</button>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3 mb-3 mt-3">
-                            <span className="font-semibold text-sm w-[40px]">100%</span>
-                            <div className="flex-1 bg-gray-200 h-2 rounded">
-                              <div className="bg-green-500 h-2 rounded w-full" />
-                            </div>
-                          </div>
-
-                          {checklist.map((item) => (
-                            <div key={item.id} className="flex items-center mb-1">
-                              <Checkbox checked={item.checked}>{item.text}</Checkbox>
-                            </div>
-                          ))}
-                        </div>
-
-                        <button size="small" className="bg-[#EBEBEB] px-[10px] py-[3px] rounded-sm cursor-pointer hover:bg-[#f4f3f3] font-semibold">Add an item</button>
                       </div>
 
-                      {/* Vertical Separator */}
-                      <div className="col-span-1 flex justify-center">
-                        <div className="w-px h-full bg-gray-200"></div>
-                      </div>
-
-                      {/* Right Panel - Comments and Activity */}
-                      <div className="col-span-7 w-full max-w-md rounded bg-white p-4 shadow">
-                        <div className="flex justify-between items-center mb-4">
-                          <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-1"><BiMessageDetail /> <span>Comments and activity</span></h2>
-                          <button className="text-sm text-gray-600 hover:underline cursor-pointer">Show details</button>
-                        </div>
-
-                        <input
-                          type="text"
-                          placeholder="Write a comment..."
-                          className="w-full p-2 border border-gray-300 rounded mb-4"
+                      {/* Description */}
+                      <div className="flex flex-col mb-4 gap-[10px]">
+                        <label className="flex font-medium mb-1 items-center gap-2">
+                          <HiOutlineMenuAlt2 /> <span>Description</span>
+                        </label>
+                        <textarea
+                          placeholder="Add a more detailed description..."
+                          className="w-full border-2 border-gray-300 rounded p-2 h-[100px]"
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
                         />
-
-                        <ul className="space-y-4">
-                          {activityData.map((item, index) => (
-                            <li key={index} className="flex items-start gap-3">
-                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${item.color}`}>
-                                {item.initials}
-                              </div>
-                              <div>
-                                <p className="text-sm text-gray-800 font-medium">
-                                  {item.name} <span className="font-normal">added this card to To do</span>
-                                </p>
-                                <p className="text-xs text-blue-600 hover:underline cursor-pointer">
-                                  {item.time}
-                                </p>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
                       </div>
-                    </div>
-                  </Modal>
 
-                </div>
+                      {/* Checklist */}
+                      <div className="mb-4">
+                        <div className="flex items-center justify-between">
+                          <label className="flex items-center gap-1 font-medium mb-1"><BiCheckSquare size={18} /> <span>Checklist</span></label>
+                          <div className="flex gap-2 mt-2">
+                            <button size="small" className="bg-[#EBEBEB] px-[10px] py-[3px] rounded-sm cursor-pointer hover:bg-[#f4f3f3]">Hide checked items</button>
+                            <button size="small" className="bg-[#EBEBEB] px-[10px] py-[3px] rounded-sm cursor-pointer hover:bg-[#f4f3f3]">Delete</button>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 mb-3 mt-3">
+                          <span className="font-semibold text-sm w-[40px]">100%</span>
+                          <div className="flex-1 bg-gray-200 h-2 rounded">
+                            <div className="bg-green-500 h-2 rounded w-full" />
+                          </div>
+                        </div>
+
+                        {checklist.map((item) => (
+                          <div key={item.id} className="flex items-center mb-1">
+                            <Checkbox checked={item.checked}>{item.text}</Checkbox>
+                          </div>
+                        ))}
+                      </div>
+
+                      <button size="small" className="bg-[#EBEBEB] px-[10px] py-[3px] rounded-sm cursor-pointer hover:bg-[#f4f3f3] font-semibold">Add an item</button>
+                    </div>
+
+                    {/* Vertical Separator */}
+                    <div className="col-span-1 flex justify-center">
+                      <div className="w-px h-full bg-gray-200"></div>
+                    </div>
+
+                    {/* Right Panel - Comments and Activity */}
+                    <div className="col-span-7 w-full max-w-md rounded bg-white p-4 shadow">
+                      <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-1"><BiMessageDetail /> <span>Comments and activity</span></h2>
+                        <button className="text-sm text-gray-600 hover:underline cursor-pointer">Show details</button>
+                      </div>
+
+                      <input
+                        type="text"
+                        placeholder="Write a comment..."
+                        className="w-full p-2 border border-gray-300 rounded mb-4"
+                      />
+
+                      <ul className="space-y-4">
+                        {activityData.map((item, index) => (
+                          <li key={index} className="flex items-start gap-3">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${item.color}`}>
+                              {item.initials}
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-800 font-medium">
+                                {item.name} <span className="font-normal">added this card to To do</span>
+                              </p>
+                              <p className="text-xs text-blue-600 hover:underline cursor-pointer">
+                                {item.time}
+                              </p>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </Modal>
+
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
