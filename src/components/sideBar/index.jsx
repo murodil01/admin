@@ -88,7 +88,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                   <button
                     key={item.label}
                     onClick={() => handleNavigate(item.path)}
-                    className={`flex items-center gap-3 py-2 rounded-md transition text-left
+                    className={`flex items-center gap-3 py-2 rounded-xl transition text-left
           ${collapsed ? "justify-center px-2 w-[48px]" : "px-4 w-full"}
           ${
             isActive
@@ -126,7 +126,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 onClick={() =>
                   window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
                 }
-                className="w-full flex items-center justify-center gap-2 bg-[#0061fe] text-white mt-3 rounded-2xl text-[18px] px-6 py-2 text-sm m-auto"
+                className="w-full flex items-center justify-center gap-2 bg-[#0061fe] text-white mt-3 rounded-xl text-[18px] px-6 py-2 text-sm m-auto"
               >
                 <BiSupport size={18} />
                 <span>Support</span>
@@ -172,7 +172,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                   <button
                     key={item.label}
                     onClick={() => handleNavigate(item.path)}
-                    className={`flex items-center gap-3 px-4 py-2 rounded-md transition
+                    className={`flex items-center gap-3 px-4 py-2 rounded-xl transition
           ${
             isActive
               ? "bg-[#0061fe] text-white font-semibold"
@@ -192,7 +192,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 onClick={() =>
                   window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
                 }
-                className="flex items-center justify-center gap-2 border border-[#0061fe] bg-white text-[#0061fe] hover:bg-[#0061fe] hover:text-white rounded-2xl text-[18px] px-6 py-3 text-sm w-full"
+                className="flex items-center justify-center gap-2 border border-[#0061fe] bg-white text-[#0061fe] hover:bg-[#0061fe] hover:text-white rounded-xl text-[18px] px-6 py-3 text-sm w-full"
               >
                 <BiSupport size={18} />
                 <span>Support</span>

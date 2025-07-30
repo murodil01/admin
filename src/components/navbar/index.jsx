@@ -139,7 +139,7 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
 
         {/* 🔽 Dropdown (common for mobile and desktop) */}
         {isUserOpen && (
-          <div className="absolute top-[70px] right-0 w-56 bg-white rounded-xl shadow-lg py-2 z-50 space-y-1 text-sm text-gray-700">
+          <div className="absolute top-[70px] right-0 w-60 bg-white rounded-[14px] shadow-lg py-2 z-50 space-y-1 text-sm text-gray-700">
             {/* Profile */}
             <div
               onClick={() => navigateAndClose("/main-profile")}
@@ -149,11 +149,13 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
             </div>
 
             {/* Role */}
-            <div className="flex items-center justify-between px-4 py-2 hover:bg-gray-100 cursor-default">
-              <FaUserCog size={18} />
-              <span>Role Description:</span>
-              <span className="inline-block border border-gray-300 bg-white text-gray-800 text-sm font-medium rounded-xl px-2.5 py-0.5 shadow-sm">
-                Junior
+            <div className="flex items-center justify-between gap-2 px-4 py-2 hover:bg-gray-100 cursor-default">
+              <div className="flex items-center gap-2">
+                <FaUserCog size={18} />
+                <span>Role :</span>
+              </div>
+              <span className="inline-block border border-gray-300 bg-white text-gray-800 text-[13.5px] font-medium rounded-xl px-2.5 py-0.5 shadow-sm">
+                Backend Developer
               </span>
             </div>
 
