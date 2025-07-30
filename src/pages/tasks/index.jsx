@@ -15,7 +15,7 @@ import { Button, Modal, Select, DatePicker, Input, Checkbox } from 'antd';
 import { Outlet } from "react-router-dom";
 import dayjs from "dayjs";
 
-const Tasks = () => {
+const Tasks = ({completed, total}) => {
   const activityData = [
     {
       name: "Rovshan Egamov",
@@ -89,9 +89,9 @@ const Tasks = () => {
 
   const taskColumns = [
     { id: "todo", title: "To Do"},
-    { id: "progress", title: "In Progress"},
-    { id: "review", title: "In Review"},
-    { id: "done", title: "Done"},
+    { id: "gotIt", title: "Got It"},
+    { id: "process", title: "Process"},
+    { id: "completed", title: "Completed"},
     { id: "backlog", title: "Backlog"},
   ];
 
@@ -114,21 +114,21 @@ const Tasks = () => {
       title: "Mind Map",
       time: "2d 4h",
       assignee: { name: "Mike", avatar: "bg-gray-800" },
-      column: "progress",
+      column: "gotIt",
     },
     {
       id: "research-reports",
       title: "Research reports",
       time: "2d",
       assignee: { name: "Sarah", avatar: "bg-yellow-600" },
-      column: "review",
+      column: "process",
     },
     {
       id: "research",
       title: "Research",
       time: "4d",
       assignee: { name: "Emma", avatar: "bg-red-500" },
-      column: "done",
+      column: "completed",
     },
     {
       id: "ux-login",
@@ -142,7 +142,7 @@ const Tasks = () => {
       title: "Research reports (presentation for client)",
       time: "6h",
       assignee: { name: "Lisa", avatar: "bg-pink-500" },
-      column: "review",
+      column: "process",
     },
     {
       id: "ui-login",
@@ -338,7 +338,7 @@ const Tasks = () => {
           {taskColumns.map((column) => (
             <div
               key={column.id}
-              className="max-w-[300px] shrink-0 rounded-xl p-4 bg-[#E9E8E8] shadow-sm flex flex-col"
+              className="max-w-[300px] min-w-[250px] shrink-0 rounded-xl p-4 bg-[#E9E8E8] shadow-sm flex flex-col"
             >
               {/* Sticky header for column title */}
               <div className="border-b border-gray-300 pb-2 mb-3 sticky top-0 bg-[#E9E8E8] z-10">
@@ -371,8 +371,12 @@ const Tasks = () => {
                         <HiOutlineMenuAlt2 />
                         <BiComment />
                       </div>
-                      <div className="flex items-center gap-1 bg-green-500 text-white px-2 py-[2px] rounded-md text-xs font-medium">
-                        <BsCheck2Square /> <span>10 / 10</span>
+                      <div
+                        className={`flex items-center gap-1 ${completed === total ? "bg-[#64C064]" : "bg-[#DDDDDD]"
+                          } text-white px-2 py-[2px] rounded-md text-xs font-medium`}
+                      >
+                        <BsCheck2Square />
+                        <span>{completed} / {total}</span>
                       </div>
                     </div>
                   </div>
