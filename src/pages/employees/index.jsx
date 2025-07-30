@@ -485,7 +485,7 @@ const InnerCircle = () => {
 
                       <div className="col-span-2 mt-3">
                         <button
-                          className="bg-[#1F2937] text-white px-10 py-2 rounded-2xl text-[16px] text-sm font-bold block m-auto"
+                          className="bg-[#0061fe] text-white px-10 py-2 rounded-2xl text-[16px] text-sm font-bold block m-auto"
                           onClick={(e) => {
                             e.stopPropagation(); // dropdown yopilib ketmasligi uchun
                             navigate(`/profile/${emp.id}`);
