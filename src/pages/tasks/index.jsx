@@ -334,17 +334,19 @@ const Tasks = ({completed, total}) => {
       <Outlet />
 
       <div className="relative w-ful">
-        <div className="w-full pb-4 overflow-x-auto">
-          <div className='flex gap-5 min-w-[600px] sm:min-w-full'>
-            {taskColumns.map((column) => (
-              <div
-                key={column.id}
-                className="max-w-[300px] min-w-[250px] shrink-0 rounded-xl p-4 bg-[#E9E8E8] shadow-sm flex flex-col"
-              >
-                {/* Sticky header for column title */}
-                <div className="border-b border-gray-300 pb-2 mb-3 sticky top-0 bg-[#E9E8E8] z-10">
-                  <span className="font-semibold text-lg text-gray-800">{column.title}</span>
-                </div>
+
+        <div className='grid grid-cols-5 gap-5 pb-4 w-full mr-5 overflow-x-auto'>
+          {taskColumns.map((column) => (
+            <div
+              key={column.id}
+              className="max-w-[300px] min-w-[250px] shrink-0 rounded-xl p-4 bg-[#E9E8E8] shadow-sm flex flex-col"
+            >
+              {/* Sticky header for column title */}
+              <div className="border-b border-gray-300 pb-2 mb-3 sticky top-0 bg-[#E9E8E8] z-10">
+                <span className="font-semibold text-lg text-gray-800">{column.title}</span>
+              </div>
+
+       
 
                 {/* Scrollable task list area */}
                 <div className="space-y-3 pr-1">
@@ -361,6 +363,7 @@ const Tasks = ({completed, total}) => {
 
                       {/* Task title */}
                       <h4 className="text-center text-gray-800 font-semibold">{task.title}</h4>
+
 
                       {/* Task info row */}
                       <div className="flex justify-between items-center text-sm text-gray-600 mt-4 px-2">
@@ -379,6 +382,7 @@ const Tasks = ({completed, total}) => {
                           <BsCheck2Square />
                           <span>{completed} / {total}</span>
                         </div>
+
                       </div>
                     </div>
                   ))}
