@@ -1,5 +1,4 @@
 import {
-  Users,
   MessageSquare,
   X,
   Calendar,
@@ -7,7 +6,6 @@ import {
   ChartNoAxesCombined,
   Landmark,
 } from "lucide-react";
-import adminPanel from "../../assets/adminPanel.png";
 import { useNavigate, useLocation } from "react-router-dom";
 import { BsFillGridFill } from "react-icons/bs";
 import { BiSupport } from "react-icons/bi";
@@ -18,6 +16,8 @@ import { IoFileTrayFull } from "react-icons/io5";
 import { TbReport } from "react-icons/tb";
 
 import TaskProjectDropdown from "./TaskProjectDropdown";
+import side_blue from "../../assets/side_blue.png";
+import side_blue3 from "../../assets/side_blue3.png";
 
 const menuItems = [
   { label: "Dashboard", icon: <BsFillGridFill size={20} />, path: "/" },
@@ -68,16 +68,16 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
               }`}
             >
               <img
-                src={adminPanel}
+                src={collapsed ? side_blue3 : side_blue}
                 alt="Logo"
                 className={`transition-all duration-300 ${
-                  collapsed ? "w-10" : "w-[60px]"
+                  collapsed ? "w-7" : "w-[150px]"
                 }`}
               />
             </div>
 
             <nav
-              className={`flex flex-col gap-[3px] ${
+              className={`flex flex-col gap-[5px] ${
                 collapsed ? "items-center py-2" : "p-4"
               }`}
             >
@@ -92,10 +92,10 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
           ${collapsed ? "justify-center px-2 w-[48px]" : "px-4 w-full"}
           ${
             isActive
-              ? "bg-[#DBDBDB] font-semibold text-[#1F2937]"
-              : "text-[#7D8592]"
+              ? "bg-[#0061fe] font-semibold text-white"
+              : "text-[#231f20] hover:text-white"
           }
-          hover:bg-[#DBDBDB]`}
+          hover:bg-[#0061fe] `}
                   >
                     {item.icon}
                     {!collapsed && (
@@ -108,7 +108,6 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                             setSelectedProject={setSelectedProject}
                           />
                         )}
-
                       </div>
                     )}
                   </button>
@@ -123,12 +122,12 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
             }`}
           >
             {!collapsed ? (
-              <button className="w-full flex items-center justify-center gap-2 bg-[#1F2937] text-white mt-3 rounded-2xl text-[18px] px-6 py-2 text-sm m-auto">
+              <button className="w-full flex items-center justify-center gap-2 bg-[#0061fe] text-white mt-3 rounded-2xl text-[18px] px-6 py-2 text-sm m-auto">
                 <BiSupport size={18} />
                 <span>Support</span>
               </button>
             ) : (
-              <button className="flex items-center justify-center bg-[#1F2937] text-white rounded-md p-2">
+              <button className="flex items-center justify-center bg-[#0061fe] text-white rounded-md p-2">
                 <BiSupport size={20} />
               </button>
             )}
@@ -145,32 +144,41 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
           ></div>
 
           {/* Sidebar Panel */}
-          <div className="relative z-50 w-64 bg-[#1F2937] text-white h-screen flex flex-col p-4 max-h-screen overflow-y-auto">
+          <div className="relative z-50 w-64 bg-white text-[#231f20] h-screen flex flex-col px-10 py-8 max-h-screen overflow-y-auto">
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
-              <img src={adminPanel} alt="Logo" className="w-24 m-auto" />
+              <img src={side_blue3} alt="Logo" className="w-10 m-auto" />
               <button onClick={() => setIsMobileOpen(false)}>
                 <X size={24} />
               </button>
             </div>
 
             {/* Navigation */}
-            <nav className="flex flex-col gap-4">
-              {menuItems.map((item) => (
-                <button
-                  key={item.label}
-                  onClick={() => handleNavigate(item.path)}
-                  className="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-[#374151] transition"
-                >
-                  {item.icon}
-                  <span className="text-sm">{item.label}</span>
-                </button>
-              ))}
+            <nav className="flex flex-col gap-[5px]">
+              {menuItems.map((item) => {
+                const isActive = location.pathname === item.path;
+
+                return (
+                  <button
+                    key={item.label}
+                    onClick={() => handleNavigate(item.path)}
+                    className={`flex items-center gap-3 px-4 py-2 rounded-md transition
+          ${
+            isActive
+              ? "bg-[#0061fe] text-white font-semibold"
+              : "text-[#231f20] hover:bg-[#0061fe] hover:text-white"
+          }`}
+                  >
+                    {item.icon}
+                    <span className="text-sm">{item.label}</span>
+                  </button>
+                );
+              })}
             </nav>
 
             {/* Footer */}
             <div className="mt-10 flex flex-col gap-4">
-              <button className="flex items-center justify-center gap-2 bg-white text-[#1F2937] rounded-2xl text-[18px] px-6 py-3 text-sm w-full">
+              <button className="flex items-center justify-center gap-2 border border-[#0061fe] bg-white text-[#0061fe] hover:bg-[#0061fe] hover:text-white rounded-2xl text-[18px] px-6 py-3 text-sm w-full">
                 <BiSupport size={18} />
                 <span>Support</span>
               </button>
