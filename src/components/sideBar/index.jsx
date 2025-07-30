@@ -3,7 +3,6 @@ import {
   X,
   Calendar,
   ClipboardList,
-  ChartNoAxesCombined,
   Landmark,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -11,7 +10,7 @@ import { BsFillGridFill } from "react-icons/bs";
 import { BiSupport } from "react-icons/bi";
 import { SiGoogleads } from "react-icons/si";
 import { useState } from "react";
-import { FaFolderOpen, FaUsers } from "react-icons/fa";
+import { FaFolderOpen, FaUsers, FaUserTag } from "react-icons/fa";
 import { IoFileTrayFull } from "react-icons/io5";
 import { TbReport } from "react-icons/tb";
 
@@ -24,7 +23,7 @@ const menuItems = [
   { label: "Calendar", icon: <Calendar size={20} />, path: "/calendar" },
   { label: "Tasks", icon: <ClipboardList size={20} />, path: "/tasks" },
   { label: "Leads", icon: <SiGoogleads size={20} />, path: "/leads" },
-  { label: "Sales", icon: <ChartNoAxesCombined size={20} />, path: "/sales" },
+  { label: "Customers", icon: <FaUserTag size={20}/>, path: "/customers" },
   { label: "Departments", icon: <Landmark size={20} />, path: "/departments" },
   { label: "Inner Circle", icon: <FaUsers size={20} />, path: "/employees" },
   { label: "Messenger", icon: <MessageSquare size={20} />, path: "/messenger" },
