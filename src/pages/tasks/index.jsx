@@ -75,6 +75,23 @@ const Tasks = ({ completed, total }) => {
     setIsCardModalOpen(false); // Close modal after saving
   };
 
+  const toggleChecklistItem = (id) => {
+    setChecklist(prev =>
+      prev.map(item =>
+        item.id === id ? { ...item, checked: !item.checked } : item
+      )
+    );
+  };
+
+  const addChecklistItem = () => {
+    const newItem = {
+      id: Date.now(),
+      text: "New task",
+      checked: false,
+    };
+    setChecklist([...checklist, newItem]);
+  };
+
   // function parseTimeToHours(timeStr) {
   //   if (!timeStr) return 0;
 
@@ -402,6 +419,7 @@ const Tasks = ({ completed, total }) => {
                   onCancel={handleCancel}
                   width={1196}
                   footer={null}
+                  maskStyle={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
                 >
                   <div className="grid grid-cols-18 gap-6">
                     {/* Left Panel */}
@@ -452,8 +470,8 @@ const Tasks = ({ completed, total }) => {
                         <div className="flex items-center justify-between">
                           <label className="flex items-center gap-1 font-medium mb-1"><BiCheckSquare size={18} /> <span>Checklist</span></label>
                           <div className="flex gap-2 mt-2">
-                            <button size="small" className="bg-[#EBEBEB] px-[10px] py-[3px] rounded-sm cursor-pointer hover:bg-[#f4f3f3]">Hide checked items</button>
-                            <button size="small" className="bg-[#EBEBEB] px-[10px] py-[3px] rounded-sm cursor-pointer hover:bg-[#f4f3f3]">Delete</button>
+                            <button className="bg-[#EBEBEB] px-[10px] py-[3px] rounded-sm cursor-pointer hover:bg-[#f4f3f3]">Hide checked items</button>
+                            <button className="bg-[#EBEBEB] px-[10px] py-[3px] rounded-sm cursor-pointer hover:bg-[#f4f3f3]">Delete</button>
                           </div>
                         </div>
                         <div className="flex items-center gap-3 mb-3 mt-3">
@@ -465,12 +483,21 @@ const Tasks = ({ completed, total }) => {
 
                         {checklist.map((item) => (
                           <div key={item.id} className="flex items-center mb-1">
-                            <Checkbox checked={item.checked}>{item.text}</Checkbox>
+                            <Checkbox
+                              checked={item.checked}
+                              onChange={() => toggleChecklistItem(item.id)}
+                            >
+                              {item.text}
+                            </Checkbox>
                           </div>
                         ))}
                       </div>
 
-                      <button size="small" className="bg-[#EBEBEB] px-[10px] py-[3px] rounded-sm cursor-pointer hover:bg-[#f4f3f3] font-semibold">Add an item</button>
+                      <button
+                        onClick={addChecklistItem}
+                        className="bg-[#EBEBEB] px-[10px] py-[3px] rounded-sm cursor-pointer hover:bg-[#f4f3f3] font-semibold">
+                        Add an item
+                      </button>
                     </div>
 
                     {/* Vertical Separator */}
