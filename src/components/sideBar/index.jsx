@@ -7,25 +7,28 @@ import {
   ChartNoAxesCombined,
   Landmark,
 } from "lucide-react";
-import { AiOutlineArrowRight } from "react-icons/ai";
 import adminPanel from "../../assets/adminPanel.png";
-import support from "../../assets/support.png";
 import { useNavigate, useLocation } from "react-router-dom";
 import { BsFillGridFill } from "react-icons/bs";
-import { IoIosLogOut } from "react-icons/io";
 import { BiSupport } from "react-icons/bi";
 import { SiGoogleads } from "react-icons/si";
 import { useState } from "react";
+import { FaFolderOpen, FaUsers } from "react-icons/fa";
+import { IoFileTrayFull } from "react-icons/io5";
+import { TbReport } from "react-icons/tb";
 
 const menuItems = [
   { label: "Dashboard", icon: <BsFillGridFill size={20} />, path: "/" },
-  { label: "Sales", icon: <ChartNoAxesCombined size={20} />, path: "/sales" },
-  { label: "Tasks", icon: <ClipboardList size={20} />, path: "/tasks" },
   { label: "Calendar", icon: <Calendar size={20} />, path: "/calendar" },
+  { label: "Tasks", icon: <ClipboardList size={20} />, path: "/tasks" },
   { label: "Leads", icon: <SiGoogleads size={20} />, path: "/leads" },
-  { label: "Employees", icon: <Users size={20} />, path: "/employees" },
-  { label: "Messenger", icon: <MessageSquare size={20} />, path: "/messenger" },
+  { label: "Sales", icon: <ChartNoAxesCombined size={20} />, path: "/sales" },
   { label: "Departments", icon: <Landmark size={20} />, path: "/departments" },
+  { label: "Inner Circle", icon: <FaUsers size={20} />, path: "/employees" },
+  { label: "Messenger", icon: <MessageSquare size={20} />, path: "/messenger" },
+  { label: "Files", icon: <FaFolderOpen size={20} />, path: "/files" },
+  { label: "Reports", icon: <TbReport size={20} />, path: "/reports" },
+  { label: "Archive", icon: <IoFileTrayFull size={20} />, path: "/archive" },
 ];
 
 const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
@@ -97,12 +100,15 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
 
                         {item.arrow && (
                           <button
-                            onClick={() => setCurrentProjectsOpen(!currentProjectsOpen)}
+                            onClick={() =>
+                              setCurrentProjectsOpen(!currentProjectsOpen)
+                            }
                             className="w-8 h-8 flex items-center justify-center bg-gray-50 rounded-lg hover:bg-gray-100 transition"
                           >
                             <span
-                              className={`w-4 h-4 text-gray-500 transition-transform duration-300 cursor-pointer ${currentProjectsOpen ? "rotate-180" : ""
-                                }`}
+                              className={`w-4 h-4 text-gray-500 transition-transform duration-300 cursor-pointer ${
+                                currentProjectsOpen ? "rotate-180" : ""
+                              }`}
                             >
                               {item.arrow}
                             </span>
@@ -122,37 +128,15 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
             }`}
           >
             {!collapsed ? (
-              <div className="bg-gray-100 rounded-2xl py-4 px-3 w-[180px] m-auto">
-                <img
-                  src={support}
-                  alt="Support"
-                  className="w-[100px] m-auto h-[90px]"
-                />
-                <button className="flex items-center justify-center gap-2 bg-[#1F2937] text-white mt-3 rounded-2xl text-[18px] px-6 py-2 text-sm m-auto">
-                  <BiSupport size={18} />
-                  <span>Support</span>
-                </button>
-              </div>
+              <button className="w-full flex items-center justify-center gap-2 bg-[#1F2937] text-white mt-3 rounded-2xl text-[18px] px-6 py-2 text-sm m-auto">
+                <BiSupport size={18} />
+                <span>Support</span>
+              </button>
             ) : (
-              <div className="flex justify-center">
-                <button className="flex items-center justify-center bg-[#1F2937] text-white rounded-md p-2">
-                  <BiSupport size={20} />
-                </button>
-              </div>
+              <button className="flex items-center justify-center bg-[#1F2937] text-white rounded-md p-2">
+                <BiSupport size={20} />
+              </button>
             )}
-
-            <button
-              onClick={() => {
-                localStorage.removeItem("token");
-                navigate("/login");
-              }}
-              className={`flex items-center gap-3 px-4 py-2 rounded-md hover:bg-[#f3f4f6] transition text-[#7D8592] w-full ${
-                collapsed ? "justify-center px-0" : "text-left"
-              }`}
-            >
-              <IoIosLogOut size={20} />
-              {!collapsed && <span className="text-sm">Logout</span>}
-            </button>
           </div>
         </div>
       </aside>
@@ -194,17 +178,6 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
               <button className="flex items-center justify-center gap-2 bg-white text-[#1F2937] rounded-2xl text-[18px] px-6 py-3 text-sm w-full">
                 <BiSupport size={18} />
                 <span>Support</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  localStorage.removeItem("token");
-                  navigate("/login");
-                }}
-                className="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-[#374151] w-full transition"
-              >
-                <IoIosLogOut size={20} />
-                <span className="text-sm">Logout</span>
               </button>
             </div>
           </div>
