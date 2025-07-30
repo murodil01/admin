@@ -7,7 +7,6 @@ import {
   X,
   ChevronUp,
   ChevronDown,
-  Eye,
   Paperclip,
 } from "lucide-react";
 import { useState } from "react";
@@ -141,7 +140,7 @@ const employees = [
   },
 ];
 
-const Employees = () => {
+const InnerCircle = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState(() => {
@@ -269,7 +268,7 @@ const Employees = () => {
     <div>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <h1 className="text-[#1F2937] font-bold text-3xl sm:text-xl  xl:text-4xl">
-          Employees ({employees.length})
+          Inner Circle ({employees.length})
         </h1>
 
         <div className="flex items-center bg-[#DBDBDB] xl:p-[3px] rounded-4xl w-full m-auto md:w-[250px] xl:w-[350px]">
@@ -728,10 +727,6 @@ const Employees = () => {
                     className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 pr-10"
                     placeholder="Password"
                   />
-                  <Eye
-                    className="absolute right-3 top-[43px] text-gray-400"
-                    size={20}
-                  />
                 </div>
 
                 <div className="relative">
@@ -742,10 +737,6 @@ const Employees = () => {
                     type="password"
                     className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 pr-10"
                     placeholder="Confirm Password"
-                  />
-                  <Eye
-                    className="absolute right-3 top-[43px] text-gray-400"
-                    size={20}
                   />
                 </div>
 
@@ -926,4 +917,4 @@ const Employees = () => {
   );
 };
 
-export default Employees;
+export default InnerCircle;

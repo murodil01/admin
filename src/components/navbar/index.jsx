@@ -1,12 +1,47 @@
 import { Menu, Bell, User, Search } from "lucide-react";
-import { useState, useRef } from "react"; // buni boshida qo‘shing
-import useDropdownBehavior from "../../hooks/useOutsideClick";
+import { useState, useRef, useEffect } from "react"; // buni boshida qo‘shing
+// import useDropdownBehavior from "../../hooks/useOutsideClick";
+import { useNavigate } from "react-router-dom";
+import { IoIosLogOut } from "react-icons/io";
 
 const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
   const [isUserOpen, setIsUserOpen] = useState(false);
   const dropdownRef = useRef(null);
-   // Hookni ishlatish, dropdownlar uchun tashqi bosishlarni aniqlash
-   const dropUp = useDropdownBehavior(dropdownRef, isUserOpen, () => setIsUserOpen(false));
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const savedUserOpen = localStorage.getItem("userDropdownOpen");
+    if (savedUserOpen === "true") {
+      setIsUserOpen(true);
+    }
+  }, []);
+
+  // Holatni localStorage ga yozish
+  useEffect(() => {
+    localStorage.setItem("userDropdownOpen", isUserOpen);
+  }, [isUserOpen]);
+
+  // Dropdown tashqarisiga bosilsa yopish
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsUserOpen(false);
+      }
+    };
+
+    if (isUserOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isUserOpen]);
+
+  // Hookni ishlatish, dropdownlar uchun tashqi bosishlarni aniqlash
+  // const dropUp = useDropdownBehavior(dropdownRef, isUserOpen, () =>
+  //   setIsUserOpen(false)
+  // );
 
   return (
     <header
@@ -15,11 +50,17 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
     >
       {/* Left - Menu */}
       <div className="flex items-center gap-3">
-        <button onClick={onToggleMobile} className="md:hidden flex w-12 h-[45px] bg-white rounded-[14px]  items-center justify-center transition sm:shadow hover:shadow-md">
+        <button
+          onClick={onToggleMobile}
+          className="md:hidden flex w-12 h-[45px] bg-white rounded-[14px]  items-center justify-center transition sm:shadow hover:shadow-md"
+        >
           <Menu size={24} className="text-[#1F2937]" />
         </button>
 
-        <button onClick={onToggleDesktop} className="hidden md:flex w-12 h-[45px] bg-white rounded-[14px]  items-center justify-center transition sm:shadow hover:shadow-md">
+        <button
+          onClick={onToggleDesktop}
+          className="hidden md:flex w-12 h-[45px] bg-white rounded-[14px]  items-center justify-center transition sm:shadow hover:shadow-md"
+        >
           <Menu size={24} className="text-[#1F2937]" />
         </button>
       </div>
@@ -45,7 +86,6 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
       </div>
 
       <div className="flex items-center gap-5">
-
         {/* Bell */}
         <button className="relative w-12 h-[45px] bg-white rounded-[14px] flex items-center justify-center transition sm:shadow hover:shadow-md">
           <Bell size={24} className="text-gray-600" />
@@ -64,15 +104,16 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
 
         {/* ✅ Desktop: button with dropdown */}
         <div className="relative hidden sm:block" ref={dropdownRef}>
-          <button 
+          <button
             onClick={() => setIsUserOpen((prev) => !prev)}
             className="flex items-center gap-2 h-11 px-9 bg-white rounded-[14px] shadow hover:shadow-md transition"
           >
             <User size={22} className="text-gray-600" />
             <span className="font-medium text-base text-gray-700">Admin</span>
             <svg
-              className={`w-4 h-4 transition-transform duration-200 ${isUserOpen ? "rotate-180" : ""
-                }`}
+              className={`w-4 h-4 transition-transform duration-200 ${
+                isUserOpen ? "rotate-180" : ""
+              }`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -87,20 +128,48 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
           </button>
 
           {isUserOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 z-50">
-              <div className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">
-                👤 My Profile
+            <div
+              ref={dropdownRef}
+              className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg py-2 z-50 space-y-1 text-sm text-gray-700"
+            >
+              {/* Profile */}
+              <div
+                onClick={() => navigate("/main-profile")}
+                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              >
+                👤 <span>My Profile</span>
               </div>
-              <div className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer">
-                ⚙️ Settings
+
+              {/* Role */}
+              <div className="flex items-center justify-between px-4 py-2 hover:bg-gray-100 cursor-default">
+                <span>Role Description:</span>
+                <span className="inline-block border border-gray-300 bg-white text-gray-800 text-sm font-medium rounded-xl px-2.5 py-0.5 shadow-sm">
+                  Junior
+                </span>
               </div>
-              <div className="px-4 py-2 text-sm text-red-600 border-t hover:bg-gray-100 cursor-pointer">
-                🚪 Logout
+
+              {/* Settings */}
+              <div
+                onClick={() => navigate("/settings")}
+                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              >
+                ⚙️ <span>Settings</span>
+              </div>
+
+              {/* Logout */}
+              <div
+                onClick={() => {
+                  localStorage.removeItem("token");
+                  navigate("/login");
+                }}
+                className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-gray-100 cursor-pointer border-t pt-2"
+              >
+                <IoIosLogOut size={18} />
+                <span>Logout</span>
               </div>
             </div>
           )}
         </div>
-
       </div>
     </header>
   );
