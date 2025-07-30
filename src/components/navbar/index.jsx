@@ -1,13 +1,20 @@
-import { Menu, Bell, User, Search } from "lucide-react";
-import { useState, useRef, useEffect } from "react"; // buni boshida qo‘shing
+import { Menu, Bell, User, Search, Settings } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 // import useDropdownBehavior from "../../hooks/useOutsideClick";
 import { useNavigate } from "react-router-dom";
 import { IoIosLogOut } from "react-icons/io";
+import { FaUserCircle, FaUserCog } from "react-icons/fa";
 
 const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
   const [isUserOpen, setIsUserOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+
+  const navigateAndClose = (path) => {
+    setIsUserOpen(false);
+    localStorage.removeItem("userDropdownOpen");
+    navigate(path);
+  };
 
   useEffect(() => {
     const savedUserOpen = localStorage.getItem("userDropdownOpen");
@@ -46,7 +53,7 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
   return (
     <header
       className="bg-white md:bg-[#F2F2F2] max-sm:mt-3 max-sm:mx-2.5 px-4 md:pl-4 md:pr-8 pb-5 pt-5 flex items-center justify-between max-w-full sticky top-0 z-40 
-      shadow-sm sm:shadow-none rounded-[24px] md:rounded-none gap-5"
+      shadow-sm sm:shadow-none rounded-[30px] md:rounded-none gap-5"
     >
       {/* Left - Menu */}
       <div className="flex items-center gap-3">
@@ -134,14 +141,15 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
             >
               {/* Profile */}
               <div
-                onClick={() => navigate("/main-profile")}
+                onClick={() => navigateAndClose("/main-profile")}
                 className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
               >
-                👤 <span>My Profile</span>
+                <FaUserCircle size={18} /> <span>My Profile</span>
               </div>
 
               {/* Role */}
               <div className="flex items-center justify-between px-4 py-2 hover:bg-gray-100 cursor-default">
+                <FaUserCog size={18} />
                 <span>Role Description:</span>
                 <span className="inline-block border border-gray-300 bg-white text-gray-800 text-sm font-medium rounded-xl px-2.5 py-0.5 shadow-sm">
                   Junior
@@ -150,19 +158,20 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
 
               {/* Settings */}
               <div
-                onClick={() => navigate("/settings")}
+                onClick={() => navigateAndClose("/settings")}
                 className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
               >
-                ⚙️ <span>Settings</span>
+                <Settings className="animate-spin" size={18} />{" "}
+                <span>Settings</span>
               </div>
 
               {/* Logout */}
               <div
                 onClick={() => {
                   localStorage.removeItem("token");
-                  navigate("/login");
+                  navigateAndClose("/login");
                 }}
-                className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-gray-100 cursor-pointer border-t pt-2"
+                className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-gray-100 cursor-pointer border-t border-gray-400 pt-2"
               >
                 <IoIosLogOut size={18} />
                 <span>Logout</span>

@@ -276,7 +276,7 @@ const InnerCircle = () => {
             onClick={() => handleTabClick("list")}
             className={`py-[5px] xl:py-[9px] rounded-4xl w-1/2 text-[16px] font-bold transition-all duration-200 ${
               activeTab === "list"
-                ? "bg-[#1F2937] text-white"
+                ? "bg-[#0061fe] text-white"
                 : "bg-[#DBDBDB] text-[#1F2937]"
             }`}
           >
@@ -287,7 +287,7 @@ const InnerCircle = () => {
             onClick={() => handleTabClick("activity")}
             className={`py-[5px] xl:py-[9px] rounded-4xl w-1/2 text-[16px] md:text-[14px] lg:text-[16px] font-bold transition-all duration-200 ${
               activeTab === "activity"
-                ? "bg-[#1F2937] text-white"
+                ? "bg-[#0061fe] text-white"
                 : "bg-[#DBDBDB] text-[#1F2937]"
             }`}
           >
@@ -305,7 +305,7 @@ const InnerCircle = () => {
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="hidden md:flex bg-[#1F2937] text-white text-sm lg:text-base rounded-2xl items-center gap-2 py-2 px-3 xl:py-3 xl:px-5"
+            className="hidden md:flex bg-[#0061fe] text-white text-sm lg:text-base rounded-2xl items-center gap-2 py-2 px-3 xl:py-3 xl:px-5"
           >
             <Plus /> Add Employee
           </button>
