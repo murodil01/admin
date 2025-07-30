@@ -1,6 +1,5 @@
 import { Menu, Bell, User, Search, Settings } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-// import useDropdownBehavior from "../../hooks/useOutsideClick";
 import { useNavigate } from "react-router-dom";
 import { IoIosLogOut } from "react-icons/io";
 import { FaUserCircle, FaUserCog } from "react-icons/fa";
@@ -31,9 +30,11 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
   // Dropdown tashqarisiga bosilsa yopish
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setIsUserOpen(false);
-      }
+      setTimeout(() => {
+        if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+          setIsUserOpen(false);
+        }
+      }, 0);
     };
 
     if (isUserOpen) {
@@ -44,11 +45,6 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isUserOpen]);
-
-  // Hookni ishlatish, dropdownlar uchun tashqi bosishlarni aniqlash
-  // const dropUp = useDropdownBehavior(dropdownRef, isUserOpen, () =>
-  //   setIsUserOpen(false)
-  // );
 
   return (
     <header
@@ -92,25 +88,31 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
         </div>
       </div>
 
-      <div className="flex items-center gap-5">
+      {/* RIGHT */}
+      <div className="flex items-center gap-5 relative" ref={dropdownRef}>
         {/* Bell */}
-        <button className="relative w-12 h-[45px] bg-white rounded-[14px] flex items-center justify-center transition sm:shadow hover:shadow-md">
+        <button
+          onClick={() => navigateAndClose("/notification")}
+          className="relative w-12 h-[45px] bg-white rounded-[14px] flex items-center justify-center transition sm:shadow hover:shadow-md"
+        >
           <Bell size={24} className="text-gray-600" />
           <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border border-white" />
         </button>
 
-        {/* USER */}
         {/* ✅ Mobile: only avatar */}
-        <div className="sm:hidden">
+        <div
+          className="sm:hidden cursor-pointer"
+          onClick={() => setIsUserOpen((prev) => !prev)}
+        >
           <img
-            src="https://i.pravatar.cc/300"
+            src="https://yt3.ggpht.com/ytc/AKedOLRgGwAm7liLUTGkwbStuX3nh3RhehQ9s6ZjhwQVGQ=s900-c-k-c0x00ffffff-no-rj"
             alt="avatar"
             className="w-11 h-11 rounded-full object-cover"
           />
         </div>
 
         {/* ✅ Desktop: button with dropdown */}
-        <div className="relative hidden sm:block" ref={dropdownRef}>
+        <div className="hidden sm:block">
           <button
             onClick={() => setIsUserOpen((prev) => !prev)}
             className="flex items-center gap-2 h-11 px-9 bg-white rounded-[14px] shadow hover:shadow-md transition"
@@ -133,52 +135,50 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
               />
             </svg>
           </button>
-
-          {isUserOpen && (
-            <div
-              ref={dropdownRef}
-              className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg py-2 z-50 space-y-1 text-sm text-gray-700"
-            >
-              {/* Profile */}
-              <div
-                onClick={() => navigateAndClose("/main-profile")}
-                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
-              >
-                <FaUserCircle size={18} /> <span>My Profile</span>
-              </div>
-
-              {/* Role */}
-              <div className="flex items-center justify-between px-4 py-2 hover:bg-gray-100 cursor-default">
-                <FaUserCog size={18} />
-                <span>Role Description:</span>
-                <span className="inline-block border border-gray-300 bg-white text-gray-800 text-sm font-medium rounded-xl px-2.5 py-0.5 shadow-sm">
-                  Junior
-                </span>
-              </div>
-
-              {/* Settings */}
-              <div
-                onClick={() => navigateAndClose("/settings")}
-                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
-              >
-                <Settings className="animate-spin" size={18} />{" "}
-                <span>Settings</span>
-              </div>
-
-              {/* Logout */}
-              <div
-                onClick={() => {
-                  localStorage.removeItem("token");
-                  navigateAndClose("/login");
-                }}
-                className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-gray-100 cursor-pointer border-t border-gray-400 pt-2"
-              >
-                <IoIosLogOut size={18} />
-                <span>Logout</span>
-              </div>
-            </div>
-          )}
         </div>
+
+        {/* 🔽 Dropdown (common for mobile and desktop) */}
+        {isUserOpen && (
+          <div className="absolute top-[70px] right-0 w-56 bg-white rounded-xl shadow-lg py-2 z-50 space-y-1 text-sm text-gray-700">
+            {/* Profile */}
+            <div
+              onClick={() => navigateAndClose("/main-profile")}
+              className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+            >
+              <FaUserCircle size={18} /> <span>My Profile</span>
+            </div>
+
+            {/* Role */}
+            <div className="flex items-center justify-between px-4 py-2 hover:bg-gray-100 cursor-default">
+              <FaUserCog size={18} />
+              <span>Role Description:</span>
+              <span className="inline-block border border-gray-300 bg-white text-gray-800 text-sm font-medium rounded-xl px-2.5 py-0.5 shadow-sm">
+                Junior
+              </span>
+            </div>
+
+            {/* Settings */}
+            <div
+              onClick={() => navigateAndClose("/settings")}
+              className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
+            >
+              <Settings className="animate-spin" size={18} />{" "}
+              <span>Settings</span>
+            </div>
+
+            {/* Logout */}
+            <div
+              onClick={() => {
+                localStorage.removeItem("token");
+                navigateAndClose("/login");
+              }}
+              className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-gray-100 cursor-pointer border-t border-gray-400 pt-2"
+            >
+              <IoIosLogOut size={18} />
+              <span>Logout</span>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );

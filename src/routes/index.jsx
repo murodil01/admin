@@ -46,7 +46,7 @@ import Files from "../pages/files";
 import Settings from "../pages/settings";
 import MainProfile from "../pages/main-profile";
 import TaskDetails from "../pages/tasks/TaskDetails";
-
+import Notification from "../pages/notification"
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -72,6 +72,7 @@ export const router = createBrowserRouter([
           { path: "profile/:id", element: <Profile /> },
           { path: "settings", element: <Settings /> },
           { path: "main-profile", element: <MainProfile /> },
+          {path: "notification", element: <Notification/>},
         ],
       },
     ],
