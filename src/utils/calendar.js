@@ -1,3 +1,5 @@
+import { format } from "date-fns";
+
 export const getMonthData = (year, month) => {
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
@@ -39,11 +41,15 @@ export const getMonthData = (year, month) => {
 };
 
 
+// export const formatMonth = (date) => {
+//   return date.toLocaleDateString('en-US', {
+//     month: 'long',
+//     year: 'numeric',
+//   });
+// };
+
 export const formatMonth = (date) => {
-  return date.toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric',
-  });
+  return format(date, "MMMM, yyyy"); // 🔥 Bu "September, 2025" formatda beradi
 };
 
 export const toLocalDateInputValue = (date) => {
@@ -68,4 +74,15 @@ export const isSameMonth = (date1, date2) => {
     date1.getFullYear() === date2.getFullYear()
   );
 };
+
+export const isToday = (date) => {
+  if (!date) return false;
+  const today = new Date();
+  return (
+    date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear()
+  );
+};
+
 

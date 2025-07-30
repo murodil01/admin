@@ -513,7 +513,7 @@ const Tasks = ({completed, total}) => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Tasks;
+export default Tasks

@@ -45,7 +45,7 @@ const Home = () => {
     setTimeout(() => {
       setChartData(mockData);
       setLoading(false);
-    }, 1000);
+    }, 4000);
   }, []);
 
   const pieData = [
