@@ -45,6 +45,7 @@ import Reports from "../pages/reports";
 import Files from "../pages/files";
 import Settings from "../pages/settings";
 import MainProfile from "../pages/main-profile";
+import TaskDetails from "../pages/tasks/TaskDetails";
 
 export const router = createBrowserRouter([
   {
@@ -56,7 +57,8 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: "", element: <Home /> },
-          { path: "tasks", element: <Tasks /> },
+          { path: "tasks", element: <Tasks />,},
+          { path: "tasks/:id", element: <TaskDetails />,},
           { path: "sales", element: <Sales /> },
           { path: "employees", element: <Employees /> },
           { path: "messenger", element: <Messenger /> },

@@ -17,6 +17,8 @@ import { FaFolderOpen, FaUsers } from "react-icons/fa";
 import { IoFileTrayFull } from "react-icons/io5";
 import { TbReport } from "react-icons/tb";
 
+import TaskProjectDropdown from "./TaskProjectDropdown";
+
 const menuItems = [
   { label: "Dashboard", icon: <BsFillGridFill size={20} />, path: "/" },
   { label: "Calendar", icon: <Calendar size={20} />, path: "/calendar" },
@@ -41,10 +43,12 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
     if (isMobileOpen) setIsMobileOpen(false);
   };
 
+  const [selectedProject, setSelectedProject] = useState();
+
   // const [selectedProject, setSelectedProject] = useState(
   //     "Medical App (iOS native)"
   //   );
-  const [currentProjectsOpen, setCurrentProjectsOpen] = useState(false);
+  // const [currentProjectsOpen, setCurrentProjectsOpen] = useState(false);
 
   return (
     <>
@@ -98,22 +102,13 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                       <div className="w-full flex items-center justify-between">
                         <span className="text-sm">{item.label}</span>
 
-                        {item.arrow && (
-                          <button
-                            onClick={() =>
-                              setCurrentProjectsOpen(!currentProjectsOpen)
-                            }
-                            className="w-8 h-8 flex items-center justify-center bg-gray-50 rounded-lg hover:bg-gray-100 transition"
-                          >
-                            <span
-                              className={`w-4 h-4 text-gray-500 transition-transform duration-300 cursor-pointer ${
-                                currentProjectsOpen ? "rotate-180" : ""
-                              }`}
-                            >
-                              {item.arrow}
-                            </span>
-                          </button>
+                        {item.path === "/tasks" && (
+                          <TaskProjectDropdown
+                            selectedProject={selectedProject}
+                            setSelectedProject={setSelectedProject}
+                          />
                         )}
+
                       </div>
                     )}
                   </button>
