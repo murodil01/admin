@@ -93,7 +93,7 @@ const Calendar = () => {
               setSelectedDate(new Date()); // ✅ Default bugungi sana
               setIsModalOpen(true);
             }}
-            className="w-full max-w-44 flex items-center justify-center text-sm sm:text-base gap-2 bg-slate-800 text-white px-4 py-2 rounded-2xl hover:bg-slate-700 transition-colors sm:py-3"
+            className="w-full max-w-44 flex items-center justify-center text-sm sm:text-base gap-2 bg-[#0061fe] text-white px-4 py-2 rounded-2xl hover:bg-blue-700 transition-colors sm:py-3"
           >
             <Plus className="w-4 h-4" />
             Add Event
