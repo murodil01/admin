@@ -148,12 +148,6 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
               <FaUserCircle size={18} /> <span>My Profile</span>
             </div>
 
-            {/* Role */}
-            <div className="flex items-center justify-start gap-2 px-4 py-2 hover:bg-gray-100 cursor-default">
-              <FaUserCog size={18} />
-              <span>Backend Developer</span>
-            </div>
-
             {/* Settings */}
             <div
               onClick={() => navigateAndClose("/settings")}
