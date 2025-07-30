@@ -63,15 +63,17 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
         <div className="w-full h-full bg-white rounded-2xl shadow-xl flex flex-col justify-between overflow-hidden">
           <div>
             <div
-              className={`flex justify-center ${
+              className={`flex justify-center transition-all duration-300 ${
                 collapsed ? "pt-6 pb-3" : "p-6"
               }`}
             >
               <img
                 src={collapsed ? side_blue3 : side_blue}
                 alt="Logo"
-                className={`transition-all duration-300 ${
-                  collapsed ? "w-7" : "w-[150px]"
+                className={`transition-all duration-500 ease-in-out transform ${
+                  collapsed
+                    ? "w-7 scale-90 opacity-80"
+                    : "w-[150px] scale-100 opacity-100"
                 }`}
               />
             </div>
