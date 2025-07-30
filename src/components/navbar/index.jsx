@@ -149,14 +149,9 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
             </div>
 
             {/* Role */}
-            <div className="flex items-center justify-between gap-2 px-4 py-2 hover:bg-gray-100 cursor-default">
-              <div className="flex items-center gap-2">
-                <FaUserCog size={18} />
-                <span>Role :</span>
-              </div>
-              <span className="inline-block border border-gray-300 bg-white text-gray-800 text-[13.5px] font-medium rounded-xl px-2.5 py-0.5 shadow-sm">
-                Backend Developer
-              </span>
+            <div className="flex items-center justify-start gap-2 px-4 py-2 hover:bg-gray-100 cursor-default">
+              <FaUserCog size={18} />
+              <span>Backend Developer</span>
             </div>
 
             {/* Settings */}
