@@ -42,7 +42,7 @@ const Tasks = ({completed, total}) => {
 
   const [dueDate, setDueDate] = useState(dayjs());
 
-  // const [title, setTitle] = useState('');
+  const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [checklist, setChecklist] = useState([
     { id: 1, text: 'Header to‘g‘rilash', checked: true },
@@ -75,17 +75,17 @@ const Tasks = ({completed, total}) => {
     setIsCardModalOpen(false); // Close modal after saving
   };
 
-  // function parseTimeToHours(timeStr) {
-  //   if (!timeStr) return 0;
+  function parseTimeToHours(timeStr) {
+    if (!timeStr) return 0;
 
-  //   const dayMatch = timeStr.match(/(\d+)\s*d/);
-  //   const hourMatch = timeStr.match(/(\d+)\s*h/);
+    const dayMatch = timeStr.match(/(\d+)\s*d/);
+    const hourMatch = timeStr.match(/(\d+)\s*h/);
 
-  //   const days = dayMatch ? parseInt(dayMatch[1]) : 0;
-  //   const hours = hourMatch ? parseInt(hourMatch[1]) : 0;
+    const days = dayMatch ? parseInt(dayMatch[1]) : 0;
+    const hours = hourMatch ? parseInt(hourMatch[1]) : 0;
 
-  //   return days * 24 + hours;
-  // }
+    return days * 24 + hours;
+  }
 
   const taskColumns = [
     { id: "todo", title: "To Do"},
@@ -95,11 +95,11 @@ const Tasks = ({completed, total}) => {
     { id: "backlog", title: "Backlog"},
   ];
 
-  // const initialChecklist = [
-  //   { id: 1, text: "Design mockup", checked: true },
-  //   { id: 2, text: "Frontend implementation", checked: false },
-  //   { id: 3, text: "Code review", checked: false },
-  // ];
+  const initialChecklist = [
+    { id: 1, text: "Design mockup", checked: true },
+    { id: 2, text: "Frontend implementation", checked: false },
+    { id: 3, text: "Code review", checked: false },
+  ];
 
   const activeTasks = [
     {
@@ -153,29 +153,29 @@ const Tasks = ({completed, total}) => {
     },
   ];
 
-  // const backlogTasks = [
-  //   {
-  //     id: "animation-buttons",
-  //     title: "Animation for buttons",
-  //     time: "8h",
-  //     priority: "low",
-  //     assignee: { name: "Alex", avatar: "bg-blue-500" },
-  //   },
-  //   {
-  //     id: "preloader",
-  //     title: "Preloader",
-  //     time: "6h",
-  //     priority: "low",
-  //     assignee: { name: "Mike", avatar: "bg-gray-800" },
-  //   },
-  //   {
-  //     id: "animation-landing",
-  //     title: "Animation for Landing page",
-  //     time: "8h",
-  //     priority: "low",
-  //     assignee: { name: "Sarah", avatar: "bg-yellow-600" },
-  //   },
-  // ];
+  const backlogTasks = [
+    {
+      id: "animation-buttons",
+      title: "Animation for buttons",
+      time: "8h",
+      priority: "low",
+      assignee: { name: "Alex", avatar: "bg-blue-500" },
+    },
+    {
+      id: "preloader",
+      title: "Preloader",
+      time: "6h",
+      priority: "low",
+      assignee: { name: "Mike", avatar: "bg-gray-800" },
+    },
+    {
+      id: "animation-landing",
+      title: "Animation for Landing page",
+      time: "8h",
+      priority: "low",
+      assignee: { name: "Sarah", avatar: "bg-yellow-600" },
+    },
+  ];
 
   const getTasksByColumn = (columnId) => {
     return activeTasks.filter((task) => task.column === columnId);
@@ -334,19 +334,17 @@ const Tasks = ({completed, total}) => {
       <Outlet />
 
       <div className="relative w-ful">
-
-        <div className='grid grid-cols-5 gap-5 pb-4 w-full mr-5 overflow-x-auto'>
-          {taskColumns.map((column) => (
-            <div
-              key={column.id}
-              className="max-w-[300px] min-w-[250px] shrink-0 rounded-xl p-4 bg-[#E9E8E8] shadow-sm flex flex-col"
-            >
-              {/* Sticky header for column title */}
-              <div className="border-b border-gray-300 pb-2 mb-3 sticky top-0 bg-[#E9E8E8] z-10">
-                <span className="font-semibold text-lg text-gray-800">{column.title}</span>
-              </div>
-
-       
+        <div className="w-full pb-4 overflow-x-auto">
+          <div className='flex gap-5 min-w-[600px] sm:min-w-full'>
+            {taskColumns.map((column) => (
+              <div
+                key={column.id}
+                className="max-w-[300px] min-w-[250px] shrink-0 rounded-xl p-4 bg-[#E9E8E8] shadow-sm flex flex-col"
+              >
+                {/* Sticky header for column title */}
+                <div className="border-b border-gray-300 pb-2 mb-3 sticky top-0 bg-[#E9E8E8] z-10">
+                  <span className="font-semibold text-lg text-gray-800">{column.title}</span>
+                </div>
 
                 {/* Scrollable task list area */}
                 <div className="space-y-3 pr-1">
@@ -363,7 +361,6 @@ const Tasks = ({completed, total}) => {
 
                       {/* Task title */}
                       <h4 className="text-center text-gray-800 font-semibold">{task.title}</h4>
-
 
                       {/* Task info row */}
                       <div className="flex justify-between items-center text-sm text-gray-600 mt-4 px-2">
@@ -382,7 +379,6 @@ const Tasks = ({completed, total}) => {
                           <BsCheck2Square />
                           <span>{completed} / {total}</span>
                         </div>
-
                       </div>
                     </div>
                   ))}
