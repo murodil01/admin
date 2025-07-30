@@ -82,10 +82,10 @@ const Calendar = () => {
   
 
   return (
-    <div className="pt-7">
+    <div className="pt-5">
       <div className="max-2xl:w-full max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8 pr-4 max-md:pr-0">
-          <h1 className="text-3xl font-bold text-gray-900">Calendar</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="font-bold text-gray-900 text-xl sm:text-3xl  xl:text-4xl">Calendar</h1>
           <button
             onClick={() => {
               // setSelectedDate(undefined);
