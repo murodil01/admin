@@ -29,8 +29,10 @@ const TaskProjectDropdown = ({ selectedProject, setSelectedProject }) => {
     const handleSelectProject = (project) => {
         setSelectedProject(project.name);
         setOpen(false);
-        navigate(`/tasks/${project.id}`);
-        console.log("Navigating to:", project.id);
+        setTimeout(() => {
+            navigate(`/tasks/${project.id}`);
+            console.log("Navigating to:", project.id);
+        }, 0); // 0ms delay — bu React rendering siklidan keyin ishlaydi
     };
 
     const handlePrev = () => {

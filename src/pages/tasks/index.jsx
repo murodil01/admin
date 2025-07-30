@@ -331,7 +331,7 @@ const Tasks = ({ completed, total }) => {
         </Modal>
       </div>
 
-      <Outlet />
+      {/* <Outlet /> */}
 
       <div className="relative w-ful">
 
