@@ -23,7 +23,7 @@ const menuItems = [
   { label: "Calendar", icon: <Calendar size={20} />, path: "/calendar" },
   { label: "Tasks", icon: <ClipboardList size={20} />, path: "/tasks" },
   { label: "Leads", icon: <SiGoogleads size={20} />, path: "/leads" },
-  { label: "Customers", icon: <FaUserTag size={20}/>, path: "/customers" },
+  { label: "Customers", icon: <FaUserTag size={20} />, path: "/customers" },
   { label: "Departments", icon: <Landmark size={20} />, path: "/departments" },
   { label: "Inner Circle", icon: <FaUsers size={20} />, path: "/employees" },
   { label: "Messenger", icon: <MessageSquare size={20} />, path: "/messenger" },
@@ -101,7 +101,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                     {item.icon}
                     {!collapsed && (
                       <div className="w-full flex items-center justify-between">
-                        <span className="text-sm">{item.label}</span>
+                        <span className="text-[16px] font-semibold">{item.label}</span>
 
                         {item.path === "/tasks" && (
                           <TaskProjectDropdown
