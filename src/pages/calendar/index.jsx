@@ -82,10 +82,10 @@ const Calendar = () => {
   
 
   return (
-    <div className="pt-7">
+    <div className="pt-5">
       <div className="max-2xl:w-full max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8 pr-4 max-md:pr-0">
-          <h1 className="text-3xl font-bold text-gray-900">Calendar</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="font-bold text-gray-900 text-xl sm:text-3xl  xl:text-4xl">Calendar</h1>
           <button
             onClick={() => {
               // setSelectedDate(undefined);
@@ -93,7 +93,7 @@ const Calendar = () => {
               setSelectedDate(new Date()); // ✅ Default bugungi sana
               setIsModalOpen(true);
             }}
-            className="w-full max-w-44 flex items-center justify-center text-sm sm:text-base gap-2 bg-slate-800 text-white px-4 py-2 rounded-2xl hover:bg-slate-700 transition-colors sm:py-3"
+            className="w-full max-w-44 flex items-center justify-center text-sm sm:text-base gap-2 bg-[#0061fe] text-white px-4 py-2 rounded-2xl hover:bg-blue-700 transition-colors sm:py-3"
           >
             <Plus className="w-4 h-4" />
             Add Event
