@@ -41,8 +41,9 @@ const Tasks = ({ completed, total }) => {
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
 
   const [dueDate, setDueDate] = useState(dayjs());
+  const [projectName, setProjectName] = useState('');
 
-  const [title, setTitle] = useState('');
+  // const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [checklist, setChecklist] = useState([
     { id: 1, text: 'Header to‘g‘rilash', checked: true },
@@ -92,6 +93,12 @@ const Tasks = ({ completed, total }) => {
     setChecklist([...checklist, newItem]);
   };
 
+  const progress =
+    checklist.length === 0
+      ? 0
+      : Math.round((checklist.filter(item => item.checked).length / checklist.length) * 100);
+
+
   const taskColumns = [
     { id: "todo", title: "To Do" },
     { id: "gotIt", title: "Got It" },
@@ -100,11 +107,11 @@ const Tasks = ({ completed, total }) => {
     { id: "backlog", title: "Backlog" },
   ];
 
-  const initialChecklist = [
-    { id: 1, text: "Design mockup", checked: true },
-    { id: 2, text: "Frontend implementation", checked: false },
-    { id: 3, text: "Code review", checked: false },
-  ];
+  // const initialChecklist = [
+  //   { id: 1, text: "Design mockup", checked: true },
+  //   { id: 2, text: "Frontend implementation", checked: false },
+  //   { id: 3, text: "Code review", checked: false },
+  // ];
 
   const activeTasks = [
     {
@@ -158,29 +165,29 @@ const Tasks = ({ completed, total }) => {
     },
   ];
 
-  const backlogTasks = [
-    {
-      id: "animation-buttons",
-      title: "Animation for buttons",
-      time: "8h",
-      priority: "low",
-      assignee: { name: "Alex", avatar: "bg-blue-500" },
-    },
-    {
-      id: "preloader",
-      title: "Preloader",
-      time: "6h",
-      priority: "low",
-      assignee: { name: "Mike", avatar: "bg-gray-800" },
-    },
-    {
-      id: "animation-landing",
-      title: "Animation for Landing page",
-      time: "8h",
-      priority: "low",
-      assignee: { name: "Sarah", avatar: "bg-yellow-600" },
-    },
-  ];
+  // const backlogTasks = [
+  //   {
+  //     id: "animation-buttons",
+  //     title: "Animation for buttons",
+  //     time: "8h",
+  //     priority: "low",
+  //     assignee: { name: "Alex", avatar: "bg-blue-500" },
+  //   },
+  //   {
+  //     id: "preloader",
+  //     title: "Preloader",
+  //     time: "6h",
+  //     priority: "low",
+  //     assignee: { name: "Mike", avatar: "bg-gray-800" },
+  //   },
+  //   {
+  //     id: "animation-landing",
+  //     title: "Animation for Landing page",
+  //     time: "8h",
+  //     priority: "low",
+  //     assignee: { name: "Sarah", avatar: "bg-yellow-600" },
+  //   },
+  // ];
 
   const getTasksByColumn = (columnId) => {
     return activeTasks.filter((task) => task.column === columnId);
@@ -194,9 +201,9 @@ const Tasks = ({ completed, total }) => {
         </h3>
         <button
           onClick={showModal}
-          className="capitalize w-full sm:max-w-[182px] py-[13px] px-[22px] bg-[#1F2937] rounded-2xl text-white gap-[10px] flex items-center justify-center cursor-pointer shadow shadow-blue-300"
+          className="capitalize w-full sm:max-w-[182px] h-11 bg-[#0061fe] rounded-2xl text-white gap-[10px] flex items-center justify-center cursor-pointer shadow shadow-blue-300"
         >
-          <span className="flex items-center text-xl">+</span>
+          <span className="flex items-center text-[22px]">+</span>
           <span className="">Add Project</span>
         </button>
 
@@ -222,6 +229,7 @@ const Tasks = ({ completed, total }) => {
                     type="text"
                     placeholder="Project Name"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    value={projectName} onChange={(e) => setProjectName(e.target.value)}
                   />
                 </div>
 
@@ -338,18 +346,19 @@ const Tasks = ({ completed, total }) => {
 
       {/* <Outlet /> */}
 
-      <div className="relative w-ful">
+      <div className="w-ful">
+        <div className="w-full pb-4 relative">
+          <div className='flex gap-5 absolute top-0 right-0 left-0 pb-4 w-full overflow-x-auto'>
+            {taskColumns.map((column) => (
+              <div
+                key={column.id}
+                className="max-w-[300px] min-w-[250px] shrink-0 rounded-xl p-4 bg-[#E9E8E8] shadow-md flex flex-col border border-blue-200"
+              >
+                {/* Sticky header for column title */}
+                <div className="border-b border-gray-300 pb-2 mb-3 bg-[#E9E8E8] z-10">
+                  <span className="font-semibold text-lg text-gray-800">{column.title}</span>
+                </div>
 
-        <div className='grid grid-cols-5 gap-5 pb-4 w-full mr-5 overflow-x-auto'>
-          {taskColumns.map((column) => (
-            <div
-              key={column.id}
-              className="max-w-[300px] min-w-[250px] shrink-0 rounded-xl p-4 bg-[#E9E8E8] shadow-md flex flex-col border border-blue-200"
-            >
-              {/* Sticky header for column title */}
-              <div className="border-b border-gray-300 pb-2 mb-3 sticky top-0 bg-[#E9E8E8] z-10">
-                <span className="font-semibold text-lg text-gray-800">{column.title}</span>
-              </div>
 
                 {/* Scrollable task list area */}
                 <div className="space-y-3 pr-1">
@@ -364,21 +373,8 @@ const Tasks = ({ completed, total }) => {
                         />
                       ) : null}
 
-              {/* Scrollable task list area */}
-              <div className="space-y-3 pr-1">
-                {getTasksByColumn(column.id).map((task) => (
-                  <div key={task.id} className="bg-white rounded-xl shadow p-4 w-full h-[220px] flex flex-col justify-between">
-                    {/* Avatar yoki default rasm (bo'lmasa chiqarilmaydi) */}
-                    {task.assignee?.avatarUrl ? (
-                      <img
-                        src={task.assignee.avatarUrl}
-                        alt={task.assignee.name}
-                        className="w-16 h-16 rounded-full mx-auto mb-3 object-cover"
-                      />
-                    ) : null}
-
-                    {/* Task title */}
-                    <h4 className="text-center text-gray-800 font-semibold">{task.title}</h4>
+                      {/* Task title */}
+                      <h4 className="text-center text-gray-800 font-semibold">{task.title}</h4>
 
                       {/* Task info row */}
                       <div className="flex justify-between items-center text-sm text-gray-600 mt-4 px-2">
@@ -398,153 +394,150 @@ const Tasks = ({ completed, total }) => {
                           <span>{completed} / {total}</span>
                         </div>
                       </div>
-
                     </div>
-                  </div>
-                ))}
+                  ))}
 
-                {/* Add card button */}
-                <button
-                  className="mt-2 w-full text-left text-sm text-blue-700 hover:underline cursor-pointer"
-                  onClick={showCardModal}
-                >
-                  + Add a card
-                </button>
+                  {/* Add card button */}
+                  <button
+                    className="mt-2 w-full text-left text-sm text-blue-700 hover:underline cursor-pointer"
+                    onClick={showCardModal}
+                  >
+                    + Add a card
+                  </button>
 
-                <Modal
-                  title="Add a card"
-                  open={isCardModalOpen}
-                  onOk={handleOk}
-                  onCancel={handleCancel}
-                  width={1196}
-                  footer={null}
-                  maskStyle={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
-                >
-                  <div className="grid grid-cols-18 gap-6">
-                    {/* Left Panel */}
-                    <div className="col-span-10">
-                      {/* Actions */}
-                      <div className="grid grid-cols-5 mb-4 gap-4">
-                        <Button><AiOutlinePlus /> Add</Button>
-                        <Button><AiOutlineTags /> Labels</Button>
-                        <Button>
-                          <MdOutlineChecklist className="bg-black text-white rounded-[3px]" size={14} /> Checklist
-                        </Button>
-                        <Button><RiUserAddFill /> Members</Button>
-                        <Button><ImAttachment /> Attachment</Button>
-                      </div>
+                  <Modal
+                    title="Add a card"
+                    open={isCardModalOpen}
+                    onOk={handleOk}
+                    onCancel={handleCancel}
+                    width={1196}
+                    footer={null}
+                    maskStyle={{ backgroundColor: "rgba(0, 0, 0, 0.2)" }}
+                  >
+                    <div className="grid grid-cols-18 gap-6">
+                      {/* Left Panel */}
+                      <div className="col-span-10">
+                        {/* Actions */}
+                        <div className="grid grid-cols-5 mb-4 gap-4">
+                          <Button><AiOutlinePlus /> Add</Button>
+                          <Button><AiOutlineTags /> Labels</Button>
+                          <Button>
+                            <MdOutlineChecklist className="bg-black text-white rounded-[3px]" size={14} /> Checklist
+                          </Button>
+                          <Button><RiUserAddFill /> Members</Button>
+                          <Button><ImAttachment /> Attachment</Button>
+                        </div>
 
-                      {/* Due Date */}
-                      <div className="mt-10 mb-4 flex flex-col gap-[10px]">
-                        <label className="font-medium mr-2">Due date:</label>
-                        <div className="flex items-center gap-2 max-w-[300px]">
-                          <DatePicker
-                            showTime
-                            value={dueDate}
-                            onChange={(value) => setDueDate(value)}
-                            format="MMM DD, h:mm A"
-                            className="w-[200px]"
+                        {/* Due Date */}
+                        <div className="mt-10 mb-4 flex flex-col gap-[10px]">
+                          <label className="font-medium mr-2">Due date:</label>
+                          <div className="flex items-center gap-2 max-w-[300px]">
+                            <DatePicker
+                              showTime
+                              value={dueDate}
+                              onChange={(value) => setDueDate(value)}
+                              format="MMM DD, h:mm A"
+                              className="w-[200px]"
+                            />
+                            <span className="w-[100px] flex items-center justify-center px-[6px] py-[2px] rounded-sm bg-yellow-300 text-xs font-medium">
+                              (Due soon)
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Description */}
+                        <div className="flex flex-col mb-4 gap-[10px]">
+                          <label className="flex font-medium mb-1 items-center gap-2">
+                            <HiOutlineMenuAlt2 /> <span>Description</span>
+                          </label>
+                          <textarea
+                            placeholder="Add a more detailed description..."
+                            className="w-full border-2 border-gray-300 rounded p-2 h-[100px]"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
                           />
-                          <span className="w-[100px] flex items-center justify-center px-[6px] py-[2px] rounded-sm bg-yellow-300 text-xs font-medium">
-                            (Due soon)
-                          </span>
                         </div>
+
+                        {/* Checklist */}
+                        <div className="mb-4">
+                          <div className="flex items-center justify-between">
+                            <label className="flex items-center gap-1 font-medium mb-1"><BiCheckSquare size={18} /> <span>Checklist</span></label>
+                            <div className="flex gap-2 mt-2">
+                              <button className="bg-[#EBEBEB] px-[10px] py-[3px] rounded-sm cursor-pointer hover:bg-[#f4f3f3]">Hide checked items</button>
+                              <button className="bg-[#EBEBEB] px-[10px] py-[3px] rounded-sm cursor-pointer hover:bg-[#f4f3f3]">Delete</button>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 mb-3 mt-3">
+                            <span>{progress}%</span>
+                            <div style={{ width: `${progress}%` }} className="bg-green-500 h-2 rounded" />
+                          </div>
+
+                          {checklist.map((item) => (
+                            <div key={item.id} className="flex items-center mb-1">
+                              <Checkbox
+                                checked={item.checked}
+                                onChange={() => toggleChecklistItem(item.id)}
+                              >
+                                {item.text}
+                              </Checkbox>
+                            </div>
+                          ))}
+                        </div>
+
+                        <button
+                          onClick={addChecklistItem}
+                          className="bg-[#EBEBEB] px-[10px] py-[3px] rounded-sm cursor-pointer hover:bg-[#f4f3f3] font-semibold">
+                          Add an item
+                        </button>
                       </div>
 
-                      {/* Description */}
-                      <div className="flex flex-col mb-4 gap-[10px]">
-                        <label className="flex font-medium mb-1 items-center gap-2">
-                          <HiOutlineMenuAlt2 /> <span>Description</span>
-                        </label>
-                        <textarea
-                          placeholder="Add a more detailed description..."
-                          className="w-full border-2 border-gray-300 rounded p-2 h-[100px]"
-                          value={description}
-                          onChange={(e) => setDescription(e.target.value)}
+                      {/* Vertical Separator */}
+                      <div className="col-span-1 flex justify-center">
+                        <div className="w-px h-full bg-gray-200"></div>
+                      </div>
+
+                      {/* Right Panel - Comments and Activity */}
+                      <div className="col-span-7 w-full max-w-md rounded bg-white p-4 shadow">
+                        <div className="flex justify-between items-center mb-4">
+                          <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-1"><BiMessageDetail /> <span>Comments and activity</span></h2>
+                          <button className="text-sm text-gray-600 hover:underline cursor-pointer">Show details</button>
+                        </div>
+
+                        <input
+                          type="text"
+                          placeholder="Write a comment..."
+                          className="w-full p-2 border border-gray-300 rounded mb-4"
                         />
+
+                        <ul className="space-y-4">
+                          {activityData.map((item, index) => (
+                            <li key={index} className="flex items-start gap-3">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${item.color}`}>
+                                {item.initials}
+                              </div>
+                              <div>
+                                <p className="text-sm text-gray-800 font-medium">
+                                  {item.name} <span className="font-normal">added this card to To do</span>
+                                </p>
+                                <p className="text-xs text-blue-600 hover:underline cursor-pointer">
+                                  {item.time}
+                                </p>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-
-                      {/* Checklist */}
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between">
-                          <label className="flex items-center gap-1 font-medium mb-1"><BiCheckSquare size={18} /> <span>Checklist</span></label>
-                          <div className="flex gap-2 mt-2">
-                            <button className="bg-[#EBEBEB] px-[10px] py-[3px] rounded-sm cursor-pointer hover:bg-[#f4f3f3]">Hide checked items</button>
-                            <button className="bg-[#EBEBEB] px-[10px] py-[3px] rounded-sm cursor-pointer hover:bg-[#f4f3f3]">Delete</button>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 mb-3 mt-3">
-                          <span className="font-semibold text-sm w-[40px]">100%</span>
-                          <div className="flex-1 bg-gray-200 h-2 rounded">
-                            <div className="bg-green-500 h-2 rounded w-full" />
-                          </div>
-                        </div>
-
-                        {checklist.map((item) => (
-                          <div key={item.id} className="flex items-center mb-1">
-                            <Checkbox
-                              checked={item.checked}
-                              onChange={() => toggleChecklistItem(item.id)}
-                            >
-                              {item.text}
-                            </Checkbox>
-                          </div>
-                        ))}
-                      </div>
-
-                      <button
-                        onClick={addChecklistItem}
-                        className="bg-[#EBEBEB] px-[10px] py-[3px] rounded-sm cursor-pointer hover:bg-[#f4f3f3] font-semibold">
-                        Add an item
-                      </button>
                     </div>
+                  </Modal>
 
-                    {/* Vertical Separator */}
-                    <div className="col-span-1 flex justify-center">
-                      <div className="w-px h-full bg-gray-200"></div>
-                    </div>
-
-                    {/* Right Panel - Comments and Activity */}
-                    <div className="col-span-7 w-full max-w-md rounded bg-white p-4 shadow">
-                      <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-1"><BiMessageDetail /> <span>Comments and activity</span></h2>
-                        <button className="text-sm text-gray-600 hover:underline cursor-pointer">Show details</button>
-                      </div>
-
-                      <input
-                        type="text"
-                        placeholder="Write a comment..."
-                        className="w-full p-2 border border-gray-300 rounded mb-4"
-                      />
-
-                      <ul className="space-y-4">
-                        {activityData.map((item, index) => (
-                          <li key={index} className="flex items-start gap-3">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${item.color}`}>
-                              {item.initials}
-                            </div>
-                            <div>
-                              <p className="text-sm text-gray-800 font-medium">
-                                {item.name} <span className="font-normal">added this card to To do</span>
-                              </p>
-                              <p className="text-xs text-blue-600 hover:underline cursor-pointer">
-                                {item.time}
-                              </p>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </Modal>
-
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-export default Tasks
+export default Tasks;
