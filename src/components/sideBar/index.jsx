@@ -226,7 +226,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                           selectedProject={selectedProject}
                           setSelectedProject={setSelectedProject}
                           isActive={isActive}
-                          isHovered={false} // mobile uchun doim true
+                          isHovered={true} // mobile uchun doim true
                         />
                       </div>
                     )}
