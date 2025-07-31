@@ -1,6 +1,6 @@
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
-const Files = () => {
+const Library = () => {
   return (
     <div className="flex flex-col justify-center items-center min-h-[70vh] text-center px-4 py-10 sm:py-16">
       <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-4">
@@ -22,4 +22,4 @@ const Files = () => {
   );
 };
 
-export default Files;
+export default Library;

@@ -29,7 +29,7 @@ const menuItems = [
   { label: "Departments", icon: <Landmark size={20} />, path: "/departments" },
   { label: "Inner Circle", icon: <FaUsers size={20} />, path: "/employees" },
   { label: "Messenger", icon: <MessageSquare size={20} />, path: "/messenger" },
-  { label: "M Library", icon: <IoLibrary size={20} />, path: "/files" },
+  { label: "M Library", icon: <IoLibrary size={20} />, path: "/library" },
   { label: "Reports", icon: <TbReport size={20} />, path: "/reports" },
   { label: "Archive", icon: <IoFileTrayFull size={20} />, path: "/archive" },
 ];
@@ -125,8 +125,8 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                   >
                     {item.icon}
                     {!collapsed && (
-                      <div className="w-full flex items-center justify-between relative">
-                        <span className="text-[16px] font-semibold">
+                      <div className="w-full flex items-center justify-between">
+                        <span className="text-[16px]">
                           {item.label}
                         </span>
 
@@ -207,31 +207,21 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 const isTaskItem = item.path === "/tasks";
 
                 return (
-                  <div key={item.label} className="relative">
-                    <button
-                      onClick={() => handleNavigate(item.path)}
-                      className={`flex items-center gap-3 px-4 py-2 rounded-xl transition w-full
-          ${isActive
-                          ? "bg-[#0061fe] text-white font-semibold"
-                          : "text-[#231f20] hover:bg-[#0061fe] hover:text-white"
-                        }`}
-                    >
-                      {item.icon}
-                      <span className="text-[16px] font-semibold">{item.label}</span>
-                    </button>
-
-                    {/* Mobil holatda faqat Tasks uchun dropdown qo‘shamiz */}
-                    {isTaskItem && (
-                      <div className="mt-1 ml-8">
-                        <TaskProjectDropdown
-                          selectedProject={selectedProject}
-                          setSelectedProject={setSelectedProject}
-                          isActive={isActive}
-                          isHovered={true} // mobile uchun doim true
-                        />
-                      </div>
-                    )}
-                  </div>
+                  <button
+                    key={item.label}
+                    onClick={() => handleNavigate(item.path)}
+                    className={`flex items-center gap-3 px-4 py-2 rounded-xl transition
+          ${
+            isActive
+              ? "bg-[#0061fe] text-white font-semibold"
+              : "text-[#231f20] hover:bg-[#0061fe] hover:text-white"
+          }`}
+                  >
+                    {item.icon}
+                    <span className="text-[16px]">
+                      {item.label}
+                    </span>
+                  </button>
                 );
               })}
 
