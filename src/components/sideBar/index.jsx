@@ -29,7 +29,7 @@ const menuItems = [
   { label: "Departments", icon: <Landmark size={20} />, path: "/departments" },
   { label: "Inner Circle", icon: <FaUsers size={20} />, path: "/employees" },
   { label: "Messenger", icon: <MessageSquare size={20} />, path: "/messenger" },
-  { label: "M Library", icon: <IoLibrary size={20} />, path: "/files" },
+  { label: "M Library", icon: <IoLibrary size={20} />, path: "/library" },
   { label: "Reports", icon: <TbReport size={20} />, path: "/reports" },
   { label: "Archive", icon: <IoFileTrayFull size={20} />, path: "/archive" },
 ];
@@ -127,7 +127,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                     {item.icon}
                     {!collapsed && (
                       <div className="w-full flex items-center justify-between">
-                        <span className="text-[16px] font-[400]">
+                        <span className="text-[16px]">
                           {item.label}
                         </span>
 
@@ -215,7 +215,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
           }`}
                   >
                     {item.icon}
-                    <span className="text-[16px] font-[400]">
+                    <span className="text-[16px]">
                       {item.label}
                     </span>
                   </button>
