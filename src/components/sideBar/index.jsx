@@ -44,6 +44,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
   };
 
   const [selectedProject, setSelectedProject] = useState();
+  // const [isHovered, setHoveredTask] = useState(false);
 
   // Handle logo click with mobile state preservation
   const handleLogoClick = () => {
@@ -219,6 +220,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
             <nav className="flex flex-col gap-[2px]">
               {menuItems.map((item) => {
                 const isActive = location.pathname === item.path;
+                const isTaskItem = item.path === "/tasks";
 
                 return (
                   <button
