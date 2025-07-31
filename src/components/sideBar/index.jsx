@@ -44,6 +44,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
   };
 
   const [selectedProject, setSelectedProject] = useState();
+  const [isHovered, setHoveredTask] = useState(false);
 
   // Handle logo click with mobile state preservation
   const handleLogoClick = () => {
@@ -78,64 +79,66 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
     <>
       <aside
         className={`hidden md:flex h-screen transition-all duration-300 bg-[#F2F2F2]
-    ${
-      collapsed
-        ? "w-20 px-2 pt-[20px] pb-[10px]"
-        : "w-64 pt-[20px] pr-[15px] pb-[5px] pl-[15px]"
-    }`}
+    ${collapsed
+            ? "w-20 px-2 pt-[20px] pb-[10px]"
+            : "w-64 pt-[20px] pr-[15px] pb-[5px] pl-[15px]"
+          }`}
       >
         <div className="w-full h-full bg-white rounded-2xl shadow-xl flex flex-col justify-between overflow-hidden">
           <div>
             <div
-              className={`flex justify-center transition-all duration-300 ${
-                collapsed ? "pt-6 pb-3" : "p-6"
-              }`}
+              className={`flex justify-center transition-all duration-300 ${collapsed ? "pt-6 pb-3" : "p-6"
+                }`}
             >
               <img
                 onClick={handleLogoClick}
                 src={collapsed ? side_blue3 : side_blue}
                 alt="Logo"
-                className={`transition-all duration-500 ease-in-out transform cursor-pointer ${
-                  collapsed
+                className={`transition-all duration-500 ease-in-out transform cursor-pointer ${collapsed
                     ? "w-7 scale-90 opacity-80"
                     : "w-[150px] scale-100 opacity-100"
-                }`}
+                  }`}
               />
             </div>
 
             <nav
-              className={`flex flex-col gap-[2px] ${
-                collapsed ? "items-center py-2" : "p-4"
-              }`}
+              className={`flex flex-col gap-[5px] ${collapsed ? "items-center py-2" : "p-4"
+                }`}
             >
               {menuItems.map((item) => {
                 const isActive = location.pathname === item.path;
+                const isTaskItem = item.path === "/tasks";
 
                 return (
                   <button
                     key={item.label}
+                    onMouseEnter={() => isTaskItem && setHoveredTask(true)}
+                    onMouseLeave={() => isTaskItem && setHoveredTask(false)}
                     onClick={() => handleNavigate(item.path)}
                     className={`flex items-center gap-3 py-2 rounded-xl transition text-left
           ${collapsed ? "justify-center px-2 w-[48px]" : "px-4 w-full"}
-          ${
-            isActive
-              ? "bg-[#0061fe] text-white"
-              : "text-[#231f20] hover:text-white"
-          }
-          hover:bg-[#0061fe] `}
+          ${isActive
+                        ? "bg-[#0061fe] font-semibold text-white"
+                        : "text-[#231f20] hover:text-white"
+                      }
+          hover:bg-[#0061fe] hover:text-white `}
                   >
                     {item.icon}
                     {!collapsed && (
-                      <div className="w-full flex items-center justify-between">
-                        <span className="text-[16px] font-[400]">
+                      <div className="w-full flex items-center justify-between relative">
+                        <span className="text-[16px] font-semibold">
                           {item.label}
                         </span>
 
                         {item.path === "/tasks" && (
-                          <TaskProjectDropdown
-                            selectedProject={selectedProject}
-                            setSelectedProject={setSelectedProject}
-                          />
+                          <div className="absolute right-0 hover:text-white">
+                            <TaskProjectDropdown
+                              selectedProject={selectedProject}
+                              setSelectedProject={setSelectedProject}
+                              isActive={isActive}
+                              isHovered={isHovered}
+                            />
+                          </div>
                         )}
                       </div>
                     )}
@@ -146,9 +149,8 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
           </div>
 
           <div
-            className={`flex flex-col gap-4 ${
-              collapsed ? "px-2 py-4" : "px-4 py-6"
-            }`}
+            className={`flex flex-col gap-4 ${collapsed ? "px-2 py-4" : "px-4 py-6"
+              }`}
           >
             {!collapsed ? (
               <button
@@ -202,25 +204,37 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
             <nav className="flex flex-col gap-[2px]">
               {menuItems.map((item) => {
                 const isActive = location.pathname === item.path;
+                const isTaskItem = item.path === "/tasks";
 
                 return (
-                  <button
-                    key={item.label}
-                    onClick={() => handleNavigate(item.path)}
-                    className={`flex items-center gap-3 px-4 py-2 rounded-xl transition
-          ${
-            isActive
-              ? "bg-[#0061fe] text-white font-semibold"
-              : "text-[#231f20] hover:bg-[#0061fe] hover:text-white"
-          }`}
-                  >
-                    {item.icon}
-                    <span className="text-[16px] font-[400]">
-                      {item.label}
-                    </span>
-                  </button>
+                  <div key={item.label} className="relative">
+                    <button
+                      onClick={() => handleNavigate(item.path)}
+                      className={`flex items-center gap-3 px-4 py-2 rounded-xl transition w-full
+          ${isActive
+                          ? "bg-[#0061fe] text-white font-semibold"
+                          : "text-[#231f20] hover:bg-[#0061fe] hover:text-white"
+                        }`}
+                    >
+                      {item.icon}
+                      <span className="text-[16px] font-semibold">{item.label}</span>
+                    </button>
+
+                    {/* Mobil holatda faqat Tasks uchun dropdown qo‘shamiz */}
+                    {isTaskItem && (
+                      <div className="mt-1 ml-8">
+                        <TaskProjectDropdown
+                          selectedProject={selectedProject}
+                          setSelectedProject={setSelectedProject}
+                          isActive={isActive}
+                          isHovered={true} // mobile uchun doim true
+                        />
+                      </div>
+                    )}
+                  </div>
                 );
               })}
+
             </nav>
 
             {/* Footer */}
