@@ -356,7 +356,7 @@ const Tasks = ({ completed, total }) => {
           {taskColumns.map((column) => (
             <div
               key={column.id}
-              className="max-w-[300px] min-w-[250px] shrink-0 rounded-xl p-4 bg-[#E9E8E8] shadow-sm flex flex-col"
+              className="max-w-[300px] min-w-[250px] shrink-0 rounded-xl p-4 bg-[#E9E8E8] shadow-md flex flex-col border border-blue-200"
             >
               {/* Sticky header for column title */}
               <div className="border-b border-gray-300 pb-2 mb-3 sticky top-0 bg-[#E9E8E8] z-10">
