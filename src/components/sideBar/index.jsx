@@ -18,13 +18,14 @@ import side_blue from "../../assets/side_blue.png";
 import side_blue3 from "../../assets/side_blue3.png";
 import { RiPieChart2Fill } from "react-icons/ri";
 import { FaSackDollar } from "react-icons/fa6";
+import { HiTrophy } from "react-icons/hi2";
 
 const menuItems = [
   { label: "Dashboard", icon: <BsFillGridFill size={20} />, path: "/" },
   { label: "Calendar", icon: <Calendar size={20} />, path: "/calendar" },
   { label: "Tasks", icon: <ClipboardList size={20} />, path: "/tasks" },
   { label: "Leads", icon: <RiPieChart2Fill size={20} />, path: "/leads" },
-  { label: "Customers", icon: <FaSackDollar size={20} />, path: "/customers" },
+  { label: "Customers", icon: <HiTrophy size={20}/>, path: "/customers" },
   { label: "Departments", icon: <Landmark size={20} />, path: "/departments" },
   { label: "Inner Circle", icon: <FaUsers size={20} />, path: "/employees" },
   { label: "Messenger", icon: <MessageSquare size={20} />, path: "/messenger" },
@@ -103,7 +104,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
             </div>
 
             <nav
-              className={`flex flex-col gap-[5px] ${
+              className={`flex flex-col gap-[2px] ${
                 collapsed ? "items-center py-2" : "p-4"
               }`}
             >
@@ -118,7 +119,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
           ${collapsed ? "justify-center px-2 w-[48px]" : "px-4 w-full"}
           ${
             isActive
-              ? "bg-[#0061fe] font-semibold text-white"
+              ? "bg-[#0061fe] text-white"
               : "text-[#231f20] hover:text-white"
           }
           hover:bg-[#0061fe] `}
@@ -126,7 +127,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                     {item.icon}
                     {!collapsed && (
                       <div className="w-full flex items-center justify-between">
-                        <span className="text-[16px] font-semibold">
+                        <span className="text-[16px] font-[400]">
                           {item.label}
                         </span>
 
@@ -154,7 +155,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 onClick={() =>
                   window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
                 }
-                className="w-full flex items-center justify-center gap-2 bg-[#0061fe] text-white mt-3 rounded-xl text-[18px] px-6 py-2 text-sm m-auto"
+                className="w-full flex items-center justify-center gap-2 bg-[#0061fe] text-white rounded-xl text-[18px] px-6 py-2 text-sm mx-auto"
               >
                 <BiSupport size={18} />
                 <span>Support</span>
@@ -164,7 +165,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 onClick={() =>
                   window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
                 }
-                className="flex items-center justify-center bg-[#0061fe] text-white rounded-md p-2"
+                className="flex items-center justify-center bg-[#0061fe] text-white rounded-xl p-2"
               >
                 <BiSupport size={20} />
               </button>
@@ -198,7 +199,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
             </div>
 
             {/* Navigation */}
-            <nav className="flex flex-col gap-[5px]">
+            <nav className="flex flex-col gap-[2px]">
               {menuItems.map((item) => {
                 const isActive = location.pathname === item.path;
 
@@ -214,7 +215,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
           }`}
                   >
                     {item.icon}
-                    <span className="text-[16px] font-semibold">
+                    <span className="text-[16px] font-[400]">
                       {item.label}
                     </span>
                   </button>
@@ -223,7 +224,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
             </nav>
 
             {/* Footer */}
-            <div className="mt-4 flex flex-col gap-4">
+            <div className="mt-2 flex flex-col gap-4">
               <button
                 onClick={() =>
                   window.open("https://t.me/+11Tug631E_40YTQy", "_blank")

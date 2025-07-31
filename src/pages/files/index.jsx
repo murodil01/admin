@@ -4,7 +4,7 @@ const Files = () => {
   return (
     <div className="flex flex-col justify-center items-center min-h-[70vh] text-center px-4 py-10 sm:py-16">
       <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-        Feature Coming Soon Files
+        Feature Coming Soon M Library
       </h1>
 
       <p className="text-gray-600 text-sm sm:text-base md:text-lg max-w-xl">

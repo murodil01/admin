@@ -139,7 +139,7 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
 
         {/* 🔽 Dropdown (common for mobile and desktop) */}
         {isUserOpen && (
-          <div className="absolute top-[70px] right-0 w-60 bg-white rounded-[14px] shadow-lg py-2 z-50 space-y-1 text-sm text-gray-700">
+          <div className="absolute top-[70px] right-0 w-44 bg-white rounded-[14px] shadow-lg py-2 z-50 space-y-1 text-sm text-gray-700">
             {/* Profile */}
             <div
               onClick={() => navigateAndClose("/main-profile")}
