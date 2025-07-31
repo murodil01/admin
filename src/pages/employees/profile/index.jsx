@@ -107,7 +107,7 @@ const CustomUpload = ({ fileList, onChange }) => {
       />
       <label
         htmlFor="file-upload"
-        className="w-full h-[48px] bg-[#1F2937] text-white text-sm font-medium px-6 rounded-[14px] hover:bg-[#111827] transition-all flex items-center justify-center gap-2 cursor-pointer"
+        className="w-full h-[48px] bg-[#0061fe] text-white text-sm font-medium px-6 rounded-[14px] hover:bg-[#111827] transition-all flex items-center justify-center gap-2 cursor-pointer"
       >
         <UploadIcon size={18} />
         <span>Download</span>
@@ -318,8 +318,8 @@ const Profile = () => {
                     onClick={() => setActiveTab(tab)}
                     className={`px-4 md:px-10 py-2 md:py-3 rounded-full text-sm md:text-base font-medium transition-all duration-200 flex-1 sm:flex-none ${
                       activeTab === tab
-                        ? "bg-gray-800 text-white shadow-sm"
-                        : "text-gray-600 hover:text-gray-800 hover:bg-gray-200"
+                        ? "bg-[#0061fe] text-white shadow-sm"
+                        : "text-gray-600 hover:text[#0061fe]gray-800 hover:bg-gray-200"
                     }`}
                   >
                     {tab}

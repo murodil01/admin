@@ -1,10 +1,10 @@
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
-const Messenger = () => {
+const Notification = () => {
   return (
     <div className="flex flex-col justify-center items-center min-h-[70vh] text-center px-4 py-10 sm:py-16">
       <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-        Feature Coming Soon Messenger
+        Feature Coming Soon Notification
       </h1>
 
       <p className="text-gray-600 text-sm sm:text-base md:text-lg max-w-xl">
@@ -22,4 +22,4 @@ const Messenger = () => {
   );
 };
 
-export default Messenger;
+export default Notification;

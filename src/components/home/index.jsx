@@ -2,10 +2,20 @@ import { SidebarContext } from "../../context";
 import SideBar from "../../components/sideBar";
 import Navbar from "../../components/navbar";
 import { Outlet } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const AppLayout = () => {
-  const [collapsed, setCollapsed] = useState(false);
+  // ⬇️ Boshlang‘ich qiymatni localStorage'dan o‘qish
+  const [collapsed, setCollapsed] = useState(() => {
+    const storedValue = localStorage.getItem("sidebarCollapsed");
+    return storedValue === "true"; // default false
+  });
+
+  // ⬇️ Har safar collapsed o‘zgarsa localStorage ga yozish
+  useEffect(() => {
+    localStorage.setItem("sidebarCollapsed", collapsed);
+  }, [collapsed]);
+
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (

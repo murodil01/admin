@@ -32,7 +32,6 @@ import PrivateRoute from "../components/private-route";
 import AppLayout from "../components/home";
 
 import Tasks from "../pages/tasks";
-import Sales from "../pages/sales";
 import Employees from "../pages/employees";
 import Messenger from "../pages/messenger";
 import Departments from "../pages/departments";
@@ -46,6 +45,8 @@ import Files from "../pages/files";
 import Settings from "../pages/settings";
 import MainProfile from "../pages/main-profile";
 import TaskDetails from "../pages/tasks/TaskDetails";
+import Notification from "../pages/notification"
+import Customers from "../pages/customers";
 
 export const router = createBrowserRouter([
   {
@@ -59,7 +60,7 @@ export const router = createBrowserRouter([
           { path: "", element: <Home /> },
           { path: "tasks", element: <Tasks />,},
           { path: "tasks/:id", element: <TaskDetails />,},
-          { path: "sales", element: <Sales /> },
+          { path: "customers", element: <Customers /> },
           { path: "employees", element: <Employees /> },
           { path: "messenger", element: <Messenger /> },
           { path: "departments", element: <Departments /> },
@@ -72,6 +73,7 @@ export const router = createBrowserRouter([
           { path: "profile/:id", element: <Profile /> },
           { path: "settings", element: <Settings /> },
           { path: "main-profile", element: <MainProfile /> },
+          {path: "notification", element: <Notification/>},
         ],
       },
     ],

@@ -1,9 +1,11 @@
-import logo from "../../assets/logo.png";
-import mlogo from "../../assets/mlogo.svg";
+// import logo from "../../assets/logo.png";
+// import mlogo from "../../assets/mlogo.svg";
+import logo_blue from "../../assets/logo_blue.png"
 import { Form, Input, Button } from "antd";
 import { Loader } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import side_blue3 from "../../assets/side_blue3.png"
 
 const inputStyle = {
   height: "40px",
@@ -17,7 +19,7 @@ const inputFocusStyle = {
 };
 
 const buttonStyle = {
-  backgroundColor: "#1F2937",
+  backgroundColor: "#0061fe",
   color: "white",
   height: "40px",
   fontSize: "18px",
@@ -26,7 +28,7 @@ const buttonStyle = {
 };
 
 const buttonHoverStyle = {
-  backgroundColor: "#111827",
+  backgroundColor: "#0061fe",
   color: "white",
 };
 
@@ -45,24 +47,24 @@ const Login = () => {
 
   return (
     <div className="flex flex-col md:flex-row h-screen w-full">
-      <div className="bg-[#1F2937] hidden md:flex md:w-1/2 flex-col items-center justify-center p-8">
-        <img src={logo} alt="Logo" className="w-32 md:w-[380px] mb-6" />
-        <h1 className="text-white font-bold text-4xl md:text-5xl">Company</h1>
+      <div className="bg-[#0061fe] hidden md:flex md:w-1/2 flex-col items-center justify-center p-8">
+        <img src={logo_blue} alt="Logo" className="w-32 md:w-[280px] mb-6" />
+        {/* <h1 className="text-white font-bold text-4xl md:text-5xl">Company</h1> */}
       </div>
 
       <div className="flex-1 flex items-start md:items-center justify-center p-6 bg-white">
         <div className="w-[452px] max-w-md">
           <img
-            src={mlogo}
+            src={side_blue3}
             alt="Mobile Logo"
-            className="block md:hidden mx-auto mt-10 mb-8"
+            className="block w-15 md:hidden mx-auto mt-20 mb-8"
           />
 
           <h2
             style={{ color: "#000", fontSize: "28px", fontWeight: 600 }}
             className="text-center mb-8"
           >
-            Login to the PROTOTYPE System{" "}
+            Welcome to PROTOTYPE
           </h2>
 
           <Form name="login" layout="vertical" onFinish={handleLogin}>

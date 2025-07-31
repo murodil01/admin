@@ -42,7 +42,7 @@ const Tasks = ({ completed, total }) => {
 
   const [dueDate, setDueDate] = useState(dayjs());
 
-  // const [title, setTitle] = useState('');
+  const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [checklist, setChecklist] = useState([
     { id: 1, text: 'Header to‘g‘rilash', checked: true },
@@ -92,18 +92,6 @@ const Tasks = ({ completed, total }) => {
     setChecklist([...checklist, newItem]);
   };
 
-  // function parseTimeToHours(timeStr) {
-  //   if (!timeStr) return 0;
-
-  //   const dayMatch = timeStr.match(/(\d+)\s*d/);
-  //   const hourMatch = timeStr.match(/(\d+)\s*h/);
-
-  //   const days = dayMatch ? parseInt(dayMatch[1]) : 0;
-  //   const hours = hourMatch ? parseInt(hourMatch[1]) : 0;
-
-  //   return days * 24 + hours;
-  // }
-
   const taskColumns = [
     { id: "todo", title: "To Do" },
     { id: "gotIt", title: "Got It" },
@@ -112,11 +100,11 @@ const Tasks = ({ completed, total }) => {
     { id: "backlog", title: "Backlog" },
   ];
 
-  // const initialChecklist = [
-  //   { id: 1, text: "Design mockup", checked: true },
-  //   { id: 2, text: "Frontend implementation", checked: false },
-  //   { id: 3, text: "Code review", checked: false },
-  // ];
+  const initialChecklist = [
+    { id: 1, text: "Design mockup", checked: true },
+    { id: 2, text: "Frontend implementation", checked: false },
+    { id: 3, text: "Code review", checked: false },
+  ];
 
   const activeTasks = [
     {
@@ -170,29 +158,29 @@ const Tasks = ({ completed, total }) => {
     },
   ];
 
-  // const backlogTasks = [
-  //   {
-  //     id: "animation-buttons",
-  //     title: "Animation for buttons",
-  //     time: "8h",
-  //     priority: "low",
-  //     assignee: { name: "Alex", avatar: "bg-blue-500" },
-  //   },
-  //   {
-  //     id: "preloader",
-  //     title: "Preloader",
-  //     time: "6h",
-  //     priority: "low",
-  //     assignee: { name: "Mike", avatar: "bg-gray-800" },
-  //   },
-  //   {
-  //     id: "animation-landing",
-  //     title: "Animation for Landing page",
-  //     time: "8h",
-  //     priority: "low",
-  //     assignee: { name: "Sarah", avatar: "bg-yellow-600" },
-  //   },
-  // ];
+  const backlogTasks = [
+    {
+      id: "animation-buttons",
+      title: "Animation for buttons",
+      time: "8h",
+      priority: "low",
+      assignee: { name: "Alex", avatar: "bg-blue-500" },
+    },
+    {
+      id: "preloader",
+      title: "Preloader",
+      time: "6h",
+      priority: "low",
+      assignee: { name: "Mike", avatar: "bg-gray-800" },
+    },
+    {
+      id: "animation-landing",
+      title: "Animation for Landing page",
+      time: "8h",
+      priority: "low",
+      assignee: { name: "Sarah", avatar: "bg-yellow-600" },
+    },
+  ];
 
   const getTasksByColumn = (columnId) => {
     return activeTasks.filter((task) => task.column === columnId);
@@ -363,7 +351,18 @@ const Tasks = ({ completed, total }) => {
                 <span className="font-semibold text-lg text-gray-800">{column.title}</span>
               </div>
 
-
+                {/* Scrollable task list area */}
+                <div className="space-y-3 pr-1">
+                  {getTasksByColumn(column.id).map((task) => (
+                    <div key={task.id} className="bg-white rounded-xl shadow p-4 w-full h-[220px] flex flex-col justify-between">
+                      {/* Avatar yoki default rasm (bo'lmasa chiqarilmaydi) */}
+                      {task.assignee?.avatarUrl ? (
+                        <img
+                          src={task.assignee.avatarUrl}
+                          alt={task.assignee.name}
+                          className="w-16 h-16 rounded-full mx-auto mb-3 object-cover"
+                        />
+                      ) : null}
 
               {/* Scrollable task list area */}
               <div className="space-y-3 pr-1">
@@ -381,23 +380,23 @@ const Tasks = ({ completed, total }) => {
                     {/* Task title */}
                     <h4 className="text-center text-gray-800 font-semibold">{task.title}</h4>
 
-
-                    {/* Task info row */}
-                    <div className="flex justify-between items-center text-sm text-gray-600 mt-4 px-2">
-                      <div className="flex items-center gap-1">
-                        <span>🕒</span>
-                        <span>Jul 23</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <HiOutlineMenuAlt2 />
-                        <BiComment />
-                      </div>
-                      <div
-                        className={`flex items-center gap-1 ${completed === total ? "bg-[#64C064]" : "bg-[#DDDDDD]"
-                          } text-white px-2 py-[2px] rounded-md text-xs font-medium`}
-                      >
-                        <BsCheck2Square />
-                        <span>{completed} / {total}</span>
+                      {/* Task info row */}
+                      <div className="flex justify-between items-center text-sm text-gray-600 mt-4 px-2">
+                        <div className="flex items-center gap-1">
+                          <span>🕒</span>
+                          <span>Jul 23</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <HiOutlineMenuAlt2 />
+                          <BiComment />
+                        </div>
+                        <div
+                          className={`flex items-center gap-1 ${completed === total ? "bg-[#64C064]" : "bg-[#DDDDDD]"
+                            } text-white px-2 py-[2px] rounded-md text-xs font-medium`}
+                        >
+                          <BsCheck2Square />
+                          <span>{completed} / {total}</span>
+                        </div>
                       </div>
 
                     </div>
