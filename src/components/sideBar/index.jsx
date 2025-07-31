@@ -18,14 +18,14 @@ import side_blue from "../../assets/side_blue.png";
 import side_blue3 from "../../assets/side_blue3.png";
 import { RiPieChart2Fill } from "react-icons/ri";
 import { FaSackDollar } from "react-icons/fa6";
-import { HiTrophy } from "react-icons/hi2";
+import { BiChevronRight } from "react-icons/bi";
 
 const menuItems = [
   { label: "Dashboard", icon: <BsFillGridFill size={20} />, path: "/" },
   { label: "Calendar", icon: <Calendar size={20} />, path: "/calendar" },
   { label: "Tasks", icon: <ClipboardList size={20} />, path: "/tasks" },
   { label: "Leads", icon: <RiPieChart2Fill size={20} />, path: "/leads" },
-  { label: "Customers", icon: <HiTrophy size={20}/>, path: "/customers" },
+  { label: "Customers", icon: <FaSackDollar size={20} />, path: "/customers" },
   { label: "Departments", icon: <Landmark size={20} />, path: "/departments" },
   { label: "Inner Circle", icon: <FaUsers size={20} />, path: "/employees" },
   { label: "Messenger", icon: <MessageSquare size={20} />, path: "/messenger" },
@@ -37,6 +37,7 @@ const menuItems = [
 const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isDropdownOpen, setDropdownOpen] = useState(false);
 
   const handleNavigate = (path) => {
     navigate(path);
@@ -95,8 +96,8 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 src={collapsed ? side_blue3 : side_blue}
                 alt="Logo"
                 className={`transition-all duration-500 ease-in-out transform cursor-pointer ${collapsed
-                    ? "w-7 scale-90 opacity-80"
-                    : "w-[150px] scale-100 opacity-100"
+                  ? "w-7 scale-90 opacity-80"
+                  : "w-[150px] scale-100 opacity-100"
                   }`}
               />
             </div>
@@ -109,40 +110,51 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 const isActive = location.pathname === item.path;
                 const isTaskItem = item.path === "/tasks";
 
-                return (
+                const baseButton = (
                   <button
-                    key={item.label}
                     onMouseEnter={() => isTaskItem && setHoveredTask(true)}
                     onMouseLeave={() => isTaskItem && setHoveredTask(false)}
-                    onClick={() => handleNavigate(item.path)}
+                    onClick={() => !isTaskItem && handleNavigate(item.path)}
                     className={`flex items-center gap-3 py-2 rounded-xl transition text-left
-          ${collapsed ? "justify-center px-2 w-[48px]" : "px-4 w-full"}
-          ${isActive
-                        ? "bg-[#0061fe] font-semibold text-white"
-                        : "text-[#231f20] hover:text-white"
-                      }
-          hover:bg-[#0061fe] hover:text-white `}
+        ${collapsed ? "justify-center px-2 w-[48px]" : "px-4 w-full"}
+        ${isActive ? "bg-[#0061fe] font-semibold text-white" : "text-[#231f20] hover:text-white"}
+        hover:bg-[#0061fe] hover:text-white`}
                   >
                     {item.icon}
                     {!collapsed && (
                       <div className="w-full flex items-center justify-between relative">
-                        <span className="text-[16px] font-semibold">
-                          {item.label}
-                        </span>
-
-                        {item.path === "/tasks" && (
-                          <div className="absolute right-0 hover:text-white">
-                            <TaskProjectDropdown
-                              selectedProject={selectedProject}
-                              setSelectedProject={setSelectedProject}
-                              isActive={isActive}
-                              isHovered={isHovered}
-                            />
-                          </div>
-                        )}
+                        <span className="text-[16px] font-semibold">{item.label}</span>
                       </div>
                     )}
+                    {isTaskItem && (
+                      <BiChevronRight
+                        className={`transition-transform duration-300 ease-in-out
+      ${isDropdownOpen ? "rotate-90" : "rotate-0"}
+      text-3xl
+    `}
+                      />
+                    )}
                   </button>
+                );
+
+                if (isTaskItem) {
+                  return (
+                    <TaskProjectDropdown
+                      key={item.label}
+                      selectedProject={selectedProject}
+                      setSelectedProject={setSelectedProject}
+                      isActive={isActive}
+                      isHovered={true}
+                      triggerButton={baseButton}
+                      onOpenChange={(open) => setDropdownOpen(open)}
+                    />
+                  );
+                }
+
+                return (
+                  <div key={item.label} className="relative">
+                    {baseButton}
+                  </div>
                 );
               })}
             </nav>
@@ -157,7 +169,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 onClick={() =>
                   window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
                 }
-                className="w-full flex items-center justify-center gap-2 bg-[#0061fe] text-white rounded-xl text-[18px] px-6 py-2 text-sm mx-auto"
+                className="w-full flex items-center justify-center gap-2 bg-[#0061fe] text-white mt-3 rounded-xl text-[18px] px-6 py-2 text-sm m-auto"
               >
                 <BiSupport size={18} />
                 <span>Support</span>
@@ -167,7 +179,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 onClick={() =>
                   window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
                 }
-                className="flex items-center justify-center bg-[#0061fe] text-white rounded-xl p-2"
+                className="flex items-center justify-center bg-[#0061fe] text-white rounded-md p-2"
               >
                 <BiSupport size={20} />
               </button>
@@ -201,262 +213,60 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
             </div>
 
             {/* Navigation */}
-            <nav className="flex flex-col gap-[2px]">
+            <nav className="flex flex-col gap-1 sm:gap-2">
               {menuItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 const isTaskItem = item.path === "/tasks";
 
-                return (
-                  <div key={item.label} className="relative">
-                    <button
-                      onClick={() => handleNavigate(item.path)}
-                      className={`flex items-center gap-3 px-4 py-2 rounded-xl transition w-full
+                const baseButton = (
+                  <button
+                    onClick={() => !isTaskItem && handleNavigate(item.path)}
+                    className={`flex items-center w-full rounded-xl transition px-3 py-2 sm:px-4 sm:py-2.5
           ${isActive
-                          ? "bg-[#0061fe] text-white font-semibold"
-                          : "text-[#231f20] hover:bg-[#0061fe] hover:text-white"
-                        }`}
-                    >
+                        ? "bg-[#0061fe] text-white font-semibold"
+                        : "text-[#231f20] hover:bg-[#0061fe] hover:text-white"
+                      }`}
+                  >
+                    <div className="w-5 h-5 mr-2 sm:mr-3 flex-shrink-0">
                       {item.icon}
-                      <span className="text-[16px] font-semibold">{item.label}</span>
-                    </button>
+                    </div>
 
-                    {/* Mobil holatda faqat Tasks uchun dropdown qo‘shamiz */}
-                    {isTaskItem && (
-                      <div className="mt-1 ml-8">
-                        <TaskProjectDropdown
-                          selectedProject={selectedProject}
-                          setSelectedProject={setSelectedProject}
-                          isActive={isActive}
-                          isHovered={true} // mobile uchun doim true
-                        />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-            </nav>
-
-            {/* Footer */}
-            <div className="mt-2 flex flex-col gap-4">
-              <button
-                onClick={() =>
-                  window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
-                }
-                className="flex items-center justify-center gap-2 border border-[#0061fe] bg-white text-[#0061fe] hover:bg-[#0061fe] hover:text-white rounded-xl text-[18px] px-6 py-3 text-sm w-full"
-              >
-                <BiSupport size={18} />
-                <span>Support</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-};
-
-export default SideBar;
-
-/*import {
-  MessageSquare,
-  X,
-  Calendar,
-  ClipboardList,
-  Landmark,
-} from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { BsFillGridFill } from "react-icons/bs";
-import { BiSupport } from "react-icons/bi";
-import { SiGoogleads } from "react-icons/si";
-import { useState } from "react";
-import { FaFolderOpen, FaUsers, FaUserTag } from "react-icons/fa";
-import { IoFileTrayFull } from "react-icons/io5";
-import { TbReport } from "react-icons/tb";
-
-import TaskProjectDropdown from "./TaskProjectDropdown";
-import side_blue from "../../assets/side_blue.png";
-import side_blue3 from "../../assets/side_blue3.png";
-
-const menuItems = [
-  { label: "Dashboard", icon: <BsFillGridFill size={20} />, path: "/" },
-  { label: "Calendar", icon: <Calendar size={20} />, path: "/calendar" },
-  { label: "Tasks", icon: <ClipboardList size={20} />, path: "/tasks" },
-  { label: "Leads", icon: <SiGoogleads size={20} />, path: "/leads" },
-  { label: "Customers", icon: <FaUserTag size={20} />, path: "/customers" },
-  { label: "Departments", icon: <Landmark size={20} />, path: "/departments" },
-  { label: "Inner Circle", icon: <FaUsers size={20} />, path: "/employees" },
-  { label: "Messenger", icon: <MessageSquare size={20} />, path: "/messenger" },
-  { label: "Files", icon: <FaFolderOpen size={20} />, path: "/files" },
-  { label: "Reports", icon: <TbReport size={20} />, path: "/reports" },
-  { label: "Archive", icon: <IoFileTrayFull size={20} />, path: "/archive" },
-];
-
-const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
-  const navigate = useNavigate();
-
-  const location = useLocation();
-
-  const handleNavigate = (path) => {
-    navigate(path);
-    if (isMobileOpen) setIsMobileOpen(false);
-  };
-
-  const [selectedProject, setSelectedProject] = useState();
-
-  // const [selectedProject, setSelectedProject] = useState(
-  //     "Medical App (iOS native)"
-  //   );
-  // const [currentProjectsOpen, setCurrentProjectsOpen] = useState(false);
-
-  return (
-    <>
-      <aside
-        className={`hidden md:flex h-screen transition-all duration-300 bg-[#F2F2F2]
-    ${
-      collapsed
-        ? "w-20 px-2 pt-[20px] pb-[10px]"
-        : "w-64 pt-[20px] pr-[15px] pb-[5px] pl-[15px]"
-    }`}
-      >
-        <div className="w-full h-full bg-white rounded-2xl shadow-xl flex flex-col justify-between overflow-hidden">
-          <div>
-            <div
-              className={`flex justify-center transition-all duration-300 ${
-                collapsed ? "pt-6 pb-3" : "p-6"
-              }`}
-            >
-              <img
-                onClick={() => window.location.reload()}
-                src={collapsed ? side_blue3 : side_blue}
-                alt="Logo"
-                className={`transition-all duration-500 ease-in-out transform ${
-                  collapsed
-                    ? "w-7 scale-90 opacity-80"
-                    : "w-[150px] scale-100 opacity-100"
-                }`}
-              />
-            </div>
-
-            <nav
-              className={`flex flex-col gap-[5px] ${
-                collapsed ? "items-center py-2" : "p-4"
-              }`}
-            >
-              {menuItems.map((item) => {
-                const isActive = location.pathname === item.path;
-
-                return (
-                  <button
-                    key={item.label}
-                    onClick={() => handleNavigate(item.path)}
-                    className={`flex items-center gap-3 py-2 rounded-xl transition text-left
-          ${collapsed ? "justify-center px-2 w-[48px]" : "px-4 w-full"}
-          ${
-            isActive
-              ? "bg-[#0061fe] font-semibold text-white"
-              : "text-[#231f20] hover:text-white"
-          }
-          hover:bg-[#0061fe] `}
-                  >
-                    {item.icon}
-                    {!collapsed && (
-                      <div className="w-full flex items-center justify-between">
-                        <span className="text-[16px] font-semibold">
-                          {item.label}
-                        </span>
-
-                        {item.path === "/tasks" && (
-                          <TaskProjectDropdown
-                            selectedProject={selectedProject}
-                            setSelectedProject={setSelectedProject}
-                          />
-                        )}
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-
-          <div
-            className={`flex flex-col gap-4 ${
-              collapsed ? "px-2 py-4" : "px-4 py-6"
-            }`}
-          >
-            {!collapsed ? (
-              <button
-                onClick={() =>
-                  window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
-                }
-                className="w-full flex items-center justify-center gap-2 bg-[#0061fe] text-white mt-3 rounded-xl text-[18px] px-6 py-2 text-sm m-auto"
-              >
-                <BiSupport size={18} />
-                <span>Support</span>
-              </button>
-            ) : (
-              <button
-                onClick={() =>
-                  window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
-                }
-                className="flex items-center justify-center bg-[#0061fe] text-white rounded-md p-2"
-              >
-                <BiSupport size={20} />
-              </button>
-            )}
-          </div>
-        </div>
-      </aside>
-
-      {isMobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div
-            className="absolute inset-0 backdrop-blur-sm bg-blue-100/10 opacity-100 transition-opacity duration-500"
-            onClick={() => setIsMobileOpen(false)}
-          ></div>
-
-          <div className="relative z-50 w-64 bg-white text-[#231f20] h-screen flex flex-col px-10 py-8 max-h-screen overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <img
-                src={side_blue3}
-                alt="Logo"
-                className="w-10 m-auto cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.location.reload(); // sidebarOpen saqlanib qoladi
-                }}
-              />
-
-              <button onClick={() => setIsMobileOpen(false)}>
-                <X size={24} />
-              </button>
-            </div>
-
-            <nav className="flex flex-col gap-[5px]">
-              {menuItems.map((item) => {
-                const isActive = location.pathname === item.path;
-
-                return (
-                  <button
-                    key={item.label}
-                    onClick={() => handleNavigate(item.path)}
-                    className={`flex items-center gap-3 px-4 py-2 rounded-xl transition
-          ${
-            isActive
-              ? "bg-[#0061fe] text-white font-semibold"
-              : "text-[#231f20] hover:bg-[#0061fe] hover:text-white"
-          }`}
-                  >
-                    {item.icon}
-                    <span className="text-[16px] font-semibold">
+                    <span className="text-sm sm:text-base font-medium flex items-center gap-5">
                       {item.label}
+                      {isTaskItem && (
+                      <BiChevronRight
+                        className={`transition-transform duration-300 ease-in-out
+      ${isDropdownOpen ? "rotate-90" : "rotate-0"}
+      text-md
+    `}
+                      />
+                    )}
                     </span>
                   </button>
                 );
+
+                if (isTaskItem) {
+                  return (
+                    <TaskProjectDropdown
+                      key={item.label}
+                      selectedProject={selectedProject}
+                      setSelectedProject={setSelectedProject}
+                      isActive={isActive}
+                      isHovered={true}
+                      triggerButton={baseButton}
+                    />
+                  );
+                }
+
+                return (
+                  <div key={item.label} className="relative">
+                    {baseButton}
+                  </div>
+                );
               })}
             </nav>
 
+            {/* Footer */}
             <div className="mt-4 flex flex-col gap-4">
               <button
                 onClick={() =>
@@ -475,195 +285,4 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
   );
 };
 
-export default SideBar;*/
-
-/*
-import {
-  Users,
-  MessageSquare,
-  X,
-  Calendar,
-  ClipboardList,
-  ChartNoAxesCombined,
-  Landmark,
-} from "lucide-react";
-import adminPanel from "../../assets/adminPanel.png";
-import support from "../../assets/support.png";
-import { useNavigate, useLocation } from "react-router-dom";
-import { BsFillGridFill } from "react-icons/bs";
-import { IoIosLogOut } from "react-icons/io";
-import { BiSupport } from "react-icons/bi";
-import { SiGoogleads } from "react-icons/si";
-
-const menuItems = [
-  { label: "Dashboard", icon: <BsFillGridFill size={20} />, path: "/" },
-  { label: "Sales", icon: <ChartNoAxesCombined size={20} />, path: "/sales" },
-  { label: "Tasks", icon: <ClipboardList size={20} />, path: "/tasks" },
-  { label: "Calendar", icon: <Calendar size={20} />, path: "/calendar" },
-  { label: "Leads", icon: <SiGoogleads size={20} />, path: "/leads" },
-  { label: "Employees", icon: <Users size={20} />, path: "/employees" },
-  { label: "Messenger", icon: <MessageSquare size={20} />, path: "/messenger" },
-  { label: "Departments", icon: <Landmark size={20} />, path: "/departments" },
-];
-
-const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
-  const navigate = useNavigate();
-
-  const location = useLocation();
-
-  const handleNavigate = (path) => {
-    navigate(path);
-    if (isMobileOpen) setIsMobileOpen(false);
-  };
-
-  return (
-    <>
-      <aside
-        className={`hidden md:flex h-screen transition-all duration-300 bg-[#F2F2F2]
-    ${
-      collapsed
-        ? "w-20 px-2 pt-[20px] pb-[10px]"
-        : "w-64 pt-[20px] pr-[15px] pb-[5px] pl-[15px]"
-    }`}
-      >
-        <div className="w-full h-full bg-white rounded-2xl shadow-xl flex flex-col justify-between overflow-hidden">
-          <div>
-            <div
-              className={`flex justify-center ${
-                collapsed ? "pt-6 pb-3" : "p-6"
-              }`}
-            >
-              <img
-                src={adminPanel}
-                alt="Logo"
-                className={`transition-all duration-300 ${
-                  collapsed ? "w-10" : "w-[60px]"
-                }`}
-              />
-            </div>
-
-            <nav
-              className={`flex flex-col gap-[3px] ${
-                collapsed ? "items-center py-2" : "p-4"
-              }`}
-            >
-              {menuItems.map((item) => {
-                const isActive = location.pathname === item.path;
-
-                return (
-                  <button
-                    key={item.label}
-                    onClick={() => handleNavigate(item.path)}
-                    className={`flex items-center gap-3 py-2 rounded-md transition text-left
-          ${collapsed ? "justify-center px-2 w-[48px]" : "px-4 w-full"}
-          ${
-            isActive
-              ? "bg-[#DBDBDB] font-semibold text-[#1F2937]"
-              : "text-[#7D8592]"
-          }
-          hover:bg-[#DBDBDB]`}
-                  >
-                    {item.icon}
-                    {!collapsed && (
-                      <span className="text-sm">{item.label}</span>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-          </div>
-
-          <div
-            className={`flex flex-col gap-4 ${
-              collapsed ? "px-2 py-4" : "px-4 py-6"
-            }`}
-          >
-            {!collapsed ? (
-              <div className="bg-gray-100 rounded-2xl py-4 px-3 w-[180px] m-auto">
-                <img
-                  src={support}
-                  alt="Support"
-                  className="w-[100px] m-auto h-[90px]"
-                />
-                <button className="flex items-center justify-center gap-2 bg-[#1F2937] text-white mt-3 rounded-2xl text-[18px] px-6 py-2 text-sm m-auto">
-                  <BiSupport size={18} />
-                  <span>Support</span>
-                </button>
-              </div>
-            ) : (
-              <div className="flex justify-center">
-                <button className="flex items-center justify-center bg-[#1F2937] text-white rounded-md p-2">
-                  <BiSupport size={20} />
-                </button>
-              </div>
-            )}
-
-            <button
-              onClick={() => {
-                localStorage.removeItem("token");
-                navigate("/login");
-              }}
-              className={`flex items-center gap-3 px-4 py-2 rounded-md hover:bg-[#f3f4f6] transition text-[#7D8592] w-full ${
-                collapsed ? "justify-center px-0" : "text-left"
-              }`}
-            >
-              <IoIosLogOut size={20} />
-              {!collapsed && <span className="text-sm">Logout</span>}
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {isMobileOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div
-            className="absolute inset-0 backdrop-blur-sm bg-blue-100/10 opacity-100 transition-opacity duration-500"
-            onClick={() => setIsMobileOpen(false)}
-          ></div>
-          <div className="relative z-50 w-64 bg-[#1F2937] text-white h-full flex flex-col justify-between p-4">
-            <div className="flex justify-between items-center mb-6">
-              <img src={adminPanel} alt="Logo" className="w-24 m-auto" />
-              <button onClick={() => setIsMobileOpen(false)}>
-                <X size={24} />
-              </button>
-            </div>
-
-            <nav className="flex flex-col gap-4">
-              {menuItems.map((item) => (
-                <button
-                  key={item.label}
-                  onClick={() => handleNavigate(item.path)}
-                  className="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-[#374151] transition"
-                >
-                  {item.icon}
-                  <span className="text-sm">{item.label}</span>
-                </button>
-              ))}
-            </nav>
-
-            <div className="mt-10 flex flex-col gap-4">
-              <button className="flex items-center justify-center gap-2 bg-white text-[#1F2937] rounded-2xl text-[18px] px-6 py-3 text-sm w-full">
-                <BiSupport size={18} />
-                <span>Support</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  localStorage.removeItem("token");
-                  navigate("/login");
-                }}
-                className="flex items-center gap-3 px-4 py-2 rounded-md hover:bg-[#374151] w-full transition"
-              >
-                <IoIosLogOut size={20} />
-                <span className="text-sm">Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-};
-
 export default SideBar;
-*/

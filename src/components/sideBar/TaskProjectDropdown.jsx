@@ -1,6 +1,6 @@
 import { Dropdown } from "antd";
 import { BiChevronRight } from "react-icons/bi";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const projects = [
@@ -14,7 +14,14 @@ const projects = [
 
 const ITEMS_PER_PAGE = 5;
 
-const TaskProjectDropdown = ({ selectedProject, setSelectedProject, isActive, isHovered }) => {
+const TaskProjectDropdown = ({
+    selectedProject,
+    setSelectedProject,
+    isActive,
+    isHovered,
+    triggerButton,
+    onOpenChange
+}) => {
     const [rotated, setRotated] = useState(false);
     const [open, setOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
@@ -26,6 +33,12 @@ const TaskProjectDropdown = ({ selectedProject, setSelectedProject, isActive, is
         currentPage * ITEMS_PER_PAGE
     );
 
+    useEffect(() => {
+    if (onOpenChange) {
+      onOpenChange(open); // tashqariga bildiradi
+    }
+  }, [open, onOpenChange]);
+
     const handleSelectProject = (project) => {
         setSelectedProject(project.name);
         setOpen(false);
@@ -34,22 +47,9 @@ const TaskProjectDropdown = ({ selectedProject, setSelectedProject, isActive, is
         }, 0);
     };
 
-    const handlePrev = () => {
-        if (currentPage > 1) setCurrentPage((prev) => prev - 1);
-    };
-
-    const handleNext = () => {
-        if (currentPage < totalPages) setCurrentPage((prev) => prev + 1);
-    };
-
     const content = (
-        <div
-            className={`
-        w-[90vw] sm:w-[350px]
-        bg-white rounded-2xl shadow-lg p-4 max-h-[60vh] overflow-y-auto
-        sm:ml-[95px] ml-0`}
-        >
-            <h1 className="text-lg font-semibold text-gray-900 text-center mb-4 border-b pb-5 border-gray-300">
+        <div className="w-[300px] bg-white rounded-2xl shadow-xl p-4 max-h-[60vh] overflow-y-auto">
+            <h1 className="text-lg font-semibold text-center text-gray-900 mb-4 border-b pb-3 border-gray-200">
                 All Projects
             </h1>
 
@@ -58,15 +58,16 @@ const TaskProjectDropdown = ({ selectedProject, setSelectedProject, isActive, is
                     <div
                         key={project.id}
                         onClick={() => handleSelectProject(project)}
-                        className={`p-3 rounded-lg cursor-pointer transition-all duration-200 border-b border-gray-300 ${selectedProject === project.name
+                        className={`p-3 rounded-lg cursor-pointer border border-transparent transition-all duration-200
+              ${selectedProject === project.name
                                 ? "bg-gray-900 text-white"
-                                : "hover:bg-gray-100 text-gray-700"
+                                : "hover:bg-gray-100 text-gray-800"
                             }`}
                     >
-                        <div className="text-xs text-gray-400 mb-1">{project.id}</div>
-                        <div className="text-sm font-medium">{project.name}</div>
+                        <div className="text-xs text-gray-400">{project.id}</div>
+                        <div className="text-sm font-medium truncate">{project.name}</div>
                         {selectedProject === project.name && (
-                            <div className="mt-2 text-xs text-gray-300 flex items-center cursor-pointer hover:text-white">
+                            <div className="mt-1 text-xs text-gray-300 flex items-center hover:text-white">
                                 View details <span className="ml-1">›</span>
                             </div>
                         )}
@@ -74,11 +75,12 @@ const TaskProjectDropdown = ({ selectedProject, setSelectedProject, isActive, is
                 ))}
             </div>
 
-            <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-300">
+            <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-200">
                 <button
-                    onClick={handlePrev}
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className={`px-3 py-1 text-sm rounded-md transition ${currentPage === 1
+                    className={`px-3 py-1 text-sm rounded-md transition
+            ${currentPage === 1
                             ? "text-gray-400 cursor-not-allowed"
                             : "text-blue-600 hover:underline"
                         }`}
@@ -89,9 +91,10 @@ const TaskProjectDropdown = ({ selectedProject, setSelectedProject, isActive, is
                     Page {currentPage} of {totalPages}
                 </span>
                 <button
-                    onClick={handleNext}
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
-                    className={`px-3 py-1 text-sm rounded-md transition ${currentPage === totalPages
+                    className={`px-3 py-1 text-sm rounded-md transition
+            ${currentPage === totalPages
                             ? "text-gray-400 cursor-not-allowed"
                             : "text-blue-600 hover:underline"
                         }`}
@@ -112,18 +115,22 @@ const TaskProjectDropdown = ({ selectedProject, setSelectedProject, isActive, is
             popupRender={() => content}
             trigger={["click"]}
             placement="bottomRight"
-            overlayClassName="z-[9999]" // to make sure it appears on top
+            overlayClassName="z-[9999]"
+            overlayStyle={{ minWidth: "auto" }}
+            getPopupContainer={(trigger) => trigger.parentNode}
         >
-            <button
-                onClick={() => setOpen(!open)}
-                className="flex items-center justify-center w-8 h-8 rounded-md transition hover:text-white"
-            >
-                <BiChevronRight
-                    className={`transform transition-transform duration-300 ${rotated ? "rotate-90" : "rotate-0"
-                        } ${isActive ? "text-white" : "text-black"} ${isHovered || isActive ? "text-white" : "text-[#231f20]"
-                        }`}
-                />
-            </button>
+            {triggerButton ? (
+                <div onClick={() => setOpen(!open)}>{triggerButton}</div>
+            ) : (
+                <button
+                    aria-label="Open project dropdown"
+                    onClick={() => setOpen(!open)}
+                    className={`flex items-center justify-center w-8 h-8 rounded-md transition
+            ${isActive ? "bg-[#0061fe] text-white" : "text-[#231f20] hover:bg-[#0061fe] hover:text-white"}
+          `}
+                >
+                </button>
+            )}
         </Dropdown>
     );
 };

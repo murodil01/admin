@@ -348,7 +348,7 @@ const Tasks = ({completed, total}) => {
 
       <div className="w-ful">
         <div className="w-full pb-4 relative">
-          <div className='flex gap-5 min-w-full sm:min-w-0 sm:flex-wrap absolute top-0 right-0 left-0 pb-4 w-full overflow-x-auto'>
+          <div className='flex gap-5 sm:min-w-0 absolute top-0 right-0 left-0 pb-4 w-full overflow-x-auto'>
             {taskColumns.map((column) => (
               <div
                 key={column.id}
@@ -358,7 +358,6 @@ const Tasks = ({completed, total}) => {
                 <div className="border-b border-gray-300 pb-2 mb-3 bg-[#E9E8E8] z-10">
                   <span className="font-semibold text-lg text-gray-800">{column.title}</span>
                 </div>
-
 
                 {/* Scrollable task list area */}
                 <div className="space-y-3 pr-1">
