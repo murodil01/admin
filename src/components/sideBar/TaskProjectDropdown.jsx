@@ -14,7 +14,7 @@ const projects = [
 
 const ITEMS_PER_PAGE = 5;
 
-const TaskProjectDropdown = ({ selectedProject, setSelectedProject }) => {
+const TaskProjectDropdown = ({ selectedProject, setSelectedProject, isActive, isHovered }) => {
     const [rotated, setRotated] = useState(false);
     const [open, setOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
@@ -31,8 +31,7 @@ const TaskProjectDropdown = ({ selectedProject, setSelectedProject }) => {
         setOpen(false);
         setTimeout(() => {
             navigate(`/tasks/${project.id}`);
-            console.log("Navigating to:", project.id);
-        }, 0); // 0ms delay — bu React rendering siklidan keyin ishlaydi
+        }, 0);
     };
 
     const handlePrev = () => {
@@ -44,7 +43,12 @@ const TaskProjectDropdown = ({ selectedProject, setSelectedProject }) => {
     };
 
     const content = (
-        <div className="ml-[95px] w-[350px] bg-white rounded-2xl shadow-lg p-4 max-h-100 overflow-y-auto">
+        <div
+            className={`
+        w-[90vw] sm:w-[350px]
+        bg-white rounded-2xl shadow-lg p-4 max-h-[60vh] overflow-y-auto
+        sm:ml-[95px] ml-0`}
+        >
             <h1 className="text-lg font-semibold text-gray-900 text-center mb-4 border-b pb-5 border-gray-300">
                 All Projects
             </h1>
@@ -54,11 +58,10 @@ const TaskProjectDropdown = ({ selectedProject, setSelectedProject }) => {
                     <div
                         key={project.id}
                         onClick={() => handleSelectProject(project)}
-                        className={`p-3 rounded-lg cursor-pointer transition-all duration-200 border-b border-gray-300 ${
-                            selectedProject === project.name
+                        className={`p-3 rounded-lg cursor-pointer transition-all duration-200 border-b border-gray-300 ${selectedProject === project.name
                                 ? "bg-gray-900 text-white"
                                 : "hover:bg-gray-100 text-gray-700"
-                        }`}
+                            }`}
                     >
                         <div className="text-xs text-gray-400 mb-1">{project.id}</div>
                         <div className="text-sm font-medium">{project.name}</div>
@@ -71,16 +74,14 @@ const TaskProjectDropdown = ({ selectedProject, setSelectedProject }) => {
                 ))}
             </div>
 
-            {/* Pagination Controls */}
             <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-300">
                 <button
                     onClick={handlePrev}
                     disabled={currentPage === 1}
-                    className={`px-3 py-1 text-sm rounded-md transition ${
-                        currentPage === 1
+                    className={`px-3 py-1 text-sm rounded-md transition ${currentPage === 1
                             ? "text-gray-400 cursor-not-allowed"
                             : "text-blue-600 hover:underline"
-                    }`}
+                        }`}
                 >
                     Previous
                 </button>
@@ -90,11 +91,10 @@ const TaskProjectDropdown = ({ selectedProject, setSelectedProject }) => {
                 <button
                     onClick={handleNext}
                     disabled={currentPage === totalPages}
-                    className={`px-3 py-1 text-sm rounded-md transition ${
-                        currentPage === totalPages
+                    className={`px-3 py-1 text-sm rounded-md transition ${currentPage === totalPages
                             ? "text-gray-400 cursor-not-allowed"
                             : "text-blue-600 hover:underline"
-                    }`}
+                        }`}
                 >
                     Next
                 </button>
@@ -108,20 +108,20 @@ const TaskProjectDropdown = ({ selectedProject, setSelectedProject }) => {
             onOpenChange={(visible) => {
                 setOpen(visible);
                 setRotated(visible);
-                if (visible) setCurrentPage(1); // Reset pagination on open
             }}
             popupRender={() => content}
             trigger={["click"]}
             placement="bottomRight"
+            overlayClassName="z-[9999]" // to make sure it appears on top
         >
             <button
                 onClick={() => setOpen(!open)}
-                className="flex items-center justify-center w-8 h-8 rounded-md transition"
+                className="flex items-center justify-center w-8 h-8 rounded-md transition hover:text-white"
             >
                 <BiChevronRight
-                    className={`text-gray-700 transform transition-transform duration-300 ${
-                        rotated ? "rotate-90" : "rotate-0"
-                    }`}
+                    className={`transform transition-transform duration-300 ${rotated ? "rotate-90" : "rotate-0"
+                        } ${isActive ? "text-white" : "text-black"} ${isHovered || isActive ? "text-white" : "text-[#231f20]"
+                        }`}
                 />
             </button>
         </Dropdown>
