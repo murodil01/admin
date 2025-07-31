@@ -220,7 +220,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
             <nav className="flex flex-col gap-[2px]">
               {menuItems.map((item) => {
                 const isActive = location.pathname === item.path;
-                const isTaskItem = item.path === "/tasks";
+                // const isTaskItem = item.path === "/tasks";
 
                 return (
                   <button
