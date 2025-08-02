@@ -3,7 +3,7 @@ import { Download } from "lucide-react";
 
 const Profiles = () => {
   return (
-    <div className="w-full bg-white shadow rounded-[24px] py-10 px-6 md:px-10 mt-9 max-w-[645px]">
+    <div className="w-full bg-white shadow rounded-[24px] py-10 px-6 md:px-10 mt-9">
       <h1 className="font-bold text-[18px] text-[#0061fe] mb-6">
         Control Data
       </h1>

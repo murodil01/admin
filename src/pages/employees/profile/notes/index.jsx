@@ -75,7 +75,7 @@ const Notes = () => {
   };
 
   return (
-    <div className="max-w-2xl rounded-[24px] h-screen flex flex-col bg-white relative">
+    <div className="w-full rounded-[24px] h-screen flex flex-col bg-white relative">
       {/* Message List */}
       <div className="flex-1 overflow-y-auto px-4 pt-4 pb-32">
         {messages.map((msg) => (
