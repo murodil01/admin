@@ -47,6 +47,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
   // const [isHovered, setHoveredTask] = useState(false);
 
   // Handle logo click with mobile state preservation
+  
   const handleLogoClick = () => {
     // Store mobile sidebar state before refresh
     if (isMobileOpen) {
@@ -85,7 +86,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
         : "w-64 pt-[20px] pr-[15px] pb-[5px] pl-[15px]"
     }`}
       >
-        <div className="w-full h-full bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
+        <div className="w-full h-full bg-white rounded-[24px] shadow-xl flex flex-col overflow-hidden">
           {/* Header Section - Fixed */}
           <div className="flex-shrink-0 mb-[5px]">
             <div
@@ -110,7 +111,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
           <div className="flex-1 overflow-hidden">
             <nav
               className={`h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent hover:scrollbar-thumb-gray-300 transition-colors duration-200 ${
-                collapsed ? "px-2 py-2" : "px-4 py-2"
+                collapsed ? "px-2 py-2" : "px-2 py-2"
               }`}
               style={{
                 scrollbarWidth: "thin",
