@@ -57,9 +57,14 @@ const Calendar = ({ currentDate, events, onEventClick, onDayClick }) => {
       <div className="grid grid-cols-7 border-b border-gray-200">
         {dayNames.map((day) => (
           <div key={day} className="p-4 text-center">
-            <span className="text-sm font-medium text-gray-700 capitalize">
+              {/* Large screen: full name */}
+            <span className="hidden sm:inline text-sm font-medium text-gray-700 capitalize">
               {day}
             </span>
+              {/* Small screen: short name (Mon, Tue, etc.) */}
+          <span className="sm:hidden text-sm font-medium text-gray-700 capitalize">
+            {day.slice(0, 3)}
+          </span>
           </div>
         ))}
       </div>
