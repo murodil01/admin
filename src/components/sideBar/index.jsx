@@ -17,8 +17,8 @@ import TaskProjectDropdown from "./TaskProjectDropdown";
 import side_blue from "../../assets/side_blue.png";
 import side_blue3 from "../../assets/side_blue3.png";
 import { RiPieChart2Fill } from "react-icons/ri";
-import { FaSackDollar } from "react-icons/fa6";
 import { BiChevronRight } from "react-icons/bi";
+import { HiTrophy } from "react-icons/hi2";
 
 const menuItems = [
   { label: "Dashboard", icon: <BsFillGridFill size={20} />, path: "/" },
@@ -45,10 +45,10 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
   };
 
   const [selectedProject, setSelectedProject] = useState();
-  // const [isHovered, setHoveredTask] = useState(false);
+  const [isHovered, setHoveredTask] = useState(false);
 
   // Handle logo click with mobile state preservation
-  
+
   const handleLogoClick = () => {
     // Store mobile sidebar state before refresh
     if (isMobileOpen) {
