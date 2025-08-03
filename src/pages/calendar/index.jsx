@@ -69,7 +69,7 @@ function CalendarPage() {
           onAddEvent={() => setShowAddModal(true)}
         />
 
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto p-6 max-sm:p-0">
           <Calendar
             currentDate={currentDate}
             events={events}
