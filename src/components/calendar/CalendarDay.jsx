@@ -71,7 +71,7 @@ const CalendarDay = ({
 
           {/* Event Image or Title */}
           <div
-            className="cursor-pointer flex flex-col items-center"
+            className="cursor-pointer flex flex-col items-center max-w-full"
             onClick={() => onEventClick(currentEvent)}
           >
             {currentEvent.image ? (
@@ -90,7 +90,7 @@ const CalendarDay = ({
                 </span>
               </>
             ) : (
-              <span className="text-xs text-gray-900 text-center px-1">
+              <span className="text-xs text-gray-900 text-center px-1 max-w-full truncate">
                 {currentEvent.title}
               </span>
             )}
