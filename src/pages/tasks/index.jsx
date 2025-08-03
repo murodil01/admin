@@ -1,3 +1,12 @@
+import { MdMoveToInbox } from "react-icons/md"; 
+import { GiTrophyCup } from "react-icons/gi";
+import { GiHole } from "react-icons/gi";
+import { RiRecycleFill } from "react-icons/ri";
+import { FaSearch } from "react-icons/fa";
+import { BsFillBoxSeamFill } from "react-icons/bs";
+import { RiSettings5Fill } from "react-icons/ri";
+import { CgCheckR } from "react-icons/cg";
+
 import { BiMessageDetail } from "react-icons/bi";
 import { BiCheckSquare } from "react-icons/bi";
 import { HiOutlineMenuAlt2 } from "react-icons/hi";
@@ -100,14 +109,14 @@ const Tasks = ({completed, total}) => {
 
 
   const taskColumns = [
-    { id: "assigned", title: "Assigned", color: "bg-[#8BB2FF]"},
-    { id: "acknowledged", title: "Acknowledged", color: "bg-[#6FE879]"},
-    { id: "inProgress", title: "In Progress", color: "bg-[#FBE67E]"},
-    { id: "completed", title: "Completed", color: "bg-[#D47FFF]"},
-    { id: "inReview", title: "In Review", color: "bg-[#FFB265]"},
-    { id: "rework", title: "Rework", color: "bg-[#C0874B]"},
-    { id: "dropped", title: "Dropped", color: "bg-[#FF7B7B]"},
-    { id: "approved", title: "Approved", color: "bg-[#1DCB42]"},
+    { id: "assigned", title: "Assigned", color: "bg-[#8BB2FF]", icon: "📥" },
+    { id: "acknowledged", title: "Acknowledged", color: "bg-[#6FE879]", icon: "✅" },
+    { id: "inProgress", title: "In Progress", color: "bg-[#FBE67E]", icon: "⚙️" },
+    { id: "completed", title: "Completed", color: "bg-[#D47FFF]", icon: "📦" },
+    { id: "inReview", title: "In Review", color: "bg-[#FFB265]", icon: "🔍" },
+    { id: "rework", title: "Rework", color: "bg-[#C0874B]", icon: "♻️" },
+    { id: "dropped", title: "Dropped", color: "bg-[#FF7B7B]", icon: "🕳" },
+    { id: "approved", title: "Approved", color: "bg-[#1DCB42]", icon: "🏆" },
   ];
 
   // const initialChecklist = [
@@ -358,7 +367,8 @@ const Tasks = ({completed, total}) => {
                 className={`max-w-[270px] min-w-[260px] sm:max-w-[270px] shrink-0 rounded-xl p-4 ${column.color} shadow-sm flex flex-col`}
               >
                 {/* Sticky header for column title */}
-                <div className="border-b border-gray-300 pb-2 mb-3 z-10">
+                <div className="border-b border-gray-300 pb-2 mb-3 z-10 flex items-center gap-1">
+                  <span>{column.icon}</span>
                   <span className="font-semibold text-lg text-gray-800">{column.title}</span>
                 </div>
 
