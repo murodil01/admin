@@ -112,7 +112,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
           <div className="flex-1 overflow-hidden">
             <nav
               className={`flex gap-1 flex-col h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent hover:scrollbar-thumb-gray-300 transition-colors duration-200 ${
-                collapsed ? "px-2 py-2" : "px-2 py-2"
+                collapsed ? "px-2 py-2" : "px-4 py-2"
               }`}
               style={{
                 scrollbarWidth: "thin",
@@ -130,20 +130,28 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                     onClick={() => !isTaskItem && handleNavigate(item.path)}
                     className={`flex items-center gap-3 py-2 rounded-xl transition-all duration-200 text-left group h-[40px]
       ${collapsed ? "justify-center px-2 w-[48px]" : "px-4 w-full"}
-      ${isActive ? "bg-[#0061fe] font-semibold text-white shadow-md" : "text-[#231f20] hover:text-white hover:shadow-sm"}
+      ${
+        isActive
+          ? "bg-[#0061fe] font-semibold text-white shadow-md"
+          : "text-[#7D8592] hover:text-white hover:shadow-sm"
+      }
       hover:bg-[#0061fe] hover:text-white relative group`}
                   >
                     {item.icon}
                     {!collapsed && (
                       <div className="w-full flex items-center justify-between relative">
-                        <span className="text-[16px] font-semibold">{item.label}</span>
+                        <span className="text-[16px] font-semibold">
+                          {item.label}
+                        </span>
                       </div>
                     )}
                     {isTaskItem && (
                       <BiChevronRight
                         className={`transition-transform duration-300 ease-in-out
           ${isDropdownOpen ? "rotate-90" : "rotate-0"}
-          text-3xl ${collapsed ? "absolute right-1 top-1/2 -translate-y-1/2" : ""}
+          text-3xl ${
+            collapsed ? "absolute right-1 top-1/2 -translate-y-1/2" : ""
+          }
         `}
                       />
                     )}
@@ -161,7 +169,6 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                       triggerButton={baseButton}
                       onOpenChange={(open) => setDropdownOpen(open)}
                     />
-
                   );
                 }
 
@@ -176,9 +183,9 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
 
           {/* Footer Section - Fixed */}
           <div
-            className={`flex-shrink-0  ${
+            className={`flex-shrink-0 ${
               collapsed ? "px-2 py-4" : "px-4 py-6"
-            }`}
+            } flex justify-center`}
           >
             {!collapsed ? (
               <button
@@ -195,9 +202,9 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 onClick={() =>
                   window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
                 }
-                className="flex items-center justify-center bg-[#0061fe] text-white rounded-xl p-2 transition-all duration-200 hover:bg-[#0056e0] hover:shadow-lg hover:scale-[1.05] active:scale-[0.95]"
+                className="bg-[#0061fe] text-white rounded-[14px] px-3 py-[10px] transition-all duration-200 hover:bg-[#0056e0] hover:shadow-lg hover:scale-[1.05] active:scale-[0.95] flex items-center justify-center"
               >
-                <BiSupport size={20} />
+                <BiSupport size={22} />
               </button>
             )}
           </div>
@@ -232,16 +239,17 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
             <nav className="flex flex-col gap-1 sm:gap-2">
               {menuItems.map((item) => {
                 const isActive = location.pathname === item.path;
-               const isTaskItem = item.path === "/tasks";
+                const isTaskItem = item.path === "/tasks";
 
                 const baseButton = (
                   <button
                     onClick={() => !isTaskItem && handleNavigate(item.path)}
                     className={`flex items-center w-full rounded-xl transition px-3 py-2 sm:px-4 sm:py-2.5
-          ${isActive
-                        ? "bg-[#0061fe] text-white font-semibold"
-                        : "text-[#231f20] hover:bg-[#0061fe] hover:text-white"
-                      }`}
+          ${
+            isActive
+              ? "bg-[#0061fe] text-white font-semibold"
+              : "text-[#7D8592] hover:bg-[#0061fe] hover:text-white"
+          }`}
                   >
                     <div className="w-5 h-5 mr-2 sm:mr-3 flex-shrink-0">
                       {item.icon}
@@ -250,13 +258,13 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                     <span className="text-sm sm:text-base font-medium flex items-center gap-5">
                       {item.label}
                       {isTaskItem && (
-                      <BiChevronRight
-                        className={`transition-transform duration-300 ease-in-out
+                        <BiChevronRight
+                          className={`transition-transform duration-300 ease-in-out
       ${isDropdownOpen ? "rotate-90" : "rotate-0"}
       text-md
     `}
-                      />
-                    )}
+                        />
+                      )}
                     </span>
                   </button>
                 );
@@ -281,9 +289,8 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 );
               })}
             </nav>
-            
-            <div className="mt-4 flex flex-col gap-4">
 
+            <div className="mt-4 flex flex-col gap-4">
               <button
                 onClick={() =>
                   window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
