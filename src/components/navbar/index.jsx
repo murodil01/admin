@@ -55,14 +55,14 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
       <div className="flex items-center gap-3">
         <button
           onClick={onToggleMobile}
-          className="md:hidden flex w-12 h-[45px] bg-white rounded-[14px]  items-center justify-center transition sm:shadow hover:shadow-md"
+          className="md:hidden flex w-12 h-[45px] bg-white rounded-[14px]  items-center justify-center transition sm:shadow "
         >
           <Menu size={24} className="text-[#1F2937]" />
         </button>
 
         <button
           onClick={onToggleDesktop}
-          className="hidden md:flex w-12 h-[45px] bg-white rounded-[14px]  items-center justify-center transition sm:shadow hover:shadow-md"
+          className="hidden md:flex w-12 h-[45px] bg-white rounded-[14px]  items-center justify-center transition sm:shadow "
         >
           <Menu size={24} className="text-[#1F2937]" />
         </button>
@@ -93,7 +93,7 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
         {/* Bell */}
         <button
           onClick={() => navigateAndClose("/notification")}
-          className="relative w-12 h-[45px] bg-white rounded-[14px] flex items-center justify-center transition sm:shadow hover:shadow-md"
+          className="relative w-12 h-[45px] bg-white rounded-[14px] flex items-center justify-center transition sm:shadow "
         >
           <Bell size={24} className="text-gray-600" />
           <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border border-white" />
@@ -115,7 +115,7 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
         <div className="hidden sm:block">
           <button
             onClick={() => setIsUserOpen((prev) => !prev)}
-            className="flex items-center gap-2 h-11 px-9 bg-white rounded-[14px] shadow hover:shadow-md transition"
+            className="flex items-center gap-2 h-11 px-9 bg-white rounded-[14px] shadow  transition"
           >
             <User size={22} className="text-gray-600" />
             <span className="font-medium text-base text-gray-700">Admin</span>
