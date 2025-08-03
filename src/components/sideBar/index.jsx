@@ -25,11 +25,11 @@ const menuItems = [
   { label: "Calendar", icon: <Calendar size={20} />, path: "/calendar" },
   { label: "Tasks", icon: <ClipboardList size={20} />, path: "/tasks" },
   { label: "Leads", icon: <RiPieChart2Fill size={20} />, path: "/leads" },
-  { label: "Customers", icon: <FaSackDollar size={20} />, path: "/customers" },
+  { label: "Customers", icon: <HiTrophy size={20} />, path: "/customers" },
   { label: "Departments", icon: <Landmark size={20} />, path: "/departments" },
   { label: "Inner Circle", icon: <FaUsers size={20} />, path: "/employees" },
   { label: "Messenger", icon: <MessageSquare size={20} />, path: "/messenger" },
-  { label: "M Library", icon: <IoLibrary size={20} />, path: "/files" },
+  { label: "M Library", icon: <IoLibrary size={20} />, path: "/library" },
   { label: "Reports", icon: <TbReport size={20} />, path: "/reports" },
   { label: "Archive", icon: <IoFileTrayFull size={20} />, path: "/archive" },
 ];
@@ -45,9 +45,10 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
   };
 
   const [selectedProject, setSelectedProject] = useState();
-  const [isHovered, setHoveredTask] = useState(false);
+  // const [isHovered, setHoveredTask] = useState(false);
 
   // Handle logo click with mobile state preservation
+  
   const handleLogoClick = () => {
     // Store mobile sidebar state before refresh
     if (isMobileOpen) {
@@ -80,31 +81,43 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
     <>
       <aside
         className={`hidden md:flex h-screen transition-all duration-300 bg-[#F2F2F2]
-    ${collapsed
-            ? "w-20 px-2 pt-[20px] pb-[10px]"
-            : "w-64 pt-[20px] pr-[15px] pb-[5px] pl-[15px]"
-          }`}
+    ${
+      collapsed
+        ? "w-20 px-2 pt-[20px] pb-[10px]"
+        : "w-64 pt-[20px] pr-[15px] pb-[5px] pl-[15px]"
+    }`}
       >
-        <div className="w-full h-full bg-white rounded-2xl shadow-xl flex flex-col justify-between overflow-hidden">
-          <div>
+        <div className="w-full h-full bg-white rounded-[24px] shadow-xl flex flex-col overflow-hidden">
+          {/* Header Section - Fixed */}
+          <div className="flex-shrink-0 mb-[5px]">
             <div
-              className={`flex justify-center transition-all duration-300 ${collapsed ? "pt-6 pb-3" : "p-6"
-                }`}
+              className={`flex justify-center transition-all duration-300 ${
+                collapsed ? "pt-6 pb-3" : "p-6"
+              }`}
             >
               <img
                 onClick={handleLogoClick}
                 src={collapsed ? side_blue3 : side_blue}
                 alt="Logo"
-                className={`transition-all duration-500 ease-in-out transform cursor-pointer ${collapsed
-                  ? "w-7 scale-90 opacity-80"
-                  : "w-[150px] scale-100 opacity-100"
-                  }`}
+                className={`transition-all duration-500 ease-in-out transform cursor-pointer ${
+                  collapsed
+                    ? "w-7 scale-90 opacity-80"
+                    : "w-[150px] scale-100 opacity-100"
+                }`}
               />
             </div>
+          </div>
 
+          {/* Navigation Section - Scrollable */}
+          <div className="flex-1 overflow-hidden">
             <nav
-              className={`flex flex-col gap-[5px] ${collapsed ? "items-center py-2" : "p-4"
-                }`}
+              className={`h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent hover:scrollbar-thumb-gray-300 transition-colors duration-200 ${
+                collapsed ? "px-2 py-2" : "px-2 py-2"
+              }`}
+              style={{
+                scrollbarWidth: "thin",
+                scrollbarColor: "rgba(156, 163, 175, 0.5) transparent",
+              }}
             >
               {menuItems.map((item) => {
                 const isActive = location.pathname === item.path;
@@ -160,16 +173,18 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
             </nav>
           </div>
 
+          {/* Footer Section - Fixed */}
           <div
-            className={`flex flex-col gap-4 ${collapsed ? "px-2 py-4" : "px-4 py-6"
-              }`}
+            className={`flex-shrink-0  ${
+              collapsed ? "px-2 py-4" : "px-4 py-6"
+            }`}
           >
             {!collapsed ? (
               <button
                 onClick={() =>
                   window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
                 }
-                className="w-full flex items-center justify-center gap-2 bg-[#0061fe] text-white mt-3 rounded-xl text-[18px] px-6 py-2 text-sm m-auto"
+                className="w-full flex items-center justify-center gap-2 bg-[#0061fe] text-white rounded-xl text-[18px] px-6 py-[8px] text-sm mx-auto transition-all duration-200 hover:bg-[#0056e0] hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] font-medium"
               >
                 <BiSupport size={18} />
                 <span>Support</span>
@@ -179,7 +194,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 onClick={() =>
                   window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
                 }
-                className="flex items-center justify-center bg-[#0061fe] text-white rounded-md p-2"
+                className="flex items-center justify-center bg-[#0061fe] text-white rounded-xl p-2 transition-all duration-200 hover:bg-[#0056e0] hover:shadow-lg hover:scale-[1.05] active:scale-[0.95]"
               >
                 <BiSupport size={20} />
               </button>
@@ -216,7 +231,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
             <nav className="flex flex-col gap-1 sm:gap-2">
               {menuItems.map((item) => {
                 const isActive = location.pathname === item.path;
-                const isTaskItem = item.path === "/tasks";
+               const isTaskItem = item.path === "/tasks";
 
                 const baseButton = (
                   <button
@@ -265,9 +280,9 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 );
               })}
             </nav>
-
-            {/* Footer */}
+            
             <div className="mt-4 flex flex-col gap-4">
+
               <button
                 onClick={() =>
                   window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
