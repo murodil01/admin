@@ -1,0 +1,141 @@
+import React from "react";
+import PropTypes from "prop-types";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
+const CalendarDay = ({
+  date,
+  events,
+  currentEventIndex,
+  onEventClick,
+  onNavigateEvent,
+  isToday,
+  isCurrentMonth,
+}) => {
+  const dayNumber = date.getDate();
+  const currentEvent = events[currentEventIndex];
+  const hasMultipleEvents = events.length > 1;
+  const additionalEventsCount = Math.max(0, events.length - 1);
+
+  return (
+    <div
+      className={`h-32 border p-2 relative transition-colors  truncate
+    ${isToday ? "bg-blue-100 border-blue-400" : "bg-white border-gray-200"} 
+    hover:bg-gray-50`}
+    >
+      {/* Date */}
+      <div className="absolute top-2 left-2">
+        <span
+          className={`text-sm font-medium ${
+            isCurrentMonth ? "text-gray-900" : "text-gray-400"
+          }`}
+        >
+          {dayNumber}
+        </span>
+      </div>
+
+      {/* Department Icon */}
+      {currentEvent?.department && (
+        <div className="absolute top-2 right-2">
+          <div
+            className={`w-3 h-3 rounded-full ${currentEvent.department.color}`}
+          ></div>
+        </div>
+      )}
+
+      {/* Event Content */}
+      {currentEvent && (
+        <div className="mt-6 flex flex-col items-center justify-center h-16">
+          {/* Navigation arrows for multiple events */}
+          {hasMultipleEvents && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNavigateEvent("prev");
+                }}
+                className="absolute left-1 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-200 rounded"
+              >
+                <ChevronLeft className="w-3 h-3" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNavigateEvent("next");
+                }}
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-200 rounded"
+              >
+                <ChevronRight className="w-3 h-3" />
+              </button>
+            </>
+          )}
+
+          {/* Event Image or Title */}
+          <div
+            className="cursor-pointer flex flex-col items-center"
+            onClick={() => onEventClick(currentEvent)}
+          >
+            {currentEvent.image ? (
+              <>
+                <img
+                  src={
+                    typeof currentEvent.image === "string"
+                      ? currentEvent.image
+                      : URL.createObjectURL(currentEvent.image)
+                  }
+                  alt={currentEvent.title}
+                  className="w-12 h-8 object-cover rounded"
+                />
+                <span className="text-xs text-gray-600 mt-1 text-center truncate max-w-full">
+                  {currentEvent.title}
+                </span>
+              </>
+            ) : (
+              <span className="text-xs text-gray-900 text-center px-1">
+                {currentEvent.title}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Additional events count badge */}
+      {additionalEventsCount > 0 && (
+        <div className="absolute bottom-2 right-2">
+          <div className="py-[3px] px-1 bg-blue-600 text-white text-xs rounded-full  flex items-center justify-center">
+            <span>{`+${additionalEventsCount}`}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+CalendarDay.propTypes = {
+  date: PropTypes.instanceOf(Date).isRequired,
+  events: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      title: PropTypes.string.isRequired,
+      date: PropTypes.oneOfType([PropTypes.instanceOf(Date), PropTypes.string])
+        .isRequired,
+      description: PropTypes.string,
+      image: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
+      department: PropTypes.shape({
+        id: PropTypes.string,
+        name: PropTypes.string,
+        icon: PropTypes.string,
+        color: PropTypes.string,
+      }),
+      link: PropTypes.string,
+      notification: PropTypes.string,
+      viewOption: PropTypes.string,
+    })
+  ).isRequired,
+  currentEventIndex: PropTypes.number.isRequired,
+  onEventClick: PropTypes.func.isRequired,
+  onNavigateEvent: PropTypes.func.isRequired,
+  isToday: PropTypes.bool,
+  isCurrentMonth: PropTypes.bool,
+};
+
+export default CalendarDay;
