@@ -100,11 +100,14 @@ const Tasks = ({completed, total}) => {
 
 
   const taskColumns = [
-    { id: "todo", title: "To Do"},
-    { id: "gotIt", title: "Got It"},
-    { id: "process", title: "Process"},
-    { id: "completed", title: "Completed"},
-    { id: "backlog", title: "Backlog"},
+    { id: "assigned", title: "Assigned", color: "bg-[#8BB2FF]"},
+    { id: "acknowledged", title: "Acknowledged", color: "bg-[#6FE879]"},
+    { id: "inProgress", title: "In Progress", color: "bg-[#FBE67E]"},
+    { id: "completed", title: "Completed", color: "bg-[#D47FFF]"},
+    { id: "inReview", title: "In Review", color: "bg-[#FFB265]"},
+    { id: "rework", title: "Rework", color: "bg-[#C0874B]"},
+    { id: "dropped", title: "Dropped", color: "bg-[#FF7B7B]"},
+    { id: "approved", title: "Approved", color: "bg-[#1DCB42]"},
   ];
 
   // const initialChecklist = [
@@ -352,10 +355,10 @@ const Tasks = ({completed, total}) => {
             {taskColumns.map((column) => (
               <div
                 key={column.id}
-                className="max-w-[270px] min-w-[260px] sm:max-w-[270px] shrink-0 rounded-xl p-4 bg-[#E9E8E8] shadow-sm flex flex-col"
+                className={`max-w-[270px] min-w-[260px] sm:max-w-[270px] shrink-0 rounded-xl p-4 ${column.color} shadow-sm flex flex-col`}
               >
                 {/* Sticky header for column title */}
-                <div className="border-b border-gray-300 pb-2 mb-3 bg-[#E9E8E8] z-10">
+                <div className="border-b border-gray-300 pb-2 mb-3 z-10">
                   <span className="font-semibold text-lg text-gray-800">{column.title}</span>
                 </div>
 

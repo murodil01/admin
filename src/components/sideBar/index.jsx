@@ -111,7 +111,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
           {/* Navigation Section - Scrollable */}
           <div className="flex-1 overflow-hidden">
             <nav
-              className={`h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent hover:scrollbar-thumb-gray-300 transition-colors duration-200 ${
+              className={`flex gap-1 flex-col h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent hover:scrollbar-thumb-gray-300 transition-colors duration-200 ${
                 collapsed ? "px-2 py-2" : "px-2 py-2"
               }`}
               style={{
@@ -128,10 +128,10 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                     onMouseEnter={() => isTaskItem && setHoveredTask(true)}
                     onMouseLeave={() => isTaskItem && setHoveredTask(false)}
                     onClick={() => !isTaskItem && handleNavigate(item.path)}
-                    className={`flex items-center gap-3 py-2 rounded-xl transition text-left
-        ${collapsed ? "justify-center px-2 w-[48px]" : "px-4 w-full"}
-        ${isActive ? "bg-[#0061fe] font-semibold text-white" : "text-[#231f20] hover:text-white"}
-        hover:bg-[#0061fe] hover:text-white`}
+                    className={`flex items-center gap-3 py-2 rounded-xl transition-all duration-200 text-left group h-[40px]
+      ${collapsed ? "justify-center px-2 w-[48px]" : "px-4 w-full"}
+      ${isActive ? "bg-[#0061fe] font-semibold text-white shadow-md" : "text-[#231f20] hover:text-white hover:shadow-sm"}
+      hover:bg-[#0061fe] hover:text-white relative group`}
                   >
                     {item.icon}
                     {!collapsed && (
@@ -142,9 +142,9 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                     {isTaskItem && (
                       <BiChevronRight
                         className={`transition-transform duration-300 ease-in-out
-      ${isDropdownOpen ? "rotate-90" : "rotate-0"}
-      text-3xl
-    `}
+          ${isDropdownOpen ? "rotate-90" : "rotate-0"}
+          text-3xl ${collapsed ? "absolute right-1 top-1/2 -translate-y-1/2" : ""}
+        `}
                       />
                     )}
                   </button>
@@ -157,10 +157,11 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                       selectedProject={selectedProject}
                       setSelectedProject={setSelectedProject}
                       isActive={isActive}
-                      isHovered={true}
+                      isHovered={collapsed ? isHovered : true}
                       triggerButton={baseButton}
                       onOpenChange={(open) => setDropdownOpen(open)}
                     />
+
                   );
                 }
 
