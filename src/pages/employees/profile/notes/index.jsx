@@ -1,5 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Trash2, Pencil, X, MoreVertical } from "lucide-react";
+import {
+  Send,
+  Trash2,
+  Pencil,
+  X,
+  MoreVertical,
+  SendHorizontal,
+} from "lucide-react";
 
 const Notes = () => {
   const [input, setInput] = useState("");
@@ -138,14 +145,14 @@ const Notes = () => {
       </div>
 
       {/* Sticky Input Field */}
-      <div className="sticky bottom-0 left-0 right-0 bg-white p-4 border-t border-[#979797] flex items-center gap-2">
+      <div className="sticky bottom-0 left-0 right-0 bg-white p-4  flex items-center gap-2">
         <textarea
           rows={1}
           placeholder={editingId ? "Editing note..." : "Type a note"}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="flex-1 px-4 py-2 border border-[#D8E0F0] rounded-full outline-none resize-none placeholder:text-gray-400"
+          className="flex-1 px-4 py-2 border border-[#D8E0F0] rounded-[14px] outline-none resize-none placeholder:text-gray-400"
         />
         {editingId && (
           <button
@@ -158,9 +165,9 @@ const Notes = () => {
         )}
         <button
           onClick={sendMessage}
-          className="p-2 bg-[#0061fe] rounded-full text-white hover:bg-[#004dcc] transition"
+          className="p-2 bg-gray-500 rounded-[14px] text-white hover:bg-[D8E0F0] transition"
         >
-          <Send size={20} />
+          <SendHorizontal className="text-[D8E0F0]" size={20} />
         </button>
       </div>
     </div>

@@ -5,6 +5,7 @@ import {
   ChevronDown as DropdownArrow,
   ArrowLeft,
   Calendar,
+  MoreVertical,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Projects from "./projects";
@@ -18,35 +19,23 @@ const Profile = () => {
 
   const [birthday, setBirthday] = useState("1996-05-19");
   const [showDetails, setShowDetails] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showEditDropdown, setShowEditDropdown] = useState(false);
   const navigate = useNavigate();
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "Profile":
-        return <Profiles />;
-      case "Projects":
-        return <Projects />;
-      case "Notes":
-        return <Notes />;
-      default:
-        return null;
-    }
+  const handleSave = () => {
+    console.log("Saved Birthday:", birthday);
+    setIsEditing(false);
   };
 
   useEffect(() => {
     const savedTab = localStorage.getItem("profileTab");
-    if (savedTab) {
-      setActiveTab(savedTab);
-    }
+    if (savedTab) setActiveTab(savedTab);
   }, []);
 
   useEffect(() => {
     localStorage.setItem("profileTab", activeTab);
   }, [activeTab]);
-
-  const handleSave = () => {
-    console.log("Saved Birthday:", birthday);
-  };
 
   const SidebarSections = [
     {
@@ -64,7 +53,6 @@ const Profile = () => {
       ],
     },
     {
-      title: "Passport Details",
       data: [
         { label: "Email", value: "evanyates@gmail.com" },
         { label: "Join Date", value: "2025-05-01" },
@@ -77,6 +65,39 @@ const Profile = () => {
       ],
     },
   ];
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "Profile":
+        return <Profiles />;
+      case "Projects":
+        return <Projects />;
+      case "Notes":
+        return <Notes />;
+      default:
+        return null;
+    }
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const dropdown = document.getElementById("edit-dropdown");
+      const button = document.getElementById("edit-button");
+      if (
+        dropdown &&
+        !dropdown.contains(event.target) &&
+        button &&
+        !button.contains(event.target)
+      ) {
+        setShowEditDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -93,9 +114,42 @@ const Profile = () => {
 
         <div className="flex flex-col xl:flex-row gap-6">
           {/* SIDEBAR */}
-          <div className="w-full xl:w-[430px] bg-white border border-gray-100 rounded-[24px] p-6 shadow-sm">
+          <div className="w-full xl:w-[430px] bg-white border border-gray-100 rounded-[24px] p-6 shadow-sm relative">
+            {/* Edit icon */}
+            <div className="absolute top-5 right-5 z-10">
+              <button
+                id="edit-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowEditDropdown((prev) => !prev);
+                }}
+                className="p-2 text-gray-600 hover:bg-gray-100 rounded-full"
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+
+              {showEditDropdown && (
+                <div
+                  id="edit-dropdown"
+                  className="absolute top-full right-0 mt-2 z-20 bg-white border border-gray-200 rounded-md shadow-md w-28"
+                >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditing(true);
+                      setShowEditDropdown(false);
+                    }}
+                    className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100"
+                  >
+                    Edit
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Profile section */}
             <div
-              className="flex items-center gap-4 cursor-pointer xl:cursor-default border-b border-[#E4E6E8] pb-5"
+              className="flex items-center border-b border-[#E4E6E8] pb-5 cursor-pointer"
               onClick={() =>
                 window.innerWidth < 1280 && setShowDetails(!showDetails)
               }
@@ -103,53 +157,64 @@ const Profile = () => {
               <img
                 src="https://randomuser.me/api/portraits/men/1.jpg"
                 alt="Profile"
-                className="w-[80px] sm:w-[100px] md:w-[120px] lg:w-[140px] h-[80px] sm:h-[100px] md:h-[120px] lg:h-[140px] rounded-full object-cover ring-4 ring-gray-100"
+                className="w-[80px] h-[80px] sm:w-[100px] sm:h-[100px] md:w-[120px] md:h-[120px] lg:w-[140px] lg:h-[140px] rounded-full object-cover ring-4 ring-gray-100"
               />
-              <div>
-                <h3 className="text-[22px] font-bold text-[#0061fe]">
+              <div className="ml-4 flex flex-col">
+                <h3 className="md:text-[22px] text-[18px] font-bold text-[#0061fe] whitespace-nowrap">
                   Allayorov Bobujon
                 </h3>
-                <p className="text-[12px] sm:text-[14px] md:text-[16px] lg:text-[18px] font-normal sm:font-medium md:font-semibold text-[#1F2937] flex items-center gap-2">
+                <p className="text-[14px] md:text-[16px] lg:text-[18px] font-medium text-[#1F2937] flex items-center gap-2">
                   Backend developer
                   <span className="text-[10px] border border-[#7D8592] px-[2px] py-[2px] rounded-[4px]">
                     Middle
                   </span>
                 </p>
               </div>
+
+              {/* Dropdown icon */}
               <DropdownArrow
-                className={`w-5 h-5 text-gray-600 ml-auto xl:hidden transition-transform ${
+                className={`w-5 h-5 text-gray-600 xl:hidden ml-auto transition-transform ${
                   showDetails ? "rotate-180" : ""
                 }`}
               />
             </div>
 
+            {/* Content info */}
             <div
               className={`mt-6 space-y-6 ${
                 showDetails ? "block" : "hidden xl:block"
               }`}
             >
-              {SidebarSections.map((section) => (
-                <div key={section.title}>
-                  <h4 className="text-[#0061fe] text-[18px] font-bold mb-3">
-                    {section.title}
-                  </h4>
+              {SidebarSections.map((section, index) => (
+                <div key={index}>
+                  {section.title && (
+                    <h4 className="text-[#0061fe] text-[18px] font-bold mb-3">
+                      {section.title}
+                    </h4>
+                  )}
                   <div className="space-y-3">
-                    {section.data.map((item) => (
-                      <div key={item.label}>
+                    {section.data.map((item, idx) => (
+                      <div key={idx}>
                         <div className="text-sm text-gray-500 mb-1">
                           {item.label}
                         </div>
                         {item.input ? (
-                          <div className="relative">
-                            <input
-                              type="date"
-                              name={item.name}
-                              value={birthday}
-                              onChange={(e) => setBirthday(e.target.value)}
-                              className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-4 py-2 text-sm text-gray-800 pr-10"
-                            />
-                            <Calendar className="absolute right-3 top-2.5 text-gray-400 w-5 h-5 pointer-events-none" />
-                          </div>
+                          isEditing ? (
+                            <div className="relative">
+                              <input
+                                type="date"
+                                name={item.name}
+                                value={birthday}
+                                onChange={(e) => setBirthday(e.target.value)}
+                                className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-4 py-2 text-sm text-gray-800 pr-10"
+                              />
+                              <Calendar className="absolute right-3 top-2.5 text-gray-400 w-5 h-5 pointer-events-none" />
+                            </div>
+                          ) : (
+                            <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-4 py-2 text-sm text-gray-800">
+                              {item.value}
+                            </div>
+                          )
                         ) : (
                           <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-4 py-2 text-sm text-gray-800">
                             {item.value}
@@ -160,14 +225,17 @@ const Profile = () => {
                   </div>
                 </div>
               ))}
-              <div>
-                <button
-                  onClick={handleSave}
-                  className="w-full bg-[#0061fe] text-white py-2 rounded-xl text-center text-sm flex items-center justify-center gap-2"
-                >
-                  <UploadIcon size={16} /> Save edit
-                </button>
-              </div>
+
+              {isEditing && (
+                <div>
+                  <button
+                    onClick={handleSave}
+                    className="w-full bg-[#0061fe] text-white py-2 rounded-xl text-center text-sm flex items-center justify-center gap-2"
+                  >
+                    <UploadIcon size={16} /> Save edit
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -194,7 +262,6 @@ const Profile = () => {
                 <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
               </button>
             </div>
-
             {renderTabContent()}
           </div>
         </div>
