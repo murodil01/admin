@@ -23,7 +23,16 @@ import { HiTrophy } from "react-icons/hi2";
 const menuItems = [
   { label: "Dashboard", icon: <BsFillGridFill size={20} />, path: "/" },
   { label: "Calendar", icon: <Calendar size={20} />, path: "/calendar" },
-  { label: "Tasks", icon: <ClipboardList size={20} />, path: "/tasks" },
+  {
+    label: "Tasks",
+    icon: (
+      <span className="w-5 h-5 flex items-center justify-center">
+        <ClipboardList size={20} />
+      </span>
+    ),
+    path: "/tasks",
+  },
+
   { label: "Leads", icon: <RiPieChart2Fill size={20} />, path: "/leads" },
   { label: "Customers", icon: <HiTrophy size={20} />, path: "/customers" },
   { label: "Departments", icon: <Landmark size={20} />, path: "/departments" },
@@ -145,7 +154,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                         </span>
                       </div>
                     )}
-                    {isTaskItem && (
+                    {/* {isTaskItem && (
                       <BiChevronRight
                         className={`transition-transform duration-300 ease-in-out
           ${isDropdownOpen ? "rotate-90" : "rotate-0"}
@@ -153,6 +162,15 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
             collapsed ? "absolute right-1 top-1/2 -translate-y-1/2" : ""
           }
         `}
+                      />
+                    )} */}
+                    {isTaskItem && !collapsed && (
+                      <BiChevronRight
+                        size={40}
+                        className={`transition-transform duration-300 ease-in-out
+      ${isDropdownOpen ? "rotate-90" : "rotate-0"}
+      text-3xl ml-2
+    `}
                       />
                     )}
                   </button>
