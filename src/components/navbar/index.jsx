@@ -153,8 +153,7 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
               onClick={() => navigateAndClose("/settings")}
               className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100 cursor-pointer"
             >
-              <Settings className="animate-spin" size={18} />{" "}
-              <span>Settings</span>
+              <Settings size={18} /> <span>Settings</span>
             </div>
 
             {/* Logout */}
