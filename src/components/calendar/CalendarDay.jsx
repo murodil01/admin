@@ -18,7 +18,7 @@ const CalendarDay = ({
 
   return (
     <div
-      className={`h-32 border p-2 relative transition-colors  truncate
+      className={`max-sm:h-32 h-36 border p-2 relative transition-colors  truncate
     ${isToday ? "bg-blue-100 border-blue-400" : "bg-white border-gray-200"} 
     hover:bg-gray-50`}
     >
@@ -83,7 +83,7 @@ const CalendarDay = ({
                       : URL.createObjectURL(currentEvent.image)
                   }
                   alt={currentEvent.title}
-                  className="w-12 h-8 object-cover rounded"
+                  className="max-w-[88px] max-h-16 object-cover rounded"
                 />
                 <span className="text-xs text-gray-600 mt-1 text-center truncate max-w-full">
                   {currentEvent.title}

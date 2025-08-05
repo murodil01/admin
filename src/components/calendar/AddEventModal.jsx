@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { X, Upload, Paperclip, ChevronDown } from "lucide-react";
 import { departments } from "../../utils/department"; // faqat array kerak, types emas
+import DepartmentsSelector from './DepartmentsSelector';
+
 
 const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
   const [formData, setFormData] = useState({
@@ -60,7 +62,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
 
   return (
     <div className="fixed inset-0 bg-[#0061fe]/10 backdrop-blur-xs flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">Add Event</h2>
           <button
@@ -72,11 +74,11 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-[60%_37%] gap-6">
             {/* Left Column */}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-600 mb-2">
                   Event Title
                 </label>
                 <input
@@ -92,7 +94,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm  font-bold text-gray-600 mb-2">
                   View option
                 </label>
                 <div className="relative">
@@ -116,8 +118,9 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="grid grid-cols-2 max-md:grid-cols-1 gap-4 max-w-full">
+                <div>
+                <label className="block text-sm font-bold text-gray-600 mb-2">
                   Date
                 </label>
                 <input
@@ -134,7 +137,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-600 mb-2">
                   Notification time
                 </label>
                 <div className="relative">
@@ -160,9 +163,10 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
                   </div>
                 </div>
               </div>
+              </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-600 mb-2">
                   Description
                 </label>
                 <textarea
@@ -184,7 +188,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
             <div className="space-y-4">
               {/* Image Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-600 mb-2">
                   Image
                 </label>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
@@ -224,7 +228,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
 
               {/* Dummy file uploader */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-600 mb-2">
                   File
                 </label>
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
@@ -244,7 +248,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
 
               {/* Link */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-600 mb-2">
                   Link
                 </label>
                 <input
@@ -259,36 +263,14 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
               </div>
 
               {/* Department buttons */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Departments
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {departments.map((dept) => (
-                    <button
-                      key={dept.id}
-                      type="button"
-                      onClick={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          department:
-                            prev.department?.id === dept.id ? null : dept,
-                        }))
-                      }
-                      className={`p-2 border rounded-lg text-xs flex flex-col items-center space-y-1 transition-colors ${
-                        formData.department?.id === dept.id
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      <span className="text-lg">{dept.icon}</span>
-                      <span className="text-center leading-tight">
-                        {dept.name}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <DepartmentsSelector
+  selectedIds={[formData.department?.id]} // yoki ko‘p tanlash bo‘lsa: formData.departments
+  onChange={(ids) => {
+    const selected = departments.find(d => d.id === ids[0]);
+    setFormData(prev => ({ ...prev, department: selected || null }));
+  }}
+/>
+
             </div>
           </div>
 
