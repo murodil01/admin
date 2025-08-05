@@ -195,7 +195,7 @@ const Profile = () => {
                   <div className="space-y-3">
                     {section.data.map((item, idx) => (
                       <div key={idx}>
-                        <div className="text-sm text-gray-500 mb-1">
+                        <div className="text-[14px] text-[#7D8592] font-bold mb-1">
                           {item.label}
                         </div>
                         {item.input ? (
@@ -206,17 +206,17 @@ const Profile = () => {
                                 name={item.name}
                                 value={birthday}
                                 onChange={(e) => setBirthday(e.target.value)}
-                                className="w-full bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-4 py-2 text-sm text-gray-800 pr-10"
+                                className="w-full h-[48px] bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-4 py-2 font-normal text-[14px] text-[#7D8592] pr-10"
                               />
                               <Calendar className="absolute right-3 top-2.5 text-gray-400 w-5 h-5 pointer-events-none" />
                             </div>
                           ) : (
-                            <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-4 py-2 text-sm text-gray-800">
+                            <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-4 py-2 text-[14px] font-normal text-[#7D8592]">
                               {item.value}
                             </div>
                           )
                         ) : (
-                          <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-4 py-2 text-sm text-gray-800">
+                          <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-4 py-2 text-[14px] font-normal text-[#7D8592]">
                             {item.value}
                           </div>
                         )}
@@ -230,7 +230,7 @@ const Profile = () => {
                 <div>
                   <button
                     onClick={handleSave}
-                    className="w-full bg-[#0061fe] text-white py-2 rounded-xl text-center text-sm flex items-center justify-center gap-2"
+                    className="w-full h-[48px] bg-[#0061fe] text-white py-2 rounded-xl text-center text-sm flex items-center justify-center gap-2"
                   >
                     <UploadIcon size={16} /> Save edit
                   </button>
