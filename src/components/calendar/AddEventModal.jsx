@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { X, Upload, Paperclip, ChevronDown } from "lucide-react";
-import { departments } from "../../utils/department"; // faqat array kerak, types emas
-import DepartmentsSelector from './DepartmentsSelector';
-
+import { X, Paperclip, ChevronDown, FileUp } from "lucide-react";
+import { rawDepartments } from "../../utils/department"; // faqat array kerak, types emas
+import DepartmentsSelector from "./DepartmentsSelector";
 
 const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
   const [formData, setFormData] = useState({
@@ -11,6 +10,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
     description: "",
     date: selectedDate || new Date(),
     image: null,
+    file: null,
     department: null,
     link: "",
     notification: "Select Time",
@@ -28,6 +28,15 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
       setFormData((prev) => ({ ...prev, image: file }));
     }
   };
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData((prev) => ({
+        ...prev,
+        file: file,
+      }));
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -39,6 +48,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
       description: formData.description,
       image: formData.image,
       department: formData.department,
+      file: formData.file,
       link: formData.link,
       notification: formData.notification,
       viewOption: formData.viewOption,
@@ -49,6 +59,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
       description: "",
       date: selectedDate || new Date(),
       image: null,
+      file: null,
       department: null,
       link: "",
       notification: "Select Time",
@@ -61,7 +72,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-[#0061fe]/10 backdrop-blur-xs flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-[#0061fe]/10 backdrop-blur-xs flex items-center justify-center z-50 px-5">
       <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">Add Event</h2>
@@ -74,7 +85,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-[60%_37%] gap-6">
+          <div className="grid grid-cols-[60%_37%] gap-6 max-sm:grid-cols-1">
             {/* Left Column */}
             <div className="space-y-4">
               <div>
@@ -98,71 +109,71 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
                   View option
                 </label>
                 <div className="relative">
-                <select
-                  value={formData.viewOption}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      viewOption: e.target.value,
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-                >
-                  <option>Choose</option>
-                  <option>Public</option>
-                  <option>Private</option>
-                </select>
-                <div className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <ChevronDown className="w-4 h-4" />
+                  <select
+                    value={formData.viewOption}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        viewOption: e.target.value,
+                      }))
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                  >
+                    <option>Choose</option>
+                    <option>Public</option>
+                    <option>Private</option>
+                  </select>
+                  <div className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <ChevronDown className="w-4 h-4" />
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 max-md:grid-cols-1 gap-4 max-w-full">
                 <div>
-                <label className="block text-sm font-bold text-gray-600 mb-2">
-                  Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.date.toISOString().split("T")[0]}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      date: new Date(e.target.value),
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-gray-600 mb-2">
-                  Notification time
-                </label>
-                <div className="relative">
-                  <select
-                    value={formData.notification}
+                  <label className="block text-sm font-bold text-gray-600 mb-2">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.date.toISOString().split("T")[0]}
                     onChange={(e) =>
                       setFormData((prev) => ({
                         ...prev,
-                        notification: e.target.value,
+                        date: new Date(e.target.value),
                       }))
                     }
-                    className="w-full px-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-                  >
-                    <option>Select Time</option>
-                    <option>5 minutes before</option>
-                    <option>15 minutes before</option>
-                    <option>30 minutes before</option>
-                    <option>1 hour before</option>
-                    <option>1 day before</option>
-                  </select>
-                  <div className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <ChevronDown className="w-4 h-4" />
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-600 mb-2">
+                    Notification time
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={formData.notification}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          notification: e.target.value,
+                        }))
+                      }
+                      className="w-full px-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                    >
+                      <option>Select Time</option>
+                      <option>5 minutes before</option>
+                      <option>15 minutes before</option>
+                      <option>30 minutes before</option>
+                      <option>1 hour before</option>
+                      <option>1 day before</option>
+                    </select>
+                    <div className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <ChevronDown className="w-4 h-4" />
+                    </div>
                   </div>
                 </div>
-              </div>
               </div>
 
               <div>
@@ -187,7 +198,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
             {/* Right Column */}
             <div className="space-y-4">
               {/* Image Upload */}
-              <div>
+              {/* <div>
                 <label className="block text-sm font-bold text-gray-600 mb-2">
                   Image
                 </label>
@@ -224,10 +235,35 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
                     Choose file
                   </label>
                 </div>
+              </div> */}
+              <div>
+                <label className="block text-sm font-bold text-gray-600 mb-2">
+                  Image
+                </label>
+
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                    id="image-upload"
+                  />
+
+                  <label
+                    htmlFor="image-upload"
+                    className="flex items-center justify-between w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-500 cursor-pointer hover:bg-gray-50 transition"
+                  >
+                    <span className="w-full truncate mr-2">
+                      {formData.image ? formData.image.name : "Upload image"}
+                    </span>
+                    <Paperclip className="w-6 h-6 text-gray-400" />
+                  </label>
+                </div>
               </div>
 
               {/* Dummy file uploader */}
-              <div>
+              {/* <div>
                 <label className="block text-sm font-bold text-gray-600 mb-2">
                   File
                 </label>
@@ -243,6 +279,31 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
                       Choose file
                     </button>
                   </div>
+                </div>
+              </div> */}
+              <div>
+                <label className="block text-sm font-bold text-gray-600 mb-2">
+                  File
+                </label>
+
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept=".pdf,.docx"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="file-upload"
+                  />
+
+                  <label
+                    htmlFor="file-upload"
+                    className="flex items-center justify-between w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-500 cursor-pointer hover:bg-gray-50 transition"
+                  >
+                    <span className="w-full truncate mr-2">
+                      {formData.file ? formData.file.name : "Upload file"}
+                    </span>
+                    <FileUp className="w-6 h-6 text-gray-400" />
+                  </label>
                 </div>
               </div>
 
@@ -264,18 +325,25 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
 
               {/* Department buttons */}
               <DepartmentsSelector
-  selectedIds={[formData.department?.id]} // yoki ko‘p tanlash bo‘lsa: formData.departments
-  onChange={(ids) => {
-    const selected = departments.find(d => d.id === ids[0]);
-    setFormData(prev => ({ ...prev, department: selected || null }));
-  }}
-/>
-
+                selectedIds={[formData.department?.id]} // agar ko‘p tanlash bo‘lsa, bu yerga array
+                onChange={(ids) => {
+                  const selectedDepartments = rawDepartments.filter((d) =>
+                    ids.includes(d.id)
+                  );
+                  setFormData((prev) => ({
+                    ...prev,
+                    department:
+                      selectedDepartments.length === 1
+                        ? selectedDepartments[0] // 1 ta bo‘lsa object sifatida
+                        : selectedDepartments, // ko‘p bo‘lsa array sifatida
+                  }));
+                }}
+              />
             </div>
           </div>
 
           {/* Submit + Cancel */}
-          <div className="flex justify-end space-x-3 mt-6">
+          <div className="flex justify-end space-x-3 mt-11">
             <button
               type="button"
               onClick={onClose}

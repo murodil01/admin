@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { X, Edit2, Calendar, Clock } from "lucide-react";
-import { departments } from "../../utils/department"; // static data uchun
+import { X, Edit2, Calendar, Clock, FileDown } from "lucide-react";
+import { rawDepartments } from "../../utils/department"; // static data uchun
 
 const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -28,6 +28,12 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
       setEditData({ ...editData, image: file });
     }
   };
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setDisplayData((prev) => ({ ...prev, file }));
+    }
+  };
 
   if (!isOpen || !event) return null;
 
@@ -35,11 +41,11 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
   if (!displayData) return null;
 
   return (
-    <div className="fixed inset-0  bg-[#0061fe]/10 backdrop-blur-xs flex items-center justify-center z-50">
+    <div className="fixed inset-0  bg-[#0061fe]/10 backdrop-blur-xs flex items-center justify-center z-50 px-5">
       <div className="relative bg-white rounded-lg">
-        <div className="p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="p-6 w-full max-w-xl max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold w-full">
+            <h2 className="text-xl font-bold w-full">
               {isEditing ? "Edit Event" : displayData.title}
             </h2>
             <button
@@ -53,7 +59,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
           <div className="space-y-4">
             {isEditing && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-700 mb-2">
                   Event Title
                 </label>
                 <input
@@ -66,14 +72,15 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                 />
               </div>
             )}
-
+            {/* Image */}
             <div>
               {isEditing && (
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-600 mb-2">
                   Image
                 </label>
               )}
-              <div className="border rounded-lg p-4 bg-gray-50">
+
+              <div className="border border-[#D8E0F0] rounded-lg py-5 px-5">
                 {displayData.image ? (
                   <img
                     src={
@@ -85,11 +92,26 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                     className="w-full h-32 object-cover rounded"
                   />
                 ) : (
-                  <div className="w-full h-32 bg-gray-200 rounded flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="w-16 h-16 bg-gray-300 rounded mx-auto mb-2 flex items-center justify-center">
+                  <div className="w-28 rounded flex items-center justify-center mx-auto">
+                    <img
+                      src="/public/insert-picture-icon.svg"
+                      alt="picture-placeholder"
+                      className="mx-auto"
+                    />
+                  </div>
+                )}
+                {isEditing && (
+                  <div className="mt-2">
+                    <label className="block w-full text-sm text-center py-2 border rounded-md cursor-pointer hover:bg-gray-100 transition">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                      <div className="flex items-center justify-center gap-2 text-sm text-gray-700">
                         <svg
-                          className="w-8 h-8 text-gray-400"
+                          className="w-5 h-5 text-gray-500"
                           fill="currentColor"
                           viewBox="0 0 20 20"
                         >
@@ -99,18 +121,10 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                             clipRule="evenodd"
                           />
                         </svg>
+                        Change Image
                       </div>
-                      <p className="text-sm text-gray-500">No image</p>
-                    </div>
+                    </label>
                   </div>
-                )}
-                {isEditing && (
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="mt-2 w-full text-sm"
-                  />
                 )}
               </div>
             </div>
@@ -118,7 +132,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
             {/* Description */}
             {isEditing ? (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-700 mb-4">
                   Description
                 </label>
                 <textarea
@@ -135,17 +149,252 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
               </div>
             ) : displayData.description ? (
               <div>
-                <h3 className="font-medium text-gray-900 mb-2">Description</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
+                <h3 className="font-bold text-sm text-gray-700 mb-2">
+                  Description
+                </h3>
+                <p className=" text-sm leading-relaxed">
                   {displayData.description}
                 </p>
               </div>
             ) : null}
 
-            {/* Date and Time */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* File */}
+            {/* <div className="mt-4">
+              {isEditing ? (
+                <>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    File
+                  </label>
+                  <div className="border rounded-lg p-4 bg-gray-50 flex items-center justify-between">
+                    {displayData.file ? (
+                      <div className="text-sm text-gray-800 break-all">
+                        {displayData.file.name}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-gray-500">No file</div>
+                    )}
+                    <label className="ml-4 inline-flex items-center gap-2 cursor-pointer text-sm text-blue-600 hover:underline">
+                      <svg
+                        className="w-5 h-5 text-blue-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8 2a1 1 0 00-1 1v4H5a1 1 0 00-.8 1.6l5 7a1 1 0 001.6 0l5-7A1 1 0 0015 7h-2V3a1 1 0 00-1-1H8z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <input
+                        type="file"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
+                      Change File
+                    </label>
+                  </div>
+                </>
+              ) : (
+                displayData.file && (
+                  <div className="">
+                    <h3 className="font-medium text-gray-900 mb-2">File</h3>
+                    <a
+                      href={URL.createObjectURL(displayData.file)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:underline break-all"
+                    >
+                      {displayData.file.name}
+                    </a>
+                  </div>
+                )
+              )}
+            </div> */}
+
+            {/* File */}
+            <div className="flex gap-9 mt-4">
+              {isEditing ? (
+                <>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    File
+                  </label>
+                  <div className="border rounded-lg p-4 bg-gray-50 flex items-center justify-between">
+                    {displayData.file ? (
+                      <div className="text-sm text-gray-800 break-all">
+                        {displayData.file.name}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-gray-500">No file</div>
+                    )}
+                    <label className="ml-4 inline-flex items-center gap-2 cursor-pointer text-sm text-blue-600 hover:underline">
+                      <svg
+                        className="w-5 h-5 text-blue-500"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8 2a1 1 0 00-1 1v4H5a1 1 0 00-.8 1.6l5 7a1 1 0 001.6 0l5-7A1 1 0 0015 7h-2V3a1 1 0 00-1-1H8z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <input
+                        type="file"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
+                      Change File
+                    </label>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <h3 className="font-bold text-sm text-gray-700 mb-2">File</h3>
+                  {/* <div className="border rounded-lg p-4 bg-gray-50 flex items-center justify-between"> */}
+                  {displayData.file ? (
+                    <>
+                      {/* <div className="text-sm text-gray-800 break-all">
+                          {displayData.file.name}
+                        </div> */}
+                      <a
+                        href={URL.createObjectURL(displayData.file)}
+                        download={displayData.file.name}
+                        className="inline-flex items-center px-5 py-4 gap-9 border border-gray-300 rounded-[14px]  bg-white hover:bg-gray-100 hover:text-gray-900"
+                      >
+                        Download file
+                        <FileDown className="w-5 h-5" />
+                      </a>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-gray-500">No file</div>
+                      <button
+                        className="inline-flex items-center px-4 py-4 gap-9 border border-gray-300 rounded-[14px] text-gray-400 bg-gray-100 cursor-not-allowed"
+                        disabled
+                      >
+                        Download file
+                        <FileDown className="w-5 h-5 text-gray-400" />
+                      </button>
+                    </>
+                  )}
+                  {/* </div> */}
+                </div>
+              )}
+
+              {/* Link */}
+              {(displayData.link || isEditing) && (
+                <div>
+                  {isEditing ? (
+                    <>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        Link
+                      </label>
+                      <input
+                        type="url"
+                        value={editData?.link || ""}
+                        onChange={(e) =>
+                          setEditData((prev) => ({
+                            ...prev,
+                            link: e.target.value,
+                          }))
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="font-bold text-sm text-gray-700 mb-2">
+                        Link
+                      </h3>
+                      <a
+                        href={displayData.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block w-full max-w-60 text-blue-600 hover:text-blue-800 text-sm truncate"
+                      >
+                        {displayData.link}
+                      </a>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Department */}
+            {isEditing ? (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Department
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {rawDepartments.map((dept) => {
+                    const isSelected = editData?.department?.some(
+                      (d) => d.id === dept.id
+                    );
+                    return (
+                      <button
+                        key={dept.id}
+                        type="button"
+                        onClick={() =>
+                          setEditData((prev) => {
+                            const alreadySelected = prev.department?.some(
+                              (d) => d.id === dept.id
+                            );
+                            return {
+                              ...prev,
+                              department: alreadySelected
+                                ? prev.department.filter(
+                                    (d) => d.id !== dept.id
+                                  ) // toggle off
+                                : [...(prev.department || []), dept], // toggle on
+                            };
+                          })
+                        }
+                        className={`p-2 border rounded-lg text-xs flex items-center space-x-2 ${
+                          isSelected
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-gray-300 hover:bg-gray-50"
+                        }`}
+                      >
+                        <img
+                          src={dept.avatar}
+                          alt={`${dept.name} avatar`}
+                          className="w-6 h-6 rounded-full object-cover"
+                        />
+                        <span>{dept.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : displayData.department?.length ? (
+              <div>
+                <h3 className="font-bold text-sm text-gray-700 mb-2">
+                  Department
+                </h3>
+                <div className="flex flex-wrap gap-4 items-center w-full pt-4 pb-10">
+                  {displayData.department.map((dept) => (
+                    <div
+                      key={dept.id}
+                      className="flex items-center"
+                      // className="flex items-center space-x-1 border px-2 py-1 rounded text-sm text-gray-600"
+                    >
+                      <img
+                        src={dept.avatar}
+                        alt={`${dept.name} avatar`}
+                        className="w-6 h-6 rounded-full object-cover"
+                      />
+                      {/* <span>{dept.name}</span> */}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {/* Date and Time */}
+            <div className="max-w-full flex justify-between flex-wrap gap-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
                   Date
                 </label>
                 {isEditing ? (
@@ -169,103 +418,26 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Time
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Notification before
                 </label>
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <Clock className="w-4 h-4" />
                   <span>{displayData.notification || "No notification"}</span>
                 </div>
               </div>
-            </div>
 
-            {/* Department */}
-            {isEditing ? (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Department
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {departments.map((dept) => (
-                    <button
-                      key={dept.id}
-                      type="button"
-                      onClick={() =>
-                        setEditData((prev) => ({
-                          ...prev,
-                          department:
-                            prev.department?.id === dept.id ? null : dept,
-                        }))
-                      }
-                      className={`p-2 border rounded-lg text-xs flex items-center space-x-2 ${
-                        editData?.department?.id === dept.id
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      <span>{dept.icon}</span>
-                      <span>{dept.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : displayData.department ? (
-              <div>
-                <h3 className="font-medium text-gray-900 mb-2">Department</h3>
-                <div className="flex items-center space-x-2">
-                  <span>{displayData.department.icon}</span>
-                  <span className="text-sm text-gray-600">
-                    {displayData.department.name}
-                  </span>
-                </div>
-              </div>
-            ) : null}
-
-            {/* Link */}
-            {(displayData.link || isEditing) && (
-              <div>
-                {isEditing ? (
-                  <>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Link
-                    </label>
-                    <input
-                      type="url"
-                      value={editData?.link || ""}
-                      onChange={(e) =>
-                        setEditData((prev) => ({
-                          ...prev,
-                          link: e.target.value,
-                        }))
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    />
-                  </>
-                ) : (
-                  <>
-                    <h3 className="font-medium text-gray-900 mb-2">Link</h3>
-                    <a
-                      href={displayData.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 text-sm break-all"
-                    >
-                      {displayData.link}
-                    </a>
-                  </>
+              {/* View Mode */}
+              {displayData.viewOption &&
+                displayData.viewOption !== "Choose" && (
+                  <div>
+                    <h3 className="font-bold text-gray-700 mb-2">View mode</h3>
+                    <span className="text-sm text-gray-600">
+                      {displayData.viewOption}
+                    </span>
+                  </div>
                 )}
-              </div>
-            )}
-
-            {/* View Mode */}
-            {displayData.viewOption && displayData.viewOption !== "Choose" && (
-              <div>
-                <h3 className="font-medium text-gray-900 mb-2">View mode</h3>
-                <span className="text-sm text-gray-600">
-                  {displayData.viewOption}
-                </span>
-              </div>
-            )}
+            </div>
           </div>
 
           {/* Footer buttons */}
