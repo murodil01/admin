@@ -172,30 +172,30 @@ const Profile = () => {
               </div>
 
               {/* Dropdown icon */}
-              <DropdownArrow
+              {/* <DropdownArrow
                 className={`w-5 h-5 text-gray-600 xl:hidden ml-auto transition-transform ${
                   showDetails ? "rotate-180" : ""
                 }`}
-              />
+              /> */}
             </div>
 
             {/* Content info */}
             <div
-              className={`mt-6 space-y-6 ${
+              className={`mt-6 space-y-8 ${
                 showDetails ? "block" : "hidden xl:block"
               }`}
             >
               {SidebarSections.map((section, index) => (
                 <div key={index}>
                   {section.title && (
-                    <h4 className="text-[#0061fe] text-[18px] font-bold mb-3">
+                    <h4 className="text-[#0061fe] text-[18px] font-bold mb-4">
                       {section.title}
                     </h4>
                   )}
-                  <div className="space-y-3">
+                  <div className="space-y-7">
                     {section.data.map((item, idx) => (
                       <div key={idx}>
-                        <div className="text-[14px] text-[#7D8592] font-bold mb-1">
+                        <div className="text-[14px] text-[#7D8592] font-bold mb-3">
                           {item.label}
                         </div>
                         {item.input ? (
