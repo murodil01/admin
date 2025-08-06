@@ -129,7 +129,11 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
               }}
             >
               {menuItems.map((item) => {
-                const isActive = location.pathname === item.path;
+                const isActive =
+                  location.pathname === item.path ||
+                  location.pathname.startsWith(item.path + "/") ||
+                  (item.path === "/employees" &&
+                    location.pathname.startsWith("/profile"));
                 const isTaskItem = item.path === "/tasks";
 
                 const baseButton = (

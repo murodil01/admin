@@ -1,29 +1,3 @@
-// import { createBrowserRouter } from "react-router-dom";
-// import Login from "../pages/login";
-// import Home from "../pages/home";
-// import VerifyPassword from "../pages/verify-password";
-// import PrivateRoute from "../components/private-route";
-// export const router = createBrowserRouter([
-//   {
-//     path: "/",
-//     element: <PrivateRoute />,
-//     children: [
-//       {
-//         path: "/",
-//         element: <Home />,
-//       },
-//     ],
-//   },
-//   {
-//     path: "/login",
-//     element: <Login />,
-//   },
-//   {
-//     path: "/verify-password",
-//     element: <VerifyPassword />,
-//   },
-// ]);
-
 import { createBrowserRouter } from "react-router-dom";
 import Login from "../pages/login";
 import Home from "../pages/home";

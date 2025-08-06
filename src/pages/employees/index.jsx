@@ -266,7 +266,7 @@ const InnerCircle = () => {
 
   return (
     <div>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mt-7 md:mt-1 mb-6 gap-4">
         <h1 className="text-[#1F2937] font-bold text-3xl sm:text-xl  xl:text-4xl">
           Inner Circle ({employees.length})
         </h1>
