@@ -17,28 +17,33 @@ const Profiles = () => {
     setIsEditing(true);
   };
 
+  const handleMenuClick = ({ key }) => {
+    if (key === "edit") {
+      handleEdit();
+    }
+  };
+
   const handleSave = () => {
     setIsEditing(false);
     console.log("Saved data:", formData);
   };
 
-  const menu = (
-    <Menu
-      items={[
-        {
-          key: "edit",
-          label: "Edit",
-          onClick: handleEdit,
-        },
-      ]}
-    />
-  );
+  const menuItems = [
+    {
+      key: "edit",
+      label: "Edit",
+    },
+  ];
 
   return (
     <div className="w-full bg-white shadow rounded-[24px] py-10 px-6 md:px-10 mt-9 relative">
       {/* Dropdown - yuqori o‘ng burchakda */}
       <div className="absolute top-6 right-6">
-        <Dropdown overlay={menu} placement="bottomRight" trigger={["click"]}>
+        <Dropdown
+          menu={{ items: menuItems, onClick: handleMenuClick }}
+          placement="bottomRight"
+          trigger={["click"]}
+        >
           <Button
             icon={<MoreVertical />}
             type="text"
