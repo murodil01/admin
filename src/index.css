@@ -67,5 +67,14 @@ body {
 /* Firefox uchun */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-color: #F2F2F2 transparent;
+}
+
+/* src/index.css yoki App.css fayliga */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE va Edge */
+  scrollbar-width: none;     /* Firefox */
 }
