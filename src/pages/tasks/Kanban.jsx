@@ -13,7 +13,7 @@ import approved from "../../assets/icons/approved.svg"
 
 const NotionKanban = () => {
     return (
-        <div className='flex gap-5 sm:min-w-0 absolute top-0 right-0 left-0 pb-4 w-full overflow-x-auto'>
+        <div className="flex gap-5 absolute top-0 right-0 left-0 pb-4 w-full overflow-x-auto hide-scrollbar">
             <Board />
         </div>
     );
@@ -105,7 +105,7 @@ const Board = () => {
     }, [cards, hasChecked]);
 
     return (
-        <div className='flex h-full w-full gap-3 overflow-scroll'>
+        <div className='flex h-full w-full gap-3 overflow-scroll items-start'>
             {taskColumns.map((col) => (
                 <Column
                     key={col.id}
@@ -215,7 +215,7 @@ const Column = ({ icon, title, backgroundColor, column, cards, setCards }) => {
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                className={`h-full w-full transition-colors ${active ? "bg-neutral-800/50 border-dashed" : "bg-neutral-800/0"}`}>
+                className={`w-full transition-colors ${active ? "bg-neutral-800/50 border-dashed" : "bg-neutral-800/0"}`}>
                 {filteredCards.map((c) => (
                     <Card key={c.id} {...c} handleDragStart={handleDragStart} />
                 ))}

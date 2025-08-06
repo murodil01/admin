@@ -31,6 +31,7 @@
     "react-resize-detector": "^12.1.0",
     "react-router-dom": "^7.7.0",
     "recharts": "^3.1.0",
+    "tailwind-scrollbar-hide": "^4.0.0",
     "tailwindcss": "^4.1.11"
   },
   "devDependencies": {
