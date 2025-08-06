@@ -14,7 +14,6 @@ import { IoFileTrayFull, IoLibrary } from "react-icons/io5";
 import { TbReport } from "react-icons/tb";
 
 import TaskProjectDropdown from "./TaskProjectDropdown";
-import side_blue from "../../assets/side_blue.png";
 import side_blue3 from "../../assets/side_blue3.png";
 import { RiPieChart2Fill } from "react-icons/ri";
 import { BiChevronRight } from "react-icons/bi";
@@ -100,20 +99,23 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
           {/* Header Section - Fixed */}
           <div className="flex-shrink-0 mb-[5px]">
             <div
-              className={`flex justify-center transition-all duration-300 ${
+              className={`flex justify-center gap-[5px] items-center transition-all duration-300 ${
                 collapsed ? "pt-6 pb-3" : "p-6"
               }`}
             >
               <img
                 onClick={handleLogoClick}
-                src={collapsed ? side_blue3 : side_blue}
+                src={side_blue3}
                 alt="Logo"
-                className={`transition-all duration-500 ease-in-out transform cursor-pointer ${
-                  collapsed
-                    ? "w-7 scale-90 opacity-80"
-                    : "w-[150px] scale-100 opacity-100"
-                }`}
+                className="cursor-pointer w-[30px] scale-100 opacity-100"
               />
+              <h1
+                className={`font-bold text-[#231f20] text-[25px] ${
+                  collapsed ? "hidden" : ""
+                }`}
+              >
+                Company
+              </h1>
             </div>
           </div>
 
