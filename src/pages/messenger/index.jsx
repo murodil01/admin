@@ -32,7 +32,7 @@ const Messenger = () => {
       <div className="flex items-center bg-[#DBDBDB] p-[2px] rounded-full w-full sm:w-[300px] md:w-[250px] xl:w-[350px] mx-auto mt-4">
         <button
           onClick={() => handleTabClick("list")}
-          className={`py-2 w-1/2 text-sm sm:text-base font-bold rounded-full transition-all duration-200 ${activeTab === "list"
+          className={`py-2 w-1/2 text-sm sm:text-base font-bold rounded-full transition-all duration-200 cursor-pointer ${activeTab === "list"
             ? "bg-[#0061fe] text-white"
             : "bg-[#DBDBDB] text-gray-800"}`}
         >
@@ -40,7 +40,7 @@ const Messenger = () => {
         </button>
         <button
           onClick={() => handleTabClick("activity")}
-          className={`py-2 w-1/2 text-sm sm:text-base font-bold rounded-full transition-all duration-200 ${activeTab === "activity"
+          className={`py-2 w-1/2 text-sm sm:text-base font-bold rounded-full transition-all duration-200 cursor-pointer ${activeTab === "activity"
             ? "bg-[#0061fe] text-white"
             : "bg-[#DBDBDB] text-gray-800"}`}
         >

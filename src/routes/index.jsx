@@ -21,6 +21,7 @@ import MainProfile from "../pages/main-profile";
 import TaskDetails from "../pages/tasks/TaskDetails";
 import Notification from "../pages/notification"
 import Customers from "../pages/customers";
+import NotionKanban from "../pages/tasks/Kanban";
 
 export const router = createBrowserRouter([
   {
@@ -47,7 +48,8 @@ export const router = createBrowserRouter([
           { path: "profile/:id", element: <Profile /> },
           { path: "settings", element: <Settings /> },
           { path: "main-profile", element: <MainProfile /> },
-          {path: "notification", element: <Notification/>},
+          { path: "notification", element: <Notification/>},
+          { path: "kanban", element: <NotionKanban/>},
         ],
       },
     ],
