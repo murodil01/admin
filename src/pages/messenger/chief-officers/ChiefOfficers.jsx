@@ -7,21 +7,21 @@ const departments = [
         photo: M_Tech,
         title: "M Tech - CS",
         description: "Computer Science Department offering M.Tech programs in AI, ML and Data Science.",
-        group: "#"
+        group: "https://t.me/+11Tug631E_40YTQy"
     },
     {
         id: "2",
         photo: M_Tech,
         title: "M Tech - ECE",
         description: "Electronics & Communication Engineering - Digital Systems and VLSI specializations.",
-        group: "#"
+        group: "https://t.me/+11Tug631E_40YTQy"
     },
     {
         id: "3",
         photo: M_Tech,
         title: "M Tech - Civil",
         description: "Specializations in Structural Engineering and Environmental Engineering.",
-        group: "#"
+        group: "https://t.me/+11Tug631E_40YTQy"
     },
 ];
 
@@ -40,12 +40,14 @@ const ChiefOfficers = () => {
                             <h4 className="font-bold text-lg">{department.title}</h4>
                             <p className="text-sm text-gray-600">{department.description}</p>
                         </div>
-                        <Link
-                            to={department.group}
-                            className="mt-6 inline-block text-center px-6 py-3 bg-[#0061fe] rounded-2xl shadow-md shadow-blue-200 text-white font-medium"
+                        <button
+                            onClick={() =>
+                                window.open(department.group)
+                            }
+                            className="mt-6 inline-block text-center px-6 py-3 bg-[#0061fe] rounded-2xl shadow-md shadow-blue-200 text-white font-medium cursor-pointer"
                         >
                             Link to the group
-                        </Link>
+                        </button>
                     </div>
                 ))}
             </div>
