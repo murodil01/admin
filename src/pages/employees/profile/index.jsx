@@ -172,11 +172,11 @@ const Profile = () => {
               </div>
 
               {/* Dropdown icon */}
-              {/* <DropdownArrow
-                className={`w-5 h-5 text-gray-600 xl:hidden ml-auto transition-transform ${
+              <DropdownArrow
+                className={`hidden w-5 h-5 text-gray-600 xl:hidden ml-auto transition-transform ${
                   showDetails ? "rotate-180" : ""
                 }`}
-              /> */}
+              />
             </div>
 
             {/* Content info */}
