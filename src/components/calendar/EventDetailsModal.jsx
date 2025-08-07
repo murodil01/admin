@@ -76,14 +76,14 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
               </div>
             )}
             {/* Image */}
-            <div className="mx-auto max-w-2/4 max-sm:max-w-5/6">
+            <div className="w-full mx-auto max-w-sm max-sm:max-w-5/6">
               {isEditing && (
                 <label className="block text-sm font-bold text-gray-600 mb-2">
                   Image
                 </label>
               )}
 
-              <div className="w-full items-center border border-[#D8E0F0] rounded-2xl py-5 px-10">
+              <div className="w-full items-center border border-[#D8E0F0] rounded-2xl max-sm:px-6 py-5 px-10">
                 {displayData.image ? (
                   <img
                     src={
@@ -97,7 +97,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                 ) : (
                   <div className="w-28 flex items-center justify-center mx-auto">
                     <img
-                      src="/public/insert-picture-icon.svg"
+                      src="/insert-picture-icon.svg"
                       alt="picture-placeholder"
                       className="mx-auto rounded-2xl"
                     />
@@ -115,7 +115,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                       <div className="flex items-center justify-center gap-2 text-base max-sm:text-sm max-sm:gap-1 text-gray-700">
                         Change Image
                         <img
-                          src="/public/change-image.svg"
+                          src="/change-image.svg"
                           alt="change-image-logo"
                           className="w-6 h-6 max-sm:size-5 text-gray-500"
                         />
@@ -149,7 +149,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                 <h3 className="font-bold text-sm text-gray-700 mb-2">
                   Description
                 </h3>
-                <p className=" text-sm leading-relaxed">
+                <p className="w-full text-sm leading-relaxed">
                   {displayData.description}
                 </p>
               </div>
@@ -222,7 +222,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                     </span>
 
                     <img
-                      src="/public/folder-sync-icon.svg"
+                      src="/folder-sync-icon.svg"
                       alt="folder-change-icon"
                       className="w-7 h-6 text-gray-500 max-sm:size-5"
                     />
