@@ -1,25 +1,123 @@
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import React, { useState } from "react";
+import { Plus } from "lucide-react";
+import CategoryCard from "../../components/m-library/CategoryCard";
+import CreateCategoryModal from "../../components/m-library/CreateCategoryModal";
 
-const Library = () => {
+const LibraryPage = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [categories, setCategories] = useState([
+    {
+      id: "1",
+      name: "M Tech Department",
+      date: "July 30, 2025",
+      status: "active",
+    },
+    {
+      id: "2",
+      name: "M Tech Department",
+      date: "July 30, 2025",
+      status: "active",
+    },
+    {
+      id: "3",
+      name: "M Tech Department",
+      date: "July 30, 2025",
+      status: "active",
+    },
+    {
+      id: "4",
+      name: "M Tech Department",
+      date: "July 30, 2025",
+      status: "active",
+    },
+    {
+      id: "5",
+      name: "M Tech Department",
+      date: "July 30, 2025",
+      status: "active",
+    },
+    {
+      id: "6",
+      name: "M Tech Department",
+      date: "July 30, 2025",
+      status: "active",
+    },
+    {
+      id: "7",
+      name: "M Tech Department",
+      date: "July 30, 2025",
+      status: "active",
+    },
+  ]);
+
+  const handleCreateCategory = (name, imageFile) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const newCategory = {
+        id: Date.now().toString(),
+        name,
+        image: reader.result, // base64 string
+        date: 'July 30, 2025',
+        status: 'active',
+      };
+      setCategories((prev) => [...prev, newCategory]);
+      setIsModalOpen(false);
+    };
+    reader.readAsDataURL(imageFile);
+  };
+  
+
   return (
-    <div className="flex flex-col justify-center items-center min-h-[70vh] text-center px-4 py-10 sm:py-16">
-      <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-        Feature Coming Soon M Library
-      </h1>
+    <div className="min-h-screen">
+      {/* Header */}
+      <div>
+        <div className="max-w-7xl mx-auto mt-5 md:mt-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 space-y-3 sm:space-y-0">
+            <div>
+              <h1 className="text-xl sm:text-[34px] font-semibold text-black">
+                M Library
+              </h1>
+              {/* <nav className="flex items-center gap-3 text-xs sm:text-sm text-gray-500 mt-1">
+              <span className="text-black opacity-60 font-semibold text-[20px]">
+              M Library
+               </span>
+              <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 mx-1 text-black opacity-60" />
+              <span className="text-black font-semibold text-[20px]">
+                Recently Viewed
+              </span>
+            </nav> */}
+            </div>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-8 py-2 sm:py-3 bg-[#0061fe] text-white text-[17px] font-bold rounded-[14px] hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Category
+            </button>
+          </div>
+        </div>
+      </div>
 
-      <p className="text-gray-600 text-sm sm:text-base md:text-lg max-w-xl">
-        This section is currently under development. We appreciate your patience
-        while we work to bring this feature to life.
-      </p>
+      {/* Content */}
+      <div className="max-w-7xl  mx-auto px-4 sm:px-5 lg:px-[22px] pt-[18px] pb-10 bg-white  shadow-sm border-t border-gray-200">
+        <h2 className="text-sm font-bold text-gray-700 pb-1">Category</h2>
 
-      <DotLottieReact
-        src="https://lottie.host/490acce8-7833-4e33-b3f2-9903dc15fb15/rVridJRK6u.lottie"
-        loop
-        autoplay
-        className="w-full max-w-[400px] sm:max-w-[500px] md:max-w-[600px]"
+        {/* Category Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+          {categories.map((category) => (
+            <CategoryCard key={category.id} category={category} />
+          ))}
+        </div>
+      </div>
+
+      {/* Modal */}
+      <CreateCategoryModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCreateCategory={handleCreateCategory}
       />
     </div>
   );
 };
 
-export default Library;
+export default LibraryPage;

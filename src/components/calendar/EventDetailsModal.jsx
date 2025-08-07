@@ -44,8 +44,8 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
   if (!displayData) return null;
 
   return (
-    <div className="fixed inset-0  bg-[#0061fe]/10 backdrop-blur-xs flex items-center justify-center z-50 px-5">
-      <div className="relative bg-white rounded-2xl max-w-2xl">
+    <div className="fixed inset-0  bg-[#0D1B42]/40 backdrop-blur-xs flex items-center justify-center z-50 px-5">
+      <div className="relative bg-white rounded-2xl max-w-2xl w-full">
         <div className="p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold w-full">
