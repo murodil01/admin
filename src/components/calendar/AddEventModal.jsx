@@ -73,12 +73,12 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
 
   return (
     <div className="fixed inset-0 bg-[#0061fe]/10 backdrop-blur-xs flex items-center justify-center z-50 px-5">
-      <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">Add Event</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 bg-gray-100 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -99,7 +99,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
                     setFormData((prev) => ({ ...prev, title: e.target.value }))
                   }
                   placeholder="Katy's Birthday"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-[14px] focus:ring-2 focus:ring-blue-500  focus:border-transparent"
                   required
                 />
               </div>
@@ -117,7 +117,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
                         viewOption: e.target.value,
                       }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-[14px] focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
                   >
                     <option>Choose</option>
                     <option>Public</option>
@@ -143,7 +143,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
                         date: new Date(e.target.value),
                       }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-[14px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
 
@@ -160,7 +160,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
                           notification: e.target.value,
                         }))
                       }
-                      className="w-full px-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                      className="w-full px-3 pr-10 py-2 border border-gray-300 rounded-[14px] focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
                     >
                       <option>Select Time</option>
                       <option>5 minutes before</option>
@@ -190,7 +190,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
                   }
                   placeholder="Add some description of the event"
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-[14px] focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                 />
               </div>
             </div>
@@ -252,7 +252,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
 
                   <label
                     htmlFor="image-upload"
-                    className="flex items-center justify-between w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-500 cursor-pointer hover:bg-gray-50 transition"
+                    className="flex items-center justify-between w-full px-4 py-2 border border-gray-300 rounded-[14px] text-gray-500 cursor-pointer hover:bg-gray-50 transition"
                   >
                     <span className="w-full truncate mr-2">
                       {formData.image ? formData.image.name : "Upload image"}
@@ -297,7 +297,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
 
                   <label
                     htmlFor="file-upload"
-                    className="flex items-center justify-between w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-500 cursor-pointer hover:bg-gray-50 transition"
+                    className="flex items-center justify-between w-full px-4 py-2 border border-gray-300 rounded-[14px] text-gray-500 cursor-pointer hover:bg-gray-50 transition"
                   >
                     <span className="w-full truncate mr-2">
                       {formData.file ? formData.file.name : "Upload file"}
@@ -319,7 +319,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
                     setFormData((prev) => ({ ...prev, link: e.target.value }))
                   }
                   placeholder="Enter a link"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-[14px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
@@ -332,10 +332,13 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
                   );
                   setFormData((prev) => ({
                     ...prev,
-                    department:
-                      selectedDepartments.length === 1
-                        ? selectedDepartments[0] // 1 ta bo‘lsa object sifatida
-                        : selectedDepartments, // ko‘p bo‘lsa array sifatida
+                    // department:
+                    //   selectedDepartments.length === 1
+                    //     ? selectedDepartments[0] // 1 ta bo‘lsa object sifatida
+                    //     : selectedDepartments, // ko‘p bo‘lsa array sifatida
+
+                    department: selectedDepartments,
+
                   }));
                 }}
               />
@@ -347,13 +350,13 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-gray-700 border border-gray-300 rounded-[14px] hover:bg-gray-50 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-blue-600 text-white rounded-[14px] hover:bg-blue-700 transition-colors"
             >
               Save Event
             </button>

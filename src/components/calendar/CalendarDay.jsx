@@ -34,13 +34,49 @@ const CalendarDay = ({
       </div>
 
       {/* Department Icon */}
-      {currentEvent?.department && (
-        <div className="absolute top-2 right-2">
-          <div
-            className={`w-3 h-3 rounded-full ${currentEvent.department.color}`}
-          ></div>
-        </div>
-      )}
+      {/* {currentEvent?.departments?.length > 0 && (
+  <div className="absolute top-2 right-2 flex -space-x-2">
+    {currentEvent.departments.map((dept) => (
+      <div
+        key={dept.id}
+        className="w-6 h-6 rounded-full border-2 border-white bg-gray-300 flex items-center justify-center text-white text-xs font-semibold overflow-hidden"
+        title={dept.name}
+      >
+        {dept.avatar === "M" || !dept.avatar ? (
+          dept.name?.[0] || "M"
+        ) : (
+          <img
+            src={dept.avatar}
+            alt={dept.name}
+            className="w-full h-full object-cover rounded-full"
+          />
+        )}
+      </div>
+    ))}
+  </div>
+)} */}
+      {Array.isArray(currentEvent?.department) &&
+        currentEvent.department.length > 0 && (
+          <div className="absolute top-2 right-2 flex -space-x-2">
+            {currentEvent.department.map((dept, index) => (
+              <div
+                key={dept.id || index}
+                className="w-6 h-6 rounded-full border-2 border-white bg-gray-300 flex items-center justify-center text-white text-[10px] font-semibold overflow-hidden"
+                title={dept.name}
+              >
+                {dept.avatar === "M" || !dept.avatar ? (
+                  dept.name?.[0] || "M"
+                ) : (
+                  <img
+                    src={dept.avatar}
+                    alt={dept.name}
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
       {/* Event Content */}
       {currentEvent && (
@@ -72,7 +108,10 @@ const CalendarDay = ({
           {/* Event Image or Title */}
           <div
             className="cursor-pointer flex flex-col items-center max-w-full"
-            onClick={() => onEventClick(currentEvent)}
+            onClick={(e) => {
+              e.stopPropagation(); // 👉 bu onDayClick ishga tushmasligi uchun
+              onEventClick(currentEvent);
+            }}
           >
             {currentEvent.image ? (
               <>
