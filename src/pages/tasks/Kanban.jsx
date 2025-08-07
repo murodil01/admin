@@ -96,7 +96,6 @@ const Board = () => {
         }
         setHasChecked(true);
     }, []);
-    console.log(localStorage.getItem("cards"));
 
     useEffect(() => {
         if (hasChecked) {
@@ -234,7 +233,7 @@ const Card = ({ title, id, column, handleDragStart }) => (
             layoutId={id}
             draggable="true"
             onDragStart={(e) => handleDragStart(e, { title, id, column })}
-            className='cursor-grab rounded bg-white p-3 active:cursor-grabbing'>
+            className='cursor-grab rounded bg-white p-3 active:cursor-grabbing overflow-y-auto max-h-[200px]'>
             <p className='text-sm text-black'>{title}</p>
         </motion.div>
     </>
