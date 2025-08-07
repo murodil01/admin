@@ -5,7 +5,7 @@ import VerifyPassword from "../pages/verify-password";
 import PrivateRoute from "../components/private-route";
 import AppLayout from "../components/home";
 
-import Tasks from "../pages/tasks";
+import Tasks from "../pages/tasks/Tasks";
 import Employees from "../pages/employees";
 import Messenger from "../pages/messenger";
 import Departments from "../pages/departments";
@@ -47,7 +47,7 @@ export const router = createBrowserRouter([
           { path: "profile/:id", element: <Profile /> },
           { path: "settings", element: <Settings /> },
           { path: "main-profile", element: <MainProfile /> },
-          {path: "notification", element: <Notification/>},
+          { path: "notification", element: <Notification/>},
         ],
       },
     ],

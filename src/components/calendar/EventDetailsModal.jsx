@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { X, Edit2, Calendar, Clock, FileDown } from "lucide-react";
+import { X, Edit2, Calendar, Clock, FileDown, ChevronDown } from "lucide-react";
 import { rawDepartments } from "../../utils/department"; // static data uchun
 
 const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState(null);
-
   useEffect(() => {
     if (event) {
-      setEditData({ ...event });
+      setEditData({
+        ...event,
+        notification: event.notification || "", // muhim!
+      });
     }
   }, [event]);
 
@@ -28,10 +30,11 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
       setEditData({ ...editData, image: file });
     }
   };
+
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setDisplayData((prev) => ({ ...prev, file }));
+    const file = e.target.files?.[0];
+    if (file && editData) {
+      setEditData((prev) => ({ ...prev, file }));
     }
   };
 
@@ -41,16 +44,16 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
   if (!displayData) return null;
 
   return (
-    <div className="fixed inset-0  bg-[#0061fe]/10 backdrop-blur-xs flex items-center justify-center z-50 px-5">
-      <div className="relative bg-white rounded-lg">
-        <div className="p-6 w-full max-w-xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0  bg-[#0D1B42]/40 backdrop-blur-xs flex items-center justify-center z-50 px-5">
+      <div className="relative bg-white rounded-2xl max-w-2xl w-full">
+        <div className="p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold w-full">
               {isEditing ? "Edit Event" : displayData.title}
             </h2>
             <button
               onClick={onClose}
-              className="p-2 absolute top-2 right-4  hover:bg-gray-100 rounded-lg transition-colors z-20"
+              className="p-2 absolute top-2 right-4  bg-gray-100 rounded-lg transition-colors z-20"
             >
               <X className="w-5 h-5" />
             </button>
@@ -68,19 +71,19 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                   onChange={(e) =>
                     setEditData((prev) => ({ ...prev, title: e.target.value }))
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-[14px]"
                 />
               </div>
             )}
             {/* Image */}
-            <div>
+            <div className="w-full mx-auto max-w-sm max-sm:max-w-5/6">
               {isEditing && (
                 <label className="block text-sm font-bold text-gray-600 mb-2">
                   Image
                 </label>
               )}
 
-              <div className="border border-[#D8E0F0] rounded-lg py-5 px-5">
+              <div className="w-full items-center border border-[#D8E0F0] rounded-2xl max-sm:px-6 py-5 px-10">
                 {displayData.image ? (
                   <img
                     src={
@@ -89,39 +92,33 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                         : URL.createObjectURL(displayData.image)
                     }
                     alt={displayData.title}
-                    className="w-full h-32 object-cover rounded"
+                    className="w-full object-cover rounded-2xl"
                   />
                 ) : (
-                  <div className="w-28 rounded flex items-center justify-center mx-auto">
+                  <div className="w-28 flex items-center justify-center mx-auto">
                     <img
-                      src="/public/insert-picture-icon.svg"
+                      src="/insert-picture-icon.svg"
                       alt="picture-placeholder"
-                      className="mx-auto"
+                      className="mx-auto rounded-2xl"
                     />
                   </div>
                 )}
                 {isEditing && (
                   <div className="mt-2">
-                    <label className="block w-full text-sm text-center py-2 border rounded-md cursor-pointer hover:bg-gray-100 transition">
+                    <label className="block w-full text-sm text-center py-3 max-sm:py-2 border border-gray-300 rounded-[14px] cursor-pointer hover:bg-gray-100 transition">
                       <input
                         type="file"
                         accept="image/*"
                         onChange={handleImageChange}
                         className="hidden"
                       />
-                      <div className="flex items-center justify-center gap-2 text-sm text-gray-700">
-                        <svg
-                          className="w-5 h-5 text-gray-500"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
+                      <div className="flex items-center justify-center gap-2 text-base max-sm:text-sm max-sm:gap-1 text-gray-700">
                         Change Image
+                        <img
+                          src="/change-image.svg"
+                          alt="change-image-logo"
+                          className="w-6 h-6 max-sm:size-5 text-gray-500"
+                        />
                       </div>
                     </label>
                   </div>
@@ -144,7 +141,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                     }))
                   }
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none"
+                  className="w-full px-3 py-2 max-sm:text-sm  border border-gray-300 rounded-[14px] resize-none"
                 />
               </div>
             ) : displayData.description ? (
@@ -152,7 +149,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                 <h3 className="font-bold text-sm text-gray-700 mb-2">
                   Description
                 </h3>
-                <p className=" text-sm leading-relaxed">
+                <p className="w-full text-sm leading-relaxed">
                   {displayData.description}
                 </p>
               </div>
@@ -211,75 +208,46 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
               )}
             </div> */}
 
-            {/* File */}
-            <div className="flex gap-9 mt-4">
-              {isEditing ? (
-                <>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    File
+            {/* File and Link */}
+            <div className="flex max-sm:flex-wrap gap-9 max-sm:gap-4 mt-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  File
+                </label>
+
+                {isEditing ? (
+                  <label className="flex items-center justify-between gap-2 max-w-60 py-2 px-3 border border-gray-300 rounded-[14px] cursor-pointer hover:bg-blue-50">
+                    <span className="text-sm text-gray-800 break-all">
+                      {editData?.file ? editData.file.name : "No file selected"}
+                    </span>
+
+                    <img
+                      src="/folder-sync-icon.svg"
+                      alt="folder-change-icon"
+                      className="w-7 h-6 text-gray-500 max-sm:size-5"
+                    />
+
+                    <input
+                      type="file"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
                   </label>
-                  <div className="border rounded-lg p-4 bg-gray-50 flex items-center justify-between">
-                    {displayData.file ? (
-                      <div className="text-sm text-gray-800 break-all">
-                        {displayData.file.name}
-                      </div>
-                    ) : (
-                      <div className="text-sm text-gray-500">No file</div>
-                    )}
-                    <label className="ml-4 inline-flex items-center gap-2 cursor-pointer text-sm text-blue-600 hover:underline">
-                      <svg
-                        className="w-5 h-5 text-blue-500"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M8 2a1 1 0 00-1 1v4H5a1 1 0 00-.8 1.6l5 7a1 1 0 001.6 0l5-7A1 1 0 0015 7h-2V3a1 1 0 00-1-1H8z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      <input
-                        type="file"
-                        onChange={handleFileChange}
-                        className="hidden"
-                      />
-                      Change File
-                    </label>
-                  </div>
-                </>
-              ) : (
-                <div>
-                  <h3 className="font-bold text-sm text-gray-700 mb-2">File</h3>
-                  {/* <div className="border rounded-lg p-4 bg-gray-50 flex items-center justify-between"> */}
-                  {displayData.file ? (
-                    <>
-                      {/* <div className="text-sm text-gray-800 break-all">
-                          {displayData.file.name}
-                        </div> */}
-                      <a
-                        href={URL.createObjectURL(displayData.file)}
-                        download={displayData.file.name}
-                        className="inline-flex items-center px-5 py-4 gap-9 border border-gray-300 rounded-[14px]  bg-white hover:bg-gray-100 hover:text-gray-900"
-                      >
-                        Download file
-                        <FileDown className="w-5 h-5" />
-                      </a>
-                    </>
-                  ) : (
-                    <>
-                      <div className="text-gray-500">No file</div>
-                      <button
-                        className="inline-flex items-center px-4 py-4 gap-9 border border-gray-300 rounded-[14px] text-gray-400 bg-gray-100 cursor-not-allowed"
-                        disabled
-                      >
-                        Download file
-                        <FileDown className="w-5 h-5 text-gray-400" />
-                      </button>
-                    </>
-                  )}
-                  {/* </div> */}
-                </div>
-              )}
+                ) : displayData.file ? (
+                  <a
+                    href={URL.createObjectURL(displayData.file)}
+                    download={displayData.file.name}
+                    className="flex items-center px-4 py-3 max-sm:py-2 gap-2 w-full max-w-56 border border-gray-300 rounded-[14px] bg-white hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    <span className="truncate max-w-[150px] text-sm text-gray-800">
+                      {displayData.file.name}
+                    </span>
+                    <FileDown className="w-5 h-5 shrink-0" />
+                  </a>
+                ) : (
+                  <div className="text-gray-500">No file</div>
+                )}
+              </div>
 
               {/* Link */}
               {(displayData.link || isEditing) && (
@@ -298,7 +266,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                             link: e.target.value,
                           }))
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        className="inline-block w-full max-w-72 max-sm:max-w-full py-2 px-3 max-sm:text-sm border border-gray-300 rounded-[14px]"
                       />
                     </>
                   ) : (
@@ -372,7 +340,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                 <h3 className="font-bold text-sm text-gray-700 mb-2">
                   Department
                 </h3>
-                <div className="flex flex-wrap gap-4 items-center w-full pt-4 pb-10">
+                <div className="flex flex-wrap gap-4 items-center w-full pt-4">
                   {displayData.department.map((dept) => (
                     <div
                       key={dept.id}
@@ -407,7 +375,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                         date: new Date(e.target.value),
                       }))
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full p-3 max-sm:text-sm border border-gray-300 rounded-[14px]"
                   />
                 ) : (
                   <div className="flex items-center space-x-2 text-sm text-gray-600">
@@ -417,18 +385,77 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                 )}
               </div>
 
+              {/* Notification Before */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
                   Notification before
                 </label>
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <Clock className="w-4 h-4" />
-                  <span>{displayData.notification || "No notification"}</span>
-                </div>
+                {isEditing ? (
+                  <div className="relative">
+                    <select
+                      value={editData.notification}
+                      onChange={(e) =>
+                        setEditData((prev) => ({
+                          ...prev,
+                          notification: e.target.value,
+                        }))
+                      }
+                      className="w-full pr-9 p-3 max-sm:pr-8 max-sm:text-sm border border-gray-300 rounded-[14px] appearance-none"
+                    >
+                      <option value="">No notification</option>
+                      <option value="5 minutes before">5 minutes before</option>
+                      <option value="15 minutes before">
+                        15 minutes before
+                      </option>
+                      <option value="30 minutes before">
+                        30 minutes before
+                      </option>
+                      <option value="1 hour before">1 hour before</option>
+                      <option value="1 day before">1 day before</option>
+                    </select>
+                    <div className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <ChevronDown className="w-4 h-4" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <Clock className="w-4 h-4" />
+                    <span>{displayData.notification || "No notification"}</span>
+                  </div>
+                )}
               </div>
 
               {/* View Mode */}
-              {displayData.viewOption &&
+              {isEditing ? (
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">
+                    View mode
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={editData.viewOption || "Choose"}
+                      onChange={(e) =>
+                        setEditData((prev) => ({
+                          ...prev,
+                          viewOption: e.target.value,
+                        }))
+                      }
+                      className="w-full pr-9 p-3 max-sm:pr-8 max-sm:text-sm border border-gray-300 rounded-[14px] appearance-none"
+                    >
+                      <option value="Choose" disabled>
+                        Choose
+                      </option>
+                      <option value="Private">Private</option>
+                      <option value="Public">Public</option>
+                      <option value="Department">Department</option>
+                    </select>
+                    <div className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <ChevronDown className="w-4 h-4" />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                displayData.viewOption &&
                 displayData.viewOption !== "Choose" && (
                   <div>
                     <h3 className="font-bold text-gray-700 mb-2">View mode</h3>
@@ -436,7 +463,8 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                       {displayData.viewOption}
                     </span>
                   </div>
-                )}
+                )
+              )}
             </div>
           </div>
 
@@ -446,29 +474,29 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
               <>
                 <button
                   onClick={() => setIsEditing(false)}
-                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="px-5 py-2 max-sm:text-sm text-gray-700 border border-gray-300 rounded-[14px] hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveEdit}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-5 py-2 max-sm:text-sm bg-blue-600 text-white rounded-[14px] hover:bg-blue-700"
                 >
-                  Save Changes
+                  Save edit
                 </button>
               </>
             ) : (
               <>
                 <button
                   onClick={handleEditClick}
-                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center space-x-2"
+                  className="px-5 py-2 max-sm:text-sm text-gray-700 border border-gray-300 rounded-[14px] hover:bg-gray-50 flex items-center space-x-2"
                 >
-                  <Edit2 className="w-4 h-4" />
                   <span>Edit</span>
+                  <Edit2 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="px-5 py-2  max-sm:text-sm bg-blue-600 text-white rounded-[14px] hover:bg-blue-700"
                 >
                   Got it
                 </button>

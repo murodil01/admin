@@ -48,7 +48,7 @@ const Messenger = () => {
 
       {/* Dynamic Content */}
       <div className="w-full">
-        {activeTab === "list" ? <DepartmentCards /> : <ChiefOfficers />}
+        {activeTab === 'list' ? <DepartmentCards /> : <ChiefOfficers />}
       </div>
     </div>
   );
