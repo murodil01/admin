@@ -70,11 +70,12 @@ body {
   scrollbar-color: #F2F2F2 transparent;
 }
 
-/* src/index.css yoki App.css fayliga */
+/* Firefox */
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+
+/* Chrome, Edge, Safari */
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
-}
-.hide-scrollbar {
-  -ms-overflow-style: none;  /* IE va Edge */
-  scrollbar-width: none;     /* Firefox */
 }
