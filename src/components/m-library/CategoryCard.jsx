@@ -43,7 +43,7 @@ const CategoryCard = ({ category }) => {
           <img
             className={`${
               category.image
-                ? "max-w-full h-auto object-contain"
+                ? "max-w-full h-[104px] object-contain"
                 : "h-22 w-24 object-contain"
             }`}
             alt={category.name}
