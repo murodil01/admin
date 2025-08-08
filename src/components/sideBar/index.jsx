@@ -8,15 +8,13 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import { BsFillGridFill } from "react-icons/bs";
 import { BiSupport } from "react-icons/bi";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { FaUsers } from "react-icons/fa";
 import { IoFileTrayFull, IoLibrary } from "react-icons/io5";
 import { TbReport } from "react-icons/tb";
 
-import TaskProjectDropdown from "./TaskProjectDropdown";
 import side_blue3 from "../../assets/side_blue3.png";
 import { RiPieChart2Fill } from "react-icons/ri";
-import { BiChevronRight } from "react-icons/bi";
 import { HiTrophy } from "react-icons/hi2";
 
 const menuItems = [
@@ -45,15 +43,11 @@ const menuItems = [
 const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isDropdownOpen, setDropdownOpen] = useState(false);
 
   const handleNavigate = (path) => {
     navigate(path);
     if (isMobileOpen) setIsMobileOpen(false);
   };
-
-  const [selectedProject, setSelectedProject] = useState();
-  const [isHovered, setHoveredTask] = useState(false);
 
   // Handle logo click with mobile state preservation
 
@@ -136,22 +130,19 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                   location.pathname.startsWith(item.path + "/") ||
                   (item.path === "/employees" &&
                     location.pathname.startsWith("/profile"));
-                const isTaskItem = item.path === "/tasks";
 
                 const baseButton = (
                   <button
-                    onMouseEnter={() => isTaskItem && setHoveredTask(true)}
-                    onMouseLeave={() => isTaskItem && setHoveredTask(false)}
-                    onClick={() => !isTaskItem && handleNavigate(item.path)}
+                    onClick={() => handleNavigate(item.path)}
                     className={`flex items-center gap-3 py-2 rounded-xl transition-all duration-200 text-left group h-[40px]
-      ${collapsed ? "justify-center px-2 w-[48px]" : "px-4 w-full"}
-      ${
-        isActive
-          ? "bg-[#0061fe] font-semibold text-white shadow-md"
-          : "text-[#7D8592] hover:text-white hover:shadow-sm"
-      }
-      hover:bg-[#0061fe] hover:text-white relative group`}
+    ${collapsed ? "justify-center px-2 w-[48px]" : "px-4 w-full"}
+    ${isActive
+                        ? "bg-[#0061fe] font-semibold text-white shadow-md"
+                        : "text-[#7D8592] hover:text-white hover:shadow-sm"
+                      }
+    hover:bg-[#0061fe] hover:text-white relative group`}
                   >
+
                     {item.icon}
                     {!collapsed && (
                       <div className="w-full flex items-center justify-between relative">
@@ -160,41 +151,8 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                         </span>
                       </div>
                     )}
-                    {/* {isTaskItem && (
-                      <BiChevronRight
-                        className={`transition-transform duration-300 ease-in-out
-          ${isDropdownOpen ? "rotate-90" : "rotate-0"}
-          text-3xl ${
-            collapsed ? "absolute right-1 top-1/2 -translate-y-1/2" : ""
-          }
-        `}
-                      />
-                    )} */}
-                    {isTaskItem && !collapsed && (
-                      <BiChevronRight
-                        size={40}
-                        className={`transition-transform duration-300 ease-in-out
-      ${isDropdownOpen ? "rotate-90" : "rotate-0"}
-      text-3xl ml-2
-    `}
-                      />
-                    )}
                   </button>
                 );
-
-                if (isTaskItem) {
-                  return (
-                    <TaskProjectDropdown
-                      key={item.label}
-                      selectedProject={selectedProject}
-                      setSelectedProject={setSelectedProject}
-                      isActive={isActive}
-                      isHovered={collapsed ? isHovered : true}
-                      triggerButton={baseButton}
-                      onOpenChange={(open) => setDropdownOpen(open)}
-                    />
-                  );
-                }
 
                 return (
                   <div key={item.label} className="relative">
@@ -263,11 +221,9 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
             <nav className="flex flex-col gap-1 sm:gap-2">
               {menuItems.map((item) => {
                 const isActive = location.pathname === item.path;
-                const isTaskItem = item.path === "/tasks";
 
                 const baseButton = (
                   <button
-                    onClick={() => !isTaskItem && handleNavigate(item.path)}
                     className={`flex items-center w-full rounded-xl transition px-3 py-2 sm:px-4 sm:py-2.5
           ${
             isActive
@@ -281,30 +237,9 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
 
                     <span className="text-sm sm:text-base font-medium flex items-center gap-5">
                       {item.label}
-                      {isTaskItem && (
-                        <BiChevronRight
-                          className={`transition-transform duration-300 ease-in-out
-      ${isDropdownOpen ? "rotate-90" : "rotate-0"}
-      text-md
-    `}
-                        />
-                      )}
                     </span>
                   </button>
                 );
-
-                if (isTaskItem) {
-                  return (
-                    <TaskProjectDropdown
-                      key={item.label}
-                      selectedProject={selectedProject}
-                      setSelectedProject={setSelectedProject}
-                      isActive={isActive}
-                      isHovered={true}
-                      triggerButton={baseButton}
-                    />
-                  );
-                }
 
                 return (
                   <div key={item.label} className="relative">

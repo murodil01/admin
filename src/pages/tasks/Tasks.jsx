@@ -4,7 +4,9 @@ import { Modal, Input, Dropdown } from 'antd';
 import pencil from "../../assets/icons/pencil.svg";
 import info from "../../assets/icons/info.svg";
 import trash from "../../assets/icons/trash.svg";
+import { useNavigate } from 'react-router-dom';
 // import departmentIcon from "../../assets/icons/department.svg";
+import { getTasks, createTask, updateTask, deleteTask } from "../../api/services/taskService";
 
 const Tasks = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -13,6 +15,10 @@ const Tasks = () => {
     const [modalType, setModalType] = useState(null); // "edit" | "info" | "delete"
     const [openDropdownId, setOpenDropdownId] = useState(null);
     const dropdownRef = useRef(null);
+    const [taskName, setTaskName] = useState('');
+    const [description, setDescription] = useState('');
+    const [imageFile, setImageFile] = useState(null);
+    const navigate = useNavigate();
 
     const [selectedImage, setSelectedImage] = useState(null);
 
@@ -21,15 +27,19 @@ const Tasks = () => {
         if (file) {
             const imageUrl = URL.createObjectURL(file);
             setSelectedImage(imageUrl);
+            setImageFile(file);
         }
     };
 
-
-    const fakeTasks = Array.from({ length: 8 }, (_, i) => ({
-        id: i + 1,
-        name: `Task #${i + 1}`,
-        progress: 45,
-    }));
+    const [tasks, setTasks] = useState(() =>
+        Array.from({ length: 8 }, (_, i) => ({
+            id: i + 1,
+            name: `Task #${i + 1}`,
+            progress: 45,
+            description: '',
+            image: null,
+        }))
+    );
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -41,6 +51,19 @@ const Tasks = () => {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    useEffect(() => {
+        loadTasks();
+    }, []);
+
+    const loadTasks = async () => {
+        try {
+            const data = await getTasks();
+            setTasks(data);
+        } catch (error) {
+            console.error("Error fetching tasks:", error);
+        }
+    };
+
     const handleAddOpen = () => setIsAddModalOpen(true);
     const handleAddClose = () => setIsAddModalOpen(false);
 
@@ -49,6 +72,53 @@ const Tasks = () => {
         setModalType(type);
         setIsActionModalOpen(true);
         setOpenDropdownId(null);
+
+        if (type === "edit") {
+            setTaskName(task.name);
+            setDescription(task.description || '');
+            setSelectedImage(task.image || null);
+        }
+    };
+
+    const handleAddTask = async () => {
+        try {
+            const newTask = { name: taskName, description, image: selectedImage, progress: 0 };
+            await createTask(newTask);
+            await loadTasks();
+            resetForm();
+            handleAddClose();
+        } catch (error) {
+            console.error("Error adding task:", error);
+        }
+    };
+
+    const handleEditTask = async () => {
+        try {
+            await updateTask(selectedTask.id, { name: taskName, description, image: selectedImage });
+            await loadTasks();
+            setIsActionModalOpen(false);
+            setSelectedTask(null);
+        } catch (error) {
+            console.error("Error editing task:", error);
+        }
+    };
+
+    const handleDeleteTask = async () => {
+        try {
+            await deleteTask(selectedTask.id);
+            await loadTasks();
+            setIsActionModalOpen(false);
+            setSelectedTask(null);
+        } catch (error) {
+            console.error("Error deleting task:", error);
+        }
+    };
+
+    const resetForm = () => {
+        setTaskName('');
+        setDescription('');
+        setSelectedImage(null);
+        setImageFile(null);
     };
 
     const dropdownItems = (task) => [
@@ -265,24 +335,39 @@ const Tasks = () => {
 
             {/* Tasks Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {fakeTasks.map((task) => (
-                    <div key={task.id} className="border border-[#D9D9D9] rounded-lg p-3 bg-white shadow relative group flex flex-col gap-3">
-                        {selectedImage && (
-                            <img src={selectedImage} alt="Selected" className="mt-2 w-32 h-32 object-cover rounded" />
-                        )}<div className="h-[134px] rounded mb-2 overflow-hidden bg-gray-200 flex items-center justify-center">
-                            <span className="text-gray-500 text-sm">No Image</span>
-                        </div>
-                        <div className="flex items-center gap-1 mb-2">
+                {tasks.map((task) => (
+                    <div
+                        key={task.id}
+                        className="border border-[#D9D9D9] rounded-lg p-3 bg-white shadow relative group flex flex-col gap-3 cursor-pointer">
+                        {task.image ? (
+                            <button
+                                onClick={() => navigate(`/tasks/${task.id}`)}
+                                className='cursor-pointer'
+                            >
+                                <img
+                                onClick={() => navigate(`/tasks/${task.id}`)}
+                                src={task.image} alt="Task" className="h-[134px] w-full object-cover rounded" />
+                            </button>
+                        ) : (
+                            <button
+                                onClick={() => navigate(`/tasks/${task.id}`)}
+                                className="h-[134px] rounded mb-2 overflow-hidden bg-gray-200 flex items-center justify-center cursor-pointer">
+                                <span className="text-gray-500 text-sm">No Image</span>
+                            </button>
+                        )}
+                        <button
+                            onClick={() => navigate(`/tasks/${task.id}`)}
+                            className="flex items-center gap-1 mb-2 cursor-pointer">
                             <span className="text-xs font-bold text-gray-600 whitespace-nowrap">{task.progress}%</span>
                             <div className="w-full h-2 bg-gray-300 rounded">
                                 <div className="h-full bg-blue-500 rounded" style={{ width: `${task.progress}%` }}></div>
                             </div>
-                        </div>
+                        </button>
 
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1">
                                 <div className="flex items-center relative w-12 h-5">
-                                    {[0, 3, 6].map((offset, index) => (
+                                    {[0, 1, 2].map((offset, index) => (
                                         <img
                                             key={index}
                                             src="https://cdn-icons-png.flaticon.com/512/25/25231.png"
@@ -291,7 +376,12 @@ const Tasks = () => {
                                         />
                                     ))}
                                 </div>
-                                <span className="font-bold text-lg">{task.name}</span>
+                                <button
+                                    onClick={() => navigate(`/tasks/${task.id}`)}
+                                    className="font-bold text-lg cursor-pointer"
+                                >
+                                    {task.name}
+                                </button>
                             </div>
 
                             <Dropdown
@@ -313,7 +403,7 @@ const Tasks = () => {
             <Modal
                 open={isAddModalOpen}
                 onCancel={handleAddClose}
-                onOk={handleAddClose}
+                onOk={handleAddTask}
                 title="Add New Task"
                 okText="Add"
                 cancelText="Cancel"
@@ -325,6 +415,8 @@ const Tasks = () => {
                             <label htmlFor="name" className="block text-sm font-medium text-gray-700">Name</label>
                             <input
                                 type="text"
+                                value={taskName}
+                                onChange={(e) => setTaskName(e.target.value)}
                                 placeholder="Edit task name"
                                 className="mt-1 w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
@@ -342,12 +434,12 @@ const Tasks = () => {
                                 id="imageInput"
                             />
 
-                            <label
-                                htmlFor="imageInput"
-                                className="mt-1 w-full block cursor-pointer border border-dashed border-gray-400 rounded px-3 py-2 text-blue-600 hover:border-blue-500 transition"
-                            >
-                                Change image
+                            <label htmlFor="addImageInput" className="mt-1 w-full cursor-pointer border-dashed...">
+                                Upload Image
                             </label>
+                            {selectedImage && (
+                                <img src={selectedImage} alt="Selected" className="mt-2 w-32 h-32 object-cover rounded" />
+                            )}
 
                             {/* Tanlangan rasmni ko‘rsatish */}
                             {selectedImage && (
@@ -393,6 +485,8 @@ const Tasks = () => {
                             <label className="block text-sm font-medium text-gray-700">Description</label>
                             <textarea
                                 rows={4}
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
                                 className="mt-1 w-full border border-gray-300 rounded px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                             ></textarea>
                         </div>
@@ -440,6 +534,11 @@ const Tasks = () => {
                             <button
                                 key="saveTask"
                                 onClick={() => {
+                                    setTasks(tasks.map((t) =>
+                                        t.id === selectedTask.id
+                                            ? { ...t, name: taskName, description, image: selectedImage }
+                                            : t
+                                    ));
                                     setIsActionModalOpen(false);
                                     setSelectedTask(null);
                                 }}
@@ -452,8 +551,9 @@ const Tasks = () => {
                             modalType === "delete" ? [
                                 <div className='flex items-center gap-2 justify-end'>
                                     <button
-                                        key="delete"
+                                        key="confirmDelete"
                                         onClick={() => {
+                                            setTasks(tasks.filter((t) => t.id !== selectedTask.id));
                                             setIsActionModalOpen(false);
                                             setSelectedTask(null);
                                         }}
@@ -462,7 +562,7 @@ const Tasks = () => {
                                         Delete
                                     </button>
                                     <button
-                                        key="delete"
+                                        key="cancelDelete"
                                         onClick={() => {
                                             setIsActionModalOpen(false);
                                             setSelectedTask(null);
