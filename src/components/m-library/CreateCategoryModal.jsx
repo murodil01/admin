@@ -1,11 +1,13 @@
 import React, { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { X, Paperclip, Image as ImageIcon } from 'lucide-react';
+import DepartmentsSelector from '../calendar/DepartmentsSelector';
 
 const CreateCategoryModal = ({ isOpen, onClose, onCreateCategory }) => {
   const [categoryName, setCategoryName] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [selectedDepartments, setSelectedDepartments] = useState([]);
   const fileInputRef = useRef(null);
 
   const handleImageUpload = (event) => {
@@ -23,10 +25,11 @@ const CreateCategoryModal = ({ isOpen, onClose, onCreateCategory }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (categoryName.trim() && selectedImage) {
-      onCreateCategory(categoryName, selectedImage);
+      onCreateCategory(categoryName, selectedImage, selectedDepartments);
       setCategoryName('');
       setSelectedImage(null);
       setImagePreview(null);
+      setSelectedDepartments([]); // RESET after submit
     }
   };
 
@@ -117,6 +120,12 @@ const CreateCategoryModal = ({ isOpen, onClose, onCreateCategory }) => {
               </div>
             )}
           </div>
+
+                    {/* Departments Selector */}
+          <DepartmentsSelector
+  selectedIds={selectedDepartments}
+  onChange={setSelectedDepartments}
+/>
 
           {/* Submit Button */}
           <div className="flex justify-end">

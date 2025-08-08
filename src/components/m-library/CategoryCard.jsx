@@ -1,6 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import { MoreVertical, User, Image as ImageIcon } from "lucide-react";
+import { rawDepartments } from "../../utils/department";
 
 const CategoryCard = ({ category }) => {
   // Data for the avatars in the footer
@@ -25,10 +26,18 @@ const CategoryCard = ({ category }) => {
       {/* Image Placeholder */}
       <div className="px-4 pb-0">
         {/* <div className=" bg-gray-200 rounded-lg flex items-center justify-center relative"> */}
-        <div className={`flex justify-center border border-blue-100  ${category.image ? '' : 'p-2'}`}>
+        <div
+          className={`flex justify-center border border-blue-100  ${
+            category.image ? "" : "p-2"
+          }`}
+        >
           {/* <ImageIcon className="w-24 h-22" /> */}
           <img
-            className={`${category.image ? 'max-w-full h-auto object-contain' : 'h-22 w-24 object-contain'}`}
+            className={`${
+              category.image
+                ? "max-w-full h-auto object-contain"
+                : "h-22 w-24 object-contain"
+            }`}
             alt={category.name}
             src={category.image || "/insert-picture-icon.svg"}
           />
@@ -57,22 +66,45 @@ const CategoryCard = ({ category }) => {
         </span>
         {/* </div> */}
         {/* <div className="flex items-center space-x-1"> */}
-        {/* Avatar Group */}
-        <div className="flex -space-x-2">
-          {[...Array(3)].map((_, index) => (
-            <div
-              key={index}
-              className="w-5 h-5 bg-green-500 rounded-full border-2 border-white overflow-hidden flex items-center justify-center"
-            >
-              <span className="text-xs text-white font-bold">€</span>
-              {/* <img
-                src={avatar.src}
-                alt={avatar.alt}
-                className="h-full w-full object-cover"
-              /> */}
-            </div>
-          ))}
-        </div>
+
+
+     {/* Avatar Group */}
+<div className="flex -space-x-2">
+  {category.department?.slice(0, 3).map((deptId) => {
+    const dept = rawDepartments.find((d) => d.id === deptId);
+    if (!dept) return null;
+
+    return (
+      <div
+        key={dept.id}
+        className="w-5 h-5 rounded-full border-2 border-white overflow-hidden flex items-center justify-center bg-gray-200"
+      >
+        {dept.avatar === "M" ? (
+          <span className="text-xs text-white font-bold bg-blue-500 w-full h-full flex items-center justify-center rounded-full">
+            M
+          </span>
+        ) : dept.avatar ? (
+          <img
+            src={dept.avatar}
+            alt={dept.name}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <span className="text-[10px] text-gray-600">None</span>
+        )}
+      </div>
+    );
+  })}
+
+  {/* Extra department badge */}
+  {category.department?.length > 3 && (
+    <div className="w-5 h-5 rounded-full border-2 border-white bg-blue-500 text-white text-[10px] font-semibold flex items-center justify-center">
+      +{category.department.length - 3}
+    </div>
+  )}
+</div>
+
+
         {/* </div> */}
       </div>
     </div>
