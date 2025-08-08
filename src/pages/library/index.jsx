@@ -24,18 +24,7 @@ const LibraryPage = () => {
       date: "July 30, 2025",
       status: "active",
     },
-    {
-      id: "4",
-      name: "M Tech Department",
-      date: "July 30, 2025",
-      status: "active",
-    },
-    {
-      id: "5",
-      name: "M Tech Department",
-      date: "July 30, 2025",
-      status: "active",
-    },
+   
   ]);
 
   const handleCreateCategory = (name, imageFile, departmentIds) => {
