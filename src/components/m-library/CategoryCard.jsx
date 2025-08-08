@@ -1,24 +1,32 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
-import { MoreVertical, User, Image as ImageIcon } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 import { rawDepartments } from "../../utils/department";
 
 const CategoryCard = ({ category }) => {
-  // Data for the avatars in the footer
-  // const avatars = [
-  //   { src: "/finance-3.png", alt: "Finance" },
-  //   { src: "/finance-3.png", alt: "Finance" },
-  //   { src: "/finance-3.png", alt: "Finance" },
-  // ];
+  const navigate = useNavigate();
+  const handleCardClick = (e) => {
+    // 3 ta nuqta tugmasi bosilganida navigatsiya bo'lmasligi kerak
+    const isDotMenu = e.target.closest(".dot-menu");
+    if (!isDotMenu) {
+      localStorage.setItem("selectedCategory", JSON.stringify(category));
+      navigate(`/library/${category.id}`);
+    }
+  };
+  
 
   return (
-    <div className="w-52 bg-white rounded-2xl border border-slate-300 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
+    <div
+      className="w-52 bg-white rounded-2xl border border-slate-300 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200"
+      onClick={handleCardClick}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <h3 className="text-base font-semibold text-gray-800">
           {category.name}
         </h3>
-        <button className="flex-shrink-0 p-1 -mr-3  text-gray-500 hover:text-gray-600 transition-colors">
+        <button className="flex-shrink-0 p-1 -mr-3 dot-menu cursor-pointer text-gray-500 hover:text-gray-600 transition-colors">
           <MoreVertical className="w-4 h-4" />
         </button>
       </div>
@@ -67,43 +75,41 @@ const CategoryCard = ({ category }) => {
         {/* </div> */}
         {/* <div className="flex items-center space-x-1"> */}
 
+        {/* Avatar Group */}
+        <div className="flex -space-x-2">
+          {category.department?.slice(0, 3).map((deptId) => {
+            const dept = rawDepartments.find((d) => d.id === deptId);
+            if (!dept) return null;
 
-     {/* Avatar Group */}
-<div className="flex -space-x-2">
-  {category.department?.slice(0, 3).map((deptId) => {
-    const dept = rawDepartments.find((d) => d.id === deptId);
-    if (!dept) return null;
+            return (
+              <div
+                key={dept.id}
+                className="w-5 h-5 rounded-full border-2 border-white overflow-hidden flex items-center justify-center bg-gray-200"
+              >
+                {dept.avatar === "M" ? (
+                  <span className="text-xs text-white font-bold bg-blue-500 w-full h-full flex items-center justify-center rounded-full">
+                    M
+                  </span>
+                ) : dept.avatar ? (
+                  <img
+                    src={dept.avatar}
+                    alt={dept.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="text-[10px] text-gray-600">None</span>
+                )}
+              </div>
+            );
+          })}
 
-    return (
-      <div
-        key={dept.id}
-        className="w-5 h-5 rounded-full border-2 border-white overflow-hidden flex items-center justify-center bg-gray-200"
-      >
-        {dept.avatar === "M" ? (
-          <span className="text-xs text-white font-bold bg-blue-500 w-full h-full flex items-center justify-center rounded-full">
-            M
-          </span>
-        ) : dept.avatar ? (
-          <img
-            src={dept.avatar}
-            alt={dept.name}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <span className="text-[10px] text-gray-600">None</span>
-        )}
-      </div>
-    );
-  })}
-
-  {/* Extra department badge */}
-  {category.department?.length > 3 && (
-    <div className="w-5 h-5 rounded-full border-2 border-white bg-blue-500 text-white text-[10px] font-semibold flex items-center justify-center">
-      +{category.department.length - 3}
-    </div>
-  )}
-</div>
-
+          {/* Extra department badge */}
+          {category.department?.length > 3 && (
+            <div className="w-5 h-5 rounded-full border-2 border-white bg-blue-500 text-white text-[10px] font-semibold flex items-center justify-center">
+              +{category.department.length - 3}
+            </div>
+          )}
+        </div>
 
         {/* </div> */}
       </div>
