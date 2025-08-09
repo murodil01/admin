@@ -9,7 +9,7 @@ const CollapsibleTable = () => {
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const buttonRef = useRef(null);
 
-  // Columns state for drag-and-drop
+ 
   const [columns, setColumns] = useState([
     { key: 'name', label: 'Item', span: 4 },
     { key: 'person', label: 'Person', span: 2 },
@@ -86,14 +86,13 @@ const CollapsibleTable = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showColumnSelector]);
 
-  // Top Button handler
+ 
   const handleTopButtonClick = () => {
     setShowNewLeadModal(true);
   };
 
   return (
     <div className="text-gray-700 w-full max-w-6xl mx-auto rounded-xl ">
-      {/* Top Blue/White Button */}
       <div className="flex items-center justify-end p-4">
         <button
           onClick={handleTopButtonClick}
@@ -103,7 +102,7 @@ const CollapsibleTable = () => {
           Yangi Lead
         </button>
       </div>
-      {/* Collapsed State */}
+     
       <div 
         className="flex items-center justify-between p-4 bg-[#f1f6fd] cursor-pointer hover:bg-blue-100 transition-colors rounded-t-xl border-b border-blue-100 shadow"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -127,7 +126,7 @@ const CollapsibleTable = () => {
         </div>
       </div>
 
-      {/* Expanded State */}
+     
       {isExpanded && (
         <div className="bg-white rounded-b-xl">
           <div className="grid grid-cols-13 gap-4 p-4 bg-gray-50 text-sm font-medium border-b border-gray-200 select-none">
@@ -170,7 +169,7 @@ const CollapsibleTable = () => {
                   </div>
 
                   <div className="p-4">
-                    {/* Essentials */}
+                   
                     <div className="mb-6">
                       <h3 className="text-gray-400 text-sm mb-3">Essentials</h3>
                       <div className="grid grid-cols-2 gap-2">
@@ -189,7 +188,7 @@ const CollapsibleTable = () => {
                       </div>
                     </div>
 
-                    {/* Super useful */}
+                   
                     <div className="mb-6">
                       <h3 className="text-gray-400 text-sm mb-3">Super useful</h3>
                       <div className="grid grid-cols-2 gap-2">
@@ -222,7 +221,7 @@ const CollapsibleTable = () => {
             </div>
           </div>
 
-          {/* Table Rows */}
+    
           {items.map((item) => (
             <div key={item.id} className="grid grid-cols-13 gap-4 p-4 border-b border-gray-100 hover:bg-gray-50">
               <div className="col-span-1 flex items-center justify-center">
@@ -301,7 +300,7 @@ const CollapsibleTable = () => {
             </div>
           ))}
 
-          {/* Add Item Button */}
+          
           <div className="p-4">
             <button className="text-gray-500 hover:text-gray-700 text-sm flex items-center gap-2">
               <Plus className="w-4 h-4" />
@@ -311,7 +310,7 @@ const CollapsibleTable = () => {
         </div>
       )}
 
-      {/* Person Modal (root darajada) */}
+       
       {showPersonModal && (
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center   bg-opacity-30"
@@ -345,7 +344,7 @@ const CollapsibleTable = () => {
         </div>
       )}
 
-      {/* New Lead Modal */}
+ 
       {showNewLeadModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-70 shadow bg-black bg-opacity-50">
           <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
