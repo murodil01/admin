@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FaFire } from 'react-icons/fa';
 import { FiPlus, FiTrash } from 'react-icons/fi';
-// import { motion } from "framer-motion";
 import assigned from "../../assets/icons/assigned.svg";
 import acknowledged from "../../assets/icons/acknowledged.svg";
 import inProgress from "../../assets/icons/inProgress.svg";
@@ -21,6 +20,7 @@ import pencil from "../../assets/icons/pencil.svg";
 
 import { Modal, Input, Select, DatePicker, Upload, Button, Checkbox } from "antd";
 import TextArea from "antd/es/input/TextArea";
+import { motion } from 'framer-motion';
 
 const NotionKanban = ({ cards, setCards }) => {
 
@@ -329,7 +329,7 @@ const Card = ({ title, id, column, time, description, checklistProgress, handleD
 
     return (
         <>
-            <DropIndicator beforeId={id} column={column} />
+            <DropIndicator beforeId={id} column={column}/>
             <motion.div
                 layout
                 layoutId={id}
@@ -379,20 +379,26 @@ const Card = ({ title, id, column, time, description, checklistProgress, handleD
                     okText="Got it"
                     cancelText="Edit"
                     width={1000}
-                    footer={[
+                    style={{
+                        top: 30 // px qiymati, modal yuqoriga yaqinlashadi
+                      }}
+                    footer={
+                        [
                         <Button
                             key="edit"
                             onClick={() => {
                                 setIsModalOpen(false); // eski modal yopiladi
                                 setIsEditModalOpen(true); // edit modal ochiladi
                             }}
+                            style={{borderRadius:'14px', padding: '18px 16px', fontSize: '14px', fontWeight: 'bolder'}}
                         >
                             <span className="text-gray-500">Edit</span>{" "}
-                            <img src={pencil} className="w-[14px]" alt="" />
+                            <img src={pencil} className="w-[14px]" alt="pencil" />
                         </Button>,
                         <Button key="gotit" type="primary"
                          style={{
-                            fontWeight: "bold"
+                            borderRadius:'14px', padding: '18px 24px', fontSize: '14px', fontWeight: 'bolder'
+
                             
                           }} onClick={() => setIsModalOpen(false)}>
                             Got it
@@ -461,15 +467,19 @@ const Card = ({ title, id, column, time, description, checklistProgress, handleD
                             {/* Comments */}
                             <div>
                                 <h4 className="font-semibold text-sm mb-3">Comments</h4>
+                                <div className='p-4 bg-blue-50 rounded-xl'>
                                 {comments.map((c, i) => (
-                                    <div key={i} className="p-3 rounded-lg bg-blue-50 mb-3">
+                                    <div key={i} className="rounded-lg bg-blue-50 mb-3">
                                         <div className="flex items-center gap-2 mb-2">
                                             <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
                                                 👤
                                             </div>
-                                            <span className="font-medium text-xs">{c.name}</span>
+                                            <span className="text-sm">Ibrohim</span>
                                         </div>
-                                        <p className="text-xs text-gray-700">{c.text}</p>
+                                        <div>
+                                            <div className='bg-white p-1 rounded-sm'><p className="text-sm  text-gray-700">salom}</p></div>
+                                      
+                                        </div>
                                     </div>
                                 ))}
 
@@ -480,7 +490,7 @@ const Card = ({ title, id, column, time, description, checklistProgress, handleD
                                         placeholder="Add a comment"
                                         value={newComment}
                                         onChange={(e) => setNewComment(e.target.value)}
-                                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none"
+                                        className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none"
                                     />
                                     <button
                                         onClick={handleAddComment}
@@ -488,6 +498,7 @@ const Card = ({ title, id, column, time, description, checklistProgress, handleD
                                     >
                                         ➤
                                     </button>
+                                </div>
                                 </div>
                             </div>
                         </div>

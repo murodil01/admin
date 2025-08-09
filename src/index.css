@@ -79,3 +79,8 @@ body {
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+.task-modal-styles {
+  padding: 28px;
+  padding-bottom: 48px;
+}
