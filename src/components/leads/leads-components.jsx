@@ -3,14 +3,32 @@ import { ChevronRight, ChevronDown, Plus, Search, MessageSquare, User, Calendar,
 
 const CollapsibleTable = () => {
   const [showNewLeadModal, setShowNewLeadModal] = useState(false);
-  // Button handler example
-  const handleTopButtonClick = () => {
-    setShowNewLeadModal(true);
-  };
+  const [showPersonModal, setShowPersonModal] = useState(false);
+  const [selectedPerson, setSelectedPerson] = useState(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const buttonRef = useRef(null);
-  
+
+  // Columns state for drag-and-drop
+  const [columns, setColumns] = useState([
+    { key: 'name', label: 'Item', span: 4 },
+    { key: 'person', label: 'Person', span: 2 },
+    { key: 'status', label: 'Status', span: 3 },
+    { key: 'date', label: 'Date', span: 2 },
+  ]);
+  const [draggedColIdx, setDraggedColIdx] = useState(null);
+
+  const handleDragStart = (idx) => setDraggedColIdx(idx);
+  const handleDragOver = (e) => e.preventDefault();
+  const handleDrop = (idx) => {
+    if (draggedColIdx === null || draggedColIdx === idx) return;
+    const newCols = [...columns];
+    const [removed] = newCols.splice(draggedColIdx, 1);
+    newCols.splice(idx, 0, removed);
+    setColumns(newCols);
+    setDraggedColIdx(null);
+  };
+
   const items = [
     { id: 1, name: 'New item', person: null, status: null, date: null },
     { id: 2, name: 'Item 1', person: 'User', status: 'Working on it', date: 'Aug 10' },
@@ -68,8 +86,13 @@ const CollapsibleTable = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showColumnSelector]);
 
+  // Top Button handler
+  const handleTopButtonClick = () => {
+    setShowNewLeadModal(true);
+  };
+
   return (
-  <div className="text-gray-700 w-full max-w-6xl mx-auto rounded-xl ">
+    <div className="text-gray-700 w-full max-w-6xl mx-auto rounded-xl ">
       {/* Top Blue/White Button */}
       <div className="flex items-center justify-end p-4">
         <button
@@ -107,20 +130,32 @@ const CollapsibleTable = () => {
       {/* Expanded State */}
       {isExpanded && (
         <div className="bg-white rounded-b-xl">
-          <div className="grid grid-cols-12 gap-4 p-4 bg-gray-50 text-sm font-medium border-b border-gray-200">
-            <div className="col-span-4 text-gray-700">Item</div>
-            <div className="col-span-2 text-gray-700">Person</div>
-            <div className="col-span-3 text-gray-700">Status</div>
-            <div className="col-span-2 text-gray-700">Date</div>
+          <div className="grid grid-cols-13 gap-4 p-4 bg-gray-50 text-sm font-medium border-b border-gray-200 select-none">
+            <div className="col-span-1 flex items-center justify-center">
+              <input type="checkbox" className="form-checkbox h-4 w-4 text-blue-600" />
+            </div>
+            {columns.map((col, idx) => (
+              <div
+                key={col.key}
+                className={`col-span-${col.span} text-gray-700${idx === 0 ? '' : ' cursor-move'}`}
+                draggable={idx === 0 ? false : true}
+                onDragStart={idx === 0 ? undefined : () => handleDragStart(idx)}
+                onDragOver={idx === 0 ? undefined : handleDragOver}
+                onDrop={idx === 0 ? undefined : () => handleDrop(idx)}
+                style={{ opacity: draggedColIdx === idx ? 0.5 : 1 }}
+              >
+                {col.label}
+              </div>
+            ))}
             <div className="col-span-1 flex justify-end relative">
-             <button
-  ref={buttonRef}
-  onClick={() => setShowColumnSelector(true)}
-  className="w-6 h-6 rounded flex items-center justify-center transition-colors"
-  style={{ background: '#2563eb', color: '#fff', border: 'none', boxShadow: 'none' }}
->
+              <button
+                ref={buttonRef}
+                onClick={() => setShowColumnSelector(true)}
+                className="w-6 h-6 rounded flex items-center justify-center transition-colors"
+                style={{ background: '#2563eb', color: '#fff', border: 'none', boxShadow: 'none' }}
+              >
                 <Plus className="w-4 h-4 text-white" />
-</button>
+              </button>
               {showColumnSelector && (
                 <div className="absolute top-8 right-0 z-50 bg-white rounded-lg w-96 max-h-96 overflow-y-auto column-selector border border-gray-200 shadow-lg">
                   <div className="p-4 border-b border-gray-200 bg-gray-50 rounded-t-lg">
@@ -189,35 +224,79 @@ const CollapsibleTable = () => {
 
           {/* Table Rows */}
           {items.map((item) => (
-            <div key={item.id} className="grid grid-cols-12 gap-4 p-4 border-b border-gray-100 hover:bg-gray-50">
-              <div className="col-span-4 flex items-center gap-3">
-                <span className="text-gray-700">{item.name}</span>
-                <MessageSquare className="w-4 h-4 text-gray-400" />
+            <div key={item.id} className="grid grid-cols-13 gap-4 p-4 border-b border-gray-100 hover:bg-gray-50">
+              <div className="col-span-1 flex items-center justify-center">
+                <input type="checkbox" className="form-checkbox h-4 w-4 text-blue-600" />
               </div>
-              <div className="col-span-2 flex items-center">
-                {item.person ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs text-gray-700">
-                      U
+              {columns.map((col) => {
+                if (col.key === 'name') {
+                  return (
+                    <div key={col.key} className="col-span-4 flex items-center gap-3">
+                      <span className="text-gray-700">{item.name}</span>
+                      <MessageSquare className="w-4 h-4 text-gray-400" />
                     </div>
-                    <span className="text-sm text-gray-700">{item.person}</span>
-                  </div>
-                ) : (
-                  <User className="w-6 h-6 text-gray-300" />
-                )}
-              </div>
-              <div className="col-span-3">
-                {item.status ? (
-                  <span className={`${getStatusColor(item.status)} px-3 py-1 rounded text-sm text-white`}>
-                    {item.status}
-                  </span>
-                ) : (
-                  <span className="bg-gray-300 px-3 py-1 rounded text-sm text-gray-500">No status</span>
-                )}
-              </div>
-              <div className="col-span-2 text-gray-700">
-                {item.date}
-              </div>
+                  );
+                }
+                if (col.key === 'person') {
+                  return (
+                    <div key={col.key} className="col-span-2 flex items-center">
+                      {item.person ? (
+                        <div
+                          className="flex items-center gap-2 cursor-pointer"
+                          onClick={e => {
+                            e.stopPropagation();
+                            setSelectedPerson(item.person);
+                            setShowPersonModal(true);
+                          }}
+                        >
+                          <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs text-gray-700">
+                            U
+                          </div>
+                          <span className="text-sm text-gray-700">{item.person}</span>
+                        </div>
+                      ) : (
+                        <div
+                          className="flex items-center gap-2 cursor-pointer"
+                          onClick={e => {
+                            e.stopPropagation();
+                            setSelectedPerson(item.person);
+                            setShowPersonModal(true);
+                          }}
+                        >
+                          <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                            <User className="w-4 h-4 text-gray-400" />
+                          </div>
+                          <span className="text-sm text-gray-500">Guest</span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+                if (col.key === 'status') {
+                  return (
+                    <div key={col.key} className="col-span-3">
+                      {item.status ? (
+                        <span className={`${getStatusColor(item.status)} px-3 py-1 rounded text-sm text-white`}>
+                          {item.status}
+                        </span>
+                      ) : (
+                        <span className="bg-gray-300 px-3 py-1 rounded text-sm text-gray-500">Pending</span>
+                      )}
+                    </div>
+                  );
+                }
+                if (col.key === 'date') {
+                  const dateValue = item.date ? item.date : new Date().toLocaleString('en-US', { month: 'short', day: 'numeric' });
+                  return (
+                    <div key={col.key} className="col-span-2">
+                      <span className="bg-gray-200 px-3 py-1 rounded text-sm text-gray-700 inline-block">
+                        {dateValue}
+                      </span>
+                    </div>
+                  );
+                }
+                return null;
+              })}
               <div className="col-span-1"></div>
             </div>
           ))}
@@ -231,9 +310,44 @@ const CollapsibleTable = () => {
           </div>
         </div>
       )}
+
+      {/* Person Modal (root darajada) */}
+      {showPersonModal && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center   bg-opacity-30"
+          onClick={() => setShowPersonModal(false)}
+        >
+              <div
+                className="bg-white rounded-lg shadow-lg p-6 min-w-[350px] max-w-xs relative"
+            onClick={e => e.stopPropagation()}
+          >
+            <input
+              type="text"
+              placeholder="Search names, roles or teams"
+                  className="w-full mb-4 px-3 py-2 rounded border border-gray-300 bg-transparent text-gray-700 placeholder-gray-400 focus:outline-none focus:border-blue-400"
+            />
+            <div className="text-gray-300 text-sm mb-2">Suggested people</div>
+            <div className="flex items-center gap-2 mb-4">
+              <img src="https://randomuser.me/api/portraits/men/1.jpg" alt="Zafar Ibragimov" className="w-8 h-8 rounded-full" />
+                  <span className="text-gray-900">{selectedPerson || "Unknown"}</span>
+            </div>
+            <div className="flex items-center gap-2 mb-4 cursor-pointer hover:bg-gray-100 p-2 rounded">
+              <span className="text-xl text-gray-400">&#43;</span>
+              <span className="text-gray-700">Invite a new member by email</span>
+            </div>
+            <div className="flex items-center gap-2 mt-6 bg-white px-3 py-2 rounded">
+              <span className="text-gray-500">Hold</span>
+              <kbd className="bg-white border border-gray-400 text-gray-700 px-2 py-1 rounded mx-1">Ctrl</kbd>
+              <span className="text-gray-500">for a multiple selection</span>
+              <button className="ml-auto text-gray-400 hover:text-gray-700 text-lg font-bold" onClick={() => setShowPersonModal(false)}>&times;</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* New Lead Modal */}
       {showNewLeadModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center   bg-opacity-70 shadow">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-70 shadow bg-black bg-opacity-50">
           <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold text-gray-700">Yangi Lead</h2>
@@ -242,10 +356,10 @@ const CollapsibleTable = () => {
             <div className="mb-4">
               <input type="text" placeholder="Lead nomi" className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-blue-400" />
             </div>
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setShowNewLeadModal(false)} className="px-4 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300">Bekor qilish</button>
-              <button className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Saqlash</button>
+            <div className="mb-4">
+              <textarea placeholder="Tavsif" className="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:border-blue-400"></textarea>
             </div>
+            <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Saqlash</button>
           </div>
         </div>
       )}
