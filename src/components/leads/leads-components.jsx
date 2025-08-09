@@ -346,7 +346,7 @@ const CollapsibleTable = () => {
 
  
       {showNewLeadModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-70 shadow bg-black bg-opacity-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-70 shadow  bg-opacity-50">
           <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold text-gray-700">Yangi Lead</h2>
