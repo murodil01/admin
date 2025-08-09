@@ -67,7 +67,7 @@ body {
 /* Firefox uchun */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #F2F2F2 transparent;
+  scrollbar-color: #f2f2f2 transparent;
 }
 
 /* Firefox */
@@ -78,4 +78,67 @@ body {
 /* Chrome, Edge, Safari */
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+
+/* ichki .ant-select-selector ga style */
+.custom-select .ant-select-selector {
+  border-radius: 14px !important;
+  height: 54px !important;
+  display: flex;
+  align-items: center; /* matnni vertikal markazlash */
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  color: #0a1629 !important;
+}
+
+.custom-select .ant-select-arrow {
+  top: 100% !important;
+  transform: translateY(-50%);
+  right: 12px; /* xohlasang chap-o‘ng joylashuvni sozlashing mumkin */
+}
+
+.custom-select .ant-select-selector {
+  padding-right: 32px !important; /* icon o‘rniga joy qoldirish */
+}
+
+/* Modal contentga radius berish */
+.custom-modal .ant-modal-content {
+  border-radius: 24px !important;
+}
+.custom-notif {
+  width: 113px;
+}
+
+.custom-notif .ant-select-selector {
+  border-radius: 14px !important;
+  height: 54px !important;
+  display: flex;
+  align-items: center;
+}
+
+.custom-notif .ant-select-arrow {
+  top: 100% !important;
+  transform: translateY(-50%);
+  right: 12px;
+}
+
+.custom-assigne .ant-select-selector {
+  border-radius: 14px !important;
+  height: 54px !important;
+}
+
+.custom-assigne {
+  width: 229px;
+}
+
+.custom-assigne .ant-select-selector {
+  border-radius: 14px !important;
+  height: 54px !important;
+}
+
+.custom-assigne .ant-select-arrow {
+  top: 100% !important;
+  transform: translateY(-50%);
+  right: 12px;
 }
