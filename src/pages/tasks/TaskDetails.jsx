@@ -38,40 +38,80 @@ const TaskDetails = () => {
   const [date, setDate] = useState(null);
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState([]);
-  const [files, setFiles] = useState([]);
+  const [image, setImage] = useState(null); // faqat rasm uchun
+  const [files, setFiles] = useState([]);   // boshqa fayllar uchun
   const [checklist, setChecklist] = useState([]);
+  const [cards, setCards] = useState([]);
+
+  const addCheckItem = () => {
+    setChecklist((prev) => [...prev, { text: "", done: false }]);
+  };
+
+  const toggleCheckDone = (index) => {
+    setChecklist((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, done: !item.done } : item
+      )
+    );
+  };
+
+  const updateCheckText = (index, value) => {
+    setChecklist((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, text: value } : item
+      )
+    );
+  };
 
   const showModal = () => setIsModalOpen(true);
   const handleCancel = () => setIsModalOpen(false);
 
   const handleSave = () => {
-    console.log("Saving column with values:", {
-      title,
-      type,
-      notification,
-      date,
-      selectedAssignee,
-      description,
-      tags,
-      files,
-      checklist,
-    });
+  // Validatsiya
+  if (!title.trim()) {
+    message.error("Please enter a column title");
+    return;
+  }
+  if (!type) {
+    message.error("Please select a type");
+    return;
+  }
 
-    message.success("Task saved!");
+  const completedChecks = checklist.filter(item => item.text.trim() !== "").length;
+  const totalChecks = checklist.length;
 
-    // Reset form
-    setTitle("");
-    setType("");
-    setNotification("Off");
-    setDate(null);
-    setSelectedAssignee(null);
-    setDescription("");
-    setTags([]);
-    setFiles([]);
-    setChecklist([]);
-
-    setIsModalOpen(false);
+  const newCard = {
+    id: Date.now().toString(),
+    title,
+    time: date
+      ? new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+      : "No due date",
+    description,
+    assignee: {
+      name: selectedAssignee || "Unknown",
+      avatar: "bg-blue-500" // Placeholder avatar
+    },
+    tags,
+    checklistProgress: `${completedChecks}/${totalChecks || 0}`,
+    column: type,
+    files, // Fayllar to‘liq obyekt bo‘lib saqlanadi
   };
+
+  setCards(prev => [...prev, newCard]);
+  message.success("Task saved!");
+
+  // Reset form
+  setTitle("");
+  setType("");
+  setNotification("Off");
+  setDate(null);
+  setSelectedAssignee(null);
+  setDescription("");
+  setTags([]);
+  setFiles([]);
+  setChecklist([]);
+  setIsModalOpen(false);
+};
 
   const [selectedAssignee, setSelectedAssignee] = useState(null)
 
@@ -134,7 +174,6 @@ const TaskDetails = () => {
                     options={[
                       { value: "assigned", label: "Assigned" },
                       { value: "acknowledged", label: "Acknowledged" },
-                      { value: "pending", label: "Pending" },
                       { value: "inProgress", label: "In Progress" },
                       { value: "completed", label: "Completed" },
                       { value: "inReview", label: "In Review" },
@@ -235,8 +274,8 @@ const TaskDetails = () => {
                         message.error("Only image files are allowed!");
                         return false;
                       }
-                      setFiles((prev) => [...prev, file.name]); // Save file name
-                      return false; // prevent automatic upload
+                      setImage(file); // faqat bitta rasm
+                      return false;
                     }}
                   >
                     <Button className="w-full flex items-center justify-between border border-gray-300">
@@ -244,10 +283,21 @@ const TaskDetails = () => {
                       <AiOutlinePaperClip className="text-lg" />
                     </Button>
                   </Upload>
+
+                  {/* Image preview */}
+                  {image && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <Input value={image.name} disabled className="flex-1" />
+                      <FiTrash
+                        className="text-gray-500 cursor-pointer hover:text-red-500"
+                        onClick={() => setImage(null)}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Files */}
-                <div>
+                <div className="mt-4">
                   <label className="block text-sm text-gray-700 mb-2">Files</label>
 
                   {/* Uploaded files preview */}
@@ -266,28 +316,29 @@ const TaskDetails = () => {
                     multiple
                     showUploadList={false}
                     beforeUpload={(file) => {
-                      // Accept all file types
-                      setFiles((prev) => [...prev, file]);
-                      return false; // Prevent default upload behavior
+                      setFiles((prev) => [...prev, file]); // faqat fayllar
+                      return false;
                     }}
                   >
                     <button className="text-blue-600 text-sm">+ add file</button>
                   </Upload>
                 </div>
 
-
                 {/* Checklist */}
                 <div>
                   <label className="block text-sm text-gray-700 mb-2">Check list</label>
                   {checklist.map((check, index) => (
                     <div key={index} className="flex items-center gap-2 mb-2">
+                      {/* Checkbox bajarilgan/bajarilmagan */}
+                      <input
+                        type="checkbox"
+                        checked={check.done}
+                        onChange={() => toggleCheckDone(index)}
+                      />
+                      {/* Matn */}
                       <Input
-                        value={check}
-                        onChange={(e) =>
-                          setChecklist((prev) =>
-                            prev.map((val, i) => (i === index ? e.target.value : val))
-                          )
-                        }
+                        value={check.text}
+                        onChange={(e) => updateCheckText(index, e.target.value)}
                         className="flex-1"
                       />
                       <FiTrash
@@ -297,12 +348,13 @@ const TaskDetails = () => {
                     </div>
                   ))}
                   <button
-                    onClick={() => setChecklist((prev) => [...prev, ""])}
+                    onClick={addCheckItem}
                     className="text-blue-600 text-sm"
                   >
                     + add new check
                   </button>
                 </div>
+
 
                 {/* Buttons */}
                 <div className="flex justify-end gap-5 pt-10">
@@ -325,7 +377,7 @@ const TaskDetails = () => {
 
       <div className="w-full">
         <div className="w-full pb-4 relative">
-          <Kanban />
+          <Kanban cards={cards} setCards={setCards} />
         </div>
       </div>
     </div>
