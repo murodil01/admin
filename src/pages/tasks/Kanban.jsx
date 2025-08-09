@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FaFire } from 'react-icons/fa';
-import { FiPlus, FiTrash } from 'react-icons/fi';
+import { FiPlus, FiTrash, FiEdit } from 'react-icons/fi';
 import { motion } from "framer-motion";
 import assigned from "../../assets/icons/assigned.svg";
 import acknowledged from "../../assets/icons/acknowledged.svg";
@@ -13,7 +13,6 @@ import approved from "../../assets/icons/approved.svg";
 import descriptionIcon from "../../assets/icons/description.svg";
 import comment from "../../assets/icons/comment.svg";
 import checkList from "../../assets/icons/checklist.svg";
-import { FiEdit } from 'react-icons/fi';
 import clock from "../../assets/icons/clock.svg";
 import dayjs from "dayjs";
 import { DownloadOutlined } from "@ant-design/icons";
@@ -21,7 +20,6 @@ import pencil from "../../assets/icons/pencil.svg";
 
 import { Modal, Input, Select, DatePicker, Upload, Button, Checkbox } from "antd";
 import TextArea from "antd/es/input/TextArea";
-import { motion } from 'framer-motion';
 
 const NotionKanban = ({ cards, setCards }) => {
 

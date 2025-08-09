@@ -16,7 +16,7 @@ import {
 } from "../../api/services/taskService";
 import { getProjects } from "../../api/services/projectService";
 
-const Tasks = () => {
+const Projects = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -27,6 +27,9 @@ const Tasks = () => {
   const [description, setDescription] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const navigate = useNavigate();
+
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedDepartments, setSelectedDepartments] = useState([]); // faqat ID lar
@@ -51,15 +54,7 @@ const Tasks = () => {
   //     }
   //   };
 
-  const [tasks, setTasks] = useState(() =>
-    Array.from({ length: 8 }, (_, i) => ({
-      id: i + 1,
-      name: `Task #${i + 1}`,
-      progress: 45,
-      description: "",
-      image: null,
-    }))
-  );
+
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -71,18 +66,24 @@ const Tasks = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    loadTasks();
-  }, []);
 
-  const loadTasks = async () => {
+  const loadProjects = async () => {
     try {
-      const data = await getTasks();
-      setTasks(data);
+      const data = await getProjects();
+      setProjects(data.results); // faqat results array
     } catch (error) {
-      console.error("Error fetching tasks:", error);
+      console.error("Error fetching projects:", error);
+    } finally {
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  if (loading) return <p>Loading...</p>;
+
 
   const handleAddOpen = () => setIsAddModalOpen(true);
   const handleAddClose = () => setIsAddModalOpen(false);
@@ -399,42 +400,42 @@ const Tasks = () => {
 
       {/* Tasks Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {tasks.map((task) => (
+        {projects.map((project) => (
           <div
-            key={task.id}
+            key={project.id}
             className="border border-[#D9D9D9] rounded-lg p-3 bg-white shadow relative group flex flex-col gap-3 cursor-pointer"
           >
-            {task.image ? (
+            {project.image ? (
               <button
                 onClick={() => navigate(`/tasks/${task.id}`)}
                 className="cursor-pointer"
               >
                 <img
                   onClick={() => navigate(`/tasks/${task.id}`)}
-                  src={task.image}
+                  src={project.image}
                   alt="Task"
                   className="h-[134px] w-full object-cover rounded"
                 />
               </button>
             ) : (
               <button
-                onClick={() => navigate(`/tasks/${task.id}`)}
+                onClick={() => navigate(`/tasks/${project.id}`)}
                 className="h-[134px] rounded mb-2 overflow-hidden bg-gray-200 flex items-center justify-center cursor-pointer"
               >
                 <span className="text-gray-500 text-sm">No Image</span>
               </button>
             )}
             <button
-              onClick={() => navigate(`/tasks/${task.id}`)}
+              onClick={() => navigate(`/tasks/${project.id}`)}
               className="flex items-center gap-1 mb-2 cursor-pointer"
             >
               <span className="text-xs font-bold text-gray-600 whitespace-nowrap">
-                {task.progress}%
+                {project?.progress}%
               </span>
               <div className="w-full h-2 bg-gray-300 rounded">
                 <div
                   className="h-full bg-blue-500 rounded"
-                  style={{ width: `${task.progress}%` }}
+                  style={{ width: `${project?.progress}%` }}
                 ></div>
               </div>
             </button>
@@ -457,12 +458,12 @@ const Tasks = () => {
                   onClick={() => navigate(`/tasks/${task.id}`)}
                   className="font-bold text-lg cursor-pointer"
                 >
-                  {task.name}
+                  {project.name}
                 </button>
               </div>
 
               <Dropdown
-                menu={{ items: dropdownItems(task) }}
+                menu={{ items: dropdownItems(project) }}
                 trigger={["click"]}
                 placement="bottomRight"
                 overlayClassName="w-[260px] rounded-lg shadow-lg border border-gray-200"
@@ -652,7 +653,7 @@ const Tasks = () => {
                   key="saveTask"
                   onClick={() => {
                     setTasks(
-                      tasks.map((t) =>
+                      projects.map((t) =>
                         t.id === selectedTask.id
                           ? {
                               ...t,
@@ -706,4 +707,4 @@ const Tasks = () => {
   );
 };
 
-export default Tasks;
+export default Projects;
