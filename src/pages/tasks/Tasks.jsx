@@ -14,6 +14,7 @@ import {
   updateTask,
   deleteTask,
 } from "../../api/services/taskService";
+import { getProjects } from "../../api/services/projectService";
 
 const Tasks = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
