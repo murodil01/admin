@@ -390,7 +390,11 @@ const Card = ({ title, id, column, time, description, checklistProgress, handleD
                             <span className="text-gray-500">Edit</span>{" "}
                             <img src={pencil} className="w-[14px]" alt="" />
                         </Button>,
-                        <Button key="gotit" type="primary" onClick={() => setIsModalOpen(false)}>
+                        <Button key="gotit" type="primary"
+                         style={{
+                            fontWeight: "bold"
+                            
+                          }} onClick={() => setIsModalOpen(false)}>
                             Got it
                         </Button>
                     ]}
