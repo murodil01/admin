@@ -22,6 +22,10 @@ import MainProfile from "../pages/main-profile";
 import TaskDetails from "../pages/tasks/TaskDetails";
 import Notification from "../pages/notification"
 import Customers from "../pages/customers";
+import AllLeads from "../pages/leads/leads-detail/AllLeads";
+import NewLead from "../pages/leads/leads-detail/NewLead";
+import LeadReports from "../pages/leads/leads-detail/LeadReports";
+ 
 
 export const router = createBrowserRouter([
   {
@@ -41,6 +45,9 @@ export const router = createBrowserRouter([
           { path: "departments", element: <Departments /> },
           { path: "calendar", element: <Calendar /> },
           { path: "leads", element: <Leads /> },
+          { path: "leads/all", element: <AllLeads /> },
+          { path: "leads/new", element: <NewLead /> },
+          { path: "leads/reports", element: <LeadReports /> },
           { path: "reports", element: <Reports /> },
           { path: "library", element: <Library /> },
           { path: "library/:id", element: <CategoryDetailsPage /> },

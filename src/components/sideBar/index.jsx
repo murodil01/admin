@@ -8,7 +8,7 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import { BsFillGridFill } from "react-icons/bs";
 import { BiSupport } from "react-icons/bi";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { FaUsers } from "react-icons/fa";
 import { IoFileTrayFull, IoLibrary } from "react-icons/io5";
 import { TbReport } from "react-icons/tb";
@@ -20,17 +20,19 @@ import { HiTrophy } from "react-icons/hi2";
 const menuItems = [
   { label: "Dashboard", icon: <BsFillGridFill size={20} />, path: "/" },
   { label: "Calendar", icon: <Calendar size={20} />, path: "/calendar" },
+  { label: "Tasks", icon: <ClipboardList size={20} />, path: "/tasks" },
+
   {
-    label: "Tasks",
-    icon: (
-      <span className="w-5 h-5 flex items-center justify-center">
-        <ClipboardList size={20} />
-      </span>
-    ),
-    path: "/tasks",
+    label: "Leads",
+    icon: <RiPieChart2Fill size={20} />,
+    path: "/leads",
+    children: [
+      { label: "All Leads", path: "/leads/all" },
+      { label: "New Lead", path: "/leads/new" },
+      { label: "Lead Reports", path: "/leads/reports" },
+    ],
   },
 
-  { label: "Leads", icon: <RiPieChart2Fill size={20} />, path: "/leads" },
   { label: "Customers", icon: <HiTrophy size={20} />, path: "/customers" },
   { label: "Departments", icon: <Landmark size={20} />, path: "/departments" },
   { label: "Inner Circle", icon: <FaUsers size={20} />, path: "/employees" },
@@ -43,16 +45,14 @@ const menuItems = [
 const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [leadsOpen, setLeadsOpen] = useState(false);
 
   const handleNavigate = (path) => {
     navigate(path);
     if (isMobileOpen) setIsMobileOpen(false);
   };
 
-  // Handle logo click with mobile state preservation
-
   const handleLogoClick = () => {
-    // Store mobile sidebar state before refresh
     if (isMobileOpen) {
       localStorage.setItem("sidebarMobileOpen", "true");
     } else {
@@ -61,20 +61,16 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
     window.location.reload();
   };
 
-  // Handle mobile logo click with mobile state preservation
   const handleMobileLogoClick = (e) => {
     e.stopPropagation();
-    // Store mobile sidebar state before refresh
     localStorage.setItem("sidebarMobileOpen", "true");
     window.location.reload();
   };
 
-  // Restore mobile sidebar state after page load
   useEffect(() => {
     const savedMobileState = localStorage.getItem("sidebarMobileOpen");
     if (savedMobileState === "true") {
       setIsMobileOpen(true);
-      // Clean up the stored state after restoring
       localStorage.removeItem("sidebarMobileOpen");
     }
   }, [setIsMobileOpen]);
@@ -90,7 +86,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
     }`}
       >
         <div className="w-full h-full bg-white rounded-[24px] shadow-xl flex flex-col overflow-hidden">
-          {/* Header Section - Fixed */}
+          {/* Header */}
           <div className="flex-shrink-0 mb-[5px]">
             <div
               className={`flex justify-center gap-[5px] items-center transition-all duration-300 ${
@@ -101,7 +97,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 onClick={handleLogoClick}
                 src={side_blue3}
                 alt="Logo"
-                className="cursor-pointer w-[30px] scale-100 opacity-100"
+                className="cursor-pointer w-[30px]"
               />
               <h1
                 className={`font-bold text-[#231f20] text-[25px] ${
@@ -113,7 +109,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
             </div>
           </div>
 
-          {/* Navigation Section - Scrollable */}
+          {/* Navigation */}
           <div className="flex-1 overflow-hidden">
             <nav
               className={`flex gap-1 flex-col h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent hover:scrollbar-thumb-gray-300 transition-colors duration-200 ${
@@ -133,22 +129,35 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
 
                 const baseButton = (
                   <button
-                    onClick={() => handleNavigate(item.path)}
-                    className={`flex items-center gap-3 py-2 rounded-xl transition-all duration-200 text-left group h-[40px]
-    ${collapsed ? "justify-center px-2 w-[48px]" : "px-4 w-full"}
-    ${isActive
-                        ? "bg-[#0061fe] font-semibold text-white shadow-md"
-                        : "text-[#7D8592] hover:text-white hover:shadow-sm"
+                    onClick={() => {
+                      if (item.label === "Leads") {
+                        setLeadsOpen((prev) => !prev);
+                      } else {
+                        handleNavigate(item.path);
                       }
-    hover:bg-[#0061fe] hover:text-white relative group`}
+                    }}
+                    className={`flex items-center gap-3 py-2 rounded-xl transition-all duration-200 text-left group h-[40px]
+                      ${collapsed ? "justify-center px-2 w-[48px]" : "px-4 w-full"}
+                      ${isActive
+                        ? "bg-[#0061fe] font-semibold text-white shadow-md"
+                        : "text-[#7D8592] hover:text-white hover:shadow-sm"}
+                      hover:bg-[#0061fe] hover:text-white relative group`}
                   >
-
                     {item.icon}
                     {!collapsed && (
                       <div className="w-full flex items-center justify-between relative">
                         <span className="text-[16px] font-semibold">
                           {item.label}
                         </span>
+                        {item.children && (
+                          <span
+                            className={`transition-transform duration-200 ${
+                              leadsOpen ? "rotate-90" : ""
+                            }`}
+                          >
+                            ▶
+                          </span>
+                        )}
                       </div>
                     )}
                   </button>
@@ -157,13 +166,32 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 return (
                   <div key={item.label} className="relative">
                     {baseButton}
+
+                    {/* Leads children */}
+                    {item.children && leadsOpen && !collapsed && (
+                      <div className="pl-8 flex flex-col gap-1 mt-1">
+                        {item.children.map((child) => (
+                          <button
+                            key={child.path}
+                            onClick={() => handleNavigate(child.path)}
+                            className={`text-left text-sm py-1 px-3 rounded-lg hover:bg-[#e5e7eb] ${
+                              location.pathname === child.path
+                                ? "bg-[#dbeafe] text-[#0061fe]"
+                                : "text-[#6b7280]"
+                            }`}
+                          >
+                            {child.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </nav>
           </div>
 
-          {/* Footer Section - Fixed */}
+          {/* Footer */}
           <div
             className={`flex-shrink-0 ${
               collapsed ? "px-2 py-4" : "px-4 py-6"
@@ -193,17 +221,15 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
         </div>
       </aside>
 
+      {/* Mobile */}
       {isMobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
-          {/* Background Overlay */}
           <div
             className="absolute inset-0 backdrop-blur-sm bg-blue-100/10 opacity-100 transition-opacity duration-500"
             onClick={() => setIsMobileOpen(false)}
           ></div>
 
-          {/* Sidebar Panel */}
           <div className="relative z-50 w-64 bg-white text-[#231f20] h-screen flex flex-col px-10 py-8 max-h-screen overflow-y-auto">
-            {/* Header */}
             <div className="flex justify-between items-center mb-6">
               <img
                 src={side_blue3}
@@ -211,32 +237,44 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 className="w-10 m-auto cursor-pointer"
                 onClick={handleMobileLogoClick}
               />
-
               <button onClick={() => setIsMobileOpen(false)}>
                 <X size={24} />
               </button>
             </div>
 
-            {/* Navigation */}
             <nav className="flex flex-col gap-1 sm:gap-2">
               {menuItems.map((item) => {
                 const isActive = location.pathname === item.path;
-
                 const baseButton = (
                   <button
+                    onClick={() => {
+                      if (item.label === "Leads") {
+                        setLeadsOpen((prev) => !prev);
+                      } else {
+                        handleNavigate(item.path);
+                      }
+                    }}
                     className={`flex items-center w-full rounded-xl transition px-3 py-2 sm:px-4 sm:py-2.5
-          ${
-            isActive
-              ? "bg-[#0061fe] text-white font-semibold"
-              : "text-[#7D8592] hover:bg-[#0061fe] hover:text-white"
-          }`}
+                      ${
+                        isActive
+                          ? "bg-[#0061fe] text-white font-semibold"
+                          : "text-[#7D8592] hover:bg-[#0061fe] hover:text-white"
+                      }`}
                   >
                     <div className="w-5 h-5 mr-2 sm:mr-3 flex-shrink-0">
                       {item.icon}
                     </div>
-
                     <span className="text-sm sm:text-base font-medium flex items-center gap-5">
                       {item.label}
+                      {item.children && (
+                        <span
+                          className={`transition-transform duration-200 ${
+                            leadsOpen ? "rotate-90" : ""
+                          }`}
+                        >
+                          ▶
+                        </span>
+                      )}
                     </span>
                   </button>
                 );
@@ -244,6 +282,23 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 return (
                   <div key={item.label} className="relative">
                     {baseButton}
+                    {item.children && leadsOpen && (
+                      <div className="pl-8 flex flex-col gap-1 mt-1">
+                        {item.children.map((child) => (
+                          <button
+                            key={child.path}
+                            onClick={() => handleNavigate(child.path)}
+                            className={`text-left text-sm py-1 px-3 rounded-lg hover:bg-[#e5e7eb] ${
+                              location.pathname === child.path
+                                ? "bg-[#dbeafe] text-[#0061fe]"
+                                : "text-[#6b7280]"
+                            }`}
+                          >
+                            {child.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}
