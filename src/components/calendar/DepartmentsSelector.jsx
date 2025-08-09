@@ -1,31 +1,50 @@
-import React, { useState } from "react";
-import { rawDepartments } from "../../utils/department";
+import { useState, useEffect } from "react";
 
-const DepartmentsSelector = ({ selectedIds, onChange }) => {
-  const [departments, setDepartments] = useState(
-    rawDepartments.map((d) => ({ ...d, isSelected: false }))
-  );
+const DepartmentsSelector = ({ departments = [], selectedIds = [], onChange }) => {
+  // Ichki state faqat tanlovlarni boshqarish uchun
+  const [localDepartments, setLocalDepartments] = useState([]);
+
+  useEffect(() => {
+    // departments props o'zgarganda local state ni yangilaymiz
+    if (departments.length > 0) {
+      const updated = departments.map((d) => ({
+        ...d,
+        isSelected: selectedIds.includes(d.id),
+      }));
+
+      // "none" uchun maxsus holat bo'lsa, uni ham qo'shish mumkin:
+      const hasNone = updated.some((d) => d.id === "none");
+      if (!hasNone) {
+        updated.push({
+          id: "none",
+          name: "None",
+          avatar: "M",
+          isSelected: selectedIds.includes("none"),
+        });
+      }
+
+      setLocalDepartments(updated);
+    }
+  }, [departments, selectedIds]);
 
   const toggleDepartment = (id) => {
     let updated;
 
     if (id === "none") {
-      // Faqat None tanlansa, boshqalarni false qilamiz
-      updated = departments.map((d) =>
+      updated = localDepartments.map((d) =>
         d.id === "none"
           ? { ...d, isSelected: !d.isSelected }
           : { ...d, isSelected: false }
       );
     } else {
-      // Agar boshqasi tanlansa, None ni false qilamiz
-      updated = departments.map((d) => {
+      updated = localDepartments.map((d) => {
         if (d.id === "none") return { ...d, isSelected: false };
         if (d.id === id) return { ...d, isSelected: !d.isSelected };
         return d;
       });
     }
 
-    setDepartments(updated);
+    setLocalDepartments(updated);
     const selected = updated.filter((d) => d.isSelected).map((d) => d.id);
     onChange(selected);
   };
@@ -55,8 +74,9 @@ const DepartmentsSelector = ({ selectedIds, onChange }) => {
       />
     );
   };
-  const mainDepartments = departments.filter((d) => d.id !== "none");
-  const noneDepartment = departments.find((d) => d.id === "none");
+
+  const mainDepartments = localDepartments.filter((d) => d.id !== "none");
+  const noneDepartment = localDepartments.find((d) => d.id === "none");
 
   return (
     <div className="bg-white">
@@ -64,7 +84,6 @@ const DepartmentsSelector = ({ selectedIds, onChange }) => {
 
       <div className="flex flex-wrap gap-6 items-start">
         <div className="grid grid-cols-3 gap-6 items-start">
-          {/* 1-3: Asosiy departmentlar */}
           {mainDepartments.map((dept) => (
             <div key={dept.id} className="flex items-center gap-3">
               <input
@@ -78,7 +97,6 @@ const DepartmentsSelector = ({ selectedIds, onChange }) => {
           ))}
         </div>
 
-        {/* 4: None ustuni */}
         {noneDepartment && (
           <div key={noneDepartment.id} className="flex items-center gap-3">
             <input
