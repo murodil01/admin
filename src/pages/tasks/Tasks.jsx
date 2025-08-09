@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Info, Edit2, Trash, MoreVertical } from "lucide-react";
 import { Modal, Input, Dropdown } from "antd";
 import pencil from "../../assets/icons/pencil.svg";
@@ -6,7 +6,8 @@ import info from "../../assets/icons/info.svg";
 import trash from "../../assets/icons/trash.svg";
 import { useNavigate } from "react-router-dom";
 import DepartmentsSelector from "../../components/calendar/DepartmentsSelector";
-import { rawDepartments } from "../../utils/department";
+import { getDepartments } from "../../api/services/departmentService";
+
 // import departmentIcon from "../../assets/icons/department.svg";
 import {
   getTasks,
@@ -28,6 +29,37 @@ const Projects = () => {
   const [imageFile, setImageFile] = useState(null);
   const navigate = useNavigate();
 
+  const [departments, setDepartments] = useState([]);
+
+  const loadTasks = async () => {
+    try {
+      const data = await getTasks();
+      setTasks(data.results); // Agar API response results massiv bo‘lsa
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTasks();
+  }, []);
+
+  useEffect(() => {
+    getDepartments()
+      .then((res) => {
+        // Backenddan kelgan ma'lumotni isSelected flag bilan to'ldiramiz
+        const deps = res.data.map((d) => ({
+          ...d,
+          isSelected: false,
+          avatar: d.photo, // `avatar` uchun photo maydonidan foydalanamiz
+        }));
+        setDepartments(deps);
+      })
+      .catch((err) => console.error(err));
+  }, []);
+
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,11 +70,11 @@ const Projects = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setSelectedImage(imageUrl);
+      setSelectedImage(URL.createObjectURL(file));
       setImageFile(file);
     }
   };
+
   //   const handleImageChange = (e) => {
   //     const file = e.target.files[0];
   //     if (file) {
@@ -54,8 +86,6 @@ const Projects = () => {
   //     }
   //   };
 
-
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -65,7 +95,6 @@ const Projects = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
 
   const loadProjects = async () => {
     try {
@@ -83,7 +112,6 @@ const Projects = () => {
   }, []);
 
   if (loading) return <p>Loading...</p>;
-
 
   const handleAddOpen = () => setIsAddModalOpen(true);
   const handleAddClose = () => setIsAddModalOpen(false);
@@ -407,11 +435,11 @@ const Projects = () => {
           >
             {project.image ? (
               <button
-                onClick={() => navigate(`/tasks/${task.id}`)}
+                onClick={() => navigate(`/tasks/${project.id}`)}
                 className="cursor-pointer"
               >
                 <img
-                  onClick={() => navigate(`/tasks/${task.id}`)}
+                  onClick={() => navigate(`/tasks/${project.id}`)}
                   src={project.image}
                   alt="Task"
                   className="h-[134px] w-full object-cover rounded"
@@ -455,7 +483,7 @@ const Projects = () => {
                   ))}
                 </div>
                 <button
-                  onClick={() => navigate(`/tasks/${task.id}`)}
+                  onClick={() => navigate(`/tasks/${project.id}`)}
                   className="font-bold text-lg cursor-pointer"
                 >
                   {project.name}
@@ -561,11 +589,11 @@ const Projects = () => {
               </label>
               <div className="mt-1 flex items-center border border-gray-300 rounded px-2 py-2 space-x-2">
                 {selectedDepartments.map((id) => {
-                  const dept = rawDepartments.find((d) => d.id === id);
+                  const dept = departments.find((d) => d.id === id); // rawDepartments o'rniga departments
                   return dept ? (
                     <img
                       key={id}
-                      src={dept.avatar}
+                      src={dept.avatar || dept.photo} // backendda photo bo'lishi mumkin
                       alt={dept.name}
                       className="w-8 h-8 rounded-full bg-blue-500 p-1"
                     />
@@ -607,6 +635,7 @@ const Projects = () => {
         okText="Done"
       >
         <DepartmentsSelector
+          departments={departments}
           selectedIds={selectedDepartments}
           onChange={(ids) => setSelectedDepartments(ids)}
         />
