@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FaFire } from 'react-icons/fa';
 import { FiPlus, FiTrash } from 'react-icons/fi';
-import { motion } from "framer-motion";
+// import { motion } from "framer-motion";
 import assigned from "../../assets/icons/assigned.svg";
 import acknowledged from "../../assets/icons/acknowledged.svg";
 import inProgress from "../../assets/icons/inProgress.svg";

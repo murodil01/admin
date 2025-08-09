@@ -4,6 +4,7 @@ import logo_blue from "../../assets/logo_blue.png"
 import { Form, Input, Button } from "antd";
 import { Loader } from "lucide-react";
 import { useState } from "react";
+import request from "../../api/request";
 import { useNavigate } from "react-router-dom";
 import side_blue3 from "../../assets/side_blue3.png"
 
@@ -33,16 +34,33 @@ const buttonHoverStyle = {
 };
 
 const Login = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (/*values*/) => {
+  const handleLogin = async (e) => {
+    // e.preventDefault();
     setLoading(true);
+    try {
+      const res = await request({
+        url: "/token/",
+        method: "POST",
+        body: {
+          email,
+          password,
+        },
+      });
 
-    setTimeout(() => {
-      localStorage.setItem("token", "fake-token"); // 👈 bu muhim
-      navigate("/");
-    }, 1500);
+      localStorage.setItem("token", res.data.access);
+      // localStorage.setItem("token", res.data.token);
+      alert("Login muvaffaqiyatli!");
+      navigate("/"); // yoki kerakli yo‘l
+    } catch (err) {
+      alert("Login xatoligi: " + (err.response?.data?.message || err.message));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -74,6 +92,8 @@ const Login = () => {
               rules={[{ required: true, message: "Please enter your email!" }]}
             >
               <Input
+               value={email}
+               onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 style={inputStyle}
                 onFocus={(e) =>
@@ -93,6 +113,8 @@ const Login = () => {
               ]}
             >
               <Input.Password
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 style={inputStyle}
                 onFocus={(e) =>

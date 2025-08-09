@@ -16,6 +16,7 @@ import Profile from "../pages/employees/profile";
 import Archive from "../pages/archive";
 import Reports from "../pages/reports";
 import Library from "../pages/library";
+import CategoryDetailsPage from "../pages/library/CategoryDetailsPage";
 import Settings from "../pages/settings";
 import MainProfile from "../pages/main-profile";
 import TaskDetails from "../pages/tasks/TaskDetails";
@@ -42,6 +43,8 @@ export const router = createBrowserRouter([
           { path: "leads", element: <Leads /> },
           { path: "reports", element: <Reports /> },
           { path: "library", element: <Library /> },
+          { path: "library/:id", element: <CategoryDetailsPage /> },
+
           { path: "archive", element: <Archive /> },
           { path: "activity", element: <Activity /> },
           { path: "profile/:id", element: <Profile /> },

@@ -24,48 +24,29 @@ const LibraryPage = () => {
       date: "July 30, 2025",
       status: "active",
     },
-    {
-      id: "4",
-      name: "M Tech Department",
-      date: "July 30, 2025",
-      status: "active",
-    },
-    {
-      id: "5",
-      name: "M Tech Department",
-      date: "July 30, 2025",
-      status: "active",
-    },
-    {
-      id: "6",
-      name: "M Tech Department",
-      date: "July 30, 2025",
-      status: "active",
-    },
-    {
-      id: "7",
-      name: "M Tech Department",
-      date: "July 30, 2025",
-      status: "active",
-    },
+   
   ]);
 
-  const handleCreateCategory = (name, imageFile) => {
+  const handleCreateCategory = (name, imageFile, departmentIds) => {
     const reader = new FileReader();
     reader.onloadend = () => {
       const newCategory = {
         id: Date.now().toString(),
         name,
         image: reader.result, // base64 string
-        date: 'July 30, 2025',
-        status: 'active',
+        department: departmentIds, // YANGI QISM
+        date: new Date().toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }), // Dinamik sana
+        status: "active",
       };
       setCategories((prev) => [...prev, newCategory]);
       setIsModalOpen(false);
     };
     reader.readAsDataURL(imageFile);
   };
-  
 
   return (
     <div className="min-h-screen">
@@ -92,7 +73,7 @@ const LibraryPage = () => {
               className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-8 py-2 sm:py-3 bg-[#0061fe] text-white text-[17px] font-bold rounded-[14px] hover:bg-blue-700 transition-colors"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add New Category
+              Add Category
             </button>
           </div>
         </div>
