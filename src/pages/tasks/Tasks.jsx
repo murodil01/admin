@@ -110,7 +110,12 @@ const Projects = () => {
     loadProjects();
   }, []);
 
-  if (loading) return <p>Loading...</p>;
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-[100vh]">
+        <span className="loader"></span>
+      </div>
+    );
 
   const handleAddOpen = () => setIsAddModalOpen(true);
   const handleAddClose = () => setIsAddModalOpen(false);
