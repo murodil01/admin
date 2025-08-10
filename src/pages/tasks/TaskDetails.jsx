@@ -438,7 +438,7 @@ const TaskDetails = () => {
                 </div>
 
                 {/* Buttons */}
-                <div className="flex justify-end gap-5 pt-60">
+                <div className="flex justify-center gap-5 pt-5 md:pt-65">
                   <Button
                     onClick={handleDelete}
                     type="primary"
