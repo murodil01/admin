@@ -871,19 +871,19 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate, assignees }) => {
       onCancel={onClose}
       footer={null}
       centered
-      width={900}
+      width={1000}
       title={
-        <h2 className="px-10 text-2xl font-bold text-[#1F2937]">Edit Card</h2>
+        <h2 className="px-5 text-2xl font-bold text-[#1F2937]">Edit Card</h2>
       }
       className="custom-modal"
     >
-      <div className="px-6 sm:px-10 py-8">
+      <div className="px-5 py-8">
         <div className="grid grid-cols-1 xl:grid-cols-5 gap-10">
           {/* LEFT SIDE */}
           <div className="xl:col-span-3 space-y-6">
             {/* Title */}
             <div>
-              <label className="block ]text-[14px] text-[#1F2937] mb-2 font-bold">
+              <label className="block ]text-[14px] text-[#7D8592] mb-2 font-bold">
                 Column title
               </label>
               <Input
@@ -895,7 +895,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate, assignees }) => {
 
             {/* Type */}
             <div>
-              <label className="block text-[14px] font-bold text-[#1F2937] mb-2">
+              <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
                 Type
               </label>
               <Select
@@ -916,23 +916,25 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate, assignees }) => {
             </div>
 
             {/* Time, Notification, Assignee */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+            <div className="flex justify-between items-center gap-[20px] flex-wrap">
               <div>
-                <label className="block text-[14px] font-bold text-[#1F2937] mb-2">
+                <label className="block text-[14px] font-bold text-[#7D8592] mt-4 mb-2">
                   Due time
                 </label>
                 <DatePicker
                   className="w-full"
-                  style={{ borderRadius: "14px", height: "54px"}}
+                  style={{ borderRadius: "14px", height: "54px" }}
                   value={date ? dayjs(date) : null}
                   onChange={(_, dateStr) => setDate(dateStr)}
                 />
               </div>
+
               <div>
-                <label className="block text-[14px] font-bold text-[#1F2937] mb-2">
+                <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
                   Notification
                 </label>
                 <Select
+                  className="custom-notif w-full"
                   value={notification}
                   onChange={setNotification}
                   options={[
@@ -941,11 +943,13 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate, assignees }) => {
                   ]}
                 />
               </div>
+
               <div className="md:col-span-2">
-                <label className="block text-[14px] font-bold text-[#1F2937] mb-2">
+                <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
                   Assignee
                 </label>
                 <Select
+                  className="custom-assigne"
                   showSearch
                   placeholder="Change assignee"
                   optionFilterProp="label"
@@ -958,10 +962,11 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate, assignees }) => {
 
             {/* Description */}
             <div>
-              <label className="block text-[14px] font-bold text-[#1F2937] mb-2">
+              <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
                 Description
               </label>
               <TextArea
+              style={{ borderRadius: "14px" }}
                 rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -970,7 +975,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate, assignees }) => {
 
             {/* Tags */}
             <div>
-              <label className="block text-[14px] text-[#1F2937] mb-2 font-bold">
+              <label className="block text-[14px] text-[#7D8592] mb-2 font-bold">
                 Task tags
               </label>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
@@ -1001,10 +1006,11 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate, assignees }) => {
           <div className="xl:col-span-2 space-y-6">
             {/* Image Upload */}
             <div>
-              <label className="block text-[14px] font-bold text-[#1F2937] mb-2">
+              <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
                 Image
               </label>
               <Upload
+                style={{ width: "100%" }}
                 defaultFileList={files.map((f, idx) => ({
                   uid: idx,
                   name: f.name || `file-${idx}`,
@@ -1017,18 +1023,33 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate, assignees }) => {
                   return false;
                 }}
               >
-                <Button>Change image</Button>
+                <Button
+                  className="custom-upload-btn"
+                  style={{
+                    width: "100%",
+                    height: "54px",
+                    borderRadius: "14px",
+                    fontWeight: "500",
+                  }}
+                >
+                  Change image
+                </Button>
               </Upload>
             </div>
 
             {/* Files */}
             <div>
-              <label className="block text-[14px] font-bold text-[#1F2937] mb-2">
+              <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
                 Files
               </label>
               {files.map((file, index) => (
                 <div key={index} className="flex items-center gap-2 mb-2">
-                  <Input value={file.name} disabled className="flex-1" />
+                  <Input
+                    value={file.name}
+                    disabled
+                    className="flex-1 h-[54px]"
+                    style={{ borderRadius: "14px" }}
+                  />
                   <FiTrash
                     className="text-gray-500 cursor-pointer hover:text-red-500"
                     onClick={() =>
@@ -1045,13 +1066,15 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate, assignees }) => {
                   return false;
                 }}
               >
-                <button className="text-blue-600 text-sm">+ add file</button>
+                <button className="text-blue-600 font-semibold text-sm">
+                  + add file
+                </button>
               </Upload>
             </div>
 
             {/* Checklist */}
             <div>
-              <label className="block text-sm text-gray-700 mb-2">
+              <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
                 Check list
               </label>
               {checklist.map((check, index) => (
@@ -1065,6 +1088,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate, assignees }) => {
                     value={check.text}
                     onChange={(e) => updateCheckText(index, e.target.value)}
                     className="flex-1"
+                    style={{ borderRadius: "14px", height: "54px" }}
                   />
                   <FiTrash
                     className="text-gray-500 cursor-pointer hover:text-red-500"
@@ -1074,15 +1098,65 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate, assignees }) => {
                   />
                 </div>
               ))}
-              <button onClick={addCheckItem} className="text-blue-600 text-sm">
+              <button
+                onClick={addCheckItem}
+                className="text-blue-600 font-semibold text-sm"
+              >
                 + add new check
               </button>
             </div>
 
             {/* Buttons */}
-            <div className="flex justify-end gap-5 pt-10">
-              <Button onClick={onClose}>Cancel</Button>
-              <Button onClick={handleSave} type="primary">
+            <div className="flex justify-center gap-5 pt-10 md:pt-65">
+              <Button
+                onClick={onClose}
+                style={{
+                  width: "140px", // bir xil width
+                  height: "48px", // bir xil height
+                  fontSize: "17px",
+                  fontWeight: "600",
+                  borderRadius: "14px",
+                  border: "none",
+                  transition: "all 0.3s ease",
+                  boxShadow: "0 4px 12px rgba(217, 217, 217, 0.5)",
+                  color: "#595959", // oddiy text rangi
+                  backgroundColor: "#fff",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "#d9d9d9"; // borderColor hoverda o‘zgarmasin
+                  e.currentTarget.style.color = "#595959"; // text rangi hoverda ham kulrang qoladi
+                  e.currentTarget.style.backgroundColor = "#f5f5f5"; // biroz engil fon
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "transparent";
+                  e.currentTarget.style.color = "#595959"; // normal holatda ham kulrang
+                  e.currentTarget.style.backgroundColor = "#fff";
+                }}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                onClick={handleSave}
+                type="primary"
+                style={{
+                  width: "140px", // bir xil width
+                  height: "48px", // bir xil height
+                  fontSize: "17px",
+                  fontWeight: "600",
+                  borderRadius: "14px",
+                  boxShadow: "0 4px 12px rgba(24, 144, 255, 0.5)",
+                  transition: "box-shadow 0.3s ease",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.boxShadow =
+                    "0 6px 20px rgba(24, 144, 255, 0.8)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.boxShadow =
+                    "0 4px 12px rgba(24, 144, 255, 0.5)")
+                }
+              >
                 Save
               </Button>
             </div>

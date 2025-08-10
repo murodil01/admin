@@ -80,7 +80,6 @@ body {
   display: none;
 }
 
-
 /* ichki .ant-select-selector ga style */
 .custom-select .ant-select-selector {
   border-radius: 14px !important;
@@ -105,10 +104,15 @@ body {
 /* Modal contentga radius berish */
 .custom-modal .ant-modal-content {
   border-radius: 24px !important;
-  padding-top: 30px;
-  padding-bottom: 30px;
+  padding: 30px 24px;
+  margin: 10px 0;
 }
 
+@media (max-width: 768px) {
+  .custom-modal .ant-modal-content {
+    padding: 30px 5px;
+  }
+}
 
 .custom-notif {
   width: 113px;
@@ -150,4 +154,11 @@ body {
 .custom-dept-modal .ant-modal-content {
   border-radius: 14px;
   padding: 30px 40px;
+}
+
+.custom-upload-btn:hover {
+  background-color: #f0f0f0 !important; /* O'zingizga yoqqan kulrang */
+  color: #595959 !important; /* Text rangi ko‘k emas */
+  border-color: #d9d9d9 !important;
+  box-shadow: none !important;
 }
