@@ -431,7 +431,7 @@ const Projects = () => {
         {projects.map((project) => (
           <div
             key={project.id}
-            className="w-[300px] h-[250px] border border-[#D9D9D9] rounded-[14px] p-3 bg-white shadow relative group flex flex-col gap-3 cursor-pointer"
+            className="max-w-[300px] w-full h-[250px] border border-[#D9D9D9] rounded-[14px] p-3 bg-white shadow relative group flex flex-col gap-3 cursor-pointer"
           >
             {project.image ? (
               <button

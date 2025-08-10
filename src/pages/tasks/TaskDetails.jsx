@@ -172,7 +172,9 @@ const TaskDetails = () => {
               Add Column
             </h2>
           }
-          bodyStyle={{ padding: 0 }}
+          styles={{
+            body: { padding: 0 }, // eski bodyStyle o‘rniga
+          }}
         >
           <div className="px-3 sm:px-4 py-8">
             <div className="grid grid-cols-1 xl:grid-cols-5 gap-10">
