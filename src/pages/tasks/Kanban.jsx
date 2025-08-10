@@ -535,64 +535,136 @@ const Card = ({
                 </div>
               </div>
 
-              {/* Checklist */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <h4 className="font-semibold text-sm">Check list</h4>
-                  <span className="text-xs text-gray-500">Show</span>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <label className="flex items-center gap-2 w-full border p-2 rounded-md border-gray-200 justify-between">
-                    <span className="line-through">
-                      All documentation is attached
-                    </span>
-                    <Checkbox defaultChecked />
-                  </label>
-                  <label className="flex items-center gap-2 w-full border p-2 rounded-md border-gray-200 justify-between">
-                    <span>User instructions are included</span>
-                    <Checkbox />
-                  </label>
-                </div>
-              </div>
+                <Modal
+                    title={`Column ${title}`}
+                    open={isModalOpen}
+                    onOk={() => setIsModalOpen(false)}
+                    onCancel={() => setIsModalOpen(false)}
+                    okText="Got it"
+                    cancelText="Edit"
+                    width={1000}
+                    style={{
+                        top: 30 // px qiymati, modal yuqoriga yaqinlashadi
+                      }}
+                    footer={
+                        [
+                        <Button
+                            key="edit"
+                            onClick={() => {
+                                setIsModalOpen(false); // eski modal yopiladi
+                                setIsEditModalOpen(true); // edit modal ochiladi
+                            }}
+                            style={{borderRadius:'14px', padding: '18px 16px', fontSize: '14px', fontWeight: 'bolder'}}
+                        >
+                            <span className="text-gray-500">Edit</span>{" "}
+                            <img src={pencil} className="w-[14px]" alt="pencil" />
+                        </Button>,
+                        <Button key="gotit" type="primary"
+                         style={{
+                            borderRadius:'14px', padding: '18px 24px', fontSize: '14px', fontWeight: 'bolder'
 
-              {/* Comments */}
-              <div>
-                <h4 className="font-semibold text-sm mb-3">Comments</h4>
-                <div className="p-4 bg-blue-50 rounded-xl">
-                  {comments.map((c, i) => (
-                    <div key={i} className="rounded-lg bg-blue-50 mb-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
-                          👤
-                        </div>
-                        <span className="text-sm">Ibrohim</span>
-                      </div>
-                      <div>
-                        <div className="bg-white p-1 rounded-sm">
-                          <p className="text-sm  text-gray-700">salom</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                            
+                          }} onClick={() => setIsModalOpen(false)}>
+                            Got it
+                        </Button>
+                    ]}
+                >
+                    <div className="grid grid-cols-1 md:grid-cols-10 gap-6 md:gap-10">
+                        {/* Left section */}
+                        <div className="md:col-span-6 space-y-6">
+                            {/* Top section */}
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <div className="w-full sm:w-[140px] h-[140px] bg-gray-200 flex items-center justify-center rounded">
+                                    <span role="img" aria-label="image" className="text-4xl">🖼️</span>
+                                </div>
+                                <div className="flex-1 text-sm text-gray-700 leading-6">
+                                    We need to design and develop a responsive user profile page for the
+                                    web application. This page will display key user information including
+                                    avatar, full name, email address, phone number, and account status.
+                                    The layout should follow our current design system and ensure
+                                    consistency with other pages. The page must support both view and edit
+                                    modes.
+                                </div>
+                            </div>
 
-                  {/* Add new comment */}
-                  <div className="mt-3 flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Add a comment"
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none"
-                    />
-                    <button
-                      onClick={handleAddComment}
-                      className="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600"
-                    >
-                      ➤
-                    </button>
-                  </div>
-                </div>
-              </div>
+                            {/* Files */}
+                            <div>
+                                <h4 className="font-semibold text-sm mb-3">Files</h4>
+                                <div className="flex flex-wrap gap-3">
+                                    {[
+                                        { name: "Design_Document.pdf", url: "/files/Design_Document.pdf" },
+                                        { name: "User_Guide.docx", url: "/files/User_Guide.docx" },
+                                        { name: "Wireframe.png", url: "/files/Wireframe.png" },
+                                        { name: "API_Specs.txt", url: "/files/API_Specs.txt" }
+                                    ].map((file, i) => (
+                                        <a
+                                            key={i}
+                                            href={file.url}
+                                            download
+                                            className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 text-sm hover:bg-gray-50 transition"
+                                        >
+                                            <DownloadOutlined />
+                                            {file.name}
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Checklist */}
+                            <div>
+                                <div className="flex justify-between items-center mb-2">
+                                    <h4 className="font-semibold text-sm">Check list</h4>
+                                    <span className="text-xs text-gray-500">Show</span>
+                                </div>
+                                <div className="flex flex-col gap-3">
+                                    <label className="flex items-center gap-2 w-full border p-2 rounded-md border-gray-200 justify-between">
+                                        <span className="line-through">All documentation is attached</span>
+                                        <Checkbox defaultChecked />
+                                    </label>
+                                    <label className="flex items-center gap-2 w-full border p-2 rounded-md border-gray-200 justify-between">
+                                        <span>User instructions are included</span>
+                                        <Checkbox />
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Comments */}
+                            <div>
+                                <h4 className="font-semibold text-sm mb-3">Comments</h4>
+                                <div className='p-4 bg-blue-50 rounded-xl'>
+                                {comments.map((c, i) => (
+                                    <div key={i} className="rounded-lg bg-blue-50 mb-3">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
+                                                👤
+                                            </div>
+                                            <span className="text-sm">Ibrohim</span>
+                                        </div>
+                                        <div>
+                                            <div className='bg-white p-1 rounded-sm'><p className="text-sm  text-gray-700">salom</p></div>
+                                      
+                                        </div>
+                                    </div>
+                                ))}
+
+                                {/* Add new comment */}
+                                <div className="mt-3 flex gap-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Add a comment"
+                                        value={newComment}
+                                        onChange={(e) => setNewComment(e.target.value)}
+                                        className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none"
+                                    />
+                                    <button
+                                        onClick={handleAddComment}
+                                        className="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600"
+                                    >
+                                        ➤
+                                    </button>
+                                </div>
+                                </div>
+                            </div>
             </div>
 
             {/* Right section */}

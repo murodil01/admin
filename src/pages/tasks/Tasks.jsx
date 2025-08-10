@@ -1,20 +1,19 @@
-import { useState, useEffect, useRef } from "react";
-import { Info, Edit2, Trash, MoreVertical, Paperclip } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { message } from "antd";
+import {  MoreVertical } from "lucide-react";
 import { Modal, Input, Dropdown } from "antd";
 import pencil from "../../assets/icons/pencil.svg";
 import info from "../../assets/icons/info.svg";
 import trash from "../../assets/icons/trash.svg";
 import { useNavigate } from "react-router-dom";
 import DepartmentsSelector from "../../components/calendar/DepartmentsSelector";
-import { getDepartments } from "../../api/services/departmentService";
-// import departmentIcon from "../../assets/icons/department.svg";
 import {
   getTasks,
   createTask,
   updateTask,
   deleteTask,
 } from "../../api/services/taskService";
-import { getProjects } from "../../api/services/projectService";
+import { getProjects, createProject  } from "../../api/services/projectService";
 
 const Projects = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -24,66 +23,22 @@ const Projects = () => {
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const dropdownRef = useRef(null);
   const [taskName, setTaskName] = useState("");
-  const [description, setDescription] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const navigate = useNavigate();
-
-  const [departments, setDepartments] = useState([]);
-
-  const loadTasks = async () => {
-    try {
-      const data = await getTasks();
-      setTasks(data.results); // Agar API response results massiv bo‘lsa
-    } catch (error) {
-      console.error("Error fetching tasks:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadTasks();
-  }, []);
-
-  useEffect(() => {
-    getDepartments()
-      .then((res) => {
-        // Backenddan kelgan ma'lumotni isSelected flag bilan to'ldiramiz
-        const deps = res.data.map((d) => ({
-          ...d,
-          isSelected: false,
-          avatar: d.photo, // `avatar` uchun photo maydonidan foydalanamiz
-        }));
-        setDepartments(deps);
-      })
-      .catch((err) => console.error(err));
-  }, []);
-
+  
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  const [name, setName] = useState("");
+  // const [departmentIds, setDepartmentIds] = useState([]);
+  const [description, setDescription] = useState("");
 
   const [selectedImage, setSelectedImage] = useState(null);
-  const [selectedDepartments, setSelectedDepartments] = useState([]); // faqat ID lar
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false); // department tanlash uchun modal
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedImage(URL.createObjectURL(file));
-      setImageFile(file);
-    }
-  };
-
-  //   const handleImageChange = (e) => {
-  //     const file = e.target.files[0];
-  //     if (file) {
-  //       const reader = new FileReader();
-  //       reader.onloadend = () => {
-  //         setSelectedImage(reader.result);
-  //       };
-  //       reader.readAsDataURL(file);
-  //     }
-  //   };
+  const [selectedDepartments, setSelectedDepartments] = useState([]); // faqat ID lar
+  const [allDepartments, setAllDepartments] = useState([]); // API dan kelgan to'liq obyektlar
+  const [assigned, setAssigned] = useState([]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -110,12 +65,7 @@ const Projects = () => {
     loadProjects();
   }, []);
 
-  if (loading)
-    return (
-      <div className="flex justify-center items-center h-[100vh]">
-        <span className="loader"></span>
-      </div>
-    );
+  if (loading) return <p>Loading...</p>;
 
   const handleAddOpen = () => setIsAddModalOpen(true);
   const handleAddClose = () => setIsAddModalOpen(false);
@@ -133,22 +83,78 @@ const Projects = () => {
     }
   };
 
-  const handleAddTask = async () => {
-    try {
-      const newTask = {
-        name: taskName,
-        description,
-        image: selectedImage,
-        progress: 0,
-      };
-      await createTask(newTask);
-      await loadTasks();
-      resetForm();
-      handleAddClose();
-    } catch (error) {
-      console.error("Error adding task:", error);
+   // Rasm tanlash
+   const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedImage(URL.createObjectURL(file)); // preview
+      setImageFile(file); // API ga yuborish
     }
   };
+
+
+
+  const handleAddTask = async () => {
+    if (!taskName.trim()) {
+      return message.error("Task name kiritilishi kerak!");
+    }
+
+    if (selectedDepartments.length === 0) {
+      return message.error("Kamida bitta department tanlang!");
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("name", taskName);
+      formData.append("description", description);
+
+      selectedDepartments.forEach(id => formData.append("department_ids", id));
+      assigned.forEach(id => formData.append("assigned", id));
+
+      if (imageFile) {
+          formData.append("image", imageFile);
+      }
+
+      console.log("📤 Yuborilayotgan FormData:");
+      for (let [key, value] of formData.entries()) {
+          console.log(key, value);
+      }
+
+      await createProject(formData);
+      message.success("✅ Task created successfully");
+
+      // Formni tozalash
+      setTaskName("");
+      setDescription("");
+      setSelectedDepartments([]);
+      setAssigned([]);
+      setImageFile(null);
+      handleAddClose();
+
+  } catch (error) {
+      console.error("❌ Task yaratishda xatolik:", error);
+      message.error("Failed to create task");
+  }
+  };
+
+
+
+  // const handleAddTask = async () => {
+  //   try {
+  //     const newTask = {
+  //       name: taskName,
+  //       description,
+  //       image: selectedImage,
+  //       progress: 0,
+  //     };
+  //     await createTask(newTask);
+  //     await loadTasks();
+  //     resetForm();
+  //     handleAddClose();
+  //   } catch (error) {
+  //     console.error("Error adding task:", error);
+  //   }
+  // };
 
   const handleEditTask = async () => {
     try {
@@ -284,7 +290,7 @@ const Projects = () => {
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
-                  className="hidden rounded-[14px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="hidden"
                   id="imageInput"
                 />
 
@@ -292,7 +298,7 @@ const Projects = () => {
                   htmlFor="imageInput"
                   className="mt-1 w-full block cursor-pointer border border-dashed border-gray-400 rounded px-3 py-2 text-blue-600 hover:border-blue-500 transition"
                 >
-                  Upload
+                  sadff
                 </label>
 
                 {/* Tanlangan rasmni ko‘rsatish */}
@@ -313,7 +319,7 @@ const Projects = () => {
                 <textarea
                   defaultValue={selectedTask.description}
                   rows={4}
-                  className="mt-1 w-full border border-gray-300 rounded-[14px] px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 w-full border border-gray-300 rounded px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                 ></textarea>
               </div>
             </div>
@@ -423,7 +429,7 @@ const Projects = () => {
         </h3>
         <button
           onClick={handleAddOpen}
-          className="capitalize w-full sm:max-w-[172px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
+          className="capitalize w-full sm:max-w-[182px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
         >
           <span className="text-[22px]">+</span>
           <span>Add Task</span>
@@ -431,22 +437,22 @@ const Projects = () => {
       </div>
 
       {/* Tasks Grid */}
-      <div className="grid justify-items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {projects.map((project) => (
           <div
             key={project.id}
-            className="max-w-[300px] w-full h-[250px] border border-[#D9D9D9] rounded-[14px] p-3 bg-white shadow relative group flex flex-col gap-3 cursor-pointer"
+            className="border border-[#D9D9D9] rounded-lg p-3 bg-white shadow relative group flex flex-col gap-3 cursor-pointer"
           >
             {project.image ? (
               <button
-                onClick={() => navigate(`/tasks/${project.id}`)}
+                onClick={() => navigate(`/tasks/${task.id}`)}
                 className="cursor-pointer"
               >
                 <img
-                  onClick={() => navigate(`/tasks/${project.id}`)}
+                  onClick={() => navigate(`/tasks/${task.id}`)}
                   src={project.image}
                   alt="Task"
-                  className="h-[134px] w-full object-contain rounded"
+                  className="h-[134px] w-full object-cover rounded"
                 />
               </button>
             ) : (
@@ -487,7 +493,7 @@ const Projects = () => {
                   ))}
                 </div>
                 <button
-                  onClick={() => navigate(`/tasks/${project.id}`)}
+                  onClick={() => navigate(`/tasks/${task.id}`)}
                   className="font-bold text-lg cursor-pointer"
                 >
                   {project.name}
@@ -514,24 +520,9 @@ const Projects = () => {
         open={isAddModalOpen}
         onCancel={handleAddClose}
         onOk={handleAddTask}
-        okText="Add Task"
-        cancelText={null} // cancel tugmasi ko‘rinmaydi
-        footer={[
-          <button
-            key="submit"
-            onClick={handleAddTask}
-            className="bg-white text-[#979797] border border-[#979797] rounded-[15px] px-[20px] py-[15px] text-base font-bold transition"
-          >
-            Save Task
-          </button>,
-        ]}
-        title={
-          <div className="text-[22px] font-bold text-[#0A1629] mb-10">
-            Add Task
-          </div>
-        }
-        width={550}
-        className="custom-modal"
+        title="Add New Task"
+        okText="Add"
+        cancelText="Cancel"
       >
         <div>
           <div className="space-y-4">
@@ -539,7 +530,7 @@ const Projects = () => {
             <div>
               <label
                 htmlFor="name"
-                className="block text-[14px] font-bold text-[#7D8592]"
+                className="block text-sm font-medium text-gray-700"
               >
                 Name
               </label>
@@ -547,14 +538,14 @@ const Projects = () => {
                 type="text"
                 value={taskName}
                 onChange={(e) => setTaskName(e.target.value)}
-                placeholder="M tech"
-                className="mt-1 w-full h-[50px] border border-gray-300 rounded-[14px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Edit task name"
+                className="mt-1 w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             {/* Image */}
             <div>
-              <label className="block text-[14px] font-bold text-[#7D8592]">
+              <label className="block text-sm font-medium text-gray-700">
                 Image
               </label>
 
@@ -570,12 +561,25 @@ const Projects = () => {
               {/* Tanlash maydoni */}
               <label
                 htmlFor="imageInput"
-                className="mt-1 h-[50px] flex items-center justify-between w-full border border-gray-300 rounded-[14px] px-3 py-2 cursor-pointer hover:border-blue-500 transition"
+                className="mt-1 flex items-center justify-between w-full border border-gray-300 rounded px-3 py-2 cursor-pointer hover:border-blue-500 transition"
               >
                 <span className="text-gray-400">
-                  {selectedImage ? "Upload image" : "Upload image"}
+                  {selectedImage ? "Change image" : "Change image"}
                 </span>
-                <Paperclip />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 text-gray-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828L18 9.828V7h-2.828z"
+                  />
+                </svg>
               </label>
 
               {/* Tanlangan rasm preview */}
@@ -590,18 +594,19 @@ const Projects = () => {
 
             {/* Department */}
             <div>
-              <label className="block text-[14px] font-bold text-[#7D8592]">
+              <label className="block text-sm font-medium text-gray-700">
                 Department
               </label>
-              <div className="mt-1 flex items-center border border-gray-300 rounded-[14px] px-2 py-2 space-x-2">
+              <div className="mt-1 flex items-center border border-gray-300 rounded px-2 py-2 space-x-2">
                 {selectedDepartments.map((id) => {
-                  const dept = departments.find((d) => d.id === id); // rawDepartments o'rniga departments
+                  const dept = allDepartments.find((d) => d.id === id);
+                  // const dept = rawDepartments.find((d) => d.id === id);
                   return dept ? (
                     <img
                       key={id}
-                      src={dept.avatar || dept.photo} // backendda photo bo'lishi mumkin
+                      src={dept.avatar}
                       alt={dept.name}
-                      className="w-8 h-8 rounded-full bg-blue-500 p-1"
+                      className="w-8 h-8 rounded-full bg-white p-1 border border-blue-300"
                     />
                   ) : null;
                 })}
@@ -618,14 +623,14 @@ const Projects = () => {
 
             {/* Description */}
             <div>
-              <label className="block text-[14px] font-bold text-[#7D8592]">
+              <label className="block text-sm font-medium text-gray-700">
                 Description
               </label>
               <textarea
                 rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="mt-1 w-full border border-gray-300 rounded-[14px] px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 w-full border border-gray-300 rounded px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
               ></textarea>
             </div>
           </div>
@@ -639,12 +644,17 @@ const Projects = () => {
         onOk={() => setIsDeptModalOpen(false)}
         title="Select Departments"
         okText="Done"
-        className="custom-dept-modal"
       >
         <DepartmentsSelector
-          departments={departments}
           selectedIds={selectedDepartments}
           onChange={(ids) => setSelectedDepartments(ids)}
+          onDataLoaded={(data) => setAllDepartments(data)} //  API dan kelgan to'liq data
+          // onChange={(ids) => {
+          //   console.log("Tanlangan department IDlar:", ids);
+          // }}
+          // onDataLoaded={(departments) => {
+          //   console.log("Modalga kelgan departments:", departments);
+          // }}
         />
       </Modal>
 

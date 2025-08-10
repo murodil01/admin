@@ -18,18 +18,18 @@ const endpoints = {
     delete: (id) => `project/tasks/${id}`,
   },
 
-  projects: {
-    getAll: "project/projects",
-    create: "project/projects",
-    getById: (id) => `project/projects/${id}`,
-    update: (id) => `project/projects/${id}`,
-    delete: (id) => `project/projects/${id}`,
-  },
+    projects: {
+        getAll: "project/projects/",
+        create: "project/projects/",
+        getById: (id) => `project/projects/${id}`,
+        update: (id) => `project/projects/${id}`,
+        delete: (id) => `project/projects/${id}`,
+    },
 
-  department: {
-    getAll: "department/departments",
-    getById: (id) => `department/departments/${id}`,
-  },
+    departments: {
+        getAll: "department/departments",
+    },
+
 };
 
 export default endpoints;
