@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 
-const DepartmentsSelector = ({ departments = [], selectedIds = [], onChange }) => {
+const DepartmentsSelector = ({
+  departments = [],
+  selectedIds = [],
+  onChange,
+}) => {
   // Ichki state faqat tanlovlarni boshqarish uchun
   const [localDepartments, setLocalDepartments] = useState([]);
 
@@ -79,10 +83,8 @@ const DepartmentsSelector = ({ departments = [], selectedIds = [], onChange }) =
   const noneDepartment = localDepartments.find((d) => d.id === "none");
 
   return (
-    <div className="bg-white">
-      <h2 className="text-gray-600 text-sm font-bold mb-4">Departments</h2>
-
-      <div className="flex flex-wrap gap-6 items-start">
+    <div className="bg-white ">
+      <div className="flex flex-wrap gap-6 items-start ">
         <div className="grid grid-cols-3 gap-6 items-start">
           {mainDepartments.map((dept) => (
             <div key={dept.id} className="flex items-center gap-3">

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Info, Edit2, Trash, MoreVertical } from "lucide-react";
+import { Info, Edit2, Trash, MoreVertical, Paperclip } from "lucide-react";
 import { Modal, Input, Dropdown } from "antd";
 import pencil from "../../assets/icons/pencil.svg";
 import info from "../../assets/icons/info.svg";
@@ -510,9 +510,24 @@ const Projects = () => {
         open={isAddModalOpen}
         onCancel={handleAddClose}
         onOk={handleAddTask}
-        title="Add New Task"
-        okText="Add"
-        cancelText="Cancel"
+        okText="Add Task"
+        cancelText={null} // cancel tugmasi ko‘rinmaydi
+        footer={[
+          <button
+            key="submit"
+            onClick={handleAddTask}
+            className="bg-white text-[#979797] border border-[#979797] rounded-[15px] px-[20px] py-[15px] text-base font-bold transition"
+          >
+            Save Task
+          </button>,
+        ]}
+        title={
+          <div className="text-[22px] font-bold text-[#0A1629] mb-10">
+            Add Task
+          </div>
+        }
+        width={550}
+        className="custom-modal"
       >
         <div>
           <div className="space-y-4">
@@ -520,7 +535,7 @@ const Projects = () => {
             <div>
               <label
                 htmlFor="name"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-[14px] font-bold text-[#7D8592]"
               >
                 Name
               </label>
@@ -528,14 +543,14 @@ const Projects = () => {
                 type="text"
                 value={taskName}
                 onChange={(e) => setTaskName(e.target.value)}
-                placeholder="Edit task name"
-                className="mt-1 w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="M tech"
+                className="mt-1 w-full h-[50px] border border-gray-300 rounded-[14px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             {/* Image */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-[14px] font-bold text-[#7D8592]">
                 Image
               </label>
 
@@ -551,25 +566,12 @@ const Projects = () => {
               {/* Tanlash maydoni */}
               <label
                 htmlFor="imageInput"
-                className="mt-1 flex items-center justify-between w-full border border-gray-300 rounded px-3 py-2 cursor-pointer hover:border-blue-500 transition"
+                className="mt-1 h-[50px] flex items-center justify-between w-full border border-gray-300 rounded-[14px] px-3 py-2 cursor-pointer hover:border-blue-500 transition"
               >
                 <span className="text-gray-400">
-                  {selectedImage ? "Change image" : "Change image"}
+                  {selectedImage ? "Upload image" : "Upload image"}
                 </span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-gray-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828L18 9.828V7h-2.828z"
-                  />
-                </svg>
+                <Paperclip />
               </label>
 
               {/* Tanlangan rasm preview */}
@@ -584,10 +586,10 @@ const Projects = () => {
 
             {/* Department */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-[14px] font-bold text-[#7D8592]">
                 Department
               </label>
-              <div className="mt-1 flex items-center border border-gray-300 rounded px-2 py-2 space-x-2">
+              <div className="mt-1 flex items-center border border-gray-300 rounded-[14px] px-2 py-2 space-x-2">
                 {selectedDepartments.map((id) => {
                   const dept = departments.find((d) => d.id === id); // rawDepartments o'rniga departments
                   return dept ? (
@@ -612,14 +614,14 @@ const Projects = () => {
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-[14px] font-bold text-[#7D8592]">
                 Description
               </label>
               <textarea
                 rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="mt-1 w-full border border-gray-300 rounded px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 w-full border border-gray-300 rounded-[14px] px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
               ></textarea>
             </div>
           </div>
@@ -633,6 +635,7 @@ const Projects = () => {
         onOk={() => setIsDeptModalOpen(false)}
         title="Select Departments"
         okText="Done"
+        className="custom-dept-modal"
       >
         <DepartmentsSelector
           departments={departments}
