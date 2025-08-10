@@ -48,7 +48,7 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
 
   return (
     <header
-      className="bg-white md:bg-[#F2F2F2] max-sm:mt-3 max-sm:mx-2.5 px-4 md:pl-4 md:pr-8 pb-3 pt-3 flex items-center justify-between max-w-full sticky top-0 z-40 
+      className="bg-white md:bg-[#F2F2F2] mt-[10px] max-sm:mt-3 max-sm:mx-2.5 px-4 md:pl-4 md:pr-8 pb-3 pt-3 flex items-center justify-between max-w-full sticky top-0 z-40 
       shadow-sm sm:shadow-none rounded-[24px] md:rounded-none gap-5"
     >
       {/* Left - Menu */}
