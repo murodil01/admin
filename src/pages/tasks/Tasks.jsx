@@ -442,7 +442,7 @@ const Projects = () => {
                   onClick={() => navigate(`/tasks/${project.id}`)}
                   src={project.image}
                   alt="Task"
-                  className="h-[134px] w-full object-cover rounded"
+                  className="h-[134px] w-full object-contain rounded"
                 />
               </button>
             ) : (
