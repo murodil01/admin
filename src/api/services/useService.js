@@ -1,5 +1,5 @@
 import api from "../base";
-import endpoints from "../endpoints";
+import endpoints from "../endpoint";
 
 export const getUsers = () => api.get(endpoints.users.getAll);
 export const getUserById = (id) => api.get(endpoints.users.getById(id));

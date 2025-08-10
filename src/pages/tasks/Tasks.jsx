@@ -1,20 +1,19 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Info, Edit2, Trash, MoreVertical } from "lucide-react";
+import { message } from "antd";
+import {  MoreVertical } from "lucide-react";
 import { Modal, Input, Dropdown } from "antd";
 import pencil from "../../assets/icons/pencil.svg";
 import info from "../../assets/icons/info.svg";
 import trash from "../../assets/icons/trash.svg";
 import { useNavigate } from "react-router-dom";
 import DepartmentsSelector from "../../components/calendar/DepartmentsSelector";
-import { rawDepartments } from "../../utils/department";
-// import departmentIcon from "../../assets/icons/department.svg";
 import {
   getTasks,
   createTask,
   updateTask,
   deleteTask,
 } from "../../api/services/taskService";
-import { getProjects } from "../../api/services/projectService";
+import { getProjects, createProject  } from "../../api/services/projectService";
 
 const Projects = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -24,37 +23,22 @@ const Projects = () => {
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const dropdownRef = useRef(null);
   const [taskName, setTaskName] = useState("");
-  const [description, setDescription] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const navigate = useNavigate();
-
+  
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  const [name, setName] = useState("");
+  // const [departmentIds, setDepartmentIds] = useState([]);
+  const [description, setDescription] = useState("");
 
   const [selectedImage, setSelectedImage] = useState(null);
-  const [selectedDepartments, setSelectedDepartments] = useState([]); // faqat ID lar
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false); // department tanlash uchun modal
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setSelectedImage(imageUrl);
-      setImageFile(file);
-    }
-  };
-  //   const handleImageChange = (e) => {
-  //     const file = e.target.files[0];
-  //     if (file) {
-  //       const reader = new FileReader();
-  //       reader.onloadend = () => {
-  //         setSelectedImage(reader.result);
-  //       };
-  //       reader.readAsDataURL(file);
-  //     }
-  //   };
-
-
+  const [selectedDepartments, setSelectedDepartments] = useState([]); // faqat ID lar
+  const [allDepartments, setAllDepartments] = useState([]); // API dan kelgan to'liq obyektlar
+  const [assigned, setAssigned] = useState([]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -65,7 +49,6 @@ const Projects = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
 
   const loadProjects = async () => {
     try {
@@ -84,7 +67,6 @@ const Projects = () => {
 
   if (loading) return <p>Loading...</p>;
 
-
   const handleAddOpen = () => setIsAddModalOpen(true);
   const handleAddClose = () => setIsAddModalOpen(false);
 
@@ -101,22 +83,78 @@ const Projects = () => {
     }
   };
 
-  const handleAddTask = async () => {
-    try {
-      const newTask = {
-        name: taskName,
-        description,
-        image: selectedImage,
-        progress: 0,
-      };
-      await createTask(newTask);
-      await loadTasks();
-      resetForm();
-      handleAddClose();
-    } catch (error) {
-      console.error("Error adding task:", error);
+   // Rasm tanlash
+   const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedImage(URL.createObjectURL(file)); // preview
+      setImageFile(file); // API ga yuborish
     }
   };
+
+
+
+  const handleAddTask = async () => {
+    if (!taskName.trim()) {
+      return message.error("Task name kiritilishi kerak!");
+    }
+
+    if (selectedDepartments.length === 0) {
+      return message.error("Kamida bitta department tanlang!");
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("name", taskName);
+      formData.append("description", description);
+
+      selectedDepartments.forEach(id => formData.append("department_ids", id));
+      assigned.forEach(id => formData.append("assigned", id));
+
+      if (imageFile) {
+          formData.append("image", imageFile);
+      }
+
+      console.log("📤 Yuborilayotgan FormData:");
+      for (let [key, value] of formData.entries()) {
+          console.log(key, value);
+      }
+
+      await createProject(formData);
+      message.success("✅ Task created successfully");
+
+      // Formni tozalash
+      setTaskName("");
+      setDescription("");
+      setSelectedDepartments([]);
+      setAssigned([]);
+      setImageFile(null);
+      handleAddClose();
+
+  } catch (error) {
+      console.error("❌ Task yaratishda xatolik:", error);
+      message.error("Failed to create task");
+  }
+  };
+
+
+
+  // const handleAddTask = async () => {
+  //   try {
+  //     const newTask = {
+  //       name: taskName,
+  //       description,
+  //       image: selectedImage,
+  //       progress: 0,
+  //     };
+  //     await createTask(newTask);
+  //     await loadTasks();
+  //     resetForm();
+  //     handleAddClose();
+  //   } catch (error) {
+  //     console.error("Error adding task:", error);
+  //   }
+  // };
 
   const handleEditTask = async () => {
     try {
@@ -561,13 +599,14 @@ const Projects = () => {
               </label>
               <div className="mt-1 flex items-center border border-gray-300 rounded px-2 py-2 space-x-2">
                 {selectedDepartments.map((id) => {
-                  const dept = rawDepartments.find((d) => d.id === id);
+                  const dept = allDepartments.find((d) => d.id === id);
+                  // const dept = rawDepartments.find((d) => d.id === id);
                   return dept ? (
                     <img
                       key={id}
                       src={dept.avatar}
                       alt={dept.name}
-                      className="w-8 h-8 rounded-full bg-blue-500 p-1"
+                      className="w-8 h-8 rounded-full bg-white p-1 border border-blue-300"
                     />
                   ) : null;
                 })}
@@ -609,6 +648,13 @@ const Projects = () => {
         <DepartmentsSelector
           selectedIds={selectedDepartments}
           onChange={(ids) => setSelectedDepartments(ids)}
+          onDataLoaded={(data) => setAllDepartments(data)} //  API dan kelgan to'liq data
+          // onChange={(ids) => {
+          //   console.log("Tanlangan department IDlar:", ids);
+          // }}
+          // onDataLoaded={(departments) => {
+          //   console.log("Modalga kelgan departments:", departments);
+          // }}
         />
       </Modal>
 

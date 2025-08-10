@@ -476,7 +476,7 @@ const Card = ({ title, id, column, time, description, checklistProgress, handleD
                                             <span className="text-sm">Ibrohim</span>
                                         </div>
                                         <div>
-                                            <div className='bg-white p-1 rounded-sm'><p className="text-sm  text-gray-700">salom}</p></div>
+                                            <div className='bg-white p-1 rounded-sm'><p className="text-sm  text-gray-700">salom</p></div>
                                       
                                         </div>
                                     </div>

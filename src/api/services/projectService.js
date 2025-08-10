@@ -3,7 +3,7 @@ import endpoints from "../endpoint";
 
 export const getProjects = async () => {
     const res = await api.get(endpoints.projects.getAll);
-    return res.data; // ✅ bu yerda count, next, previous, results bo‘ladi
+    return res.data; //  bu yerda count, next, previous, results bo‘ladi
 };
 
 export const getProjectById = async (id) => {
