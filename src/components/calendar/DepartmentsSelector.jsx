@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { getDepartments } from "../../api/services/departmentService"; 
 
 const DepartmentsSelector = ({ selectedIds, onChange,onDataLoaded }) => {
@@ -86,7 +86,7 @@ const DepartmentsSelector = ({ selectedIds, onChange,onDataLoaded }) => {
   };
 
   if (loading) {
-    return <p className="text-gray-500">Loading departments...</p>;
+    return <p className="text-gray-500 font-bold">Loading departments...</p>;
   }
 
   const mainDepartments = departments.filter((d) => d.id !== "none");
@@ -94,7 +94,6 @@ const DepartmentsSelector = ({ selectedIds, onChange,onDataLoaded }) => {
 
   return (
     <div className="bg-white">
-      <h2 className="text-gray-600 text-sm font-bold mb-4">Departments</h2>
 
       <div className="flex flex-wrap gap-6 items-start">
         <div className="grid grid-cols-5 max-md:grid-cols-4 gap-6 items-start">
