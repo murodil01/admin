@@ -134,18 +134,6 @@ const TaskDetails = () => {
     }
   };
 
-  const handleDelete = () => {
-    setTitle("");
-    setType("");
-    setNotification("Off");
-    setDate(null);
-    setDescription("");
-    setTags([]);
-    setFiles([]);
-    setChecklist([]);
-    message.success("Form reset");
-  };
-
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
@@ -440,31 +428,55 @@ const TaskDetails = () => {
                 </div>
 
                 {/* Buttons */}
-                <div className="flex justify-center gap-5 pt-5 md:pt-65">
+                <div className="flex justify-center gap-5 pt-10 md:pt-65">
                   <Button
-                    onClick={handleDelete}
-                    type="primary"
-                    danger
+                    onClick={handleCancel}
                     style={{
-                      width: "90px",
-                      height: "54px",
+                      width: "140px", // bir xil width
+                      height: "48px", // bir xil height
+                      fontSize: "17px",
+                      fontWeight: "600",
                       borderRadius: "14px",
-                      fontSize: "16px",
-                      fontWeight: "bold",
+                      border: "none",
+                      transition: "all 0.3s ease",
+                      boxShadow: "0 4px 12px rgba(217, 217, 217, 0.5)",
+                      color: "#595959", // oddiy text rangi
+                      backgroundColor: "#fff",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = "#d9d9d9"; // borderColor hoverda o‘zgarmasin
+                      e.currentTarget.style.color = "#595959"; // text rangi hoverda ham kulrang qoladi
+                      e.currentTarget.style.backgroundColor = "#f5f5f5"; // biroz engil fon
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "transparent";
+                      e.currentTarget.style.color = "#595959"; // normal holatda ham kulrang
+                      e.currentTarget.style.backgroundColor = "#fff";
                     }}
                   >
-                    Delete
+                    Cancel
                   </Button>
+
                   <Button
                     onClick={handleSave}
                     type="primary"
                     style={{
-                      width: "74px",
-                      height: "54px",
+                      width: "140px", // bir xil width
+                      height: "48px", // bir xil height
+                      fontSize: "17px",
+                      fontWeight: "600",
                       borderRadius: "14px",
-                      fontSize: "16px",
-                      fontWeight: "bold",
+                      boxShadow: "0 4px 12px rgba(24, 144, 255, 0.5)",
+                      transition: "box-shadow 0.3s ease",
                     }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.boxShadow =
+                        "0 6px 20px rgba(24, 144, 255, 0.8)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.boxShadow =
+                        "0 4px 12px rgba(24, 144, 255, 0.5)")
+                    }
                   >
                     Save
                   </Button>
