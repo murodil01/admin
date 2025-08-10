@@ -2,7 +2,7 @@
 const VerifyPassword = () => {
   return (
     <div>
-      
+      VerifyPassword
     </div>
   )
 }

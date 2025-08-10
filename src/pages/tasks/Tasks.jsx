@@ -7,7 +7,6 @@ import trash from "../../assets/icons/trash.svg";
 import { useNavigate } from "react-router-dom";
 import DepartmentsSelector from "../../components/calendar/DepartmentsSelector";
 import { getDepartments } from "../../api/services/departmentService";
-
 // import departmentIcon from "../../assets/icons/department.svg";
 import {
   getTasks,
@@ -280,7 +279,7 @@ const Projects = () => {
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
-                  className="hidden"
+                  className="hidden rounded-[14px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   id="imageInput"
                 />
 
@@ -288,7 +287,7 @@ const Projects = () => {
                   htmlFor="imageInput"
                   className="mt-1 w-full block cursor-pointer border border-dashed border-gray-400 rounded px-3 py-2 text-blue-600 hover:border-blue-500 transition"
                 >
-                  sadff
+                  Upload
                 </label>
 
                 {/* Tanlangan rasmni ko‘rsatish */}
@@ -309,7 +308,7 @@ const Projects = () => {
                 <textarea
                   defaultValue={selectedTask.description}
                   rows={4}
-                  className="mt-1 w-full border border-gray-300 rounded px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 w-full border border-gray-300 rounded-[14px] px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                 ></textarea>
               </div>
             </div>
