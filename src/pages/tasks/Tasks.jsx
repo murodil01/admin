@@ -443,11 +443,11 @@ const Projects = () => {
       </div>
 
       {/* Tasks Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="flex flex-wrap gap-y-5 justify-center md:justify-between">
         {projects.map((project) => (
           <div
             key={project.id}
-            className="max-w-[300px] w-full h-[250px] border border-[#D9D9D9]  rounded-[14px] p-3 bg-white shadow relative group flex flex-col gap-3 cursor-pointer"
+            className="max-w-[290px] w-full h-[250px] border border-[#D9D9D9]  rounded-[14px] p-3 bg-white shadow relative group flex flex-col gap-3 cursor-pointer"
           >
             {project.image ? (
               <button
@@ -537,7 +537,7 @@ const Projects = () => {
           <button
             key="submit"
             onClick={handleAddTask}
-            className="bg-white text-[#979797] border border-[#979797] rounded-[15px] px-[20px] py-[15px] text-base font-bold transition"
+            className="bg-[#0061fe] hover:bg-[#3b77d7] text-white rounded-[15px] px-[20px] py-[12px] text-base font-bold transition"
           >
             Save Task
           </button>,
@@ -714,7 +714,7 @@ const Projects = () => {
                     setIsActionModalOpen(false);
                     setSelectedTask(null);
                   }}
-                  className="bg-[#0061fe] text-white px-5 py-2 rounded-xl cursor-pointer"
+                  className="bg-[#0061fe] text-white font-bold px-5 py-2 rounded-xl cursor-pointer"
                 >
                   Got it
                 </button>,
@@ -739,7 +739,7 @@ const Projects = () => {
                     setIsActionModalOpen(false);
                     setSelectedTask(null);
                   }}
-                  className="border border-gray-400 text-gray-500 px-5 py-2 rounded-xl font-medium cursor-pointer"
+                  className="bg-[#0061fe] hover:bg-[#3b77d7] text-white px-5 py-2 rounded-[14px] font-bold cursor-pointer"
                 >
                   Save Task
                 </button>,
