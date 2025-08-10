@@ -162,7 +162,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                               leadsOpen ? "rotate-90" : ""
                             }`}
                           >
-                            <ChevronRight size={20}/>
+                            <ChevronRight size={20} />
                           </span>
                         )}
                       </div>
@@ -279,7 +279,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                             leadsOpen ? "rotate-90" : ""
                           }`}
                         >
-                          <ChevronRight size={20}/>
+                          <ChevronRight size={20} />
                         </span>
                       )}
                     </span>
@@ -316,7 +316,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 onClick={() =>
                   window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
                 }
-                className="flex items-center justify-center gap-2 border border-[#0061fe] bg-white text-[#0061fe] hover:bg-[#0061fe] hover:text-white rounded-xl text-[18px] px-6 py-3 text-sm w-full"
+                className="hover:shadow-lg hover:scale-[1.05] active:scale-[0.95]  flex items-center justify-center gap-2 border-[1px] border-[#0061fe] text-white bg-[#0061fe] rounded-xl font-bold text-[18px] px-6 py-[5px] text-sm w-full"
               >
                 <BiSupport size={18} />
                 <span>Support</span>
