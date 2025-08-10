@@ -16,6 +16,7 @@ import { TbReport } from "react-icons/tb";
 import side_blue3 from "../../assets/side_blue3.png";
 import { RiPieChart2Fill } from "react-icons/ri";
 import { HiTrophy } from "react-icons/hi2";
+import { ChevronRight } from "lucide-react";
 
 const menuItems = [
   { label: "Dashboard", icon: <BsFillGridFill size={20} />, path: "/" },
@@ -137,10 +138,16 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                       }
                     }}
                     className={`flex items-center gap-3 py-2 rounded-xl transition-all duration-200 text-left group h-[40px]
-                      ${collapsed ? "justify-center px-2 w-[48px]" : "px-4 w-full"}
-                      ${isActive
-                        ? "bg-[#0061fe] font-semibold text-white shadow-md"
-                        : "text-[#7D8592] hover:text-white hover:shadow-sm"}
+                      ${
+                        collapsed
+                          ? "justify-center px-2 w-[48px]"
+                          : "px-4 w-full"
+                      }
+                      ${
+                        isActive
+                          ? "bg-[#0061fe] font-semibold text-white shadow-md"
+                          : "text-[#7D8592] hover:text-white hover:shadow-sm"
+                      }
                       hover:bg-[#0061fe] hover:text-white relative group`}
                   >
                     {item.icon}
@@ -155,7 +162,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                               leadsOpen ? "rotate-90" : ""
                             }`}
                           >
-                            ▶
+                            <ChevronRight size={20} />
                           </span>
                         )}
                       </div>
@@ -272,7 +279,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                             leadsOpen ? "rotate-90" : ""
                           }`}
                         >
-                          ▶
+                          <ChevronRight size={20} />
                         </span>
                       )}
                     </span>
@@ -309,7 +316,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 onClick={() =>
                   window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
                 }
-                className="flex items-center justify-center gap-2 border border-[#0061fe] bg-white text-[#0061fe] hover:bg-[#0061fe] hover:text-white rounded-xl text-[18px] px-6 py-3 text-sm w-full"
+                className="hover:shadow-lg hover:scale-[1.05] active:scale-[0.95]  flex items-center justify-center gap-2 border-[1px] border-[#0061fe] text-white bg-[#0061fe] rounded-xl font-bold text-[18px] px-6 py-[5px] text-sm w-full"
               >
                 <BiSupport size={18} />
                 <span>Support</span>

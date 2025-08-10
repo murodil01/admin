@@ -80,7 +80,6 @@ body {
   display: none;
 }
 
-
 /* ichki .ant-select-selector ga style */
 .custom-select .ant-select-selector {
   border-radius: 14px !important;
@@ -105,7 +104,16 @@ body {
 /* Modal contentga radius berish */
 .custom-modal .ant-modal-content {
   border-radius: 24px !important;
+  padding: 30px 24px;
+  margin: 10px 0;
 }
+
+@media (max-width: 768px) {
+  .custom-modal .ant-modal-content {
+    padding: 30px 5px;
+  }
+}
+
 .custom-notif {
   width: 113px;
 }
@@ -141,4 +149,54 @@ body {
   top: 100% !important;
   transform: translateY(-50%);
   right: 12px;
+}
+
+.custom-dept-modal .ant-modal-content {
+  border-radius: 14px;
+  padding: 30px 40px;
+}
+
+.custom-upload-btn:hover {
+  background-color: #f0f0f0 !important; /* O'zingizga yoqqan kulrang */
+  color: #595959 !important; /* Text rangi ko‘k emas */
+  border-color: #d9d9d9 !important;
+  box-shadow: none !important;
+}
+
+.loader {
+  width: 70px;
+  height: 70px;
+  border: 10px solid #fff;
+  border-radius: 50%;
+  position: relative;
+  transform: rotate(45deg);
+  box-sizing: border-box;
+}
+
+.loader::before {
+  content: "";
+  position: absolute;
+  box-sizing: border-box;
+  inset: -10px;
+  border-radius: 50%;
+  border: 10px solid #ff3d00;
+  animation: prixClipFix 2s infinite linear;
+}
+
+@keyframes prixClipFix {
+  0% {
+    clip-path: polygon(50% 50%, 0 0, 0 0, 0 0, 0 0, 0 0);
+  }
+  25% {
+    clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 0, 100% 0, 100% 0);
+  }
+  50% {
+    clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 100% 100%, 100% 100%);
+  }
+  75% {
+    clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 0 100%, 0 100%);
+  }
+  100% {
+    clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 0 100%, 0 0);
+  }
 }

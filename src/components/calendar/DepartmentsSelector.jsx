@@ -132,7 +132,6 @@ export default DepartmentsSelector;
 
 
 
-
 // import React, { useState } from "react";
 // import { rawDepartments } from "../../utils/department";
 

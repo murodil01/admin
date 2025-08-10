@@ -1,22 +1,22 @@
 const endpoints = {
-    auth: {
-        login: "/auth/login",
-        register: "/auth/register",
-        me: "/auth/me",
-    },
-    users: {
-        getAll: "/users",
-        getById: (id) => `/users/${id}`,
-        update: (id) => `/users/${id}`,
-        delete: (id) => `/users/${id}`,
-    },
-    tasks: {
-        getAll: "/tasks",
-        create: "/tasks",
-        getById: (id) => `/tasks/${id}`,
-        update: (id) => `/tasks/${id}`,
-        delete: (id) => `/tasks/${id}`,
-    },
+  auth: {
+    login: "/auth/login",
+    register: "/auth/register",
+    me: "/auth/me",
+  },
+  users: {
+    getAll: "/users",
+    getById: (id) => `/users/${id}`,
+    update: (id) => `/users/${id}`,
+    delete: (id) => `/users/${id}`,
+  },
+  tasks: {
+    getAll: "project/tasks",
+    create: "project/tasks",
+    getById: (id) => `project/tasks/${id}`,
+    update: (id) => `project/tasks/${id}`,
+    delete: (id) => `project/tasks/${id}`,
+  },
 
     projects: {
         getAll: "project/projects/",
@@ -29,6 +29,7 @@ const endpoints = {
     departments: {
         getAll: "department/departments",
     },
+
 };
 
 export default endpoints;

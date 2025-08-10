@@ -31,3 +31,4 @@ export const deleteDepartment = async (id) => {
     const res = await api.delete(endpoints.departments.delete(id));
     return res.data;
 };
+

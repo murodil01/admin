@@ -134,27 +134,15 @@ const TaskDetails = () => {
     }
   };
 
-  const handleDelete = () => {
-    setTitle("");
-    setType("");
-    setNotification("Off");
-    setDate(null);
-    setDescription("");
-    setTags([]);
-    setFiles([]);
-    setChecklist([]);
-    message.success("Form reset");
-  };
-
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
         <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
-          task-name
+          Project name
         </h3>
         <button
           onClick={showModal}
-          className="capitalize w-full sm:max-w-[182px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
+          className="capitalize w-full sm:max-w-[172px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
         >
           <span className="text-[22px]">+</span>
           <span>Add Column</span>
@@ -172,7 +160,9 @@ const TaskDetails = () => {
               Add Column
             </h2>
           }
-          bodyStyle={{ padding: 0 }}
+          styles={{
+            body: { padding: 0 }, // eski bodyStyle o‘rniga
+          }}
         >
           <div className="px-3 sm:px-4 py-8">
             <div className="grid grid-cols-1 xl:grid-cols-5 gap-10">
@@ -438,31 +428,55 @@ const TaskDetails = () => {
                 </div>
 
                 {/* Buttons */}
-                <div className="flex justify-end gap-5 pt-60">
+                <div className="flex justify-center gap-5 pt-10 md:pt-65">
                   <Button
-                    onClick={handleDelete}
-                    type="primary"
-                    danger
+                    onClick={handleCancel}
                     style={{
-                      width: "90px",
-                      height: "54px",
+                      width: "140px", // bir xil width
+                      height: "48px", // bir xil height
+                      fontSize: "17px",
+                      fontWeight: "600",
                       borderRadius: "14px",
-                      fontSize: "16px",
-                      fontWeight: "bold",
+                      border: "none",
+                      transition: "all 0.3s ease",
+                      boxShadow: "0 4px 12px rgba(217, 217, 217, 0.5)",
+                      color: "#595959", // oddiy text rangi
+                      backgroundColor: "#fff",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = "#d9d9d9"; // borderColor hoverda o‘zgarmasin
+                      e.currentTarget.style.color = "#595959"; // text rangi hoverda ham kulrang qoladi
+                      e.currentTarget.style.backgroundColor = "#f5f5f5"; // biroz engil fon
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "transparent";
+                      e.currentTarget.style.color = "#595959"; // normal holatda ham kulrang
+                      e.currentTarget.style.backgroundColor = "#fff";
                     }}
                   >
-                    Delete
+                    Cancel
                   </Button>
+
                   <Button
                     onClick={handleSave}
                     type="primary"
                     style={{
-                      width: "74px",
-                      height: "54px",
+                      width: "140px", // bir xil width
+                      height: "48px", // bir xil height
+                      fontSize: "17px",
+                      fontWeight: "600",
                       borderRadius: "14px",
-                      fontSize: "16px",
-                      fontWeight: "bold",
+                      boxShadow: "0 4px 12px rgba(24, 144, 255, 0.5)",
+                      transition: "box-shadow 0.3s ease",
                     }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.boxShadow =
+                        "0 6px 20px rgba(24, 144, 255, 0.8)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.boxShadow =
+                        "0 4px 12px rgba(24, 144, 255, 0.5)")
+                    }
                   >
                     Save
                   </Button>
