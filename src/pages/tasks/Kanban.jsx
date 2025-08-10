@@ -569,7 +569,7 @@ const Card = ({
                       </div>
                       <div>
                         <div className="bg-white p-1 rounded-sm">
-                          <p className="text-sm  text-gray-700">salom}</p>
+                          <p className="text-sm  text-gray-700">salom</p>
                         </div>
                       </div>
                     </div>
@@ -748,19 +748,19 @@ const AddCard = ({ column, setCards }) => {
         onChange={(e) => setText(e.target.value)}
         autoFocus
         placeholder="Add new task..."
-        className="w-full rounded border border-violet-400 bg-white p-3 text-sm text-gray-700 placeholder-violet-300 focus:outline-0"
+        className="w-full rounded-lg border border-violet-400 bg-white p-3 text-sm text-gray-700 placeholder-violet-300 focus:outline-0"
       />
       <div className="mt-1.5 flex items-center justify-end gap-1.5">
         <button
           type="button"
           onClick={() => setAdding(false)}
-          className="px-3 py-1.5 text-xs text-neutral-400 hover:text-neutral-50"
+          className="px-3 py-1.5 text-xs text-neutral-600 font-bold hover:text-neutral-500"
         >
           Close
         </button>
         <button
           type="submit"
-          className="flex items-center gap-1.5 rounded bg-neutral-50 px-3 py-1.5 text-xs text-neutral-950 hover:text-neutral-300"
+          className="flex items-center gap-1.5 rounded-lg bg-neutral-50 font-bold px-3 py-1.5 text-xs text-neutral-95"
         >
           <span>Add</span>
           <FiPlus />
@@ -771,7 +771,7 @@ const AddCard = ({ column, setCards }) => {
     <motion.button
       layout
       onClick={() => setAdding(true)}
-      className="flex w-full items-center gap-1.5 p-2 text-xs text-black font-semibold hover:bg-gray-400 hover:rounded cursor-pointer"
+      className="flex w-full items-center gap-1.5 p-2 text-xs text-black font-bold hover:bg-white hover:rounded-lg cursor-pointer"
     >
       <FiPlus />
       <span>Add a card</span>
