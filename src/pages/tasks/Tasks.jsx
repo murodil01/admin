@@ -427,11 +427,11 @@ const Projects = () => {
       </div>
 
       {/* Tasks Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid justify-items-center grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {projects.map((project) => (
           <div
             key={project.id}
-            className="border border-[#D9D9D9] rounded-lg p-3 bg-white shadow relative group flex flex-col gap-3 cursor-pointer"
+            className="w-[300px] h-[250px] border border-[#D9D9D9] rounded-[14px] p-3 bg-white shadow relative group flex flex-col gap-3 cursor-pointer"
           >
             {project.image ? (
               <button
