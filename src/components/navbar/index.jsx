@@ -115,10 +115,16 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
         <div className="hidden sm:block">
           <button
             onClick={() => setIsUserOpen((prev) => !prev)}
-            className="flex items-center gap-2 h-11 px-9 bg-white rounded-[14px] shadow  transition"
+            className="flex justify-between w-44 items-center gap-2 h-11 px-9 bg-white rounded-[14px] shadow  transition"
           >
-            <User size={22} className="text-gray-600" />
-            <span className="font-medium text-base text-gray-700">Admin</span>
+            <img
+              src="https://www.svgrepo.com/show/356715/businessman.svg"
+              alt="Image"
+              className="w-5 h-5 rounded-full object-cover"
+            />
+            <span className="font-medium text-base text-gray-700 truncate w-12">
+              Admin
+            </span>
             <svg
               className={`w-4 h-4 transition-transform duration-200 ${
                 isUserOpen ? "rotate-180" : ""
