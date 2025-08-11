@@ -29,6 +29,7 @@ import {
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
 
+
 const NotionKanban = ({ cards, setCards }) => {
   return (
     <div className="flex gap-5 absolute top-0 right-0 left-0 pb-4 w-full overflow-x-auto hide-scrollbar">
