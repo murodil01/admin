@@ -1168,3 +1168,4 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate, assignees }) => {
 };
 
 export default NotionKanban;
+

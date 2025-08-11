@@ -1,6 +1,6 @@
 import { AiOutlinePaperClip } from "react-icons/ai";
 import { FiTrash } from "react-icons/fi";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Button,
   Modal,
@@ -12,6 +12,8 @@ import {
 } from "antd";
 import Kanban from "./Kanban";
 import memberSearch from "../../assets/icons/memberSearch.svg";
+import { getTasks, createTask } from "../../api/services/taskService"; // Updated imports
+import dayjs from "dayjs"; // Added for date formatting
 
 const { TextArea } = Input;
 
@@ -45,11 +47,60 @@ const TaskDetails = () => {
   const [date, setDate] = useState(null);
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState([]);
-  const [image, setImage] = useState(null); // faqat rasm uchun
-  const [files, setFiles] = useState([]); // boshqa fayllar uchun
+  const [image, setImage] = useState(null);
+  const [files, setFiles] = useState([]);
   const [checklist, setChecklist] = useState([]);
   const [cards, setCards] = useState([]);
-  const [type, setType] = useState("acknowledged");
+  const [type, setType] = useState("assigned");
+  const [selectedAssignee, setSelectedAssignee] = useState(null);
+
+  // Fetch tasks on mount
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      message.error("Please log in to access tasks");
+      // Optionally redirect to login page
+      // window.location.href = "/login";
+      return;
+    }
+
+    // Fetch tasks
+    getTasks()
+      .then((response) => setCards(mapTasksToCards(response.data)))
+      .catch((err) => {
+        console.error("Error fetching tasks:", err);
+        if (err.response?.status === 401) {
+          message.error("Session expired. Please log in again.");
+          // Optionally redirect to login
+          // window.location.href = "/login";
+        } else {
+          message.error("Failed to fetch tasks");
+        }
+      });
+  }, []);
+
+  // Helper to map API tasks to card format
+  const mapTasksToCards = (tasks) => {
+    return tasks.map((task) => ({
+      id: task.id,
+      title: task.name,
+      time: task.deadline
+        ? new Date(task.deadline).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+          })
+        : "No due date",
+      description: task.description,
+      assignee: {
+        name: task.assigned?.length > 0 ? task.assigned[0] : "Unknown",
+        avatar: "bg-blue-500",
+      },
+      tags: task.tags,
+      checklistProgress: "0/0", // Adjust if checklist is supported
+      column: task.tasks_type,
+      files: [], // Adjust if files are supported
+    }));
+  };
 
   const addCheckItem = () => {
     setChecklist((prev) => [...prev, { text: "", done: false }]);
@@ -70,10 +121,23 @@ const TaskDetails = () => {
   };
 
   const showModal = () => setIsModalOpen(true);
-  const handleCancel = () => setIsModalOpen(false);
+  const handleCancel = () => {
+    setIsModalOpen(false);
+    // Reset form
+    setTitle("");
+    setType("acknowledged");
+    setNotification("Off");
+    setDate(null);
+    setSelectedAssignee(null);
+    setDescription("");
+    setTags([]);
+    setFiles([]);
+    setChecklist([]);
+    setImage(null);
+  };
 
-  const handleSave = () => {
-    // Validatsiya
+  const handleSave = async () => {
+    // Validation
     if (!title.trim()) {
       message.error("Please enter a column title");
       return;
@@ -83,48 +147,74 @@ const TaskDetails = () => {
       return;
     }
 
-    const completedChecks = checklist.filter(
-      (item) => item.text.trim() !== ""
-    ).length;
-    const totalChecks = checklist.length;
+    // Retrieve token
+    const token = localStorage.getItem("token");
+    if (!token) {
+      message.error("Please log in to create a task");
+      // Optionally redirect to login
+      // window.location.href = "/login";
+      return;
+    }
 
-    const newCard = {
-      id: Date.now().toString(),
-      title,
-      time: date
-        ? new Date(date).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          })
-        : "No due date",
+    // Prepare task data for API
+    const taskData = {
+      name: title,
       description,
-      assignee: {
-        name: selectedAssignee || "Unknown",
-        avatar: "bg-blue-500", // Placeholder avatar
-      },
+      tasks_type: type,
+      deadline: date ? dayjs(date).format("YYYY-MM-DD") : null,
       tags,
-      checklistProgress: `${completedChecks}/${totalChecks || 0}`,
-      column: type,
-      files, // Fayllar to‘liq obyekt bo‘lib saqlanadi
+      project: "5c112bdb-be91-4e09-a062-bf244691892b", // Replace with dynamic project ID
+      assigned: selectedAssignee ? [selectedAssignee] : [], // Match API's assigned field
     };
 
-    setCards((prev) => [...prev, newCard]);
-    message.success("Task saved!");
+    try {
+      // Call createTask API
+      const response = await createTask(taskData);
+      const newTask = response.data;
 
-    // Reset form
-    setTitle("");
-    setType("");
-    setNotification("Off");
-    setDate(null);
-    setSelectedAssignee(null);
-    setDescription("");
-    setTags([]);
-    setFiles([]);
-    setChecklist([]);
-    setIsModalOpen(false);
+      // Map the new task to card format
+      const completedChecks = checklist.filter(
+        (item) => item.text.trim() !== ""
+      ).length;
+      const totalChecks = checklist.length;
+
+      const newCard = {
+        id: newTask.id,
+        title: newTask.name,
+        time: newTask.deadline
+          ? new Date(newTask.deadline).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            })
+          : "No due date",
+        description: newTask.description,
+        assignee: {
+          name: selectedAssignee || "Unknown",
+          avatar: "bg-blue-500",
+        },
+        tags: newTask.tags,
+        checklistProgress: `${completedChecks}/${totalChecks || 0}`,
+        column: newTask.tasks_type,
+        files, // Store files locally or handle separately
+      };
+
+      // Update cards state
+      setCards((prev) => [...prev, newCard]);
+      message.success("Task created successfully!");
+
+      // Reset form
+      handleCancel();
+    } catch (error) {
+      console.error("Error creating task:", error);
+      if (error.response?.status === 401) {
+        message.error("Session expired. Please log in again.");
+        // Optionally redirect to login
+        // window.location.href = "/login";
+      } else {
+        message.error(error.response?.data?.message || "Failed to create task");
+      }
+    }
   };
-
-  const [selectedAssignee, setSelectedAssignee] = useState(null);
 
   const toggleTag = (tag) => {
     if (tags.includes(tag)) {
@@ -132,18 +222,6 @@ const TaskDetails = () => {
     } else {
       setTags((prev) => [...prev, tag]);
     }
-  };
-
-  const handleDelete = () => {
-    setTitle("");
-    setType("");
-    setNotification("Off");
-    setDate(null);
-    setDescription("");
-    setTags([]);
-    setFiles([]);
-    setChecklist([]);
-    message.success("Form reset");
   };
 
   return (
@@ -173,7 +251,7 @@ const TaskDetails = () => {
             </h2>
           }
           styles={{
-            body: { padding: 0 }, // eski bodyStyle o‘rniga
+            body: { padding: 0 },
           }}
         >
           <div className="px-3 sm:px-4 py-8">
@@ -219,9 +297,7 @@ const TaskDetails = () => {
                   />
                 </div>
 
-                {/* Due time, Notif Assigne */}
                 <div className="flex justify-between items-center gap-[20px] flex-wrap">
-                  {/* Due Time */}
                   <div>
                     <label className="block font-bold text-[14px] text-[#7D8592] mt-4 mb-2">
                       Due time
@@ -231,13 +307,11 @@ const TaskDetails = () => {
                       onChange={(_, dateStr) => setDate(dateStr)}
                       style={{
                         borderRadius: "14px",
-                        width: "",
                         height: "54px",
                       }}
                     />
                   </div>
 
-                  {/* Notification */}
                   <div>
                     <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
                       Notification
@@ -254,7 +328,6 @@ const TaskDetails = () => {
                     />
                   </div>
 
-                  {/* Assignee (2 column span) */}
                   <div className="md:col-span-2">
                     <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
                       Assignee
@@ -321,15 +394,12 @@ const TaskDetails = () => {
 
               {/* RIGHT SIDE */}
               <div className="xl:col-span-2 space-y-6">
-                {/* Image upload */}
                 <div>
                   <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
                     Image
                   </label>
                   <Upload
-                    style={{
-                      width: "100%",
-                    }}
+                    style={{ width: "100%" }}
                     showUploadList={false}
                     beforeUpload={(file) => {
                       const isImage = file.type.startsWith("image/");
@@ -337,7 +407,7 @@ const TaskDetails = () => {
                         message.error("Only image files are allowed!");
                         return false;
                       }
-                      setImage(file); // faqat bitta rasm
+                      setImage(file);
                       return false;
                     }}
                   >
@@ -349,8 +419,6 @@ const TaskDetails = () => {
                       <AiOutlinePaperClip className="text-lg" />
                     </Button>
                   </Upload>
-
-                  {/* Image preview */}
                   {image && (
                     <div className="flex items-center gap-2 mt-2">
                       <Input value={image.name} disabled className="flex-1" />
@@ -362,13 +430,10 @@ const TaskDetails = () => {
                   )}
                 </div>
 
-                {/* Files */}
                 <div className="mt-4">
                   <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
                     Files
                   </label>
-
-                  {/* Uploaded files preview */}
                   {files.map((file, index) => (
                     <div key={index} className="flex items-center gap-2 mb-2">
                       <Input
@@ -385,14 +450,12 @@ const TaskDetails = () => {
                       />
                     </div>
                   ))}
-
-                  {/* File Upload */}
                   <Upload
                     className="w-full"
                     multiple
                     showUploadList={false}
                     beforeUpload={(file) => {
-                      setFiles((prev) => [...prev, file]); // faqat fayllar
+                      setFiles((prev) => [...prev, file]);
                       return false;
                     }}
                   >
@@ -402,20 +465,17 @@ const TaskDetails = () => {
                   </Upload>
                 </div>
 
-                {/* Checklist */}
                 <div>
                   <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
                     Check list
                   </label>
                   {checklist.map((check, index) => (
                     <div key={index} className="flex items-center gap-2 mb-2">
-                      {/* Checkbox bajarilgan/bajarilmagan */}
                       <input
                         type="checkbox"
                         checked={check.done}
                         onChange={() => toggleCheckDone(index)}
                       />
-                      {/* Matn */}
                       <Input
                         value={check.text}
                         onChange={(e) => updateCheckText(index, e.target.value)}
@@ -439,32 +499,55 @@ const TaskDetails = () => {
                   </button>
                 </div>
 
-                {/* Buttons */}
-                <div className="flex justify-center gap-5 pt-5 md:pt-65">
+                <div className="flex justify-center gap-5 pt-10 md:pt-65">
                   <Button
-                    onClick={handleDelete}
-                    type="primary"
-                    danger
+                    onClick={handleCancel}
                     style={{
-                      width: "90px",
-                      height: "54px",
+                      width: "140px",
+                      height: "48px",
+                      fontSize: "17px",
+                      fontWeight: "600",
                       borderRadius: "14px",
-                      fontSize: "16px",
-                      fontWeight: "bold",
+                      border: "none",
+                      transition: "all 0.3s ease",
+                      boxShadow: "0 4px 12px rgba(217, 217, 217, 0.5)",
+                      color: "#595959",
+                      backgroundColor: "#fff",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = "#d9d9d9";
+                      e.currentTarget.style.color = "#595959";
+                      e.currentTarget.style.backgroundColor = "#f5f5f5";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "transparent";
+                      e.currentTarget.style.color = "#595959";
+                      e.currentTarget.style.backgroundColor = "#fff";
                     }}
                   >
-                    Delete
+                    Cancel
                   </Button>
+
                   <Button
                     onClick={handleSave}
                     type="primary"
                     style={{
-                      width: "74px",
-                      height: "54px",
+                      width: "140px",
+                      height: "48px",
+                      fontSize: "17px",
+                      fontWeight: "600",
                       borderRadius: "14px",
-                      fontSize: "16px",
-                      fontWeight: "bold",
+                      boxShadow: "0 4px 12px rgba(24, 144, 255, 0.5)",
+                      transition: "box-shadow 0.3s ease",
                     }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.boxShadow =
+                        "0 6px 20px rgba(24, 144, 255, 0.8)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.boxShadow =
+                        "0 4px 12px rgba(24, 144, 255, 0.5)")
+                    }
                   >
                     Save
                   </Button>

@@ -25,7 +25,7 @@ const endpoints = {
 		delete: id => `project/projects/${id}`,
 	},
 
-	department: {
+	departments: {
 		getAll: 'department/departments',
 		getById: id => `department/departments/${id}`,
 	},
@@ -54,5 +54,9 @@ const endpoints = {
 		delete: id => `board/leads/${id}`,
 	},
 }
+
+ 
+
+};
 
 export default endpoints;
