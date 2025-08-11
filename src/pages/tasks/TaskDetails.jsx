@@ -1,4 +1,5 @@
 import { AiOutlinePaperClip } from "react-icons/ai";
+import { useParams } from "react-router-dom";
 import { FiTrash } from "react-icons/fi";
 import { useState, useEffect } from "react";
 import {
@@ -12,7 +13,7 @@ import {
 } from "antd";
 import Kanban from "./Kanban";
 import memberSearch from "../../assets/icons/memberSearch.svg";
-import { getTasks, createTask } from "../../api/services/taskService"; // Updated imports
+import { getTasks, createTask, getProjectTaskById } from "../../api/services/taskService"; // Updated imports
 import dayjs from "dayjs"; // Added for date formatting
 
 const { TextArea } = Input;
@@ -41,6 +42,7 @@ const assignees = [
 ];
 
 const TaskDetails = () => {
+  const { projectId } = useParams(); // URL dan projectId ni oladi
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [notification, setNotification] = useState("Off");
@@ -56,28 +58,27 @@ const TaskDetails = () => {
 
   // Fetch tasks on mount
   useEffect(() => {
+    if (!projectId) return; // ID yo‘q bo‘lsa, so‘rov qilmaydi
+
     const token = localStorage.getItem("token");
     if (!token) {
       message.error("Please log in to access tasks");
-      // Optionally redirect to login page
-      // window.location.href = "/login";
       return;
     }
 
-    // Fetch tasks
-    getTasks()
-      .then((response) => setCards(mapTasksToCards(response.data)))
-      .catch((err) => {
-        console.error("Error fetching tasks:", err);
-        if (err.response?.status === 401) {
-          message.error("Session expired. Please log in again.");
-          // Optionally redirect to login
-          // window.location.href = "/login";
-        } else {
-          message.error("Failed to fetch tasks");
-        }
-      });
-  }, []);
+    getProjectTaskById(projectId) // ✅ ID berildi
+    .then((response) => {
+      setCards(mapTasksToCards(response.data));
+    })
+    .catch((err) => {
+      console.error("Error fetching tasks:", err);
+      if (err.response?.status === 401) {
+        message.error("Session expired. Please log in again.");
+      } else {
+        message.error("Failed to fetch tasks");
+      }
+    });
+}, [projectId]);
 
   // Helper to map API tasks to card format
   const mapTasksToCards = (tasks) => {

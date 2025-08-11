@@ -7,12 +7,12 @@ import info from "../../assets/icons/info.svg";
 import trash from "../../assets/icons/trash.svg";
 import { useNavigate } from "react-router-dom";
 import DepartmentsSelector from "../../components/calendar/DepartmentsSelector";
-import {
-  getTasks,
-  createTask,
-  updateTask,
-  deleteTask,
-} from "../../api/services/taskService";
+// import {
+//   getTasks,
+//   createTask,
+//   updateTask,
+//   deleteTask,
+// } from "../../api/services/taskService";
 import { getProjects, createProject  } from "../../api/services/projectService";
 
 const Projects = () => {
@@ -445,11 +445,11 @@ const Projects = () => {
           >
             {project.image ? (
               <button
-                onClick={() => navigate(`/tasks/${task.id}`)}
+                onClick={() => navigate(`/tasks/${project.id}`)}
                 className="cursor-pointer"
               >
                 <img
-                  onClick={() => navigate(`/tasks/${task.id}`)}
+                  onClick={() => navigate(`/tasks/${project.id}`)}
                   src={project.image}
                   alt="Task"
                   className="h-[134px] w-full object-cover rounded"
