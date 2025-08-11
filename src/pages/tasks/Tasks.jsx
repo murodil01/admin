@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { message } from "antd";
-import {  MoreVertical } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 import { Modal, Input, Dropdown } from "antd";
 import pencil from "../../assets/icons/pencil.svg";
 import info from "../../assets/icons/info.svg";
@@ -14,6 +14,8 @@ import DepartmentsSelector from "../../components/calendar/DepartmentsSelector";
 //   deleteTask,
 // } from "../../api/services/taskService";
 import { getProjects, createProject  } from "../../api/services/projectService";
+import { Paperclip } from "lucide-react";
+import { useSidebar } from "../../context";
 
 const Projects = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -25,10 +27,27 @@ const Projects = () => {
   const [taskName, setTaskName] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const navigate = useNavigate();
-  
+  const { collapsed } = useSidebar();
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSmallScreen(window.innerWidth < 768); // 768px = md breakpoint
+    };
+
+    handleResize(); // component mount bo‘lganida chaqiramiz
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // justify-content klassini aniqlash
+  const justifyClass =
+    collapsed && !isSmallScreen ? "justify-between" : "justify-center";
+
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [name, setName] = useState("");
   // const [departmentIds, setDepartmentIds] = useState([]);
   const [description, setDescription] = useState("");
@@ -65,7 +84,12 @@ const Projects = () => {
     loadProjects();
   }, []);
 
-  if (loading) return <p>Loading...</p>;
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-[100vh]">
+        <span className="loader"></span>
+      </div>
+    );
 
   const handleAddOpen = () => setIsAddModalOpen(true);
   const handleAddClose = () => setIsAddModalOpen(false);
@@ -83,16 +107,14 @@ const Projects = () => {
     }
   };
 
-   // Rasm tanlash
-   const handleImageChange = (e) => {
+  // Rasm tanlash
+  const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setSelectedImage(URL.createObjectURL(file)); // preview
       setImageFile(file); // API ga yuborish
     }
   };
-
-
 
   const handleAddTask = async () => {
     if (!taskName.trim()) {
@@ -108,16 +130,18 @@ const Projects = () => {
       formData.append("name", taskName);
       formData.append("description", description);
 
-      selectedDepartments.forEach(id => formData.append("department_ids", id));
-      assigned.forEach(id => formData.append("assigned", id));
+      selectedDepartments.forEach((id) =>
+        formData.append("department_ids", id)
+      );
+      assigned.forEach((id) => formData.append("assigned", id));
 
       if (imageFile) {
-          formData.append("image", imageFile);
+        formData.append("image", imageFile);
       }
 
       console.log("📤 Yuborilayotgan FormData:");
       for (let [key, value] of formData.entries()) {
-          console.log(key, value);
+        console.log(key, value);
       }
 
       await createProject(formData);
@@ -130,14 +154,11 @@ const Projects = () => {
       setAssigned([]);
       setImageFile(null);
       handleAddClose();
-
-  } catch (error) {
+    } catch (error) {
       console.error("❌ Task yaratishda xatolik:", error);
       message.error("Failed to create task");
-  }
+    }
   };
-
-
 
   // const handleAddTask = async () => {
   //   try {
@@ -225,6 +246,9 @@ const Projects = () => {
     },
   ];
 
+  {
+    /* Edit task vs views codes */
+  }
   const renderModalContent = () => {
     if (!selectedTask) return null;
 
@@ -237,7 +261,7 @@ const Projects = () => {
               <div>
                 <label
                   htmlFor="name"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-[14px] font-bold text-[#7D8592]"
                 >
                   Name
                 </label>
@@ -245,13 +269,13 @@ const Projects = () => {
                   type="text"
                   defaultValue={selectedTask.name}
                   placeholder="Edit task name"
-                  className="mt-1 w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 w-full h-[54px] border border-gray-300 rounded-[14px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               {/* Image */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-[14px] font-bold text-[#7D8592]">
                   Image
                 </label>
 
@@ -265,7 +289,7 @@ const Projects = () => {
 
                 <label
                   htmlFor="imageInput"
-                  className="mt-1 w-full block cursor-pointer border border-dashed border-gray-400 rounded px-3 py-2 text-blue-600 hover:border-blue-500 transition"
+                  className="mt-1 w-full h-[54px] block cursor-pointer border border-dashed border-gray-400 rounded-[14px] px-3 py-[15px] text-blue-600 hover:border-blue-500 transition"
                 >
                   Change image
                 </label>
@@ -275,14 +299,14 @@ const Projects = () => {
                   <img
                     src={selectedImage}
                     alt="Selected"
-                    className="mt-2 w-32 h-32 object-cover rounded"
+                    className="mt-2 w-20 h-20 object-cover rounded"
                   />
                 )}
               </div>
 
               {/* Department */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-[14px] font-bold text-[#7D8592]">
                   Department
                 </label>
 
@@ -296,9 +320,9 @@ const Projects = () => {
 
                 <label
                   htmlFor="imageInput"
-                  className="mt-1 w-full block cursor-pointer border border-dashed border-gray-400 rounded px-3 py-2 text-blue-600 hover:border-blue-500 transition"
+                  className="mt-1 w-full h-[54px] block rounded-[14px] cursor-pointer border border-dashed border-gray-400 px-3 py-[15px] text-blue-600 hover:border-blue-500 transition"
                 >
-                  sadff
+                  Select Departments
                 </label>
 
                 {/* Tanlangan rasmni ko‘rsatish */}
@@ -306,20 +330,20 @@ const Projects = () => {
                   <img
                     src={selectedImage}
                     alt="Selected"
-                    className="mt-2 w-32 h-32 object-cover rounded"
+                    className="mt-2 w-20 h-20 object-cover rounded"
                   />
                 )}
               </div>
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-[14px] font-bold text-[#7D8592]">
                   Description
                 </label>
                 <textarea
                   defaultValue={selectedTask.description}
                   rows={4}
-                  className="mt-1 w-full border border-gray-300 rounded px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="mt-1 w-full border border-gray-300 rounded-[14px] px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                 ></textarea>
               </div>
             </div>
@@ -429,7 +453,7 @@ const Projects = () => {
         </h3>
         <button
           onClick={handleAddOpen}
-          className="capitalize w-full sm:max-w-[182px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
+          className="capitalize w-full sm:max-w-[172px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
         >
           <span className="text-[22px]">+</span>
           <span>Add Task</span>
@@ -437,11 +461,11 @@ const Projects = () => {
       </div>
 
       {/* Tasks Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className={`flex flex-wrap gap-x-5 gap-y-5 ${justifyClass}`}>
         {projects.map((project) => (
           <div
             key={project.id}
-            className="border border-[#D9D9D9] rounded-lg p-3 bg-white shadow relative group flex flex-col gap-3 cursor-pointer"
+            className="max-w-[290px] w-full h-[250px] border border-[#D9D9D9]  rounded-[14px] p-3 bg-white shadow relative group flex flex-col gap-3 cursor-pointer"
           >
             {project.image ? (
               <button
@@ -451,14 +475,14 @@ const Projects = () => {
                 <img
                   onClick={() => navigate(`/tasks/${project.id}`)}
                   src={project.image}
-                  alt="Task"
-                  className="h-[134px] w-full object-cover rounded"
+                  alt="Task image"
+                  className="h-[134px] w-full object-contain rounded-[14px]"
                 />
               </button>
             ) : (
               <button
                 onClick={() => navigate(`/tasks/${project.id}`)}
-                className="h-[134px] rounded mb-2 overflow-hidden bg-gray-200 flex items-center justify-center cursor-pointer"
+                className="h-[134px] rounded-[14px] mb-2 overflow-hidden bg-gray-200 flex items-center justify-center cursor-pointer"
               >
                 <span className="text-gray-500 text-sm">No Image</span>
               </button>
@@ -493,8 +517,13 @@ const Projects = () => {
                   ))}
                 </div>
                 <button
-                  onClick={() => navigate(`/tasks/${task.id}`)}
-                  className="font-bold text-lg cursor-pointer"
+                  onClick={() => navigate(`/tasks/${project.id}`)}
+                  className="font-bold text-lg cursor-pointer troncate max-w-[180px] "
+                  style={{
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
                 >
                   {project.name}
                 </button>
@@ -520,9 +549,24 @@ const Projects = () => {
         open={isAddModalOpen}
         onCancel={handleAddClose}
         onOk={handleAddTask}
-        title="Add New Task"
-        okText="Add"
-        cancelText="Cancel"
+        okText="Add Task"
+        cancelText="none"
+        footer={[
+          <button
+            key="submit"
+            onClick={handleAddTask}
+            className="bg-[#0061fe] hover:bg-[#3b77d7] text-white rounded-[15px] px-[20px] py-[12px] text-base font-bold transition"
+          >
+            Save Task
+          </button>,
+        ]}
+        title={
+          <div className="text-[22px] font-bold text-[#0A1629] mb-10">
+            Add Task
+          </div>
+        }
+        width={550}
+        className="custom-modal"
       >
         <div>
           <div className="space-y-4">
@@ -530,7 +574,7 @@ const Projects = () => {
             <div>
               <label
                 htmlFor="name"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-[14px] font-bold text-[#7D8592]"
               >
                 Name
               </label>
@@ -538,14 +582,14 @@ const Projects = () => {
                 type="text"
                 value={taskName}
                 onChange={(e) => setTaskName(e.target.value)}
-                placeholder="Edit task name"
-                className="mt-1 w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="M Tech"
+                className="mt-1 w-full h-[50px] border border-gray-300 rounded-[14px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             {/* Image */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-[14px] font-bold text-[#7D8592]">
                 Image
               </label>
 
@@ -561,25 +605,12 @@ const Projects = () => {
               {/* Tanlash maydoni */}
               <label
                 htmlFor="imageInput"
-                className="mt-1 flex items-center justify-between w-full border border-gray-300 rounded px-3 py-2 cursor-pointer hover:border-blue-500 transition"
+                className="mt-1 h-[50px] flex items-center justify-between w-full border border-gray-300 rounded-[14px] px-3 py-2 cursor-pointer hover:border-blue-500 transition"
               >
                 <span className="text-gray-400">
-                  {selectedImage ? "Change image" : "Change image"}
+                  {selectedImage ? "Upload image" : "Upload image"}
                 </span>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-gray-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828L18 9.828V7h-2.828z"
-                  />
-                </svg>
+                <Paperclip />
               </label>
 
               {/* Tanlangan rasm preview */}
@@ -587,17 +618,17 @@ const Projects = () => {
                 <img
                   src={selectedImage}
                   alt="Selected"
-                  className="mt-2 w-32 h-32 object-cover rounded"
+                  className="mt-2 w-20 h-20 object-cover rounded"
                 />
               )}
             </div>
 
             {/* Department */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-[14px] font-bold text-[#7D8592]">
                 Department
               </label>
-              <div className="mt-1 flex items-center border border-gray-300 rounded px-2 py-2 space-x-2">
+              <div className="mt-1 flex items-center border border-gray-300 rounded-[14px] px-2 py-2 space-x-2">
                 {selectedDepartments.map((id) => {
                   const dept = allDepartments.find((d) => d.id === id);
                   // const dept = rawDepartments.find((d) => d.id === id);
@@ -623,14 +654,14 @@ const Projects = () => {
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-[14px] font-bold text-[#7D8592]">
                 Description
               </label>
               <textarea
                 rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="mt-1 w-full border border-gray-300 rounded px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 w-full border border-gray-300 rounded-[14px] px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
               ></textarea>
             </div>
           </div>
@@ -644,6 +675,7 @@ const Projects = () => {
         onOk={() => setIsDeptModalOpen(false)}
         title="Select Departments"
         okText="Done"
+        className="custom-modal"
       >
         <DepartmentsSelector
           selectedIds={selectedDepartments}
@@ -660,6 +692,7 @@ const Projects = () => {
 
       {/* Action Modal (Edit / Info / Delete) */}
       <Modal
+        className="custom-modal"
         open={!!selectedTask && isActionModalOpen}
         onCancel={() => {
           setIsActionModalOpen(false);
@@ -675,7 +708,18 @@ const Projects = () => {
           setIsActionModalOpen(false);
           setSelectedTask(null);
         }}
-        title={getModalTitle()}
+        title={
+          <h2
+            style={{
+              color: "#0A1629",
+              fontWeight: "bold",
+              fontSize: "22px",
+              marginBottom: "10px",
+            }}
+          >
+            {getModalTitle()}
+          </h2>
+        }
         okText={getOkText()}
         cancelText="Cancel"
         width={600}
@@ -688,7 +732,7 @@ const Projects = () => {
                     setIsActionModalOpen(false);
                     setSelectedTask(null);
                   }}
-                  className="bg-[#0061fe] text-white px-5 py-2 rounded-xl cursor-pointer"
+                  className="bg-[#0061fe] text-white font-bold px-5 py-2 rounded-xl cursor-pointer"
                 >
                   Got it
                 </button>,
@@ -713,7 +757,7 @@ const Projects = () => {
                     setIsActionModalOpen(false);
                     setSelectedTask(null);
                   }}
-                  className="border border-gray-400 text-gray-500 px-5 py-2 rounded-xl font-medium cursor-pointer"
+                  className="bg-[#0061fe] hover:bg-[#3b77d7] text-white px-5 py-2 rounded-[14px] font-bold cursor-pointer"
                 >
                   Save Task
                 </button>,
