@@ -9,7 +9,6 @@ const CollapsibleTable = () => {
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const buttonRef = useRef(null);
 
- 
   const [columns, setColumns] = useState([
     { key: 'name', label: 'Item', span: 4 },
     { key: 'person', label: 'Person', span: 2 },
@@ -126,7 +125,7 @@ const CollapsibleTable = () => {
         </div>
       </div>
 
-     
+
       {isExpanded && (
         <div className="bg-white rounded-b-xl">
           <div className="grid grid-cols-13 gap-4 p-4 bg-gray-50 text-sm font-medium border-b border-gray-200 select-none">

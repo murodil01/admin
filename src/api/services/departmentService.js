@@ -1,8 +1,8 @@
 import api from "../base";
 import endpoints from "../endpoint";
 
-// export const getDepartments = () => api.get(endpoints.departments.getAll); 
-// export const getDepartmentById = (id) => api.get(endpoints.departments.getById(id)); 
+// export const getDepartments = () => api.get(endpoints.departments.getAll);
+// export const getDepartmentById = (id) => api.get(endpoints.departments.getById(id));
 // export const updateDepartment = (id, data) => api.put(endpoints.departments.update(id), data);
 // export const deleteDepartment = (id) => api.delete(endpoints.departments.delete(id));
 

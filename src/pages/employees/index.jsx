@@ -14,131 +14,10 @@ import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import Activity from "./activity";
 import { useNavigate } from "react-router-dom";
 import { useRef, useEffect } from "react";
+import { getEmployees } from "../../api/services/employeeService";
+import { addEmployee } from "../../api/services/employeeService";
 
 const itemsPerPage = 7;
-
-const employees = [
-  {
-    id: 1,
-    name: "Murodil",
-    surname: "Nurmamatov",
-    phone: "+998 90 123 45 67",
-    image: "https://randomuser.me/api/portraits/men/1.jpg",
-    role: "Frontend Developer",
-    positionLevel: "Junior",
-    department: "M Technology",
-    taskCount: 5,
-    status: "Busy",
-  },
-  {
-    id: 2,
-    name: "Bobur",
-    surname: "Allayorov",
-    phone: "+998 90 094 00 83",
-    image: "https://randomuser.me/api/portraits/men/2.jpg",
-    role: "Backend Developer",
-    positionLevel: "Junior",
-    department: "M Technology",
-    taskCount: 10,
-    status: "Busy",
-  },
-  {
-    id: 3,
-    name: "Ziyoda",
-    surname: "Karimova",
-    phone: "+998 91 555 55 55",
-    image: "https://randomuser.me/api/portraits/women/3.jpg",
-    role: "UI/UX Designer",
-    positionLevel: "Mid",
-    department: "Design Team",
-    taskCount: 4,
-    status: "Free",
-  },
-  {
-    id: 4,
-    name: "Jasur",
-    surname: "Qodirov",
-    phone: "+998 93 777 77 77",
-    image: "https://randomuser.me/api/portraits/men/4.jpg",
-    role: "DevOps Engineer",
-    positionLevel: "Senior",
-    department: "Infrastructure",
-    taskCount: 12,
-    status: "Busy",
-  },
-  {
-    id: 5,
-    name: "Dilnoza",
-    surname: "To'xtayeva",
-    phone: "+998 90 888 88 88",
-    image: "https://randomuser.me/api/portraits/women/5.jpg",
-    role: "QA Engineer",
-    positionLevel: "Junior",
-    department: "QA Team",
-    taskCount: 3,
-    status: "Free",
-  },
-  {
-    id: 6,
-    name: "Aziz",
-    surname: "Sattorov",
-    phone: "+998 94 666 66 66",
-    image: "https://randomuser.me/api/portraits/men/6.jpg",
-    role: "Project Manager",
-    positionLevel: "Mid",
-    department: "Management",
-    taskCount: 8,
-    status: "Busy",
-  },
-  {
-    id: 7,
-    name: "Malika",
-    surname: "Soliyeva",
-    phone: "+998 97 222 22 22",
-    image: "https://randomuser.me/api/portraits/women/7.jpg",
-    role: "Frontend Developer",
-    positionLevel: "Mid",
-    department: "M Technology",
-    taskCount: 6,
-    status: "Free",
-  },
-  {
-    id: 8,
-    name: "Sherzod",
-    surname: "Sattorov",
-    phone: "+998 93 333 33 33",
-    image: "https://randomuser.me/api/portraits/men/8.jpg",
-    role: "Fullstack Developer",
-    positionLevel: "Senior",
-    department: "M Technology",
-    taskCount: 15,
-    status: "Busy",
-  },
-  {
-    id: 9,
-    name: "Nodira",
-    surname: "Ortiqova",
-    phone: "+998 95 444 44 44",
-    image: "https://randomuser.me/api/portraits/women/9.jpg",
-    role: "Product Owner",
-    positionLevel: "Senior",
-    department: "Management",
-    taskCount: 7,
-    status: "Free",
-  },
-  {
-    id: 10,
-    name: "Ulug‘bek",
-    surname: "Maxmudov",
-    phone: "+998 90 999 99 99",
-    image: "https://randomuser.me/api/portraits/men/10.jpg",
-    role: "Security Analyst",
-    positionLevel: "Mid",
-    department: "Security",
-    taskCount: 2,
-    status: "Busy",
-  },
-];
 
 const InnerCircle = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -147,12 +26,87 @@ const InnerCircle = () => {
     return localStorage.getItem("innerCircleTab") || "list";
   });
 
+  const [formData, setFormData] = useState({
+    first_name: "",
+    last_name: "",
+    password: "",
+    password1: "",
+    email: "",
+    // status: "",
+    // level: "",
+    role: "",
+    // profession: "",
+    birth_date: "",
+    phone_number: "",
+    tg_username: "@username",
+    // department: "",
+    // passportSerial: "",
+    // pinfl: "",
+  });
+
+  // const [avatar, setAvatar] = useState(null);
+  // const [passportFile, setPassportFile] = useState(null);
+  // const [passportName, setPassportName] = useState("Upload passport");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      // Fayllar bilan birga yuborish uchun FormData
+      const data = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          data.append(key, value);
+        }
+      });
+
+      // Agar avatar va passport fayl alohida bo‘lsa:
+      // if (avatar) data.append("avatar", avatar);
+      // if (passportFile) data.append("passport", passportFile);
+
+      console.log("📦 Yuborilayotgan FormData:");
+      for (let pair of data.entries()) {
+        console.log(pair[0], pair[1]);
+      }
+
+      await addEmployee(data);
+
+      // await getEmployees().then(res => setEmployees(res.data.results || []));
+      setIsAddModalOpen(false);
+    } catch (err) {
+      console.error("Error adding employee:", err);
+
+      if (err.response) {
+      console.error("📩 Server javobi:", err.response.data);
+    }
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getEmployees()
+      .then((res) => {
+        setEmployees(res.data.results || []); // API’dan kelgan ma’lumot
+        // console.log(res.data.results);
+      })
+      .catch((err) => {
+        console.error("Xatolik:", err);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
   const totalPages = Math.ceil(employees.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentEmployees = employees.slice(
+  const currentEmployees = Array.isArray(employees || []) ? employees.slice(
     startIndex,
     startIndex + itemsPerPage
-  );
+  ) : [];
 
   const toggleDropdown = (id) => {
     setOpenDropdown(openDropdown === id ? null : id);
@@ -246,23 +200,25 @@ const InnerCircle = () => {
     };
   }, [isAddModalOpen]);
 
-  const [avatar, setAvatar] = useState(null);
+  // const [avatar, setAvatar] = useState(null);
 
-  const handleAvatarUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setAvatar(URL.createObjectURL(file));
-    }
-  };
+  // const handleAvatarUpload = (e) => {
+  //   const file = e.target.files[0];
+  //   if (file) {
+  //     setAvatar(URL.createObjectURL(file));
+  //   }
+  // };
 
-  const [passportName, setPassportName] = useState("Upload Passport");
+  // const [passportName, setPassportName] = useState("Upload Passport");
 
-  const handlePassportUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setPassportName(file.name);
-    }
-  };
+  // const handlePassportUpload = (e) => {
+  //   const file = e.target.files[0];
+  //   if (file) {
+  //     setPassportName(file.name);
+  //   }
+  // };
+
+  if (loading) return <p>Yuklanmoqda...</p>;
 
   return (
     <div>
@@ -333,13 +289,13 @@ const InnerCircle = () => {
                 >
                   <div className="flex items-center gap-4 lg:gap-2">
                     <img
-                      src={emp.image}
+                      src={emp.profile_picture}
                       alt={emp.name}
                       className="w-12 h-12 rounded-full object-cover"
                     />
                     <div>
                       <p className="text-[#1F2937] font-semibold text-base truncate max-w-[180px]">
-                        {emp.name} {emp.surname}
+                        {emp.first_name} {emp.last_name}
                       </p>
                       <div className="flex items-center gap-2">
                         <div className="text-gray-500 text-sm truncate">
@@ -356,7 +312,7 @@ const InnerCircle = () => {
                               : "border-gray-300 text-gray-600"
                           }`}
                         >
-                          {emp.positionLevel}
+                          {emp.level}
                         </div>
                       </div>
                     </div>
@@ -366,7 +322,7 @@ const InnerCircle = () => {
                     <span className="text-gray-500 text-sm truncate">
                       Phone number
                     </span>
-                    {emp.phone}
+                    {emp.phone_number}
                   </div>
                   <div className="text-[#1F2937] font-medium truncate flex flex-col text-center md:text-[13px] xl:text-base">
                     <span className="text-gray-500 text-sm truncate">
@@ -376,9 +332,9 @@ const InnerCircle = () => {
                   </div>
                   <div className="text-[#1F2937] font-medium truncate flex flex-col text-center md:text-[13px] xl:text-base">
                     <span className="text-gray-500 text-sm truncate">
-                      Tasks
+                      Projects
                     </span>
-                    {emp.taskCount}
+                    {emp.project_count}
                   </div>
                   <div className="text-[#1F2937] font-medium truncate flex flex-col text-center md:text-[13px] xl:text-base">
                     <span className="text-gray-500 text-sm truncate">
@@ -426,13 +382,13 @@ const InnerCircle = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <img
-                        src={emp.image}
+                        src={emp.profile_picture}
                         alt={emp.name}
                         className="w-14 h-14 rounded-full object-cover"
                       />
                       <div>
                         <p className="text-[#1F2937] font-semibold text-base">
-                          {emp.surname} {emp.name}
+                          {emp.first_name} {emp.last_name}
                         </p>
                         <p className="text-gray-500 text-sm">{emp.role}</p>
                       </div>
@@ -452,14 +408,14 @@ const InnerCircle = () => {
                       <div>
                         <p className="text-gray-400">Phone number:</p>
                         <p className="text-[#1F2937] font-medium">
-                          {emp.phone}
+                          {emp.phone_number}
                         </p>
                       </div>
 
                       <div>
-                        <p className="text-gray-400">Tasks</p>
+                        <p className="text-gray-400">Projects</p>
                         <p className="text-[#1F2937] font-medium">
-                          {emp.taskCount}
+                          {emp.project_count}
                         </p>
                       </div>
 
@@ -690,8 +646,12 @@ const InnerCircle = () => {
                     </label>
                     <input
                       type="text"
+                      name="first_name"
                       className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
                       placeholder="First Name"
+                      value={formData.first_name}
+                      onChange={handleChange}
+                      required
                     />
                   </div>
 
@@ -701,8 +661,12 @@ const InnerCircle = () => {
                     </label>
                     <input
                       type="text"
+                      name="last_name"
                       className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
                       placeholder="Last Name"
+                      value={formData.last_name}
+                      onChange={handleChange}
+                      required
                     />
                   </div>
                 </div>
@@ -713,8 +677,12 @@ const InnerCircle = () => {
                   </label>
                   <input
                     type="email"
+                    name="email"
                     className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
                     placeholder="Email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
                   />
                 </div>
 
@@ -724,8 +692,11 @@ const InnerCircle = () => {
                   </label>
                   <input
                     type="password"
+                    name="password"
                     className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 pr-10"
                     placeholder="Password"
+                    value={formData.password}
+                    onChange={handleChange}
                   />
                 </div>
 
@@ -735,28 +706,31 @@ const InnerCircle = () => {
                   </label>
                   <input
                     type="password"
+                    name="password1"
                     className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 pr-10"
                     placeholder="Confirm Password"
+                    value={formData.password1}
+                    onChange={handleChange}
                   />
                 </div>
 
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Role
                   </label>
                   <select className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1">
                     <option>Select role</option>
                   </select>
-                </div>
+                </div> */}
 
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Department
                   </label>
                   <select className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1">
                     <option>Select department</option>
                   </select>
-                </div>
+                </div> */}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
@@ -764,8 +738,10 @@ const InnerCircle = () => {
                   </label>
                   <input
                     type="text"
-                    defaultValue="Backend Developer"
+                    name="role"
                     className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
+                    value={formData.role}
+                    onChange={handleChange}
                   />
                 </div>
 
@@ -776,8 +752,10 @@ const InnerCircle = () => {
                     </label>
                     <input
                       type="text"
-                      defaultValue="+998991234567"
+                      name="phone_number"
                       className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
+                      value={formData.phone_number}
+                      onChange={handleChange}
                     />
                   </div>
                   <div className="w-1/2">
@@ -786,8 +764,11 @@ const InnerCircle = () => {
                     </label>
                     <input
                       type="text"
-                      defaultValue="@username"
+                      name="tg_username"
+                      placeholder="@username"
                       className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
+                      value={formData.tg_username}
+                      onChange={handleChange}
                     />
                   </div>
                 </div>
@@ -796,9 +777,9 @@ const InnerCircle = () => {
               {/* RIGHT SIDE */}
               <div className="flex-1 space-y-5 max-w-[320px] w-full">
                 {/* Avatar */}
-                <div className="flex flex-col items-center justify-center border border-gray-300 rounded-[24px] p-6 h-[230px]">
+                {/* <div className="flex flex-col items-center justify-center border border-gray-300 rounded-[24px] p-6 h-[230px]"> */}
                   {/* Avatar Image Preview */}
-                  <div className="w-28 h-28 bg-[#DBDBDB] rounded-full overflow-hidden flex justify-center items-center">
+                  {/* <div className="w-28 h-28 bg-[#DBDBDB] rounded-full overflow-hidden flex justify-center items-center">
                     {avatar ? (
                       <img
                         src={avatar}
@@ -808,10 +789,10 @@ const InnerCircle = () => {
                     ) : (
                       <span className="text-3xl text-gray-400">👤</span>
                     )}
-                  </div>
+                  </div> */}
 
                   {/* Upload Button */}
-                  <label
+                  {/* <label
                     htmlFor="avatarUpload"
                     className="cursor-pointer w-full mt-3 text-[18px] font-bold flex items-center gap-8 justify-between"
                   >
@@ -827,10 +808,10 @@ const InnerCircle = () => {
                     className="hidden"
                     onChange={handleAvatarUpload}
                   />
-                </div>
+                </div> */}
 
                 {/* Passport */}
-                <div>
+                {/* <div>
                   <label
                     htmlFor="passportUpload"
                     className="cursor-pointer mt-3 w-full h-[68px] border border-[#CED5E0] rounded-[24px] px-7 py-2 text-[18px] font-bold flex items-center justify-between"
@@ -851,7 +832,7 @@ const InnerCircle = () => {
                     className="hidden"
                     onChange={handlePassportUpload}
                   />
-                </div>
+                </div> */}
 
                 {/* Date of Birth */}
                 <div>
@@ -860,23 +841,26 @@ const InnerCircle = () => {
                   </label>
                   <input
                     type="date"
+                    name="birth_date"
                     className="w-full border border-[#D8E0F0] rounded-[14px] px-3 py-2 mt-1"
                     placeholder="Select Date"
+                    value={formData.birth_date}
+                    onChange={handleChange}
                   />
                 </div>
 
                 {/* Level */}
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Level
                   </label>
                   <select className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1">
                     <option>Select level</option>
                   </select>
-                </div>
+                </div> */}
 
                 {/* Passport Serial Number */}
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Passport Serial Number
                   </label>
@@ -885,10 +869,10 @@ const InnerCircle = () => {
                     placeholder="AD1234567"
                     className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
                   />
-                </div>
+                </div> */}
 
                 {/* PINFL */}
-                <div>
+                {/* <div>
                   <label className="block text-sm font-medium text-gray-700">
                     PINFL
                   </label>
@@ -897,7 +881,7 @@ const InnerCircle = () => {
                     placeholder="12345678901234"
                     className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
                   />
-                </div>
+                </div> */}
               </div>
             </form>
 
@@ -905,7 +889,8 @@ const InnerCircle = () => {
             <div className="pt-6 flex justify-end">
               <button
                 type="submit"
-                className="bg-[#1F2937] hover:bg-[#111827] text-white px-[40px] py-[13px] rounded-[14px]"
+                className="bg-[#1F2937] hover:bg-[#111827] text-white px-[40px] py-[13px] rounded-[14px] cursor-pointer"
+                onClick={handleSubmit}
               >
                 Save Employee
               </button>
