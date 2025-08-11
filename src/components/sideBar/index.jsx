@@ -90,16 +90,12 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
           {/* Header */}
           <div className="flex-shrink-0 mb-[5px]">
             <div
-              className={`flex justify-center gap-[5px] items-center transition-all duration-300 ${
+              onClick={handleLogoClick}
+              className={`flex justify-center gap-[5px] items-center transition-all duration-300 cursor-pointer ${
                 collapsed ? "pt-6 pb-3" : "p-6"
               }`}
             >
-              <img
-                onClick={handleLogoClick}
-                src={side_blue3}
-                alt="Logo"
-                className="cursor-pointer w-[30px]"
-              />
+              <img src={side_blue3} alt="Logo" className="w-[30px]" />
               <h1
                 className={`font-bold text-[#231f20] text-[25px] ${
                   collapsed ? "hidden" : ""
