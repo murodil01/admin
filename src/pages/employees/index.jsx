@@ -54,7 +54,7 @@ const InnerCircle = () => {
       // Fayllar bilan birga yuborish uchun FormData
       const data = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
+        if (value !== undefined && value !==  null) {
           data.append(key, value);
         }
       });
