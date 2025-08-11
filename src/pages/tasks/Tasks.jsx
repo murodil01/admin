@@ -7,13 +7,13 @@ import info from "../../assets/icons/info.svg";
 import trash from "../../assets/icons/trash.svg";
 import { useNavigate } from "react-router-dom";
 import DepartmentsSelector from "../../components/calendar/DepartmentsSelector";
-import {
-  getTasks,
-  createTask,
-  updateTask,
-  deleteTask,
-} from "../../api/services/taskService";
-import { getProjects, createProject } from "../../api/services/projectService";
+// import {
+//   getTasks,
+//   createTask,
+//   updateTask,
+//   deleteTask,
+// } from "../../api/services/taskService";
+import { getProjects, createProject  } from "../../api/services/projectService";
 import { Paperclip } from "lucide-react";
 import { useSidebar } from "../../context";
 
