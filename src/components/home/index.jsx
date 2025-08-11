@@ -11,6 +11,18 @@ const AppLayout = () => {
     return storedValue === "true"; // default false
   });
 
+  const [paddingRight, setPaddingRight] = useState("1.5rem"); // default pr-6
+
+  useEffect(() => {
+    if (navigator.userAgent.includes("Macintosh")) {
+      // Mac uchun biroz ko'proq padding
+      setPaddingRight("2rem");
+    } else {
+      // Windows va boshqa platformalar uchun standart
+      setPaddingRight("1.5rem");
+    }
+  }, []);
+
   // ⬇️ Har safar collapsed o‘zgarsa localStorage ga yozish
   useEffect(() => {
     localStorage.setItem("sidebarCollapsed", collapsed);
@@ -32,7 +44,10 @@ const AppLayout = () => {
             onToggleDesktop={() => setCollapsed(!collapsed)}
             onToggleMobile={() => setIsMobileOpen(true)}
           />
-          <main className="flex-1 overflow-y-scroll [scrollbar-gutter:stable] bg-gray-100 p-4 pr-6">
+          <main
+            className="flex-1 overflow-y-auto bg-gray-100 p-4"
+            style={{ paddingRight }}
+          >
             <Outlet />
           </main>
         </div>

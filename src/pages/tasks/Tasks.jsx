@@ -15,6 +15,7 @@ import {
 } from "../../api/services/taskService";
 import { getProjects, createProject } from "../../api/services/projectService";
 import { Paperclip } from "lucide-react";
+import { useSidebar } from "../../context";
 
 const Projects = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -26,6 +27,23 @@ const Projects = () => {
   const [taskName, setTaskName] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const navigate = useNavigate();
+  const { collapsed } = useSidebar();
+  const [isSmallScreen, setIsSmallScreen] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSmallScreen(window.innerWidth < 768); // 768px = md breakpoint
+    };
+
+    handleResize(); // component mount bo‘lganida chaqiramiz
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // justify-content klassini aniqlash
+  const justifyClass =
+    collapsed && !isSmallScreen ? "justify-between" : "justify-center";
 
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -443,7 +461,7 @@ const Projects = () => {
       </div>
 
       {/* Tasks Grid */}
-      <div className="flex flex-wrap gap-y-5 justify-center md:justify-between">
+      <div className={`flex flex-wrap gap-x-5 gap-y-5 ${justifyClass}`}>
         {projects.map((project) => (
           <div
             key={project.id}
