@@ -957,10 +957,10 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate, assignees }) => {
                 options={[
                   { value: "acknowledged", label: "Acknowledged" },
                   { value: "assigned", label: "Assigned" },
-                  { value: "inProgress", label: "In Progress" },
+                  { value: "in_progress", label: "In Progress" },
                   { value: "completed", label: "Completed" },
-                  { value: "inReview", label: "In Review" },
-                  { value: "rework", label: "Rework" },
+                  { value: "in_review", label: "In Review" },
+                  { value: "return_for_fixes", label: "Rework" },
                   { value: "dropped", label: "Dropped" },
                   { value: "approved", label: "Approved" },
                 ]}
