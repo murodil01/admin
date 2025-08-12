@@ -14,8 +14,7 @@ import Activity from "./activity";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useRef, useEffect, useState } from "react";
 import { getEmployees, createEmployees } from "../../api/services/employeeService";
-import { getDepartmentById } from "../../api/services/departmentService";
-import avatarImage from "../../assets/default-avatar.png";
+import avatarImage from "../../assets/default-avatar.png"
 
 const InnerCircle = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
