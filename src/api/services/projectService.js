@@ -25,3 +25,6 @@ export const deleteProject = async (id) => {
     const res = await api.delete(endpoints.projects.delete(id));
     return res.data;
 };
+
+export const getProjectMembers = (projectId) => 
+  api.get(endpoints.projects.getMembers(projectId));
