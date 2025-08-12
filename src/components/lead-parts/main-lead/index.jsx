@@ -196,7 +196,7 @@ const MainLead = () => {
         ))}
       </div>
 
-      <div className="mt-8 py-6 px-7 bg-[#CBCBCB] rounded-[8px]">
+      <div className="mt-8 py-3 px-6 bg-[#CBCBCB] rounded-[8px]">
         {addingGroup ? (
           <AddGroupInput
             onSave={addGroup}
@@ -205,7 +205,7 @@ const MainLead = () => {
         ) : (
           <button
             onClick={() => setAddingGroup(true)}
-            className="flex items-center justify-center gap-2 bg-[#7D8592] hover:bg-gray-600 text-white px-5 py-3 text-[16px] rounded-[8px] font-medium transition-colors w-full sm:w-auto"
+            className="flex items-center justify-center gap-2 bg-[#7D8592] hover:bg-gray-600 text-white px-5 py-[15px] text-[16px] rounded-[8px] font-medium transition-colors"
             aria-label="Add new group"
           >
             <Plus className="w-5 h-5" />
@@ -220,7 +220,7 @@ const MainLead = () => {
             <div className="flex items-center gap-2 sm:gap-4 text-black rounded-full px-2 sm:px-3 py-1 font-semibold">
               <span className="bg-[#0061FE] px-2 sm:px-[10px] py-[2px] text-[14px] sm:text-[16px] text-white rounded-full">
                 {selectedItems.length}
-              </span>{" "}
+              </span>
               Lead selected
             </div>
 
