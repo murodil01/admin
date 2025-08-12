@@ -1,12 +1,18 @@
-import api from '../base'
-import endpoints from '../endpoints'
+import api from "../base";
+import endpoints from "../endpoint";
 
-export const getBoards = () => request({ url: endpoints.boards.getAll })
-export const getBoardById = id => request({ url: endpoints.boards.getById(id) })
-export const createBoard = data =>
-	request({ url: endpoints.boards.create, method: 'POST', body: data })
+// Barcha boardlarni olish
+export const getBoards = () => api.get(endpoints.boards.getAll);
+
+// ID bo'yicha bitta boardni olish
+export const getBoardById = (id) => api.get(endpoints.boards.getById(id));
+
+// Yangi board yaratish
+export const createBoard = (data) => api.post(endpoints.boards.create, data);
+
+// Mavjud boardni yangilash
 export const updateBoard = (id, data) =>
-	request({ url: endpoints.boards.update(id), method: 'PUT', body: data })
-export const deleteBoard = id =>
-	request({ url: endpoints.boards.delete(id), method: 'DELETE' })
+  api.put(endpoints.boards.update(id), data);
 
+// Boardni o'chirish
+export const deleteBoard = (id) => api.delete(endpoints.boards.delete(id));
