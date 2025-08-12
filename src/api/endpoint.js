@@ -4,7 +4,7 @@ const endpoints = {
 		register: '/auth/register',
 		me: '/auth/me',
 	},
-	
+
 	users: {
 		getAll: '/users',
 		getById: id => `/users/${id}/`,
@@ -62,6 +62,12 @@ const endpoints = {
 	employees: {
 		getAll: 'employees/',
 		getById: 'employees/{id}/',
+		create: 'users/',
+	},
+
+	activities: {
+		getAll: 'user-activities/',
+		getById: 'user-activities/{id}/',
 		create: 'users/',
 	}
 }
