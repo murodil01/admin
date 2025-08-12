@@ -26,6 +26,7 @@ import {
   Upload,
   Button,
   Checkbox,
+  message,
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import { updateTaskType } from "../../api/services/taskService";
@@ -706,52 +707,12 @@ const DropIndicator = ({ beforeId, column }) => (
 const BurnBarrel = ({ setCards }) => {
   const [active, setActive] = useState(false);
 
-  // const handleDrop = (e) => {
-  //   const cardId = e.dataTransfer.getData("cardId");
-  //   setCards((prev) => prev.filter((c) => c.id !== cardId));
-  //   setActive(false);
-  // };
-  const handleDrop = async (e) => {
-    setActive(false);
-    clearHighlights();
-  
+  const handleDrop = (e) => {
     const cardId = e.dataTransfer.getData("cardId");
-    const indicators = getIndicators();
-    const { element } = getNearestIndicator(e, indicators);
-    const before = element?.dataset.before || "-1";
-  
-    if (before !== cardId) {
-      let copy = [...cards];
-      let cardToTransfer = copy.find((c) => c.id === cardId);
-      if (!cardToTransfer) return;
-  
-      // 1. Optimistic UI update (darhol ko'rinishni yangilash)
-      cardToTransfer = { ...cardToTransfer, column };
-      copy = copy.filter((c) => c.id !== cardId);
-  
-      if (before === "-1") {
-        copy.push(cardToTransfer);
-      } else {
-        const insertAt = copy.findIndex((c) => c.id === before);
-        if (insertAt === -1) return;
-        copy.splice(insertAt, 0, cardToTransfer);
-      }
-  
-      setCards(copy); // UI ni yangilash
-  
-      // 2. Backendga yangilash
-      try {
-        await updateTaskType(cardId, column); // API so'rovi
-        message.success("Task status updated!");
-      } catch (error) {
-        // Agar xato bo'lsa, eski holatga qaytarish
-        setCards((prev) => [...prev]);
-        message.error("Failed to update task status");
-        console.error("Update error:", error);
-      }
-    }
+    setCards((prev) => prev.filter((c) => c.id !== cardId));
+    setActive(false);
   };
-
+ 
   return (
     <div
       onDrop={handleDrop}
