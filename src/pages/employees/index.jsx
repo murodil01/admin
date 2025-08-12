@@ -14,7 +14,10 @@ import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import Activity from "./activity";
 import { useNavigate } from "react-router-dom";
 import { useRef, useEffect } from "react";
-import { getEmployees, createEmployees } from "../../api/services/employeeService";
+import {
+  getEmployees,
+  createEmployees,
+} from "../../api/services/employeeService";
 
 const itemsPerPage = 10;
 
@@ -75,8 +78,8 @@ const InnerCircle = () => {
         tg_username: formData.tg_username,
         department: {
           name: "Department Name", // Bu qiymatni formdan olishingiz kerak
-          department_id: "uuid-string" // Haqiqiy department ID
-        }
+          department_id: "uuid-string", // Haqiqiy department ID
+        },
       };
 
       console.log("Yuborilayotgan ma'lumot:", requestData);
@@ -84,7 +87,7 @@ const InnerCircle = () => {
       await createEmployees(requestData);
       setIsAddModalOpen(false);
       // Yangi xodim qo'shilgandan so'ng ro'yxatni yangilash
-      getEmployees().then(res => setEmployees(res.data.results || []));
+      getEmployees().then((res) => setEmployees(res.data.results || []));
     } catch (err) {
       console.error("Xodim qo'shishda xato:", err);
       if (err.response) {
@@ -116,10 +119,9 @@ const InnerCircle = () => {
 
   const totalPages = Math.ceil(employees.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentEmployees = Array.isArray(employees || []) ? employees.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  ) : [];
+  const currentEmployees = Array.isArray(employees || [])
+    ? employees.slice(startIndex, startIndex + itemsPerPage)
+    : [];
 
   const toggleDropdown = (id) => {
     setOpenDropdown(openDropdown === id ? null : id);
@@ -231,7 +233,12 @@ const InnerCircle = () => {
   //   }
   // };
 
-  if (loading) return <p>Yuklanmoqda...</p>;
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-[100vh]">
+        <span className="loader"></span>
+      </div>
+    );
 
   return (
     <div>
@@ -793,8 +800,8 @@ const InnerCircle = () => {
               <div className="flex-1 space-y-5 max-w-[320px] w-full">
                 {/* Avatar */}
                 {/* <div className="flex flex-col items-center justify-center border border-gray-300 rounded-[24px] p-6 h-[230px]"> */}
-                  {/* Avatar Image Preview */}
-                  {/* <div className="w-28 h-28 bg-[#DBDBDB] rounded-full overflow-hidden flex justify-center items-center">
+                {/* Avatar Image Preview */}
+                {/* <div className="w-28 h-28 bg-[#DBDBDB] rounded-full overflow-hidden flex justify-center items-center">
                     {avatar ? (
                       <img
                         src={avatar}
@@ -806,8 +813,8 @@ const InnerCircle = () => {
                     )}
                   </div> */}
 
-                  {/* Upload Button */}
-                  {/* <label
+                {/* Upload Button */}
+                {/* <label
                     htmlFor="avatarUpload"
                     className="cursor-pointer w-full mt-3 text-[18px] font-bold flex items-center gap-8 justify-between"
                   >
