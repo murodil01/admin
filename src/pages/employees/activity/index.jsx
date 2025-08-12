@@ -104,14 +104,14 @@ const activity = [
 
 const Activity = () => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[25px] w-full px-4 py-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[25px] w-full py-6">
       {activity.map((user) => (
         <div
           key={user.id}
-          className="bg-white rounded-[24px] shadow-md px-[8px] pt-[10px] pb-[25px] flex flex-col gap-[16px] justify-center items-center"
+          className="bg-white rounded-[24px] shadow-md px-[8px] pt-[10px] pb-[25px] flex flex-col gap-[10px] justify-center items-center"
         >
           {/* User Info */}
-          <div className="bg-[#EEEEEE] py-4 px-4 flex flex-col items-center gap-2 rounded-[24px] w-full">
+          <div className="bg-[#E3EDFA] py-4 px-4 flex flex-col items-center gap-2 rounded-[24px] w-full">
             <img
               className="w-[50px] h-[50px] rounded-full object-cover"
               src={user.image}
@@ -121,36 +121,38 @@ const Activity = () => {
               {user.fullname}
             </h1>
             <p className="font-[400] text-[14px] text-[#0A1629]">{user.role}</p>
-            <span className="font-semibold text-[12px] text-[#7D8592] border border-[#7D8592] px-2 py-[2px] rounded-lg">
+            <span className="font-semibold text-[12px] text-[#7D8592] px-2 py-[2px] rounded-lg bg-white">
               {user.positionRole}
             </span>
           </div>
 
+          <h3 className="font-bold">Tasks</h3>
+
           {/* Task Stats */}
           <div className="w-full">
             <div className="flex items-center justify-between text-center w-full">
-              <div>
+              <div className="rounded-2xl p-3 border-[#E3EDFA] border-2 w-[80px] h-[80px]">
                 <p className="font-bold text-[26px] text-[#0A1629]">
                   {user.tasks}
                 </p>
-                <h3 className="text-[#91929E] text-[14px] font-[400]">
-                  Backlog tasks
+                <h3 className="text-[#91929E] text-[12px] font-[400]">
+                  Active
                 </h3>
               </div>
-              <div>
+              <div className="rounded-2xl p-3 border-[#E3EDFA] border-2 w-[80px] h-[80px]">
                 <p className="font-bold text-[26px] text-[#0A1629]">
                   {user.tasksInProgress}
                 </p>
-                <h3 className="text-[#91929E] text-[14px] font-[400]">
-                  Tasks In Progress
+                <h3 className="text-[#91929E] text-[12px] font-[400]">
+                  In Review
                 </h3>
               </div>
-              <div>
+              <div className="rounded-2xl p-3 border-[#E3EDFA] border-2 w-[80px] h-[80px]">
                 <p className="font-bold text-[26px] text-[#0A1629]">
                   {user.tasksInReview}
                 </p>
-                <h3 className="text-[#91929E] text-[14px] font-[400]">
-                  Tasks In Review
+                <h3 className="text-[#91929E] text-[12px] font-[400]">
+                  Completed
                 </h3>
               </div>
             </div>

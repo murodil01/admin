@@ -12,5 +12,3 @@ export const updateTaskType = (id, tasks_type) => api.patch(endpoints.tasks.upda
 export const getProjectTaskById = (id) => api.get(endpoints.projects.getByIdTasks(id));
 
 export const getProjectUsers = (id) => api.get(endpoints.projects.getByIdUsers(id));
-
-
