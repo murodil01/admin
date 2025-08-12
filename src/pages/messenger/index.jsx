@@ -94,7 +94,7 @@ const Messenger = () => {
     localStorage.setItem("departments", tab);
   };
   return (
-    <div className="flex flex-col gap-6 px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 max-w-7xl mx-auto py-6 sm:py-8">
+    <div className="flex flex-col gap-6 py-6 sm:py-8">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">Messenger</h2>
       </div>
@@ -146,7 +146,7 @@ const Messenger = () => {
         </div>
       </div>
 
-     <div className="bg-gray-200 rounded-2xl w-full sm:w-fit max-w-lg mx-auto flex flex-wrap justify-center gap-2 mt-4 sm:mt-6 md:mt-8">
+     <div className="bg-gray-200 rounded-2xl  sm:w-fit max-w-lg mx-auto flex flex-wrap justify-center gap-2 mt-4 sm:mt-6 md:mt-8">
   <button
     onClick={() => handleTabChange("list")}
     className={`rounded-full text-xs sm:text-sm md:text-base font-medium transition px-4 sm:px-6 md:px-8 py-2
