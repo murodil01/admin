@@ -4,12 +4,14 @@ const endpoints = {
 		register: '/auth/register',
 		me: '/auth/me',
 	},
+	
 	users: {
 		getAll: '/users',
 		getById: id => `/users/${id}/`,
 		update: id => `/users/${id}/`,
 		delete: id => `/users/${id}/`,
 	},
+
 	tasks: {
 		getAll: 'project/tasks/',
 		create: 'project/tasks/',
@@ -23,6 +25,7 @@ const endpoints = {
         create: "project/projects/",
         getById: (id) => `project/projects/${id}`,
         getByIdTasks: (id) => `project/projects/${id}/tasks`,
+        getByIdUsers: (id) => `project/projects/${id}/users`,
         update: (id) => `project/projects/${id}`,
         delete: (id) => `project/projects/${id}`,
     },
@@ -31,7 +34,6 @@ const endpoints = {
 		getAll: 'department/departments/',
 		getById: id => `department/departments/${id}/`,
 	},
-
 
 	boards: {
 		getAll: 'board/list/',
