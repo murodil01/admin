@@ -7,6 +7,44 @@ import {
   MoreVertical,
   Edit2,
 } from "lucide-react";
+import ReactDatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+
+const DatePickerCell = ({ value, onChange, onSave, onCancel }) => {
+  const [date, setDate] = useState(value ? new Date(value) : null);
+
+  // Sana o'zgarganda value ni yyyy-mm-dd formatida onChange ga yuboramiz
+  const handleChange = (date) => {
+    setDate(date);
+    if (date) {
+      onChange(date.toISOString().split("T")[0]);
+    } else {
+      onChange("");
+    }
+  };
+
+  {
+    /* Date part */
+  }
+  return (
+    <ReactDatePicker
+      selected={date}
+      onChange={handleChange}
+      dateFormat="yyyy-MM-dd"
+      onBlur={onSave}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") onSave();
+        if (e.key === "Escape") onCancel();
+      }}
+      className="w-full px-2 py-1 text-center focus:outline-none"
+      placeholderText="Select a date"
+      isClearable
+      autoFocus
+      // ReactDatePicker ichidagi kalitlarga to'g'ri ishlashi uchun tabIndex -1
+      tabIndex={-1}
+    />
+  );
+};
 
 const GroupSection = ({
   id,
@@ -86,10 +124,13 @@ const GroupSection = ({
     cancelEditCell();
   };
 
+  // Status class css colors
   const getStatusClass = (status) => {
-    if (status === "Working on it") return "bg-purple-300 text-purple-800";
-    if (status === "Done") return "bg-green-300 text-green-800";
-    return "bg-gray-300 text-gray-800";
+    if (status === "Working")
+      return "bg-[#928EFF] text-white border border-[#FFFFFF]";
+    if (status === "Done")
+      return "bg-[#71DC98] text-white border border-[#FFFFFF]";
+    return "text-gray-800";
   };
 
   const [addingItem, setAddingItem] = useState(false);
@@ -107,7 +148,7 @@ const GroupSection = ({
 
   return (
     <div className="mb-3 bg-[#CBCBCB] rounded-[8px] relative">
-      <div className="flex items-center justify-between w-full p-[30px] cursor-pointer rounded-[8px] select-none">
+      <div className="flex items-center justify-between w-full p-[15px] cursor-pointer rounded-[8px] select-none">
         <div
           onClick={onToggleExpanded}
           className="flex items-center gap-3 font-medium text-gray-900 flex-1"
@@ -127,7 +168,7 @@ const GroupSection = ({
                 onChange={handleTitleChange}
                 onBlur={handleTitleBlur}
                 onKeyDown={(e) => e.key === "Enter" && handleTitleBlur()}
-                className="text-[18px] text-black font-medium rounded-[8px]"
+                className="text-[18px] text-black font-medium focus:outline-none bg-transparent border-b border-gray-400 w-full"
               />
             ) : (
               <span
@@ -276,51 +317,61 @@ const GroupSection = ({
                     onClick={() => startEditCell(i, "date")}
                   >
                     {editingCell?.row === i && editingCell?.field === "date" ? (
-                      <input
-                        autoFocus
-                        type="text" // Changed to text for simple Aug1 format
+                      <DatePickerCell
                         value={item.date}
-                        onChange={(e) => {
-                          const newVal = e.target.value;
+                        onChange={(val) => {
                           setLocalItems((prev) => {
                             const copy = [...prev];
-                            copy[i] = { ...copy[i], date: newVal };
+                            copy[i] = { ...copy[i], date: val };
                             return copy;
                           });
                         }}
-                        onBlur={saveEditCell}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") saveEditCell();
-                          if (e.key === "Escape") cancelEditCell();
-                        }}
-                        className="w-full px-2 py-1 rounded border border-gray-400 focus:outline-none"
+                        onSave={saveEditCell}
+                        onCancel={cancelEditCell}
                       />
                     ) : (
                       item.date || "-"
                     )}
                   </td>
-                  <td className="border border-gray-300 p-2 text-center"></td>{" "}
-                  {/* Empty column for + in header */}
+                  <td className="border border-gray-300 p-2 text-center"></td>
                 </tr>
               ))}
-
               {addingItem ? (
                 <tr>
-                  <td colSpan={6} className="p-2">
+                  <td className="border border-gray-300 text-center p-2">
+                    <input type="checkbox" disabled />
+                  </td>
+                  <td className="border border-gray-300 p-2 text-center">
                     <input
                       autoFocus
                       type="text"
                       value={newItemName}
                       onChange={(e) => setNewItemName(e.target.value)}
-                      onBlur={saveNewItem}
+                      onBlur={() => {
+                        if (newItemName.trim()) {
+                          saveNewItem();
+                        } else {
+                          setAddingItem(false);
+                        }
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter") saveNewItem();
                         if (e.key === "Escape") setAddingItem(false);
                       }}
                       placeholder="Enter item name..."
-                      className="w-full px-3 py-2 rounded-[8px] border border-gray-400 focus:outline-none"
+                      className="w-full px-3 py-1 rounded-[8px] border border-gray-400 focus:outline-none text-center"
                     />
                   </td>
+                  <td className="border border-gray-300 text-center p-2 text-gray-400">
+                    -
+                  </td>
+                  <td className="border border-gray-300 text-center p-2 text-gray-400">
+                    -
+                  </td>
+                  <td className="border border-gray-300 text-center p-2 text-gray-400">
+                    -
+                  </td>
+                  <td className="border border-gray-300 text-center p-2 text-gray-400"></td>
                 </tr>
               ) : (
                 <tr>
