@@ -14,10 +14,9 @@ import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import Activity from "./activity";
 import { useNavigate } from "react-router-dom";
 import { useRef, useEffect } from "react";
-import { getEmployees } from "../../api/services/employeeService";
-import { addEmployee } from "../../api/services/employeeService";
+import { getEmployees, createEmployees } from "../../api/services/employeeService";
 
-const itemsPerPage = 7;
+const itemsPerPage = 10;
 
 const InnerCircle = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -38,7 +37,7 @@ const InnerCircle = () => {
     // profession: "",
     birth_date: "",
     phone_number: "",
-    tg_username: "@username",
+    tg_username: "",
     // department: "",
     // passportSerial: "",
     // pinfl: "",
@@ -50,34 +49,47 @@ const InnerCircle = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      // Fayllar bilan birga yuborish uchun FormData
-      const data = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value !== undefined && value !==  null) {
-          data.append(key, value);
-        }
-      });
 
-      // Agar avatar va passport fayl alohida bo‘lsa:
-      // if (avatar) data.append("avatar", avatar);
-      // if (passportFile) data.append("passport", passportFile);
-
-      console.log("📦 Yuborilayotgan FormData:");
-      for (let pair of data.entries()) {
-        console.log(pair[0], pair[1]);
-      }
-
-      await addEmployee(data);
-
-      // await getEmployees().then(res => setEmployees(res.data.results || []));
-      setIsAddModalOpen(false);
-    } catch (err) {
-      console.error("Error adding employee:", err);
-
-      if (err.response) {
-      console.error("📩 Server javobi:", err.response.data);
+    // Parolni tekshirish
+    if (formData.password !== formData.password1) {
+      alert("Parollar mos kelmadi!");
+      return;
     }
+
+    // Boshqa zarur maydonlarni tekshirish
+    if (!formData.first_name || !formData.email) {
+      alert("Majburiy maydonlarni to'ldiring!");
+      return;
+    }
+    try {
+      // FormData o'rniga oddiy object yuboramiz
+      const requestData = {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        email: formData.email,
+        password: formData.password,
+        password1: formData.password1,
+        role: formData.role,
+        birth_date: formData.birth_date,
+        phone_number: formData.phone_number,
+        tg_username: formData.tg_username,
+        department: {
+          name: "Department Name", // Bu qiymatni formdan olishingiz kerak
+          department_id: "uuid-string" // Haqiqiy department ID
+        }
+      };
+
+      console.log("Yuborilayotgan ma'lumot:", requestData);
+
+      await createEmployees(requestData);
+      setIsAddModalOpen(false);
+      // Yangi xodim qo'shilgandan so'ng ro'yxatni yangilash
+      getEmployees().then(res => setEmployees(res.data.results || []));
+    } catch (err) {
+      console.error("Xodim qo'shishda xato:", err);
+      if (err.response) {
+        console.error("Server javobi:", err.response.data);
+      }
     }
   };
 
@@ -92,11 +104,12 @@ const InnerCircle = () => {
   useEffect(() => {
     getEmployees()
       .then((res) => {
-        setEmployees(res.data.results || []); // API’dan kelgan ma’lumot
-        // console.log(res.data.results);
+        const employeesData = Array.isArray(res) ? res : res?.results || [];
+        setEmployees(employeesData); // API’dan kelgan ma’lumot
       })
       .catch((err) => {
         console.error("Xatolik:", err);
+        setEmployees([]); // Xato bo'lsa bo'sh array qilib qo'yish
       })
       .finally(() => setLoading(false));
   }, []);
@@ -261,7 +274,7 @@ const InnerCircle = () => {
 
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="hidden md:flex bg-[#0061fe] text-white text-sm lg:text-base rounded-2xl items-center gap-2 py-2 px-3 xl:py-3 xl:px-5"
+            className="hidden md:flex bg-[#0061fe] text-white text-sm lg:text-base rounded-2xl items-center gap-1 py-2 px-3 xl:py-3 xl:px-5"
           >
             <Plus /> Add Employee
           </button>
@@ -503,7 +516,7 @@ const InnerCircle = () => {
       <div className="fixed bottom-4 right-4 z-50 lg:hidden">
         <button
           className="w-14 h-14 bg-[#1F2937] text-white rounded-full flex items-center justify-center shadow-lg"
-          onClick={() => console.log("Add Employee clicked")}
+          onClick={() => setIsAddModalOpen(true)}
         >
           <Plus size={28} />
         </button>
@@ -697,6 +710,7 @@ const InnerCircle = () => {
                     placeholder="Password"
                     value={formData.password}
                     onChange={handleChange}
+                    required
                   />
                 </div>
 
@@ -711,6 +725,7 @@ const InnerCircle = () => {
                     placeholder="Confirm Password"
                     value={formData.password1}
                     onChange={handleChange}
+                    required
                   />
                 </div>
 
@@ -734,7 +749,7 @@ const InnerCircle = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Profession
+                    Role
                   </label>
                   <input
                     type="text"
