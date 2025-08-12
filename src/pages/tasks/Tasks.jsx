@@ -1,20 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { message } from "antd";
-import { MoreVertical } from "lucide-react";
+import { MoreVertical,Paperclip } from "lucide-react";
 import { Modal, Input, Dropdown } from "antd";
 import pencil from "../../assets/icons/pencil.svg";
 import info from "../../assets/icons/info.svg";
 import trash from "../../assets/icons/trash.svg";
 import { useNavigate } from "react-router-dom";
 import DepartmentsSelector from "../../components/calendar/DepartmentsSelector";
-// import {
-//   getTasks,
-//   createTask,
-//   updateTask,
-//   deleteTask,
-// } from "../../api/services/taskService";
 import { getProjects, createProject  } from "../../api/services/projectService";
-import { Paperclip } from "lucide-react";
 import { useSidebar } from "../../context";
 
 const Projects = () => {

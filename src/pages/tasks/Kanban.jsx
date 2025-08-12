@@ -28,6 +28,7 @@ import {
   Checkbox,
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
+import { updateTaskType } from "../../api/services/taskService";
 
 
 const NotionKanban = ({ cards, setCards }) => {
@@ -52,7 +53,7 @@ const taskColumns = [
     icon: <img src={acknowledged} alt="" />,
   },
   {
-    id: "inProgress",
+    id: "in_progress",
     title: "In Progress",
     color: "bg-[#FAF6E1]",
     icon: <img src={inProgress} alt="" />,
@@ -64,14 +65,14 @@ const taskColumns = [
     icon: <img src={completedIcon} alt="" />,
   },
   {
-    id: "inReview",
+    id: "in_review",
     title: "In Review",
     color: "bg-[#FFF0E0]",
     icon: <img src={inReview} alt="" />,
   },
   {
-    id: "rework",
-    title: "Rework",
+    id: "return_for_fixes",
+    title: "Return for Fixes",
     color: "bg-[#E2C7A9]",
     icon: <img src={rework} alt="" />,
   },
@@ -266,23 +267,24 @@ const Column = ({
 
   const handleDragLeave = () => setActive(false);
 
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
     setActive(false);
     clearHighlights();
-
+  
     const cardId = e.dataTransfer.getData("cardId");
     const indicators = getIndicators();
     const { element } = getNearestIndicator(e, indicators);
     const before = element?.dataset.before || "-1";
-
+  
     if (before !== cardId) {
       let copy = [...cards];
       let cardToTransfer = copy.find((c) => c.id === cardId);
       if (!cardToTransfer) return;
-
+  
+      // 1. Optimistic UI update (darhol ko'rinishni yangilash)
       cardToTransfer = { ...cardToTransfer, column };
       copy = copy.filter((c) => c.id !== cardId);
-
+  
       if (before === "-1") {
         copy.push(cardToTransfer);
       } else {
@@ -290,8 +292,19 @@ const Column = ({
         if (insertAt === -1) return;
         copy.splice(insertAt, 0, cardToTransfer);
       }
-
-      setCards(copy);
+  
+      setCards(copy); // UI ni yangilash
+  
+      // 2. Backendga yangilash
+      try {
+        await updateTaskType(cardId, column); // API so'rovi
+        message.success("Task status updated!");
+      } catch (error) {
+        // Agar xato bo'lsa, eski holatga qaytarish
+        setCards((prev) => [...prev]);
+        message.error("Failed to update task status");
+        console.error("Update error:", error);
+      }
     }
   };
 
@@ -338,7 +351,7 @@ const Card = ({
   column,
   time,
   description,
-  checklistProgress,
+  progress,
   handleDragStart,
   onEdit,
   image,
@@ -671,12 +684,10 @@ const Card = ({
 
           {/* Right Side: Avatar + Checklist */}
           <div className="flex items-center gap-2">
-            {checklistProgress && (
               <span className="bg-[#64C064] text-white text-[11px] px-2 py-0.5 rounded flex items-center gap-1">
                 <img src={checkList} alt="" />
-                {checklistProgress}
+                {progress}{` /10`}
               </span>
-            )}
           </div>
         </div>
       </motion.div>
@@ -695,10 +706,50 @@ const DropIndicator = ({ beforeId, column }) => (
 const BurnBarrel = ({ setCards }) => {
   const [active, setActive] = useState(false);
 
-  const handleDrop = (e) => {
-    const cardId = e.dataTransfer.getData("cardId");
-    setCards((prev) => prev.filter((c) => c.id !== cardId));
+  // const handleDrop = (e) => {
+  //   const cardId = e.dataTransfer.getData("cardId");
+  //   setCards((prev) => prev.filter((c) => c.id !== cardId));
+  //   setActive(false);
+  // };
+  const handleDrop = async (e) => {
     setActive(false);
+    clearHighlights();
+  
+    const cardId = e.dataTransfer.getData("cardId");
+    const indicators = getIndicators();
+    const { element } = getNearestIndicator(e, indicators);
+    const before = element?.dataset.before || "-1";
+  
+    if (before !== cardId) {
+      let copy = [...cards];
+      let cardToTransfer = copy.find((c) => c.id === cardId);
+      if (!cardToTransfer) return;
+  
+      // 1. Optimistic UI update (darhol ko'rinishni yangilash)
+      cardToTransfer = { ...cardToTransfer, column };
+      copy = copy.filter((c) => c.id !== cardId);
+  
+      if (before === "-1") {
+        copy.push(cardToTransfer);
+      } else {
+        const insertAt = copy.findIndex((c) => c.id === before);
+        if (insertAt === -1) return;
+        copy.splice(insertAt, 0, cardToTransfer);
+      }
+  
+      setCards(copy); // UI ni yangilash
+  
+      // 2. Backendga yangilash
+      try {
+        await updateTaskType(cardId, column); // API so'rovi
+        message.success("Task status updated!");
+      } catch (error) {
+        // Agar xato bo'lsa, eski holatga qaytarish
+        setCards((prev) => [...prev]);
+        message.error("Failed to update task status");
+        console.error("Update error:", error);
+      }
+    }
   };
 
   return (

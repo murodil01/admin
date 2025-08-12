@@ -83,7 +83,7 @@ const TaskDetails = () => {
   // Helper to map API tasks to card format
   const mapTasksToCards = (tasks) => {
     return tasks.map((task) => ({
-      id: task.id,
+      id: task.id.toString(),
       title: task.name,
       time: task.deadline
         ? new Date(task.deadline).toLocaleDateString("en-US", {
@@ -93,12 +93,12 @@ const TaskDetails = () => {
         : "No due date",
       description: task.description,
       assignee: {
-        name: task.assigned?.length > 0 ? task.assigned[0] : "Unknown",
+        name: task.assigned?.length > 0 ? task.assigned : "Unknown",
         avatar: "bg-blue-500",
       },
-      tags: task.tags,
-      checklistProgress: "0/0", // Adjust if checklist is supported
-      column: task.tasks_type,
+       progress: task.progress || 0,
+      column: task.tasks_type, // ustun nomi
+      tags: task.tags || [],
       files: [], // Adjust if files are supported
     }));
   };
@@ -567,7 +567,7 @@ const TaskDetails = () => {
     </div>
   );
 };
-
+  
 export default TaskDetails;
 
 
