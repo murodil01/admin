@@ -13,8 +13,12 @@ import {
 } from "antd";
 import Kanban from "./Kanban";
 import memberSearch from "../../assets/icons/memberSearch.svg";
-import { getTasks, createTask, getProjectTaskById } from "../../api/services/taskService"; // Updated imports
-import dayjs from "dayjs"; // Added for date formatting
+import { 
+  createTask, 
+  getProjectTaskById,
+  getProjectUsers 
+} from "../../api/services/taskService";
+import dayjs from "dayjs";
 
 const { TextArea } = Input;
 
@@ -34,12 +38,6 @@ const tagOptions = [
   "marketing & sales",
 ];
 
-const assignees = [
-  { label: "Jasurbek", value: "jasurbek" },
-  { label: "Sardor", value: "sardor" },
-  { label: "Malika", value: "malika" },
-  { label: "Nodir", value: "nodir" },
-];
 
 const TaskDetails = () => {
   const { projectId } = useParams(); // URL dan projectId ni oladi
@@ -55,10 +53,11 @@ const TaskDetails = () => {
   const [cards, setCards] = useState([]);
   const [type, setType] = useState("assigned");
   const [selectedAssignee, setSelectedAssignee] = useState(null);
-
+const [assignees, setAssignees] = useState([]);
+  const [loadingAssignees, setLoadingAssignees] = useState(false);
   // Fetch tasks on mount
   useEffect(() => {
-    if (!projectId) return; // ID yo‘q bo‘lsa, so‘rov qilmaydi
+    if (!projectId) return;
 
     const token = localStorage.getItem("token");
     if (!token) {
@@ -66,22 +65,60 @@ const TaskDetails = () => {
       return;
     }
 
-    getProjectTaskById(projectId) // ✅ ID berildi
-    .then((response) => {
-      setCards(mapTasksToCards(response.data));
-    })
-    .catch((err) => {
-      console.error("Error fetching tasks:", err);
-      if (err.response?.status === 401) {
-        message.error("Session expired. Please log in again.");
-      } else {
-        message.error("Failed to fetch tasks");
-      }
-    });
-}, [projectId]);
+    getProjectTaskById(projectId)
+      .then((response) => {
+        setCards(mapTasksToCards(response.data));
+      })
+      .catch((err) => {
+        console.error("Error fetching tasks:", err);
+        if (err.response?.status === 401) {
+          message.error("Session expired. Please log in again.");
+        } else {
+          message.error("Failed to fetch tasks");
+        }
+      });
+  }, [projectId]);
+  
+   useEffect(() => {
+    if (isModalOpen && projectId) {
+      fetchProjectUsers();
+    }
+  }, [isModalOpen, projectId]);
 
+
+    const fetchProjectUsers = async () => {
+    setLoadingAssignees(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        message.error("Please log in to access users");
+        return;
+      }
+
+      // Call getProjectUsers API with projectId
+      const response = await getProjectUsers(projectId);
+      
+      // Map the API response to Select options format
+      const userOptions = response.data.map(user => ({
+        label: user.name || user.username || `${user.first_name} ${user.last_name}`.trim() || "Unknown User",
+        value: user.id || user.user_id, // Adjust based on your API response structure
+        // You can add more user data if needed
+        avatar: user.avatar || user.profile_picture,
+        email: user.email
+      }));
+
+      setAssignees(userOptions);
+    } catch (error) {
+      console.error("Error fetching project users:", error);
+      message.error("Failed to load project users");
+      // Fallback to empty array if API fails
+      setAssignees([]);
+    } finally {
+      setLoadingAssignees(false);
+    }
+  };
   // Helper to map API tasks to card format
-  const mapTasksToCards = (tasks) => {
+    const mapTasksToCards = (tasks) => {
     return tasks.map((task) => ({
       id: task.id.toString(),
       title: task.name,
@@ -96,14 +133,14 @@ const TaskDetails = () => {
         name: task.assigned?.length > 0 ? task.assigned : "Unknown",
         avatar: "bg-blue-500",
       },
-       progress: task.progress || 0,
-      column: task.tasks_type, // ustun nomi
+      progress: task.progress || 0,
+      column: task.tasks_type,
       tags: task.tags || [],
-      files: [], // Adjust if files are supported
+      files: [],
     }));
   };
 
-  const addCheckItem = () => {
+ const addCheckItem = () => {
     setChecklist((prev) => [...prev, { text: "", done: false }]);
   };
 
@@ -122,11 +159,12 @@ const TaskDetails = () => {
   };
 
   const showModal = () => setIsModalOpen(true);
-  const handleCancel = () => {
+  
+   const handleCancel = () => {
     setIsModalOpen(false);
     // Reset form
     setTitle("");
-    setType("acknowledged");
+    setType("Assigned");
     setNotification("Off");
     setDate(null);
     setSelectedAssignee(null);
@@ -137,7 +175,7 @@ const TaskDetails = () => {
     setImage(null);
   };
 
-  const handleSave = async () => {
+   const handleSave = async () => {
     // Validation
     if (!title.trim()) {
       message.error("Please enter a column title");
@@ -152,20 +190,18 @@ const TaskDetails = () => {
     const token = localStorage.getItem("token");
     if (!token) {
       message.error("Please log in to create a task");
-      // Optionally redirect to login
-      // window.location.href = "/login";
       return;
     }
 
     // Prepare task data for API
-    const taskData = {
+     const taskData = {
       name: title,
       description,
       tasks_type: type,
       deadline: date ? dayjs(date).format("YYYY-MM-DD") : null,
       tags,
-      project: "5c112bdb-be91-4e09-a062-bf244691892b", // Replace with dynamic project ID
-      assigned: selectedAssignee ? [selectedAssignee] : [], // Match API's assigned field
+      project: projectId || "5c112bdb-be91-4e09-a062-bf244691892b", // Use dynamic projectId
+      assigned: selectedAssignee ? [selectedAssignee] : [],
     };
     try {
       // Call createTask API
@@ -178,6 +214,10 @@ const TaskDetails = () => {
       ).length;
       const totalChecks = checklist.length;
 
+      // Find the assignee name from the assignees array
+      const assigneeName = assignees.find(a => a.value === selectedAssignee)?.label || "Unknown";
+      
+ 
       const newCard = {
         id: newTask.id,
         title: newTask.name,
@@ -189,13 +229,13 @@ const TaskDetails = () => {
           : "No due date",
         description: newTask.description,
         assignee: {
-          name: selectedAssignee || "Unknown",
+          name: assigneeName,
           avatar: "bg-blue-500",
         },
         tags: newTask.tags,
         checklistProgress: `${completedChecks}/${totalChecks || 0}`,
         column: newTask.tasks_type,
-        files, // Store files locally or handle separately
+        files,
       };
 
       // Update cards state
@@ -208,21 +248,19 @@ const TaskDetails = () => {
       console.error("Error creating task:", error);
       if (error.response?.status === 401) {
         message.error("Session expired. Please log in again.");
-        // Optionally redirect to login
-        // window.location.href = "/login";
       } else {
         message.error(error.response?.data?.message || "Failed to create task");
       }
     }
   };
 
-  const toggleTag = (tag) => {
+   const toggleTag = (tag) => {
     if (tags.includes(tag)) {
       setTags((prev) => prev.filter((t) => t !== tag));
     } else {
       setTags((prev) => [...prev, tag]);
     }
-  };
+  }
 
   return (
     <div>
@@ -285,14 +323,14 @@ const TaskDetails = () => {
                     value={type}
                     onChange={setType}
                     options={[
-                      { value: "acknowledged", label: "Acknowledged" },
-                      { value: "assigned", label: "Assigned" },
-                      { value: "inProgress", label: "In Progress" },
-                      { value: "completed", label: "Completed" },
-                      { value: "inReview", label: "In Review" },
-                      { value: "rework", label: "Rework" },
-                      { value: "dropped", label: "Dropped" },
-                      { value: "approved", label: "Approved" },
+                        { value: "assigned", label: "Assigned" },
+                        { value: "acknowledged", label: "Acknowledged" },
+                        { value: "in_progress", label: "In Progress" },
+                        { value: "completed", label: "Completed" },
+                        { value: "in_review", label: "In Review" },
+                        { value: "return_for_fixes", label: "Return for Fixes" },
+                        { value: "dropped", label: "Dropped" },
+                        { value: "approved", label: "Approved" },
                     ]}
                   />
                 </div>
@@ -328,24 +366,27 @@ const TaskDetails = () => {
                     />
                   </div>
 
-                  <div className="md:col-span-2">
+                   <div className="md:col-span-2">
                     <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
                       Assignee
                     </label>
                     <div className="relative">
                       <Select
                         showSearch
-                        placeholder="Change assignee"
+                        placeholder={loadingAssignees ? "Loading users..." : "Change assignee"}
                         optionFilterProp="label"
                         value={selectedAssignee}
                         onChange={setSelectedAssignee}
                         options={assignees}
+                        loading={loadingAssignees}
+                        disabled={loadingAssignees}
                         className="custom-assigne"
                         filterOption={(input, option) =>
                           (option?.label ?? "")
                             .toLowerCase()
                             .includes(input.toLowerCase())
                         }
+                        notFoundContent={loadingAssignees ? "Loading..." : "No users found"}
                       />
                       <span className="absolute top-7 right-10 -translate-y-1/2 flex items-center pointer-events-none">
                         <img

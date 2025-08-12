@@ -11,8 +11,8 @@ const endpoints = {
 		delete: id => `/users/${id}`,
 	},
 	tasks: {
-		getAll: 'project/tasks',
-		create: 'project/tasks',
+		getAll: 'project/tasks/',
+		create: 'project/tasks/',
 		getById: id => `project/tasks/${id}/`,
 		update: id => `project/tasks/${id}/`,
 		delete: id => `project/tasks/${id}/`,
@@ -23,6 +23,7 @@ const endpoints = {
         create: "project/projects/",
         getById: (id) => `project/projects/${id}`,
         getByIdTasks: (id) => `project/projects/${id}/tasks`,
+        getByIdUsers: (id) => `project/projects/${id}/users`,
         update: (id) => `project/projects/${id}`,
         delete: (id) => `project/projects/${id}`,
     },
