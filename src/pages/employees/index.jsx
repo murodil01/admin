@@ -170,20 +170,20 @@ const InnerCircle = () => {
 
   // 3. Tashqariga bosilganda modal yopilsin
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setIsFilterModalOpen(null);
+    const handleClickOutside = (event) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target)
+      ) {
+        setOpenDropdown(null);
       }
     };
 
-    if (isFilterModalOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isFilterModalOpen]);
+  }, []);
 
   const [showAllDepartments, setShowAllDepartments] = useState(false);
 
@@ -339,14 +339,7 @@ const InnerCircle = () => {
                         <div className="flex items-center gap-2">
                           <span className="text-gray-500 text-sm font-medium truncate">{emp.role}</span>
                           <span
-                            className={`px-3 py-[3px] rounded-md text-xs font-medium border capitalize ${emp.level === "junior"
-                                ? "border-blue-500 text-blue-600"
-                                : emp.level === "middle"
-                                  ? "border-yellow-500 text-yellow-600"
-                                  : emp.level === "senior"
-                                    ? "border-green-500 text-green-600"
-                                    : "border-gray-300 text-gray-600 bg-gray-100"
-                              }`}
+                            className={`px-3 py-[3px] rounded-md text-xs font-medium border capitalize border-gray-300 text-gray-600 bg-gray-100`}
                           >
                             {emp.level}
                           </span>
@@ -406,17 +399,22 @@ const InnerCircle = () => {
 
                     {/* Actions */}
                     <div className="text-right relative" ref={dropdownRef}>
-                      <button onClick={() => toggleDropdown(emp.id)}>
+                      <button
+                        className="cursor-pointer"
+                        onClick={() => toggleDropdown(emp.id)}>
                         <MoreVertical size={20} className="text-[#1F2937]" />
                       </button>
                       {openDropdown === emp.id && (
                         <div className="absolute z-10 mt-2 right-0 w-40 bg-white rounded-lg shadow border border-gray-300">
                           <button
-                            onClick={() => navigate(`/profile/${emp.id}`)}
                             className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-500 cursor-pointer">
                             Edit profile
                           </button>
-                          <button className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-yellow-500 cursor-pointer">
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/profile/${emp.id}`)}
+                            className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-yellow-500 cursor-pointer"
+                          >
                             Details
                           </button>
                           <button className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-green-500 cursor-pointer">
@@ -681,7 +679,7 @@ const InnerCircle = () => {
             </div>
 
             {/* Form */}
-            <form 
+            <form
               onSubmit={handleSubmit}
               className="flex  flex-col lg:flex-row gap-[50px]">
               {/* LEFT SIDE */}
