@@ -56,6 +56,12 @@ const endpoints = {
 		update: id => `board/leads/${id}`,
 		delete: id => `board/leads/${id}`,
 	},
+
+	employees: {
+		getAll: 'employees/',
+		getById: 'employees/{id}/',
+		create: 'users/',
+	}
 }
 
 export default endpoints;
