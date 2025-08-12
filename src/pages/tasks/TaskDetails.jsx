@@ -167,7 +167,6 @@ const TaskDetails = () => {
       project: "5c112bdb-be91-4e09-a062-bf244691892b", // Replace with dynamic project ID
       assigned: selectedAssignee ? [selectedAssignee] : [], // Match API's assigned field
     };
-
     try {
       // Call createTask API
       const response = await createTask(taskData);
