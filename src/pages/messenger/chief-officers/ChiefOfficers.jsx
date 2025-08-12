@@ -1,191 +1,149 @@
-import { useState, useEffect, useRef } from 'react';
-import { MoreVertical, Edit, Trash2, Phone } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import Telegram from "../../../assets/logos_telegram.png";
 
 const ChiefOfficers = () => {
-  const [activeDropdown, setActiveDropdown] = useState(null);
-  const dropdownRef = useRef(null);
+  const [manager, setManager] = useState(null);
+  const [heads, setHeads] = useState([]);
 
-  const officers = [
-    {
-      id: 1,
-      name: 'Allayorov Boburjon',
-      position: 'Backend developer',
-      level: 'Junior',
-      phone: '+998 99 1234567',
-      department: 'M Technology',
-      tasks: 0,
-      status: 'Working',
-      avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg'
-    },
-    {
-      id: 2,
-      name: 'Allayorov Boburjon',
-      position: 'Backend developer',
-      level: 'Middle',
-      phone: '+998 99 1234567',
-      department: 'M Technology',
-      tasks: 0,
-      status: 'B3k',
-      avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg'
-    },
-    {
-      id: 3,
-      name: 'Allayorov Boburjon',
-      position: 'Backend developer',
-      level: 'Senior',
-      phone: '+998 99 1234567',
-      department: 'M Technology',
-      tasks: 0,
-      status: 'On leave',
-      avatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg'
-    }
-    // Qolgan officerlar xohlasang qo‘shib ketaverasan
-  ];
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get(
+        "https://prototype-production-2b67.up.railway.app/messenger/departments/users/"
+      );
 
-  const getLevelBadgeColor = (level) => {
-    switch (level) {
-      case 'Junior':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Middle':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'Senior':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+      const users = response.data;
+
+      const managerUser = users.find(
+        (user) => user.role?.toLowerCase() === "manager"
+      );
+
+      const headsUsers = users.filter((user) => {
+        const role = user.role?.toLowerCase();
+        return role === "head" || role === "heads";
+      });
+
+      setManager(managerUser);
+      setHeads(headsUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
     }
   };
 
-  const getStatusBadgeColor = (status) => {
-    switch (status) {
-      case 'Working':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'B3k':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'On leave':
-        return 'bg-red-100 text-red-800 border-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const handleEdit = (officer) => {
-    console.log('Edit officer:', officer);
-    setActiveDropdown(null);
-  };
-
-  const handleDelete = (officer) => {
-    console.log('Delete officer:', officer);
-    setActiveDropdown(null);
-  };
-
-  const toggleDropdown = (id) => {
-    setActiveDropdown(activeDropdown === id ? null : id);
-  };
-
-  // Click outside to close dropdown
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target)
-      ) {
-        setActiveDropdown(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    fetchUsers();
   }, []);
 
   return (
-    <div className="w-full max-w-7xl mx-auto py-6">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Phone Number</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Tasks</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {officers.map((officer, index) => (
-                <tr
-                  key={officer.id}
-                  className={`hover:bg-gray-50 ${
-                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
-                  }`}
+    <main className="flex flex-col gap-6 sm:gap-8 px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 max-w-7xl mx-auto py-6 sm:py-8">
+      {manager && (
+        <section className="flex justify-center mb-8 px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center p-4 bg-white rounded-3xl shadow-md hover:shadow-xl transition duration-300 w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-[320px] mx-auto">
+            <div className="w-full flex flex-col items-center text-center">
+              <img
+                src={manager.profile_picture || "https://via.placeholder.com/150"}
+                alt={manager.full_name || "Manager"}
+                className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover mb-3 border-2 border-gray-200"
+              />
+              <p className="text-base sm:text-lg font-bold h-6 overflow-hidden">
+                {manager.profession || "CTO"}
+              </p>
+              <p className="text-xs sm:text-sm text-gray-500 h-5 overflow-hidden">
+                {manager.position || "Chief Technology Officer"}
+              </p>
+            </div>
+            <div className=" flex justify-center flex-col w-full p-2 mt-3">
+              <p className="font-semibold text-sm sm:text-base md:text-lg mb-1">
+                {manager.full_name || "Axrarov Bobirxo'ja"}
+              </p>
+              <p className="text-gray-600 text-xs sm:text-sm md:text-md">
+                Phone: <span className="font-medium">{manager.phone_number || "+998 94 855 0203"}</span>
+              </p>
+            </div>
+            <div className=" flex justify-center flex-col w-full p-2 mb-3 text-xs sm:text-sm text-gray-700 ">
+              Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.
+            </div>
+            <a
+              href={
+                manager.tg_username
+                  ? `https://t.me/${manager.tg_username.replace(/^@/, "")}`
+                  : "#"
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center justify-center gap-2 py-2 px-4 border border-gray-300 bg-gray-100 rounded-lg text-gray-600 font-medium hover:border-blue-300 hover:bg-blue-600 hover:text-white transition w-full max-w-[270px]"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 240 240"
+                className="w-4 h-4 fill-gray-600 group-hover:fill-white transition"
+              >
+                <path d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm57.6 79.2l-17.4 82.2c-1.3 5.9-4.8 7.4-9.7 4.6l-26.8-19.8-12.9 12.4c-1.4 1.4-2.6 2.6-5.3 2.6l1.9-27.1 49.4-44.6c2.2-1.9-.5-3-3.4-1.1l-61 38.4-26.3-8.2c-5.7-1.8-5.8-5.7 1.2-8.4l102.6-39.6c4.7-1.7 8.8 1.1 7.3 8.6z" />
+              </svg>
+              <span>Message</span>
+            </a>
+
+          </div>
+        </section>
+      )}
+
+
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8 px-4 sm:px-6 lg:px-8">
+        {heads && heads.length > 0 ? (
+          heads.map((officer) => (
+            <div
+              key={officer.id}
+              className="flex flex-col justify-between p-4 bg-white rounded-3xl shadow-md hover:shadow-xl transition duration-300 w-full max-w-[320px] mx-auto h-full"
+            >
+              <div className="flex flex-col items-center text-center">
+                <img
+                  src={officer.profile_picture || "https://via.placeholder.com/150"}
+                  alt="Chief Officer"
+                  className="w-28 h-28 rounded-full object-cover mb-3 border-2 border-gray-200"
+                />
+                <p className="text-lg font-bold h-6 overflow-hidden">
+                  {officer.profession || "No position"}
+                </p>
+                <p className="text-sm text-gray-500 h-5 overflow-hidden">
+                  {officer.position || "Department Head"}
+                </p>
+              </div>
+
+              <div className=" flex justify-center flex-col mt-5">
+                <p className="font-semibold truncate">{officer.full_name || "Unknown"}</p>
+                <p className="text-gray-600 text-sm">
+                  Phone:   {officer.phone_number || "No phone number"}
+                </p>
+              </div>
+
+              <div className=" flex justify-center flex-col text-sm text-gray-700 mt-3">
+                {officer.description ||
+                  "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s."}
+              </div>
+              <a
+                href={officer.tg_username ? `https://t.me/${officer.tg_username.replace(/^@/, "")}` : "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center justify-center gap-2 px-5 py-2 mt-4 border border-gray-300 bg-gray-100 rounded-lg text-gray-600 font-medium hover:border-blue-300 hover:bg-white hover:text-blue-600 transition w-full"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 240 240"
+                  className="w-4 h-4 fill-gray-600 group-hover:fill-blue-600 transition"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-4">
-                      <img
-                        className="h-12 w-12 rounded-full object-cover ring-2 ring-white shadow-sm"
-                        src={officer.avatar}
-                        alt={officer.name}
-                      />
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900">{officer.name}</p>
-                        <div className="flex items-center space-x-2">
-                          <p className="text-sm text-gray-500">{officer.position}</p>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getLevelBadgeColor(officer.level)}`}>
-                            {officer.level}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 flex items-center space-x-2">
-                    <Phone className="h-4 w-4 text-gray-400" />
-                    <span>{officer.phone}</span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{officer.department}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{officer.tasks}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadgeColor(officer.status)}`}>
-                      {officer.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="relative" ref={dropdownRef}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleDropdown(officer.id);
-                        }}
-                        className="w-8 h-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                      {activeDropdown === officer.id && (
-                        <div className="absolute right-0 top-10 mt-1 w-36 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-10">
-                          <button
-                            onClick={() => handleEdit(officer)}
-                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDelete(officer)}
-                            className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+                  <path d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm57.6 79.2l-17.4 82.2c-1.3 5.9-4.8 7.4-9.7 4.6l-26.8-19.8-12.9 12.4c-1.4 1.4-2.6 2.6-5.3 2.6l1.9-27.1 49.4-44.6c2.2-1.9-.5-3-3.4-1.1l-61 38.4-26.3-8.2c-5.7-1.8-5.8-5.7 1.2-8.4l102.6-39.6c4.7-1.7 8.8 1.1 7.3 8.6z" />
+                </svg>
+                <span>Message</span>
+              </a>
+            </div>
+          ))
+        ) : (
+          <p className="col-span-full text-center text-gray-500">
+            No officers found
+          </p>
+        )}
+      </section>
+    </main>
   );
 };
 

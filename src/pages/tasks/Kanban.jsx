@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { FaFire } from "react-icons/fa";
 import { FiPlus, FiTrash, FiEdit } from "react-icons/fi";
 import { motion } from "framer-motion";
@@ -26,8 +27,10 @@ import {
   Upload,
   Button,
   Checkbox,
+  message,
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
+import { updateTaskType, createTask } from "../../api/services/taskService";
 
 
 const NotionKanban = ({ cards, setCards }) => {
@@ -52,7 +55,7 @@ const taskColumns = [
     icon: <img src={acknowledged} alt="" />,
   },
   {
-    id: "inProgress",
+    id: "in_progress",
     title: "In Progress",
     color: "bg-[#FAF6E1]",
     icon: <img src={inProgress} alt="" />,
@@ -64,14 +67,14 @@ const taskColumns = [
     icon: <img src={completedIcon} alt="" />,
   },
   {
-    id: "inReview",
+    id: "in_review",
     title: "In Review",
     color: "bg-[#FFF0E0]",
     icon: <img src={inReview} alt="" />,
   },
   {
-    id: "rework",
-    title: "Rework",
+    id: "return_for_fixes",
+    title: "Return for Fixes",
     color: "bg-[#E2C7A9]",
     icon: <img src={rework} alt="" />,
   },
@@ -266,23 +269,24 @@ const Column = ({
 
   const handleDragLeave = () => setActive(false);
 
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
     setActive(false);
     clearHighlights();
-
+  
     const cardId = e.dataTransfer.getData("cardId");
     const indicators = getIndicators();
     const { element } = getNearestIndicator(e, indicators);
     const before = element?.dataset.before || "-1";
-
+  
     if (before !== cardId) {
       let copy = [...cards];
       let cardToTransfer = copy.find((c) => c.id === cardId);
       if (!cardToTransfer) return;
-
+  
+      // 1. Optimistic UI update (darhol ko'rinishni yangilash)
       cardToTransfer = { ...cardToTransfer, column };
       copy = copy.filter((c) => c.id !== cardId);
-
+  
       if (before === "-1") {
         copy.push(cardToTransfer);
       } else {
@@ -290,8 +294,19 @@ const Column = ({
         if (insertAt === -1) return;
         copy.splice(insertAt, 0, cardToTransfer);
       }
-
-      setCards(copy);
+  
+      setCards(copy); // UI ni yangilash
+  
+      // 2. Backendga yangilash
+      try {
+        await updateTaskType(cardId, column); // API so'rovi
+        message.success("Task status updated!");
+      } catch (error) {
+        // Agar xato bo'lsa, eski holatga qaytarish
+        setCards((prev) => [...prev]);
+        message.error("Failed to update task status");
+        console.error("Update error:", error);
+      }
     }
   };
 
@@ -338,7 +353,7 @@ const Card = ({
   column,
   time,
   description,
-  checklistProgress,
+  progress,
   handleDragStart,
   onEdit,
   image,
@@ -441,7 +456,7 @@ const Card = ({
 
         {/* Title */}
         <button
-          className="text-sm font-semibold text-gray-900 mb-3 cursor-pointer"
+          className="text-sm font-semibold text-gray-900 mb-3 cursor-pointer max-w-full truncate"
           onClick={() => setIsModalOpen(true)}
         >
           {title}
@@ -656,27 +671,25 @@ const Card = ({
         <div className="flex items-center justify-between text-xs text-gray-500">
           {/* Deadline */}
           <div className="flex items-center gap-1 bg-gray-100 rounded p-1">
-            <img src={clock} alt="" />
+            <img src={clock} alt="Deadline" />
             <span>{time || "No due date"}</span>
           </div>
 
           {description && (
             <div>
-              <img src={descriptionIcon} alt="" />
+              <img src={descriptionIcon} alt="Description Icon" />
             </div>
           )}
           <div>
-            <img src={comment} alt="" />
+            <img src={comment} alt="Comment Icon" />
           </div>
 
           {/* Right Side: Avatar + Checklist */}
           <div className="flex items-center gap-2">
-            {checklistProgress && (
               <span className="bg-[#64C064] text-white text-[11px] px-2 py-0.5 rounded flex items-center gap-1">
                 <img src={checkList} alt="" />
-                {checklistProgress}
+                {progress}{` /10`}
               </span>
-            )}
           </div>
         </div>
       </motion.div>
@@ -700,7 +713,7 @@ const BurnBarrel = ({ setCards }) => {
     setCards((prev) => prev.filter((c) => c.id !== cardId));
     setActive(false);
   };
-
+ 
   return (
     <div
       onDrop={handleDrop}
@@ -724,23 +737,55 @@ const BurnBarrel = ({ setCards }) => {
 const AddCard = ({ column, setCards }) => {
   const [text, setText] = useState("");
   const [adding, setAdding] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { projectId } = useParams();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault();
     if (!text.trim()) return;
 
     const newCard = {
+      name: text.trim(),
       column,
-      title: text.trim(),
-      id: Math.random().toString(),
-      time: "",
-      assignee: null,
+      // title: text.trim(),
+      tasks_type: column,
+      // id: Math.random().toString(),
+      // time: "",
+      // assignee: null,
+      description: "", // default qiymat
+      project: projectId, // loyiha ID sini dynamic qilib olish kerak
     };
+    setLoading(true);
+    try {
+      // 1. Backendga yuborish
+      const response = await createTask(newCard);
+      const createdTask = response.data;
 
-    setCards((prev) => [...prev, newCard]);
+      // 2. UI ga yangi card qo'shish
+      setCards((prev) => [
+        ...prev,
+        {
+          id: createdTask.id,
+          title: createdTask.name,
+          column: createdTask.tasks_type,
+          time: createdTask.deadline || "",
+          assignee: createdTask.assigned ? { 
+            name: createdTask.assigned[0], 
+            avatar: "bg-blue-500" 
+          } : null,
+        },
+      ]);
+    // setCards((prev) => [...prev, newCard]);
     setText("");
     setAdding(false);
-  };
+    message.success("Task created successfully!");
+  } catch (error) {
+    console.error("Failed to create task:", error);
+    message.error(error.response?.data?.message || "Failed to create task");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return adding ? (
     <motion.form layout onSubmit={handleSubmit}>
@@ -750,21 +795,30 @@ const AddCard = ({ column, setCards }) => {
         autoFocus
         placeholder="Add new task..."
         className="w-full rounded-lg border border-violet-400 bg-white p-3 text-sm text-gray-700 placeholder-violet-300 focus:outline-0"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleSubmit(e);
+          }
+        }}
+        disabled={loading}
       />
       <div className="mt-1.5 flex items-center justify-end gap-1.5">
         <button
           type="button"
           onClick={() => setAdding(false)}
           className="px-3 py-1.5 text-xs text-neutral-600 font-bold hover:text-neutral-500"
+          disabled={loading}
         >
           Close
         </button>
         <button
           type="submit"
           className="flex items-center gap-1.5 rounded-lg bg-neutral-50 font-bold px-3 py-1.5 text-xs text-neutral-95"
+          disabled={loading}
         >
-          <span>Add</span>
-          <FiPlus />
+           {loading ? "Creating..." : "Add"}
+          {!loading && <FiPlus />}
         </button>
       </div>
     </motion.form>
@@ -906,10 +960,10 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate, assignees }) => {
                 options={[
                   { value: "acknowledged", label: "Acknowledged" },
                   { value: "assigned", label: "Assigned" },
-                  { value: "inProgress", label: "In Progress" },
+                  { value: "in_progress", label: "In Progress" },
                   { value: "completed", label: "Completed" },
-                  { value: "inReview", label: "In Review" },
-                  { value: "rework", label: "Rework" },
+                  { value: "in_review", label: "In Review" },
+                  { value: "return_for_fixes", label: "Rework" },
                   { value: "dropped", label: "Dropped" },
                   { value: "approved", label: "Approved" },
                 ]}

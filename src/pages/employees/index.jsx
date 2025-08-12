@@ -232,8 +232,30 @@ const InnerCircle = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isAddModalOpen]);
+  // const [avatar, setAvatar] = useState(null);
 
-  if (loading) return <p>Yuklanmoqda...</p>;
+  // const handleAvatarUpload = (e) => {
+  //   const file = e.target.files[0];
+  //   if (file) {
+  //     setAvatar(URL.createObjectURL(file));
+  //   }
+  // };
+
+  // const [passportName, setPassportName] = useState("Upload Passport");
+
+  // const handlePassportUpload = (e) => {
+  //   const file = e.target.files[0];
+  //   if (file) {
+  //     setPassportName(file.name);
+  //   }
+  // };
+
+  if (loading)
+    return (
+      <div className="flex justify-center items-center h-[100vh]">
+        <span className="loader"></span>
+      </div>
+    );
 
   return (
     <div>
