@@ -28,9 +28,10 @@ import {
   Button,
   Checkbox,
   message,
+  Spin,
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
-import { updateTaskType, createTask } from "../../api/services/taskService";
+import { updateTaskType,deleteTask,getTaskById } from "../../api/services/taskService";
 
 
 const NotionKanban = ({ cards, setCards }) => {
@@ -364,55 +365,65 @@ const Card = ({
 
   const [selectedCard, setSelectedCard] = useState(null);
 
-  // "Got it" modal ochilganda card ma'lumotlarini saqlash
-  const openViewModal = (card) => {
-    setSelectedCard(card);
-    setIsModalOpen(true);
-  };
+  const [taskData, setTaskData] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // Edit qilishni saqlash
+ // "Got it" modal ochilganda card ma'lumotlarini saqlash
+   const openViewModal = async () => {
+    setIsModalOpen(true);
+    setLoading(true);
+    
+    try {
+      const response = await getTaskById(id);
+      console.log("Task ma'lumotlari:", response.data);
+      setTaskData(response.data); // API dan kelgan ma'lumotlar
+    } catch (error) {
+      console.error("Task olishda xatolik:", error);
+      message.error("Task ma'lumotlarini yuklab bo'lmadi");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+  const [imageUrl, setImageUrl] = useState(null);
+
+   useEffect(() => {
+     if (!image) return;
+     if (image instanceof File) {
+       const url = URL.createObjectURL(image);
+       setImageUrl(url);
+       return () => URL.revokeObjectURL(url);
+     }
+
+    setImageUrl(image);
+  }, [image]);
+   
   const handleUpdateCard = (updatedCard) => {
     console.log("Updated card: ", updatedCard);
     // bu yerda serverga yoki local state'ga saqlash kodini yozasan
     setIsEditModalOpen(false);
   };
-  const [comments, setComments] = useState([
-    {
-      // name: "Botirov Shaxobiddin",
-      // text: "We need to design and develop a responsive user profile page for the web application."
-    },
-  ]);
-  const [newComment, setNewComment] = useState("");
-  const [imageUrl, setImageUrl] = useState(null);
 
-  useEffect(() => {
-    if (!image) return;
+ 
 
-    // Agar File obyekt bo‘lsa
-    if (image instanceof File) {
-      const url = URL.createObjectURL(image);
-      setImageUrl(url);
-
-      // Cleanup qilish — memory leak oldini olish
-      return () => {
-        URL.revokeObjectURL(url);
-      };
-    }
-
-    // Agar string bo‘lsa (URL yoki base64)
-    setImageUrl(image);
-  }, [image]);
-
-  const handleAddComment = () => {
-    if (!newComment.trim()) return; // bo‘sh comment qo‘shmaslik
+   const handleAddComment = () => {
+    if (!newComment.trim()) return;
 
     const updatedComments = [
       ...comments,
-      { name: "Botirov Shaxobiddin", text: newComment },
+      { name: "Current User", text: newComment },
     ];
     setComments(updatedComments);
-    setNewComment(""); // inputni tozalash
+    setNewComment("");
   };
+
+  useEffect(() => {
+    if (taskData && taskData.comments) {
+      setComments(taskData.comments);
+    }
+  }, [taskData]);
 
   return (
     <>
@@ -440,14 +451,10 @@ const Card = ({
         )}
 
         {/* Agar image mavjud bo'lsa */}
-        {imageUrl && (
-          <div className="w-[100px] h-[100px] rounded overflow-hidden">
+       {imageUrl && (
+          <div className="w-[100px] h-[100px] rounded overflow-hidden mb-2">
             <img
-              src={
-                typeof imageUrl === "string"
-                  ? imageUrl
-                  : URL.createObjectURL(imageUrl)
-              }
+              src={imageUrl}
               alt="card"
               className="w-full h-full object-cover"
             />
@@ -456,14 +463,16 @@ const Card = ({
 
         {/* Title */}
         <button
-          className="text-sm font-semibold text-gray-900 mb-3 cursor-pointer max-w-full truncate"
-          onClick={() => setIsModalOpen(true)}
+
+          className="text-sm font-semibold text-gray-900 mb-3 cursor-pointer"
+          onClick={openViewModal}
+
         >
           {title}
         </button>
 
         <Modal
-          title={`Column ${title}`}
+          title={taskData ? taskData.name : `Task Details`}
           open={isModalOpen}
           onOk={() => setIsModalOpen(false)}
           onCancel={() => setIsModalOpen(false)}
@@ -505,155 +514,157 @@ const Card = ({
             </Button>,
           ]}
         >
-          <div className="grid grid-cols-1 md:grid-cols-10 gap-6 md:gap-10">
-            {/* Left section */}
-            <div className="md:col-span-6 space-y-6">
-              {/* Top section */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="w-full sm:w-[140px] h-[140px] bg-gray-200 flex items-center justify-center rounded">
-                  <span role="img" aria-label="image" className="text-4xl">
-                    🖼️
-                  </span>
-                </div>
-                <div className="flex-1 text-sm text-gray-700 leading-6">
-                  We need to design and develop a responsive user profile page
-                  for the web application. This page will display key user
-                  information including avatar, full name, email address, phone
-                  number, and account status. The layout should follow our
-                  current design system and ensure consistency with other pages.
-                  The page must support both view and edit modes.
-                </div>
-              </div>
-
-              {/* Files */}
-              <div>
-                <h4 className="font-semibold text-sm mb-3">Files</h4>
-                <div className="flex flex-wrap gap-3">
-                  {[
-                    {
-                      name: "Design_Document.pdf",
-                      url: "/files/Design_Document.pdf",
-                    },
-                    { name: "User_Guide.docx", url: "/files/User_Guide.docx" },
-                    { name: "Wireframe.png", url: "/files/Wireframe.png" },
-                    { name: "API_Specs.txt", url: "/files/API_Specs.txt" },
-                  ].map((file, i) => (
-                    <a
-                      key={i}
-                      href={file.url}
-                      download
-                      className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 text-sm hover:bg-gray-50 transition"
-                    >
-                      <DownloadOutlined />
-                      {file.name}
-                    </a>
-                  ))}
-                </div>
-              </div>
-
-              {/* Checklist */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <h4 className="font-semibold text-sm">Check list</h4>
-                  <span className="text-xs text-gray-500">Show</span>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <label className="flex items-center gap-2 w-full border p-2 rounded-md border-gray-200 justify-between">
-                    <span className="line-through">
-                      All documentation is attached
+          {loading ? (
+            <div className="flex justify-center items-center h-[400px]">
+              <Spin size="large" />
+            </div>
+          ) : taskData ? (
+            <div className="grid grid-cols-1 md:grid-cols-10 gap-6 md:gap-10">
+              {/* Left section */}
+              <div className="md:col-span-6 space-y-6">
+                {/* Top section */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="w-full sm:w-[140px] h-[140px] bg-gray-200 flex items-center justify-center rounded">
+                    <span role="img" aria-label="image" className="text-4xl">
+                      🖼️
                     </span>
-                    <Checkbox defaultChecked />
-                  </label>
-                  <label className="flex items-center gap-2 w-full border p-2 rounded-md border-gray-200 justify-between">
-                    <span>User instructions are included</span>
-                    <Checkbox />
-                  </label>
+                  </div>
+                  <div className="flex-1 text-sm text-gray-700 leading-6">
+                    {taskData.description || "No description available"}
+                  </div>
                 </div>
-              </div>
 
-              {/* Comments */}
-              <div>
-                <h4 className="font-semibold text-sm mb-3">Comments</h4>
-                <div className="p-4 bg-blue-50 rounded-xl">
-                  {comments.map((c, i) => (
-                    <div key={i} className="rounded-lg bg-blue-50 mb-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
-                          👤
+                {/* Files */}
+                <div>
+                  <h4 className="font-semibold text-sm mb-3">Files</h4>
+                  <div className="flex flex-wrap gap-3">
+                    <p className="text-sm text-gray-500">No files attached</p>
+                  </div>
+                </div>
+
+                {/* Checklist */}
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-semibold text-sm">Check list</h4>
+                    <span className="text-xs text-gray-500">Show</span>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <p className="text-sm text-gray-500">No checklist items</p>
+                  </div>
+                </div>
+
+                {/* Comments */}
+                <div>
+                  <h4 className="font-semibold text-sm mb-3">Comments</h4>
+                  <div className="p-4 bg-blue-50 rounded-xl">
+                    {comments.length > 0 ? (
+                      comments.map((c, i) => (
+                        <div key={i} className="rounded-lg bg-blue-50 mb-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
+                              👤
+                            </div>
+                            <span className="text-sm">{c.name || "User"}</span>
+                          </div>
+                          <div>
+                            <div className="bg-white p-1 rounded-sm">
+                              <p className="text-sm text-gray-700">{c.text}</p>
+                            </div>
+                          </div>
                         </div>
-                        <span className="text-sm">Ibrohim</span>
-                      </div>
-                      <div>
-                        <div className="bg-white p-1 rounded-sm">
-                          <p className="text-sm  text-gray-700">salom</p>
-                        </div>
-                      </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500 mb-3">No comments yet</p>
+                    )}
+
+                    {/* Add new comment */}
+                    <div className="mt-3 flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Add a comment"
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none"
+                      />
+                      <button
+                        onClick={handleAddComment}
+                        className="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600"
+                      >
+                        ➤
+                      </button>
                     </div>
-                  ))}
-
-                  {/* Add new comment */}
-                  <div className="mt-3 flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Add a comment"
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none"
-                    />
-                    <button
-                      onClick={handleAddComment}
-                      className="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600"
-                    >
-                      ➤
-                    </button>
                   </div>
                 </div>
+              </div>
+
+              {/* Right section */}
+              <div className="md:col-span-4 space-y-4 text-sm">
+                <div>
+                  <p className="text-gray-400">Assigned by</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                      👤
+                    </div>
+                    <span>N/A</span>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-gray-400">Assignee</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                      👤
+                    </div>
+                    <span>{taskData.assigned && taskData.assigned.length > 0 ? taskData.assigned.join(", ") : "N/A"}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-gray-400">Date</p>
+                  <p className="mt-1">{taskData.deadline ? dayjs(taskData.deadline).format('YYYY-MM-DD') : "N/A"}</p>
+                </div>
+
+                <div>
+                  <p className="text-gray-400">Notification</p>
+                  <p className="mt-1">{taskData.is_active ? "On" : "Off"}</p>
+                </div>
+
+                <div>
+                  <p className="text-gray-400">Status</p>
+                  <p className="mt-1">{taskData.tasks_type || "N/A"}</p>
+                </div>
+
+                <div>
+                  <p className="text-gray-400">Type</p>
+                  <p className="mt-1">N/A</p>
+                </div>
+
+                <div>
+                  <p className="text-gray-400">Progress</p>
+                  <p className="mt-1">{taskData.progress}%</p>
+                </div>
+
+                <div>
+                  <p className="text-gray-400">Tags</p>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {taskData.tags && taskData.tags.length > 0 ? (
+                      taskData.tags.map((tag, i) => (
+                        <span key={i} className="bg-gray-200 px-2 py-1 rounded text-xs">
+                          {tag.name}
+                        </span>
+                      ))
+                    ) : (
+                      <p>N/A</p>
+                    )}
+                  </div>
+                </div>
+
+                
               </div>
             </div>
-
-            {/* Right section */}
-            <div className="md:col-span-4 space-y-4 text-sm">
-              <div>
-                <p className="text-gray-400">Assigned by</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-                    👤
-                  </div>
-                  <span>Botirov Shaxobiddin</span>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-gray-400">Assignee</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-                    👤
-                  </div>
-                  <span>Botirov Shaxobiddin</span>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-gray-400">Date</p>
-                <p className="mt-1">16 March</p>
-              </div>
-
-              <div>
-                <p className="text-gray-400">Notification</p>
-                <p className="mt-1">On</p>
-              </div>
-
-              <div>
-                <p className="text-gray-400">Status</p>
-                <p className="mt-1">In progress</p>
-              </div>
-
-              <div>
-                <p className="text-gray-400">Type</p>
-                <p className="mt-1">Service work</p>
-              </div>
-            </div>
-          </div>
+          ) : (
+            <p className="text-center text-gray-500">No task data available</p>
+          )}
         </Modal>
 
         <EditCardModal
@@ -708,12 +719,30 @@ const DropIndicator = ({ beforeId, column }) => (
 const BurnBarrel = ({ setCards }) => {
   const [active, setActive] = useState(false);
 
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
+    e.preventDefault(); 
     const cardId = e.dataTransfer.getData("cardId");
-    setCards((prev) => prev.filter((c) => c.id !== cardId));
-    setActive(false);
+    if (!cardId) {
+      setActive(false);
+      return;
+    }
+
+    // 1) Local UI dan olib tashlash — string bilan solishtirish (type mismatch oldini olish uchun)
+    setCards((prev) => prev.filter((c) => String(c.id) !== String(cardId)));
+
+    // 2) (Optional) Serverda ham o'chirish — agar kerak bo'lsa
+    try {
+      await deleteTask(cardId); // agar id raqam bo'lsa ham API odatda string id qabul qiladi
+      message.success("Task successfully deleted.");
+    } catch (err) {
+      console.error("Failed to delete task on server:", err);
+      // UI da ham foydalanuvchiga xabar bering; lokal o'chirishni rollback qilishni xohlasangiz, shu yerda revert qiling
+      message.error("Server delete failed — removed locally.");
+    } finally {
+      setActive(false);
+    }
   };
- 
+
   return (
     <div
       onDrop={handleDrop}
@@ -723,11 +752,11 @@ const BurnBarrel = ({ setCards }) => {
       }}
       onDragLeave={() => setActive(false)}
       className={`mt-10 grid h-56 w-56 shrink-0 place-content-center rounded border text-3xl
-                ${
-                  active
-                    ? "border-red-800 bg-red-800/20 text-red-500"
-                    : "border-neutral-500 bg-neutral-500/20 text-neutral-500"
-                }`}
+        ${
+          active
+            ? "border-red-800 bg-red-800/20 text-red-500"
+            : "border-neutral-500 bg-neutral-500/20 text-neutral-500"
+        }`}
     >
       {active ? <FaFire className="animate-bounce" /> : <FiTrash />}
     </div>
