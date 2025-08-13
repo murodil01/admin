@@ -1,17 +1,21 @@
 import logo_blue from "../../assets/logo_blue.png";
 import { Form, Input, Button } from "antd";
 import { Loader, Mail, Lock } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import request from "../../api/request";
 import { useNavigate } from "react-router-dom";
-import side_blue3 from "../../assets/side_blue3.png";
 import toast, { Toaster } from "react-hot-toast";
+import AOS from "aos";
+import "aos/dist/aos.css";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
+  const [mobileLeftHeight, setMobileLeftHeight] = useState("100vh");
+  const [mobileRightVisible, setMobileRightVisible] = useState(false);
+  const isMobile = window.innerWidth < 768; // faqat bir marta aniqlanadi
   const navigate = useNavigate();
 
   const handleLogin = async () => {
@@ -22,7 +26,6 @@ const Login = () => {
         method: "POST",
         body: { email, password },
       });
-
       localStorage.setItem("token", res.data.access);
       toast.success("Login muvaffaqiyatli!");
       navigate("/");
@@ -35,29 +38,69 @@ const Login = () => {
     }
   };
 
+  // AOS faqat mobile uchun
+  useEffect(() => {
+    if (isMobile) {
+      AOS.init({ duration: 800, once: true });
+    }
+  }, [isMobile]);
+
+  // Mobile left side height animatsiyasi
+  useEffect(() => {
+    if (isMobile) {
+      let height = 100;
+      const interval = setInterval(() => {
+        height -= 2;
+        if (height <= 25) {
+          height = 25;
+          clearInterval(interval);
+          setMobileRightVisible(true);
+        }
+        setMobileLeftHeight(height + "vh");
+      }, 28);
+      return () => clearInterval(interval);
+    } else {
+      // Desktop — animatsiya yo'q
+      setMobileLeftHeight("auto");
+      setMobileRightVisible(true);
+    }
+  }, [isMobile]);
+
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />
-      <div className="flex flex-col md:flex-row min-h-screen w-full overflow-y-auto">
+      <div
+        className="flex flex-col  bg-[#0061fe] md:flex-row min-h-screen w-full overflow-hidden"
+        {...(isMobile ? { "data-aos": "fade-zoom-in" } : {})}
+      >
         {/* Left Side */}
-        <div className="bg-[#0061fe] hidden md:flex md:w-1/2 flex-col items-center justify-center p-4">
+        <div
+          className="bg-[#0061fe] flex items-center justify-center p-4 transition-all duration-700 ease-in-out md:h-auto md:w-1/2"
+          style={{ height: mobileLeftHeight }}
+        >
           <img
             src={logo_blue}
             alt="Logo"
-            className="w-24 md:w-[250px] mb-4 object-contain"
+            className="w-20 md:w-[250px] mb-4 object-contain"
           />
         </div>
 
         {/* Right Side */}
-        <div className="flex-1 flex items-center justify-center p-4 sm:p-6 bg-white">
+        <div
+          className="flex-1 rounded-t-[30px] md:rounded-t-none flex items-center justify-center p-4 sm:p-6 bg-white"
+          style={
+            isMobile
+              ? {
+                  opacity: mobileRightVisible ? 1 : 0,
+                  transform: mobileRightVisible
+                    ? "translateY(0)"
+                    : "translateY(24px)",
+                  transition: "opacity 0.6s ease, transform 0.6s ease",
+                }
+              : {} // desktopda style bo'sh → animatsiya yo'q
+          }
+        >
           <div className="w-full max-w-md">
-            {/* Mobile Logo */}
-            <img
-              src={side_blue3}
-              alt="Mobile Logo"
-              className="block w-14 md:hidden mx-auto mt-6 mb-6 object-contain"
-            />
-
             <h2
               className="text-center mb-6"
               style={{ color: "#000", fontSize: "24px", fontWeight: 600 }}
@@ -71,7 +114,6 @@ const Login = () => {
               onFinish={handleLogin}
               autoComplete="off"
             >
-              {/* Email */}
               <Form.Item
                 label={
                   <span style={{ fontWeight: 500, color: "#9A9A9A" }}>
@@ -96,6 +138,7 @@ const Login = () => {
                   placeholder="Email"
                   onFocus={() => setFocusedField("email")}
                   onBlur={() => setFocusedField(null)}
+                  autoComplete="email" // ✅ qo‘shildi
                   style={{
                     height: "50px",
                     fontSize: "16px",
@@ -104,7 +147,6 @@ const Login = () => {
                 />
               </Form.Item>
 
-              {/* Password */}
               <Form.Item
                 label={
                   <span style={{ fontWeight: 500, color: "#9A9A9A" }}>
@@ -131,6 +173,7 @@ const Login = () => {
                   placeholder="Password"
                   onFocus={() => setFocusedField("password")}
                   onBlur={() => setFocusedField(null)}
+                  autoComplete="current-password" // ✅ qo‘shildi
                   style={{
                     height: "50px",
                     fontSize: "16px",
@@ -139,7 +182,6 @@ const Login = () => {
                 />
               </Form.Item>
 
-              {/* Submit */}
               <Form.Item>
                 <Button
                   className="mt-4"
