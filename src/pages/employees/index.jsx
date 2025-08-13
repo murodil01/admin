@@ -13,8 +13,9 @@ import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import Activity from "./activity";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useRef, useEffect, useState } from "react";
-import { getEmployees, createEmployees } from "../../api/services/employeeService";
+import { getEmployees, createEmployees, getEmployeeById } from "../../api/services/employeeService";
 import avatarImage from "../../assets/default-avatar.png"
+import { deleteUser } from "../../api/services/userService";
 
 const InnerCircle = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -26,6 +27,7 @@ const InnerCircle = () => {
   const [searchParams] = useSearchParams();
   const pageNum = parseInt(searchParams.get("page_num") || "1", 10);
   const itemsPerPage = 10;
+  const [dropdownPosition, setDropdownPosition] = useState({});
 
   const [formData, setFormData] = useState({
     first_name: "",
@@ -100,6 +102,9 @@ const InnerCircle = () => {
       if (err.response) {
         console.error("Server javobi:", err.response.data);
       }
+
+      getEmployeeById().then((res) =>
+        setEmployees(res.data.results || []));
     }
   };
 
@@ -123,6 +128,11 @@ const InnerCircle = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+  fetchEmployees();
+}, []);
+
+  const fetchEmployees = () => {
+    setLoading(true);
     getEmployees()
       .then((res) => {
         const employeesData = Array.isArray(res) ? res : res?.results || [];
@@ -130,10 +140,25 @@ const InnerCircle = () => {
       })
       .catch((err) => {
         console.error("Xatolik:", err);
-        setEmployees([]); // Xato bo'lsa bo'sh array qilib qo'yish
+        setEmployees([]); // Xato bo'lsa bo'sh array
       })
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  const handleDelete = async (id) => {
+    console.log("O‘chirilayotgan user ID:", id); // 🖨 Console’da ko‘rsatish
+    if (confirm("Haqiqatan ham ushbu xodimni o‘chirib tashlamoqchimisiz?")) {
+      try {
+        await deleteUser(id);
+        alert("Xodim o‘chirildi ✅");
+        fetchEmployees(); // qayta yuklash
+      } catch (err) {
+        console.error(err);
+        alert("Xodimni o‘chirishda xatolik yuz berdi ❌");
+      }
+    }
+  };
+
 
   // Pagination uchun hisoblashlar
   const totalPages = Math.ceil(employees.length / itemsPerPage);
@@ -141,9 +166,23 @@ const InnerCircle = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentPageItems = employees.slice(startIndex, endIndex);
 
-  const toggleDropdown = (id) => {
-    setOpenDropdown(openDropdown === id ? null : id);
+  const toggleDropdown = (id, e) => {
+    if (openDropdown === id) {
+      setOpenDropdown(null);
+      return;
+    }
+
+    const buttonRect = e.currentTarget.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - buttonRect.bottom;
+    const spaceAbove = buttonRect.top;
+
+    const position =
+      spaceBelow < 300 && spaceAbove > spaceBelow ? "top" : "bottom";
+
+    setDropdownPosition((prev) => ({ ...prev, [id]: position }));
+    setOpenDropdown(id);
   };
+
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
@@ -171,10 +210,7 @@ const InnerCircle = () => {
   // 3. Tashqariga bosilganda modal yopilsin
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setOpenDropdown(null);
       }
     };
@@ -183,7 +219,7 @@ const InnerCircle = () => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [openDropdown]);
 
   const [showAllDepartments, setShowAllDepartments] = useState(false);
 
@@ -218,37 +254,19 @@ const InnerCircle = () => {
   // 3. Modal tashqarisiga bosilganda yopish + localStorage'ni yangilash
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (modalRef.current && !modalRef.current.contains(e.target)) {
-        setIsAddModalOpen(false);
-        localStorage.setItem("addModalOpen", "false");
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setOpenDropdown(null);
       }
     };
 
-    if (isAddModalOpen) {
+    if (openDropdown !== null) {
       document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isAddModalOpen]);
-  // const [avatar, setAvatar] = useState(null);
-
-  // const handleAvatarUpload = (e) => {
-  //   const file = e.target.files[0];
-  //   if (file) {
-  //     setAvatar(URL.createObjectURL(file));
-  //   }
-  // };
-
-  // const [passportName, setPassportName] = useState("Upload Passport");
-
-  // const handlePassportUpload = (e) => {
-  //   const file = e.target.files[0];
-  //   if (file) {
-  //     setPassportName(file.name);
-  //   }
-  // };
+  }, [openDropdown]);
 
   if (loading)
     return (
@@ -397,34 +415,59 @@ const InnerCircle = () => {
                       </span>
                     </div>
 
-                    {/* Actions */}
-                    <div className="text-right relative" ref={dropdownRef}>
+                    <div className="text-right relative dropdown-container inline-block">
                       <button
                         className="cursor-pointer"
-                        onClick={() => toggleDropdown(emp.id)}>
+                        onClick={(event) => toggleDropdown(emp.id, event)}
+                        ref={openDropdown === emp.id ? dropdownRef : null}
+                      >
                         <MoreVertical size={20} className="text-[#1F2937]" />
                       </button>
+
                       {openDropdown === emp.id && (
-                        <div className="absolute z-10 mt-2 right-0 w-40 bg-white rounded-lg shadow border border-gray-300">
-                          <button
-                            className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-500 cursor-pointer">
-                            Edit profile
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => navigate(`/profile/${emp.id}`)}
-                            className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-yellow-500 cursor-pointer"
-                          >
-                            Details
-                          </button>
-                          <button className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-green-500 cursor-pointer">
-                            Edit status
-                          </button>
-                          <button
-                            className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-red-500 cursor-pointer"
-                          >
-                            Delete
-                          </button>
+                        <div
+                          className={`absolute z-10 w-40 bg-white rounded-lg shadow border border-gray-300
+        ${dropdownPosition[emp.id] === "top" ? "bottom-full mb-2" : "mt-2"}`}
+                          style={{
+                            right: 0,
+                          }}
+                          onClick={(e) => e.stopPropagation()} // dropdown ichida click bubble bo‘lmasin
+                        >
+                          {["founder", "manager"].includes(emp.role) ? (
+                            <>
+                              <button className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-green-500 cursor-pointer">
+                                Edit status
+                              </button>
+                              <button
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/profile/${emp.id}`);
+                                  setTimeout(() => setOpenDropdown(null), 0);
+                                }}
+                                className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-yellow-500 cursor-pointer"
+                              >
+                                Details
+                              </button>
+                              <button
+                                onClick={() => handleDelete(emp.id)}
+                                className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-red-500 cursor-pointer">
+                                Delete
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                                navigate(`/profile/${emp.id}`);
+                                setTimeout(() => setOpenDropdown(null), 0);
+                              }}
+                              className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-yellow-500 cursor-pointer"
+                            >
+                              Details
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -511,7 +554,7 @@ const InnerCircle = () => {
               {Array.from({ length: totalPages }, (_, index) => (
                 <button
                   key={index + 1}
-                  onClick={() => navigate(`?page_num=${index + 1}`)}
+                  onClick={() => navigate(`/employees/?page_num=${index + 1}`)}
                   className={`px-3 py-1 rounded ${pageNum === index + 1 ? "bg-blue-500 text-white" : "hover:bg-gray-200"
                     }`}
                 >
@@ -519,7 +562,7 @@ const InnerCircle = () => {
                 </button>
               ))}
               <button
-                onClick={() => pageNum > 1 && navigate(`?page_num=${pageNum - 1}`)}
+                onClick={() => pageNum > 1 && navigate(`/employees/?page_num=${pageNum - 1}`)}
                 disabled={pageNum === 1}
                 className={`px-2 py-1 rounded-full ${pageNum === 1 ? "text-gray-400 cursor-not-allowed" : "hover:bg-gray-200"
                   }`}
@@ -527,7 +570,7 @@ const InnerCircle = () => {
                 <ArrowLeft />
               </button>
               <button
-                onClick={() => pageNum < totalPages && navigate(`?page_num=${pageNum + 1}`)}
+                onClick={() => pageNum < totalPages && navigate(`/employees/?page_num=${pageNum + 1}`)}
                 disabled={pageNum === totalPages}
                 className={`px-2 py-1 rounded-full ${pageNum === totalPages
                     ? "text-gray-400 cursor-not-allowed"
