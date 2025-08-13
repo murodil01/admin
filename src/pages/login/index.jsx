@@ -138,6 +138,7 @@ const Login = () => {
                   placeholder="Email"
                   onFocus={() => setFocusedField("email")}
                   onBlur={() => setFocusedField(null)}
+                  autoComplete="email" // ✅ qo‘shildi
                   style={{
                     height: "50px",
                     fontSize: "16px",
@@ -172,6 +173,7 @@ const Login = () => {
                   placeholder="Password"
                   onFocus={() => setFocusedField("password")}
                   onBlur={() => setFocusedField(null)}
+                  autoComplete="current-password" // ✅ qo‘shildi
                   style={{
                     height: "50px",
                     fontSize: "16px",
