@@ -7,7 +7,6 @@ import { rawDepartments } from "../../utils/department";
 const CategoryCard = ({ category }) => {
   const navigate = useNavigate();
   const handleCardClick = (e) => {
-    // 3 ta nuqta tugmasi bosilganida navigatsiya bo'lmasligi kerak
     const isDotMenu = e.target.closest(".dot-menu");
     if (!isDotMenu) {
       localStorage.setItem("selectedCategory", JSON.stringify(category));
@@ -21,7 +20,6 @@ const CategoryCard = ({ category }) => {
       className="w-52 bg-white rounded-2xl border border-slate-300 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200"
       onClick={handleCardClick}
     >
-      {/* Header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <h3 className="text-base font-semibold text-gray-800">
           {category.name}
@@ -31,15 +29,12 @@ const CategoryCard = ({ category }) => {
         </button>
       </div>
 
-      {/* Image Placeholder */}
       <div className="px-4 pb-0">
-        {/* <div className=" bg-gray-200 rounded-lg flex items-center justify-center relative"> */}
         <div
           className={`flex justify-center border border-blue-100  ${
             category.image ? "" : "p-2"
           }`}
         >
-          {/* <ImageIcon className="w-24 h-22" /> */}
           <img
             className={`${
               category.image
@@ -49,19 +44,13 @@ const CategoryCard = ({ category }) => {
             alt={category.name}
             src={category.image || "/insert-picture-icon.svg"}
           />
-          {/* <div className="w-6 h-6 bg-white rounded-full absolute translate-x-2 -translate-y-2 flex items-center justify-center">
-              <div className="w-3 h-3 bg-gray-300 rounded-full"></div>
-            </div> */}
-          {/* </div> */}
+         
         </div>
       </div>
 
-      {/* Footer */}
       <div className="flex items-center justify-between px-4 pt-2.5 pb-3.5">
-        {/* <div className="flex items-center space-x-2"> */}
-        {/* User Avatar */}
+      
         <div className="w-5 h-5 rounded-full overflow-hidden">
-          {/* <User className="w-3 h-3 text-orange-600" /> */}
           <img
             src="https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=100&h=100&fit=crop&crop=face"
             alt="User avatar"

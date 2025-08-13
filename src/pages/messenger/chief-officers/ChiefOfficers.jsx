@@ -6,29 +6,43 @@ const ChiefOfficers = () => {
   const [manager, setManager] = useState(null);
   const [heads, setHeads] = useState([]);
 
-  const fetchUsers = async () => {
-    try {
-      const response = await axios.get(
-        "https://prototype-production-2b67.up.railway.app/messenger/departments/users/"
-      );
-
-      const users = response.data;
-
-      const managerUser = users.find(
-        (user) => user.role?.toLowerCase() === "manager"
-      );
-
-      const headsUsers = users.filter((user) => {
-        const role = user.role?.toLowerCase();
-        return role === "head" || role === "heads";
-      });
-
-      setManager(managerUser);
-      setHeads(headsUsers);
-    } catch (error) {
-      console.error("Error fetching users:", error);
+ const fetchUsers = async () => {
+  try {
+    const token = localStorage.getItem("token")?.trim();
+    if (!token) {
+      console.error("Token topilmadi. Iltimos, login qiling.");
+      return;
     }
-  };
+
+    const response = await axios.get(
+      "https://prototype-production-2b67.up.railway.app/messenger/departments/users/",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const users = Array.isArray(response.data) ? response.data : [];
+
+    const managerUser = users.find(
+      (user) => user.role?.toLowerCase() === "manager"
+    );
+
+    const headsUsers = users.filter((user) => {
+      const role = user.role?.toLowerCase();
+      return role === "head" || role === "heads";
+    });
+
+    setManager(managerUser || null);
+    setHeads(headsUsers || []);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    if (error.response?.status === 401) {
+      console.warn("Token noto‘g‘ri yoki muddati tugagan. Qayta login qiling.");
+    }
+  }
+};
 
   useEffect(() => {
     fetchUsers();

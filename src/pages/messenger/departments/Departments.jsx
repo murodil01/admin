@@ -4,17 +4,25 @@ import React, { useState, useEffect } from "react";
 const Departments = () => {
   const [users, setUsers] = useState([]);
 
-  const fetchUsers = async (e) => {
-    e?.preventDefault();
-    try {
-      const response = await axios.get(
-        "https://prototype-production-2b67.up.railway.app/messenger/departments/"
-      );
-      setUsers(response?.data);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-    }
-  };
+ const fetchUsers = async (e) => {
+  e?.preventDefault();
+  try {
+    const token = localStorage.getItem("token");
+    const response = await axios.get(
+      "https://prototype-production-2b67.up.railway.app/messenger/departments/",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    console.log("Users fetched successfully:", response.data);
+    setUsers(response?.data || []);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+  }
+};
+
 
   useEffect(() => {
     fetchUsers();
