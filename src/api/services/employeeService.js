@@ -6,10 +6,10 @@ export const getEmployees = async () => {
     return res.data; //  bu yerda count, next, previous, results bo‘ladi
 };
 
-// export const getEmployeeById = async (id) => {
-//     const res = await api.get(endpoints.employees.getById(id));
-//     return res.data;
-// };
+export const getEmployeeById = async (id) => {
+    const res = await api.get(endpoints.employees.getById(id));
+    return res.data;
+};
 
 export const createEmployees = async (data) => {
     const res = await api.post(endpoints.employees.create, data, {
@@ -20,10 +20,10 @@ export const createEmployees = async (data) => {
     return res.data;
 };
 
-// export const updateEmployees = async (id, data) => {
-//     const res = await api.put(endpoints.employees.update(id), data);
-//     return res.data;
-// };
+export const updateEmployees = async (id, data) => {
+    const res = await api.put(endpoints.employees.update(id), data);
+    return res.data;
+};
 
 // export const deleteEmployees = async (id) => {
 //     const res = await api.delete(endpoints.employees.delete(id));

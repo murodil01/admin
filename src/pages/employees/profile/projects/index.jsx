@@ -1,53 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowLeft, ArrowRight, CalendarDays } from "lucide-react";
+import { getUserProjects } from "../../../../api/services/userProjectsService"; // backend API
 
-const projectsData = [
-  {
-    id: 1,
-    title: "Medical App (iOS native)",
-    created: "2020-09-12",
-    allTasks: 34,
-    activeTasks: 13,
-    assignees: [
-      "https://randomuser.me/api/portraits/men/1.jpg",
-      "https://randomuser.me/api/portraits/women/2.jpg",
-      "https://randomuser.me/api/portraits/men/3.jpg",
-    ],
-  },
-  {
-    id: 2,
-    title: "E-commerce Dashboard",
-    created: "2021-03-08",
-    allTasks: 22,
-    activeTasks: 6,
-    assignees: [
-      "https://randomuser.me/api/portraits/women/4.jpg",
-      "https://randomuser.me/api/portraits/men/5.jpg",
-    ],
-  },
-  {
-    id: 3,
-    title: "AI Chatbot Platform",
-    created: "2023-06-20",
-    allTasks: 48,
-    activeTasks: 20,
-    assignees: [
-      "https://randomuser.me/api/portraits/men/6.jpg",
-      "https://randomuser.me/api/portraits/women/7.jpg",
-      "https://randomuser.me/api/portraits/men/8.jpg",
-      "https://randomuser.me/api/portraits/men/9.jpg",
-    ],
-  },
-  {
-    id: 4,
-    title: "Logistics CRM Tool",
-    created: "2024-01-15",
-    allTasks: 12,
-    activeTasks: 4,
-    assignees: ["https://randomuser.me/api/portraits/women/10.jpg"],
-  },
-];
-
+// ✅ ProjectCard endi prop qabul qiladi
 const ProjectCard = ({ project }) => {
   return (
     <div className="shadow bg-white rounded-[24px] p-[24px] flex flex-col md:flex-row items-start md:items-center gap-6 w-full min-h-[150px]">
@@ -56,17 +11,14 @@ const ProjectCard = ({ project }) => {
         <div className="flex items-center gap-4">
           <img
             className="rounded-[14px] w-[48px] h-[48px] object-cover"
-            src="https://www.10wallpaper.com/wallpaper/1366x768/1703/Green_tree_alone-2017_High_Quality_Wallpaper_1366x768.jpg"
-            // src={project.image}
-            alt="Project"
+            src={project.image || "https://www.10wallpaper.com/wallpaper/1366x768/1703/Green_tree_alone-2017_High_Quality_Wallpaper_1366x768.jpg"}
+            alt={project.title}
           />
-          <h3 className="text-[#0A1629] font-bold text-[18px]">
-            Medical App (iOS native)
-          </h3>
+          <h3 className="text-[#0A1629] font-bold text-[18px]">{project.title}</h3>
         </div>
         <div className="text-[#7D8592] text-[14px] font-semibold flex items-center gap-2">
           <CalendarDays size={16} />
-          Created {new Date(project.created).toLocaleDateString()}
+          Created {new Date(project.createdAt).toLocaleDateString()}
         </div>
       </div>
 
@@ -78,33 +30,18 @@ const ProjectCard = ({ project }) => {
         <h3 className="text-[#0A1629] font-bold text-[18px]">Project Data</h3>
         <div className="flex items-center gap-5 flex-wrap">
           <div className="flex flex-col gap-1">
-            <p className="text-[#7D8592] text-[14px] font-semibold">
-              All tasks
-            </p>
-            <p>{project.allTasks}</p>
+            <p className="text-[#7D8592] text-[14px] font-semibold">All tasks</p>
+            <p className="text-center">{project.allTasks || 0}</p>
           </div>
 
           <div className="flex flex-col gap-1">
-            <p className="text-[#7D8592] text-[14px] font-semibold">
-              Active tasks
-            </p>
-            <p>{project.activeTasks}</p>
+            <p className="text-[#7D8592] text-[14px] font-semibold">Active tasks</p>
+            <p className="text-center">{project.activeTasks || 0}</p>
           </div>
 
           <div className="flex flex-col gap-1">
-            <p className="text-[#7D8592] text-[14px] font-semibold">
-              Assignees ({project.assignees.length})
-            </p>
-            <div className="flex items-center -space-x-2">
-              {project.assignees.map((src, index) => (
-                <img
-                  key={index}
-                  className="w-[28px] h-[28px] rounded-full border border-white"
-                  src={src}
-                  alt={`User ${index + 1}`}
-                />
-              ))}
-            </div>
+            <p className="text-[#7D8592] text-[14px] font-semibold">Assignees</p>
+            <p className="text-center">{project.dropped_count || 0}</p>
           </div>
         </div>
       </div>
@@ -113,10 +50,40 @@ const ProjectCard = ({ project }) => {
 };
 
 const Projects = () => {
+  const [projects, setProjects] = useState([]);
   const [page, setPage] = useState(1);
   const itemsPerPage = 2;
-  const totalPages = Math.ceil(projectsData.length / itemsPerPage);
-  const visibleProjects = projectsData.slice(
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const data = await getUserProjects();
+        console.log("Fetched projects:", data); // bu yerda array chiqadi
+
+        // data array bo‘lgani uchun to‘g‘ridan-to‘g‘ri flatMap ishlatamiz
+        const formatted = data.flatMap(user =>
+          (user.projects || []).map(p => ({
+            id: p.id,
+            title: p.name,
+            image: p.image,
+            createdAt: p.created_at,
+            allTasks: p.all_tasks,
+            activeTasks: p.active_tasks,
+            dropped_count: p.dropped_count,
+          }))
+        );
+
+        setProjects(formatted);
+      } catch (error) {
+        console.error("Error fetching projects:", error);
+      }
+    };
+
+    fetchProjects();
+  }, []);
+
+  const totalPages = Math.ceil(projects.length / itemsPerPage);
+  const visibleProjects = projects.slice(
     (page - 1) * itemsPerPage,
     page * itemsPerPage
   );
@@ -133,11 +100,10 @@ const Projects = () => {
           <span>
             {`${(page - 1) * itemsPerPage + 1}–${Math.min(
               page * itemsPerPage,
-              projectsData.length
-            )} of ${projectsData.length}`}
+              projects.length
+            )} of ${projects.length}`}
           </span>
 
-          {/* Left Arrow */}
           <button
             onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
             disabled={page === 1}
@@ -148,7 +114,6 @@ const Projects = () => {
             <ArrowLeft />
           </button>
 
-          {/* Right Arrow */}
           <button
             onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
             disabled={page === totalPages}
