@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { MoreVertical, Plus } from "lucide-react";
 import CreateCategoryModal from "../../components/m-library/CreateCategoryModal";
+import api from "../../api/base";
 
 const LibraryPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -9,7 +9,6 @@ const LibraryPage = () => {
   const [menuId, setMenuId] = useState(null);
   const [loadingDelete, setLoadingDelete] = useState(false);
   const [editCategory, setEditCategory] = useState(null);
-
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
@@ -19,16 +18,10 @@ const LibraryPage = () => {
 
   const fetchCategories = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get(
-        "https://prototype-production-2b67.up.railway.app/library/categories/",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await api.get("/library/categories/");
       setCategories(res.data);
     } catch (error) {
-      console.log("Error fetching categories:", error);
+      console.error("Error fetching categories:", error);
     }
   };
 
@@ -43,22 +36,11 @@ const LibraryPage = () => {
 
   const handleCreateCategory = async (name, imageFile) => {
     try {
-      const token = localStorage.getItem("token");
       const formData = new FormData();
       formData.append("name", name);
       formData.append("image", imageFile);
 
-      const res = await axios.post(
-        "https://prototype-production-2b67.up.railway.app/library/categories/",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
+      const res = await api.post("/library/categories/", formData);
       setCategories((prev) => [res.data, ...prev]);
       setIsModalOpen(false);
     } catch (error) {
@@ -68,22 +50,11 @@ const LibraryPage = () => {
 
   const handleEditCategory = async (id, name, imageFile) => {
     try {
-      const token = localStorage.getItem("token");
       const formData = new FormData();
       formData.append("name", name);
       if (imageFile) formData.append("image", imageFile);
 
-      const res = await axios.patch(
-        `https://prototype-production-2b67.up.railway.app/library/categories/${id}/`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
+      const res = await api.patch(`/library/categories/${id}/`, formData);
       setCategories((prev) =>
         prev.map((cat) => (cat.id === id ? res.data : cat))
       );
@@ -98,13 +69,10 @@ const LibraryPage = () => {
     if (!deleteId) return;
     setLoadingDelete(true);
     try {
-      await axios.delete(
-        `https://prototype-production-2b67.up.railway.app/library/categories/${deleteId}/`,
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
+      await api.delete(`/library/categories/${deleteId}/`);
+      setCategories((prev) =>
+        prev.filter((category) => category.id !== deleteId)
       );
-      setCategories((prev) => prev.filter((category) => category.id !== deleteId));
       setMenuId(null);
     } catch (error) {
       console.error("Error deleting category:", error);
@@ -209,11 +177,9 @@ const LibraryPage = () => {
           setEditCategory(null);
         }}
         onSave={(data) => {
-          if (editCategory) {
-            handleEditCategory(editCategory.id, data.name, data.file);
-          } else {
-            handleCreateCategory(data.name, data.file);
-          }
+          editCategory
+            ? handleEditCategory(editCategory.id, data.name, data.file)
+            : handleCreateCategory(data.name, data.file);
         }}
         initialData={editCategory}
       />

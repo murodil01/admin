@@ -1,28 +1,18 @@
-import axios from "axios";
 import React, { useState, useEffect } from "react";
+import api from "../../../api/base"; // base.js dan axios instansiyani import qilamiz
 
 const Departments = () => {
   const [users, setUsers] = useState([]);
 
- const fetchUsers = async (e) => {
-  e?.preventDefault();
-  try {
-    const token = localStorage.getItem("token");
-    const response = await axios.get(
-      "https://prototype-production-2b67.up.railway.app/messenger/departments/",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    console.log("Users fetched successfully:", response.data);
-    setUsers(response?.data || []);
-  } catch (error) {
-    console.error("Error fetching users:", error);
-  }
-};
-
+  const fetchUsers = async () => {
+    try {
+      const { data } = await api.get("/messenger/departments/");
+      console.log("Users fetched successfully:", data);
+      setUsers(data || []);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
 
   useEffect(() => {
     fetchUsers();
