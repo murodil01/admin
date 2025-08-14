@@ -44,7 +44,9 @@ export const router = createBrowserRouter([
           { path: "leads", element: <Leads /> },
           { path: "reports", element: <Reports /> },
           { path: "library", element: <Library /> },
-          { path: "library/:id", element: <CategoryDetailsPage /> },
+          { path: "library/id", element: <CategoryDetailsPage /> },
+          { path: "category/:id", element: <CategoryDetailsPage /> },
+
 
           { path: "archive", element: <Archive /> },
           { path: "activity", element: <Activity /> },

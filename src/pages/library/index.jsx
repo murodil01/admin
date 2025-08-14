@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { MoreVertical, Plus } from "lucide-react";
 import CreateCategoryModal from "../../components/m-library/CreateCategoryModal";
 import api from "../../api/base";
+import { useNavigate } from "react-router-dom";
 
 const LibraryPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -11,6 +12,12 @@ const LibraryPage = () => {
   const [editCategory, setEditCategory] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  const navigate = useNavigate();
+
+
+  const handleCardClick = (id) => {
+    navigate(`/category/${id}`);
+  };
 
   const toggleMenu = (id) => {
     setMenuId((prev) => (prev === id ? null : id));
@@ -85,6 +92,7 @@ const LibraryPage = () => {
   return (
     <main className="min-h-screen">
       <header className="max-w-7xl mx-auto mt-5 md:mt-2">
+
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 space-y-3 sm:space-y-0">
           <h1 className="text-xl sm:text-[34px] font-semibold text-black">M Library</h1>
           <button
@@ -98,10 +106,12 @@ const LibraryPage = () => {
             Add Category
           </button>
         </div>
+
         <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {categories.map((category) => (
             <div
               key={category.id}
+              onClick={() => handleCardClick(category.id)}
               className="border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 bg-white flex flex-col relative"
             >
               <div className="flex items-center justify-between mb-4" data-card-menu>
