@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import EmployeeList from './EmployeeList';
-import Activity from './Activity';
+import Activity from './activity';
 import AddEmployeeModal from './AddEmployeeModal';
 import { getEmployees, createEmployees, deleteEmployee } from '../../api/services/employeeService';
 import { message, Pagination, Modal } from 'antd';
