@@ -61,14 +61,26 @@ const endpoints = {
 
 	employees: {
 		getAll: 'employees/',
-		getById: 'employees/{id}/',
+		getById: (id) => `users/${id}/`,
 		create: 'users/',
+		update: (id) => `users/${id}/`,
 	},
 
 	activities: {
 		getAll: 'user-activities/',
 		getById: 'user-activities/{id}/',
 		create: 'users/',
+	},
+
+	controlData: {
+		getAll: 'control-data/',
+		getById: (id) => `control-data/${id}/`,
+		create: 'control-data/',
+	},
+
+	userProjects: {
+		getAll: 'user-projects/',
+		getById: (id) => `user-projects/${id}/`,
 	}
 }
 

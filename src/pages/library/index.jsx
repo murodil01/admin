@@ -1,103 +1,247 @@
-import React, { useState } from "react";
-import { Plus } from "lucide-react";
-import CategoryCard from "../../components/m-library/CategoryCard";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { MoreVertical, Plus } from "lucide-react";
 import CreateCategoryModal from "../../components/m-library/CreateCategoryModal";
 
 const LibraryPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [categories, setCategories] = useState([
-    {
-      id: "1",
-      name: "M Tech Department",
-      date: "July 30, 2025",
-      status: "active",
-    },
-    {
-      id: "2",
-      name: "M Tech Department",
-      date: "July 30, 2025",
-      status: "active",
-    },
-    {
-      id: "3",
-      name: "M Tech Department",
-      date: "July 30, 2025",
-      status: "active",
-    },
-   
-  ]);
+  const [categories, setCategories] = useState([]);
+  const [menuId, setMenuId] = useState(null);
+  const [loadingDelete, setLoadingDelete] = useState(false);
+  const [editCategory, setEditCategory] = useState(null);
 
-  const handleCreateCategory = (name, imageFile, departmentIds) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const newCategory = {
-        id: Date.now().toString(),
-        name,
-        image: reader.result, // base64 string
-        department: departmentIds, // YANGI QISM
-        date: new Date().toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }), // Dinamik sana
-        status: "active",
-      };
-      setCategories((prev) => [...prev, newCategory]);
-      setIsModalOpen(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+
+  const toggleMenu = (id) => {
+    setMenuId((prev) => (prev === id ? null : id));
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(
+        "https://prototype-production-2b67.up.railway.app/library/categories/",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setCategories(res.data);
+    } catch (error) {
+      console.log("Error fetching categories:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+    const closeOnOutside = (e) => {
+      if (!e.target.closest("[data-card-menu]")) setMenuId(null);
     };
-    reader.readAsDataURL(imageFile);
+    document.addEventListener("click", closeOnOutside);
+    return () => document.removeEventListener("click", closeOnOutside);
+  }, []);
+
+  const handleCreateCategory = async (name, imageFile) => {
+    try {
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("image", imageFile);
+
+      const res = await axios.post(
+        "https://prototype-production-2b67.up.railway.app/library/categories/",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      setCategories((prev) => [res.data, ...prev]);
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Error creating category:", error);
+    }
+  };
+
+  const handleEditCategory = async (id, name, imageFile) => {
+    try {
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("name", name);
+      if (imageFile) formData.append("image", imageFile);
+
+      const res = await axios.patch(
+        `https://prototype-production-2b67.up.railway.app/library/categories/${id}/`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      setCategories((prev) =>
+        prev.map((cat) => (cat.id === id ? res.data : cat))
+      );
+      setIsModalOpen(false);
+      setEditCategory(null);
+    } catch (error) {
+      console.error("Error editing category:", error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    setLoadingDelete(true);
+    try {
+      await axios.delete(
+        `https://prototype-production-2b67.up.railway.app/library/categories/${deleteId}/`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+      setCategories((prev) => prev.filter((category) => category.id !== deleteId));
+      setMenuId(null);
+    } catch (error) {
+      console.error("Error deleting category:", error);
+    }
+    setLoadingDelete(false);
+    setConfirmOpen(false);
+    setDeleteId(null);
   };
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <div>
-        <div className="max-w-7xl mx-auto mt-5 md:mt-2">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 space-y-3 sm:space-y-0">
-            <div>
-              <h1 className="text-xl sm:text-[34px] font-semibold text-black">
-                M Library
-              </h1>
-              {/* <nav className="flex items-center gap-3 text-xs sm:text-sm text-gray-500 mt-1">
-              <span className="text-black opacity-60 font-semibold text-[20px]">
-              M Library
-               </span>
-              <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 mx-1 text-black opacity-60" />
-              <span className="text-black font-semibold text-[20px]">
-                Recently Viewed
-              </span>
-            </nav> */}
-            </div>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-8 py-2 sm:py-3 bg-[#0061fe] text-white text-[17px] font-bold rounded-[14px] hover:bg-blue-700 transition-colors"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Category
-            </button>
-          </div>
+    <main className="min-h-screen">
+      <header className="max-w-7xl mx-auto mt-5 md:mt-2">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 space-y-3 sm:space-y-0">
+          <h1 className="text-xl sm:text-[34px] font-semibold text-black">M Library</h1>
+          <button
+            onClick={() => {
+              setEditCategory(null);
+              setIsModalOpen(true);
+            }}
+            className="inline-flex items-center justify-center px-3 py-2 sm:px-6 sm:py-3 bg-[#0061fe] text-white text-sm sm:text-base font-bold rounded-[14px] hover:bg-blue-700 transition-colors whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1" />
+            Add Category
+          </button>
         </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-7xl  mx-auto px-4 sm:px-5 lg:px-[22px] pt-[18px] pb-10 bg-white  shadow-sm border-t border-gray-200">
-        <h2 className="text-sm font-bold text-gray-700 pb-1">Category</h2>
-
-        {/* Category Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {categories.map((category) => (
-            <CategoryCard key={category.id} category={category} />
+            <div
+              key={category.id}
+              className="border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 bg-white flex flex-col relative"
+            >
+              <div className="flex items-center justify-between mb-4" data-card-menu>
+                <h2 className="text-lg font-semibold truncate">{category.name}</h2>
+                <div className="relative">
+                  <MoreVertical
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleMenu(category.id);
+                    }}
+                    className="cursor-pointer text-gray-500 hover:text-gray-700"
+                  />
+                  {menuId === category.id && (
+                    <div className="absolute top-8 right-0 bg-white border border-gray-200 shadow-lg rounded-lg z-50 w-36 overflow-hidden">
+                      <button
+                        onClick={() => {
+                          setEditCategory(category);
+                          setIsModalOpen(true);
+                          setMenuId(null);
+                        }}
+                        className="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50 text-blue-600"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDeleteId(category.id);
+                          setConfirmOpen(true);
+                        }}
+                        disabled={loadingDelete}
+                        className="block w-full px-4 py-2 text-left text-sm hover:bg-red-50 text-red-600"
+                      >
+                        {loadingDelete ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {category.image && (
+                <img
+                  src={category.image}
+                  alt={`${category.name} image`}
+                  className="border border-blue-200 rounded-xl w-full h-[150px] object-cover"
+                />
+              )}
+              <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  {category.created_by?.profile_picture && (
+                    <img
+                      src={category.created_by?.profile_picture}
+                      alt="profile"
+                      className="w-10 h-10 rounded-full object-cover border border-gray-300"
+                    />
+                  )}
+                </div>
+                <p>
+                  {new Date(category.created_at).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+            </div>
           ))}
         </div>
-      </div>
+      </header>
 
-      {/* Modal */}
       <CreateCategoryModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onCreateCategory={handleCreateCategory}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditCategory(null);
+        }}
+        onSave={(data) => {
+          if (editCategory) {
+            handleEditCategory(editCategory.id, data.name, data.file);
+          } else {
+            handleCreateCategory(data.name, data.file);
+          }
+        }}
+        initialData={editCategory}
       />
-    </div>
+
+      {confirmOpen && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
+            <h3 className="text-lg font-semibold mb-4 text-gray-800">
+              Are you sure you want to delete this category?
+            </h3>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmOpen(false)}
+                className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
   );
 };
 
