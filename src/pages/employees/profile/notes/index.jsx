@@ -110,21 +110,21 @@ const Notes = () => {
                         prev === msg.id ? null : msg.id
                       )
                     }
-                    className="p-1 rounded-full hover:bg-gray-100"
+                    className="p-1 rounded-full cursor-pointer"
                   >
                     <MoreVertical size={16} className="text-gray-500" />
                   </button>
                   {openDropdownId === msg.id && (
-                    <div className="absolute right-0 mt-1 w-[90px] bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                    <div className="absolute right-0 mt-1 w-[150px] bg-white border border-gray-300 rounded-lg shadow-lg z-10">
                       <button
                         onClick={() => startEditing(msg.id, msg.text)}
-                        className="w-full px-3 py-2 text-sm text-left text-gray-700 hover:bg-gray-100"
+                        className="w-full px-3 py-3 text-sm text-left text-gray-700 hover:bg-blue-50 hover:rounded-lg cursor-pointer hover:text-blue-500"
                       >
-                        Edit
+                        Edit message
                       </button>
                       <button
                         onClick={() => deleteMessage(msg.id)}
-                        className="w-full px-3 py-2 text-sm text-left text-red-500 hover:bg-gray-100"
+                        className="w-full px-3 py-3 text-sm text-left text-gray-700 hover:text-red-500 hover:bg-blue-50 hover:rounded-lg cursor-pointer"
                       >
                         Delete
                       </button>

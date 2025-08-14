@@ -9,46 +9,40 @@ import {
   ChevronDown,
   Paperclip,
 } from "lucide-react";
-import { useState } from "react";
 import { FaChevronDown, FaChevronUp } from "react-icons/fa";
 import Activity from "./activity";
-import { useNavigate } from "react-router-dom";
-import { useRef, useEffect } from "react";
-import {
-  getEmployees,
-  createEmployees,
-} from "../../api/services/employeeService";
-
-const itemsPerPage = 10;
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useRef, useEffect, useState } from "react";
+import { getEmployees, createEmployees } from "../../api/services/employeeService";
+import avatarImage from "../../assets/default-avatar.png"
 
 const InnerCircle = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
+  const dropdownRef = useRef(null);
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem("innerCircleTab") || "list";
   });
 
+  const [searchParams] = useSearchParams();
+  const pageNum = parseInt(searchParams.get("page_num") || "1", 10);
+  const itemsPerPage = 10;
+
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
+    email: "",
     password: "",
     password1: "",
-    email: "",
-    // status: "",
-    // level: "",
     role: "",
-    // profession: "",
-    birth_date: "",
+    department: "",
+    profession: "",
     phone_number: "",
     tg_username: "",
-    // department: "",
-    // passportSerial: "",
-    // pinfl: "",
+    level: "",
+    birth_date: "",
+    address: "",
+    avatarFile: ""
   });
-
-  // const [avatar, setAvatar] = useState(null);
-  // const [passportFile, setPassportFile] = useState(null);
-  // const [passportName, setPassportName] = useState("Upload passport");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -59,35 +53,48 @@ const InnerCircle = () => {
       return;
     }
 
-    // Boshqa zarur maydonlarni tekshirish
-    if (!formData.first_name || !formData.email) {
+    // Majburiy maydonlarni tekshirish
+    if (
+      !formData.first_name ||
+      !formData.last_name ||
+      !formData.email ||
+      !formData.password ||
+      !formData.password1
+    ) {
       alert("Majburiy maydonlarni to'ldiring!");
       return;
     }
+
     try {
-      // FormData o'rniga oddiy object yuboramiz
-      const requestData = {
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        email: formData.email,
-        password: formData.password,
-        password1: formData.password1,
-        role: formData.role,
-        birth_date: formData.birth_date,
-        phone_number: formData.phone_number,
-        tg_username: formData.tg_username,
-        department: {
-          name: "Department Name", // Bu qiymatni formdan olishingiz kerak
-          department_id: "uuid-string", // Haqiqiy department ID
-        },
-      };
+      // FormData obyektini yaratish
+      const form = new FormData();
+      form.append("first_name", formData.first_name);
+      form.append("last_name", formData.last_name);
+      form.append("email", formData.email);
+      form.append("password", formData.password);
+      form.append("password1", formData.password1);
+      form.append("role", formData.role);
+      form.append("birth_date", formData.birth_date);
+      form.append("phone_number", formData.phone_number);
+      form.append("tg_username", formData.tg_username);
+      form.append("department[name]", formData.department);
+      form.append("department[department_id]", formData.department); // id yuborish
 
-      console.log("Yuborilayotgan ma'lumot:", requestData);
+      // Agar avatar fayl tanlangan bo'lsa
+      if (avatarFile) {
+        form.append("profile_picture", avatarFile);
+      }
 
-      await createEmployees(requestData);
+      console.log("Yuborilayotgan ma'lumot (FormData):", [...form.entries()]);
+
+      // createEmployees API chaqirishi
+      await createEmployees(form); // Bu funksiya FormData bilan ishlashiga ishonch hosil qil
       setIsAddModalOpen(false);
-      // Yangi xodim qo'shilgandan so'ng ro'yxatni yangilash
-      getEmployees().then((res) => setEmployees(res.data.results || []));
+
+      // Yangi xodimlar ro'yxatini yangilash
+      getEmployees().then((res) =>
+        setEmployees(res.data.results || [])
+      );
     } catch (err) {
       console.error("Xodim qo'shishda xato:", err);
       if (err.response) {
@@ -99,6 +106,17 @@ const InnerCircle = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const [avatar, setAvatar] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);
+
+  const handleAvatarUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setAvatar(URL.createObjectURL(file)); // preview
+      setAvatarFile(file); // backendga yuborish uchun
+    }
   };
 
   const [employees, setEmployees] = useState([]);
@@ -117,11 +135,11 @@ const InnerCircle = () => {
       .finally(() => setLoading(false));
   }, []);
 
+  // Pagination uchun hisoblashlar
   const totalPages = Math.ceil(employees.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentEmployees = Array.isArray(employees || [])
-    ? employees.slice(startIndex, startIndex + itemsPerPage)
-    : [];
+  const startIndex = (pageNum - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentPageItems = employees.slice(startIndex, endIndex);
 
   const toggleDropdown = (id) => {
     setOpenDropdown(openDropdown === id ? null : id);
@@ -152,20 +170,20 @@ const InnerCircle = () => {
 
   // 3. Tashqariga bosilganda modal yopilsin
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (modalRef.current && !modalRef.current.contains(e.target)) {
-        setIsFilterModalOpen(false);
+    const handleClickOutside = (event) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target)
+      ) {
+        setOpenDropdown(null);
       }
     };
 
-    if (isFilterModalOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isFilterModalOpen]);
+  }, []);
 
   const [showAllDepartments, setShowAllDepartments] = useState(false);
 
@@ -214,7 +232,6 @@ const InnerCircle = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isAddModalOpen]);
-
   // const [avatar, setAvatar] = useState(null);
 
   // const handleAvatarUpload = (e) => {
@@ -250,22 +267,20 @@ const InnerCircle = () => {
         <div className="flex items-center bg-[#DBDBDB] xl:p-[3px] rounded-4xl w-full m-auto md:w-[250px] xl:w-[350px]">
           <button
             onClick={() => handleTabClick("list")}
-            className={`py-[5px] xl:py-[9px] rounded-4xl w-1/2 text-[16px] font-bold transition-all duration-200 ${
-              activeTab === "list"
+            className={`py-[5px] xl:py-[9px] rounded-4xl w-1/2 text-[16px] font-bold transition-all duration-200 ${activeTab === "list"
                 ? "bg-[#0061fe] text-white"
                 : "bg-[#DBDBDB] text-[#1F2937]"
-            }`}
+              }`}
           >
             List
           </button>
 
           <button
             onClick={() => handleTabClick("activity")}
-            className={`py-[5px] xl:py-[9px] rounded-4xl w-1/2 text-[16px] md:text-[14px] lg:text-[16px] font-bold transition-all duration-200 ${
-              activeTab === "activity"
+            className={`py-[5px] xl:py-[9px] rounded-4xl w-1/2 text-[16px] md:text-[14px] lg:text-[16px] font-bold transition-all duration-200 ${activeTab === "activity"
                 ? "bg-[#0061fe] text-white"
                 : "bg-[#DBDBDB] text-[#1F2937]"
-            }`}
+              }`}
           >
             Activity
           </button>
@@ -289,190 +304,203 @@ const InnerCircle = () => {
       </div>
 
       {activeTab === "list" && (
-        <>
-          <div className="space-y-4">
-            {currentEmployees.map((emp) => (
-              <div
-                key={emp.id}
-                className="bg-white rounded-3xl lg:rounded-3xl shadow p-4 flex flex-col gap-4"
-              >
-                {/* Desktop Layout */}
-                {/* <div
-                  className={`hidden lg:grid items-center transition-all duration-300 ${
-                    collapsed
-                      ? "grid-cols-[1fr_1fr_1fr_0.5fr_0.8fr_40px] gap-10"
-                      : "grid-cols-[270px_290px_150px_100px_120px_40px] gap-10"
-                  }`}
-                > */}
-                <div
-                  className={`hidden lg:grid grid-cols-[2fr_1.8fr_1fr_1fr_0.5fr_0.2fr] items-center transition-all duration-300 rounded-2xl`}
-                >
-                  <div className="flex items-center gap-4 lg:gap-2">
-                    <img
-                      src={emp.profile_picture}
-                      alt={emp.name}
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                    <div>
-                      <p className="text-[#1F2937] font-semibold text-base truncate max-w-[180px]">
-                        {emp.first_name} {emp.last_name}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <div className="text-gray-500 text-sm truncate">
-                          {emp.role}
-                        </div>
-                        <div
-                          className={`mt-1 inline-block px-3 py-[3px] rounded-md text-xs font-medium border ${
-                            emp.positionLevel === "Junior"
-                              ? "border-blue-500 text-blue-600"
-                              : emp.positionLevel === "Middle"
-                              ? "border-yellow-500 text-yellow-600"
-                              : emp.positionLevel === "Senior"
-                              ? "border-green-500 text-green-600"
-                              : "border-gray-300 text-gray-600"
-                          }`}
-                        >
-                          {emp.level}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+        <div className="bg-gray-50 rounded-2xl shadow p-4">
+          {/* Desktop Table */}
+          <div className="overflow-x-auto">
+            <div className="w-full">
+              {/* Header - faqat lg dan katta ekranlarda */}
+              <div className="hidden lg:grid grid-cols-17 text-gray-500 text-md font-bold py-3 px-4 border-b border-b-gray-200 mb-7 pb-5">
+                <div className="col-span-5">Employees</div>
+                <div className="col-span-3 text-center">Department</div>
+                <div className="col-span-4 text-center">Phone number</div>
+                <div className="col-span-2 text-center">Projects</div>
+                <div className="col-span-2 text-center">Status</div>
+                <div></div>
+              </div>
 
-                  <div className="text-[#1F2937] font-medium truncate flex flex-col text-center md:text-[13px] xl:text-base">
-                    <span className="text-gray-500 text-sm truncate">
-                      Phone number
-                    </span>
-                    {emp.phone_number}
-                  </div>
-                  <div className="text-[#1F2937] font-medium truncate flex flex-col text-center md:text-[13px] xl:text-base">
-                    <span className="text-gray-500 text-sm truncate">
-                      Department
-                    </span>
-                    {emp.department}
-                  </div>
-                  <div className="text-[#1F2937] font-medium truncate flex flex-col text-center md:text-[13px] xl:text-base">
-                    <span className="text-gray-500 text-sm truncate">
-                      Projects
-                    </span>
-                    {emp.project_count}
-                  </div>
-                  <div className="text-[#1F2937] font-medium truncate flex flex-col text-center md:text-[13px] xl:text-base">
-                    <span className="text-gray-500 text-sm truncate">
-                      Status
-                    </span>
-                    <span
-                      className={`inline-block py-[3px] rounded-lg text-xs font-medium border ${
-                        emp.status === "Free"
-                          ? "border-green-400 text-green-600"
-                          : "border-yellow-400 text-yellow-600"
-                      }`}
-                    >
-                      {emp.status}
-                    </span>
-                  </div>
-
-                  <div className="relative flex justify-end">
-                    <button onClick={() => toggleDropdown(emp.id)}>
-                      <MoreVertical size={20} className="text-[#1F2937]" />
-                    </button>
-                    {openDropdown === emp.id && (
-                      <div className="absolute z-10 top-full mt-2 right-0 w-36 bg-white border-none rounded shadow">
-                        <button className="w-full text-left px-4 py-2 hover:bg-gray-100">
-                          Edit
-                        </button>
-                        <button className="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-500">
-                          Delete
-                        </button>
-                        <button
-                          onClick={() => navigate(`/profile/${emp.id}`)}
-                          className="w-full text-left px-4 py-2 hover:bg-gray-100 text-blue-500"
-                        >
-                          Details
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Mobile Layout */}
-                <div
-                  className="flex flex-col lg:hidden gap-3 cursor-pointer"
-                  onClick={() => toggleDropdown(emp.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+              {/* Rows */}
+              <div className="space-y-3 mt-2">
+                {currentPageItems.map((emp) => (
+                  <div
+                    key={emp.id}
+                    className="bg-white border border-gray-200 rounded-lg shadow hover:shadow-md transition p-4 grid grid-cols-1 gap-4 lg:grid-cols-17 lg:items-center"
+                  >
+                    {/* Employee info */}
+                    <div className="flex items-center gap-3 col-span-5">
                       <img
                         src={emp.profile_picture}
                         alt={emp.name}
-                        className="w-14 h-14 rounded-full object-cover"
+                        className="w-12 h-12 rounded-full object-cover"
                       />
                       <div>
-                        <p className="text-[#1F2937] font-semibold text-base">
+                        <p className="text-[#1F2937] font-semibold truncate max-w-[180px]">
                           {emp.first_name} {emp.last_name}
                         </p>
-                        <p className="text-gray-500 text-sm">{emp.role}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-500 text-sm font-medium truncate">{emp.role}</span>
+                          <span
+                            className={`px-3 py-[3px] rounded-md text-xs font-medium border capitalize border-gray-300 text-gray-600 bg-gray-100`}
+                          >
+                            {emp.level}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    {/* Faqat vizual icon uchun */}
-                    <div>
-                      {openDropdown === emp.id ? (
-                        <FaChevronUp className="text-[#1F2937]" />
-                      ) : (
-                        <FaChevronDown className="text-[#1F2937]" />
+
+                    {/* Department */}
+                    <div className="lg:col-span-3 text-center">
+                      <span className="lg:hidden font-medium text-gray-600">Department: </span>
+                      {emp.department}
+                    </div>
+
+                    {/* Phone */}
+                    <div className="lg:col-span-4 text-center text-gray-600">
+                      {emp.phone_number}
+                    </div>
+
+                    {/* Projects */}
+                    <div className="lg:col-span-2 text-center text-gray-600">
+                      {emp.project_count}
+                    </div>
+
+                    {/* Status */}
+                    <div className="lg:col-span-2 flex justify-center">
+                      <span
+                        className={`flex px-2 w-[84px] py-[6px] rounded-lg text-xs font-medium capitalize items-center gap-1 justify-center
+                              ${emp.status === "free"
+                            ? "text-green-600 bg-green-100"
+                            : emp.status === "overload"
+                              ? "text-red-600 bg-red-100"
+                              : emp.status === "working"
+                                ? "text-blue-600 bg-blue-100"
+                                : emp.status === "sick"
+                                  ? "text-yellow-600 bg-yellow-100"
+                                  : "text-gray-600 bg-gray-200"
+                          }`}
+
+                      >
+                        <div
+                          className={`w-[5px] h-[5px] rounded-full
+                            ${emp.status === "free"
+                              ? "bg-green-500"
+                              : emp.status === "overload"
+                                ? "bg-red-500"
+                                : emp.status === "working"
+                                  ? "bg-blue-500"
+                                  : emp.status === "sick"
+                                    ? "bg-yellow-500"
+                                    : "bg-gray-400"
+                            }`}
+                        ></div>
+                        <span className="ml-2 capitalize">{emp.status}</span>
+
+                      </span>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="text-right relative" ref={dropdownRef}>
+                      <button
+                        className="cursor-pointer"
+                        onClick={() => toggleDropdown(emp.id)}>
+                        <MoreVertical size={20} className="text-[#1F2937]" />
+                      </button>
+                      {openDropdown === emp.id && (
+                        <div className="absolute z-10 mt-2 right-0 w-40 bg-white rounded-lg shadow border border-gray-300">
+                          <button
+                            className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-500 cursor-pointer">
+                            Edit profile
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/profile/${emp.id}`)}
+                            className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-yellow-500 cursor-pointer"
+                          >
+                            Details
+                          </button>
+                          <button className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-green-500 cursor-pointer">
+                            Edit status
+                          </button>
+                          <button
+                            className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-red-500 cursor-pointer"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
+                ))}
+              </div>
+            </div>
+          </div>
 
-                  {openDropdown === emp.id && (
-                    <div className="grid grid-cols-2 gap-y-5 gap-x-14 text-sm px-2 border-t border-gray-200 pt-2">
-                      <div>
-                        <p className="text-gray-400">Phone number:</p>
-                        <p className="text-[#1F2937] font-medium">
-                          {emp.phone_number}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-gray-400">Projects</p>
-                        <p className="text-[#1F2937] font-medium">
-                          {emp.project_count}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-gray-400">Department</p>
-                        <p className="text-[#1F2937] font-medium mt-[6px]">
-                          {emp.department}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-gray-400">Status</p>
-                        <span
-                          className={`inline-block mt-1 text-xs font-medium px-4 py-[3px] rounded-lg border ${
-                            emp.status === "Free"
-                              ? "border-green-400 text-green-600"
-                              : "border-yellow-400 text-yellow-600"
-                          }`}
-                        >
-                          {emp.status}
-                        </span>
-                      </div>
-
-                      <div className="col-span-2 mt-3">
-                        <button
-                          className="bg-[#0061fe] text-white px-10 py-2 rounded-2xl text-[16px] text-sm font-bold block m-auto"
-                          onClick={(e) => {
-                            e.stopPropagation(); // dropdown yopilib ketmasligi uchun
-                            navigate(`/profile/${emp.id}`);
-                          }}
-                        >
-                          More
-                        </button>
-                      </div>
+          {/* Mobile Cards */}
+          <div className="lg:hidden flex flex-col gap-3">
+            {currentPageItems.map((emp) => (
+              <div
+                key={emp.id}
+                className="bg-white rounded-xl shadow p-4 cursor-pointer"
+                onClick={() => toggleDropdown(emp.id)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <img
+                      src={emp.profile_picture}
+                      alt={emp.name}
+                      className="w-14 h-14 rounded-full object-cover"
+                    />
+                    <div>
+                      <p className="text-[#1F2937] font-semibold">
+                        {emp.first_name} {emp.last_name}
+                      </p>
+                      <p className="text-gray-500 text-sm">{emp.role}</p>
                     </div>
+                  </div>
+                  {openDropdown === emp.id ? (
+                    <FaChevronUp className="text-[#1F2937]" />
+                  ) : (
+                    <FaChevronDown className="text-[#1F2937]" />
                   )}
                 </div>
+
+                {openDropdown === emp.id && (
+                  <div className="grid grid-cols-2 gap-y-3 gap-x-6 mt-3 text-sm">
+                    <div>
+                      <p className="text-gray-400">Phone</p>
+                      <p className="text-[#1F2937] font-medium">{emp.phone_number}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400">Projects</p>
+                      <p className="text-[#1F2937] font-medium">{emp.project_count}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400">Department</p>
+                      <p className="text-[#1F2937] font-medium">{emp.department}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-400">Status</p>
+                      <span
+                        className={`inline-block px-3 py-[3px] rounded-lg text-xs font-medium border ${emp.status === "Free"
+                            ? "border-green-400 text-green-600"
+                            : "border-yellow-400 text-yellow-600"
+                          }`}
+                      >
+                        {emp.status}
+                      </span>
+                    </div>
+                    <div className="col-span-2">
+                      <button
+                        className="bg-[#0061fe] text-white px-6 py-2 rounded-2xl font-bold block m-auto"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/profile/${emp.id}`);
+                        }}
+                      >
+                        More
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -480,42 +508,37 @@ const InnerCircle = () => {
           {/* Pagination */}
           <div className="mt-6 flex justify-center md:justify-end">
             <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-2xl text-sm text-[#1F2937] shadow-sm">
-              <span>
-                {startIndex + 1}–
-                {Math.min(startIndex + itemsPerPage, employees.length)} of{" "}
-                {employees.length}
-              </span>
-
+              {Array.from({ length: totalPages }, (_, index) => (
+                <button
+                  key={index + 1}
+                  onClick={() => navigate(`?page_num=${index + 1}`)}
+                  className={`px-3 py-1 rounded ${pageNum === index + 1 ? "bg-blue-500 text-white" : "hover:bg-gray-200"
+                    }`}
+                >
+                  {index + 1}
+                </button>
+              ))}
               <button
-                onClick={() =>
-                  currentPage > 1 && setCurrentPage(currentPage - 1)
-                }
-                disabled={currentPage === 1}
-                className={`px-2 py-1 rounded-full ${
-                  currentPage === 1
-                    ? "text-gray-400 cursor-not-allowed"
-                    : "hover:bg-gray-200"
-                }`}
+                onClick={() => pageNum > 1 && navigate(`?page_num=${pageNum - 1}`)}
+                disabled={pageNum === 1}
+                className={`px-2 py-1 rounded-full ${pageNum === 1 ? "text-gray-400 cursor-not-allowed" : "hover:bg-gray-200"
+                  }`}
               >
                 <ArrowLeft />
               </button>
-
               <button
-                onClick={() =>
-                  currentPage < totalPages && setCurrentPage(currentPage + 1)
-                }
-                disabled={currentPage === totalPages}
-                className={`px-2 py-1 rounded-full ${
-                  currentPage === totalPages
+                onClick={() => pageNum < totalPages && navigate(`?page_num=${pageNum + 1}`)}
+                disabled={pageNum === totalPages}
+                className={`px-2 py-1 rounded-full ${pageNum === totalPages
                     ? "text-gray-400 cursor-not-allowed"
                     : "hover:bg-gray-200"
-                }`}
+                  }`}
               >
                 <ArrowRight />
               </button>
             </div>
           </div>
-        </>
+        </div>
       )}
 
       {activeTab === "activity" && <Activity />}
@@ -656,7 +679,9 @@ const InnerCircle = () => {
             </div>
 
             {/* Form */}
-            <form className="flex  flex-col lg:flex-row gap-[50px]">
+            <form
+              onSubmit={handleSubmit}
+              className="flex  flex-col lg:flex-row gap-[50px]">
               {/* LEFT SIDE */}
               <div className="flex-1 space-y-[19px] max-w-[464px] w-full">
                 <div className="flex gap-4">
@@ -736,33 +761,45 @@ const InnerCircle = () => {
                   />
                 </div>
 
-                {/* <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Role
-                  </label>
-                  <select className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1">
-                    <option>Select role</option>
+                <div>
+                  <select
+                    name="role"
+                    value={formData.role}
+                    onChange={handleChange}
+                    className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
+                  >
+                    <option value="">Select role to this employee</option>
+                    <option value="founder">Founder</option>
+                    <option value="manager">Manager</option>
+                    <option value="heads">Heads</option>
+                    <option value="employee">Employee</option>
                   </select>
-                </div> */}
+                </div>
 
-                {/* <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Department
-                  </label>
-                  <select className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1">
-                    <option>Select department</option>
+                <div>
+                  <select
+                    name="department"
+                    value={formData.department}
+                    onChange={handleChange}
+                    className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
+                  >
+                    <option value="">Select department to this employee</option>
+                    <option value="tech">M Tech Department</option>
+                    <option value="sales">M Sales Department</option>
+                    <option value="marketing">Marketing Department</option>
                   </select>
-                </div> */}
+
+                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Role
+                    Profession
                   </label>
                   <input
                     type="text"
-                    name="role"
+                    name="profession"
                     className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
-                    value={formData.role}
+                    value={formData.profession}
                     onChange={handleChange}
                   />
                 </div>
@@ -799,9 +836,9 @@ const InnerCircle = () => {
               {/* RIGHT SIDE */}
               <div className="flex-1 space-y-5 max-w-[320px] w-full">
                 {/* Avatar */}
-                {/* <div className="flex flex-col items-center justify-center border border-gray-300 rounded-[24px] p-6 h-[230px]"> */}
+                <div className="flex flex-col items-center justify-center border border-gray-300 rounded-[24px] p-6 h-[300px]">
                 {/* Avatar Image Preview */}
-                {/* <div className="w-28 h-28 bg-[#DBDBDB] rounded-full overflow-hidden flex justify-center items-center">
+                <div className="w-[180px] h-[180px] bg-[#DBDBDB] rounded-full overflow-hidden flex justify-center items-center">
                     {avatar ? (
                       <img
                         src={avatar}
@@ -809,14 +846,14 @@ const InnerCircle = () => {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="text-3xl text-gray-400">👤</span>
+                      <img src={avatarImage} alt="" />
                     )}
-                  </div> */}
+                  </div>
 
                 {/* Upload Button */}
-                {/* <label
+                <label
                     htmlFor="avatarUpload"
-                    className="cursor-pointer w-full mt-3 text-[18px] font-bold flex items-center gap-8 justify-between"
+                    className="cursor-pointer w-full mt-7 text-[18px] font-bold flex items-center gap-8 justify-between"
                   >
                     Upload Avatar
                     <div className="w-[48px] h-[48px] bg-[#DBDBDB] rounded-[14px] text-[#1F2937] justify-center flex items-center">
@@ -830,31 +867,7 @@ const InnerCircle = () => {
                     className="hidden"
                     onChange={handleAvatarUpload}
                   />
-                </div> */}
-
-                {/* Passport */}
-                {/* <div>
-                  <label
-                    htmlFor="passportUpload"
-                    className="cursor-pointer mt-3 w-full h-[68px] border border-[#CED5E0] rounded-[24px] px-7 py-2 text-[18px] font-bold flex items-center justify-between"
-                  >
-                    {passportName.length > 25
-                      ? `${passportName.slice(0, 22)}...`
-                      : passportName}
-
-                    <div className="w-[48px] h-[48px] bg-[#DBDBDB] rounded-[14px] text-[#1F2937] justify-center flex items-center">
-                      <Paperclip size={24} />
-                    </div>
-                  </label>
-
-                  <input
-                    type="file"
-                    id="passportUpload"
-                    accept=".pdf,image/*"
-                    className="hidden"
-                    onChange={handlePassportUpload}
-                  />
-                </div> */}
+                </div>
 
                 {/* Date of Birth */}
                 <div>
@@ -872,38 +885,33 @@ const InnerCircle = () => {
                 </div>
 
                 {/* Level */}
-                {/* <div>
+                <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Level
                   </label>
                   <select className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1">
                     <option>Select level</option>
+                    <option value="junior">junior</option>
+                    <option value="middle">middle</option>
+                    <option value="senior">senior</option>
+                    <option value="none">none</option>
                   </select>
-                </div> */}
+                </div>
 
-                {/* Passport Serial Number */}
-                {/* <div>
+                {/* Address */}
+                <div>
                   <label className="block text-sm font-medium text-gray-700">
-                    Passport Serial Number
+                    Address
                   </label>
                   <input
                     type="text"
-                    placeholder="AD1234567"
+                    name="address"
                     className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
+                    value={formData.address}
+                    onChange={handleChange}
+                    placeholder="Enter your full address"
                   />
-                </div> */}
-
-                {/* PINFL */}
-                {/* <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    PINFL
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="12345678901234"
-                    className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
-                  />
-                </div> */}
+                </div>
               </div>
             </form>
 
@@ -911,7 +919,7 @@ const InnerCircle = () => {
             <div className="pt-6 flex justify-end">
               <button
                 type="submit"
-                className="bg-[#1F2937] hover:bg-[#111827] text-white px-[40px] py-[13px] rounded-[14px] cursor-pointer"
+                className="bg-[#0061FE] hover:bg-[#111827] text-white px-[40px] py-[13px] rounded-[14px] cursor-pointer shadow-md shadow-blue-300"
                 onClick={handleSubmit}
               >
                 Save Employee

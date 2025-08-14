@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { FaFire } from "react-icons/fa";
 import { FiPlus, FiTrash, FiEdit } from "react-icons/fi";
 import { motion } from "framer-motion";
@@ -462,8 +463,10 @@ const Card = ({
 
         {/* Title */}
         <button
+
           className="text-sm font-semibold text-gray-900 mb-3 cursor-pointer"
           onClick={openViewModal}
+
         >
           {title}
         </button>
@@ -679,17 +682,17 @@ const Card = ({
         <div className="flex items-center justify-between text-xs text-gray-500">
           {/* Deadline */}
           <div className="flex items-center gap-1 bg-gray-100 rounded p-1">
-            <img src={clock} alt="" />
+            <img src={clock} alt="Deadline" />
             <span>{time || "No due date"}</span>
           </div>
 
           {description && (
             <div>
-              <img src={descriptionIcon} alt="" />
+              <img src={descriptionIcon} alt="Description Icon" />
             </div>
           )}
           <div>
-            <img src={comment} alt="" />
+            <img src={comment} alt="Comment Icon" />
           </div>
 
           {/* Right Side: Avatar + Checklist */}
@@ -775,23 +778,55 @@ const cancelDelete = () => {
 const AddCard = ({ column, setCards }) => {
   const [text, setText] = useState("");
   const [adding, setAdding] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { projectId } = useParams();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault();
     if (!text.trim()) return;
 
     const newCard = {
+      name: text.trim(),
       column,
-      title: text.trim(),
-      id: Math.random().toString(),
-      time: "",
-      assignee: null,
+      // title: text.trim(),
+      tasks_type: column,
+      // id: Math.random().toString(),
+      // time: "",
+      // assignee: null,
+      description: "", // default qiymat
+      project: projectId, // loyiha ID sini dynamic qilib olish kerak
     };
+    setLoading(true);
+    try {
+      // 1. Backendga yuborish
+      const response = await createTask(newCard);
+      const createdTask = response.data;
 
-    setCards((prev) => [...prev, newCard]);
+      // 2. UI ga yangi card qo'shish
+      setCards((prev) => [
+        ...prev,
+        {
+          id: createdTask.id,
+          title: createdTask.name,
+          column: createdTask.tasks_type,
+          time: createdTask.deadline || "",
+          assignee: createdTask.assigned ? { 
+            name: createdTask.assigned[0], 
+            avatar: "bg-blue-500" 
+          } : null,
+        },
+      ]);
+    // setCards((prev) => [...prev, newCard]);
     setText("");
     setAdding(false);
-  };
+    message.success("Task created successfully!");
+  } catch (error) {
+    console.error("Failed to create task:", error);
+    message.error(error.response?.data?.message || "Failed to create task");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return adding ? (
     <motion.form layout onSubmit={handleSubmit}>
@@ -801,21 +836,30 @@ const AddCard = ({ column, setCards }) => {
         autoFocus
         placeholder="Add new task..."
         className="w-full rounded-lg border border-violet-400 bg-white p-3 text-sm text-gray-700 placeholder-violet-300 focus:outline-0"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleSubmit(e);
+          }
+        }}
+        disabled={loading}
       />
       <div className="mt-1.5 flex items-center justify-end gap-1.5">
         <button
           type="button"
           onClick={() => setAdding(false)}
           className="px-3 py-1.5 text-xs text-neutral-600 font-bold hover:text-neutral-500"
+          disabled={loading}
         >
           Close
         </button>
         <button
           type="submit"
           className="flex items-center gap-1.5 rounded-lg bg-neutral-50 font-bold px-3 py-1.5 text-xs text-neutral-95"
+          disabled={loading}
         >
-          <span>Add</span>
-          <FiPlus />
+           {loading ? "Creating..." : "Add"}
+          {!loading && <FiPlus />}
         </button>
       </div>
     </motion.form>

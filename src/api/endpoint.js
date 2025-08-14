@@ -4,12 +4,14 @@ const endpoints = {
 		register: '/auth/register',
 		me: '/auth/me',
 	},
+
 	users: {
 		getAll: '/users',
-		getById: id => `/users/${id}`,
-		update: id => `/users/${id}`,
-		delete: id => `/users/${id}`,
+		getById: id => `/users/${id}/`,
+		update: id => `/users/${id}/`,
+		delete: id => `/users/${id}/`,
 	},
+
 	tasks: {
 		getAll: 'project/tasks/',
 		create: 'project/tasks/',
@@ -29,38 +31,43 @@ const endpoints = {
     },
 
 	departments: {
-		getAll: 'department/departments',
-		getById: id => `department/departments/${id}`,
+		getAll: 'department/departments/',
+		getById: id => `department/departments/${id}/`,
 	},
 
-
 	boards: {
-		getAll: 'board/list',
-		create: 'board/list',
-		getById: id => `board/board/${id}`,
-		update: id => `board/board/${id}`,
-		delete: id => `board/board/${id}`,
+		getAll: 'board/list/',
+		create: 'board/list/',
+		getById: id => `board/board/${id}/`,
+		update: id => `board/board/${id}/`,
+		delete: id => `board/board/${id}/`,
 	},
 
 	group: {
-		getAll: 'board/groups',
-		create: 'board/groups',
-		getById: id => `board/groups/${id}`,
-		update: id => `board/groups/${id}`,
-		delete: id => `board/groups/${id}`,
+		getAll: 'board/groups/',
+		create: 'board/groups/',
+		getById: id => `board/groups/${id}/`,
+		update: id => `board/groups/${id}/`,
+		delete: id => `board/groups/${id}/`,
 	},
 
 	leads: {
-		getAll: 'board/leads',
-		create: 'board/leads',
-		getById: id => `board/leads/${id}`,
-		update: id => `board/leads/${id}`,
-		delete: id => `board/leads/${id}`,
+		getAll: 'board/leads/',
+		create: 'board/leads/',
+		getById: id => `board/leads/${id}/`,
+		update: id => `board/leads/${id}/`,
+		delete: id => `board/leads/${id}/`,
 	},
 
 	employees: {
 		getAll: 'employees/',
 		getById: 'employees/{id}/',
+		create: 'users/',
+	},
+
+	activities: {
+		getAll: 'user-activities/',
+		getById: 'user-activities/{id}/',
 		create: 'users/',
 	}
 }
