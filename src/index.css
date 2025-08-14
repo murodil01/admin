@@ -299,3 +299,28 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
   }
 }
+
+/* dropdown menyusi uchun */
+.dropdown-menu {
+    position: absolute;
+    right: 0;
+    z-index: 10;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    background: #f9fafb;
+}
