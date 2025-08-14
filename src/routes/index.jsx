@@ -22,9 +22,6 @@ import MainProfile from "../pages/main-profile";
 import TaskDetails from "../pages/tasks/TaskDetails";
 import Notification from "../pages/notification"
 import Customers from "../pages/customers";
-import AllLeads from "../pages/leads/leads-detail/AllLeads";
-import NewLead from "../pages/leads/leads-detail/NewLead";
-import LeadReports from "../pages/leads/leads-detail/LeadReports";
 
 export const router = createBrowserRouter([
   {
