@@ -29,9 +29,11 @@ import {
   Checkbox,
   message,
   Spin,
+  Dropdown,
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
 import { updateTaskType,deleteTask,getTaskById } from "../../api/services/taskService";
+import { MoreVertical } from "lucide-react";
 
 
 const NotionKanban = ({ cards, setCards }) => {
@@ -340,6 +342,7 @@ const Column = ({
             handleDragStart={handleDragStart}
             onEdit={onEdit}
             image={c.image}
+            setCards={setCards} // yangi prop qo'shildi
           />
         ))}
         <DropIndicator beforeId="-1" column={column} />
@@ -358,6 +361,7 @@ const Card = ({
   handleDragStart,
   onEdit,
   image,
+  setCards //yangi props
 }) => {
   const [hovered, setHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -388,6 +392,30 @@ const Card = ({
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [imageUrl, setImageUrl] = useState(null);
+
+  const handleMoveToColumn = async (newColumn) => {
+    try {
+      await updateTaskType(id, newColumn);
+      message.success(`Task moved to ${newColumn}`);
+      // Local state ni yangilash
+      onEdit({ id, title, time, description, column: newColumn });
+    } catch (error) {
+      message.error("Failed to move task");
+      console.error("Move error:", error);
+    }
+  };
+  
+  const handleDelete = async () => {
+    try {
+      await deleteTask(id);
+      message.success("Task deleted successfully");
+      // Local state dan o'chirish
+      setCards(prev => prev.filter(card => card.id !== id));
+    } catch (error) {
+      message.error("Failed to delete task");
+      console.error("Delete error:", error);
+    }
+  };
 
    useEffect(() => {
      if (!image) return;
@@ -437,18 +465,60 @@ const Card = ({
         onMouseLeave={() => setHovered(false)}
         className="cursor-grab rounded-lg bg-white p-3 shadow-sm active:cursor-grabbing border border-gray-100 hover:shadow-md transition relative"
       >
-        {/* Edit Icon */}
-        {hovered && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit({ id, title, time, description, column });
-            }}
-            className="absolute top-2 right-2 p-1 bg-gray-100 rounded hover:bg-gray-200 cursor-pointer"
-          >
-            <FiEdit className="text-gray-600" />
-          </button>
-        )}
+    
+    
+    {/* New 3 point button */}
+    <div className="absolute top-2 right-1">
+      <Dropdown 
+        menu={{
+          items: [
+            {
+              key: 'edit',
+              label: 'Edit',
+              onClick: (e) => {
+                e.domEvent.stopPropagation();
+                onEdit({ id, title, time, description, column });
+              }
+            },
+            {
+              key: 'detail',
+              label: 'Detail',
+              onClick: (e) => {
+                e.domEvent.stopPropagation();
+                openViewModal();
+              }
+            },
+            {
+              key: 'move_to',
+              label: 'Move to',
+              children: taskColumns.map(col => ({
+                key: col.id,
+                label: col.title,
+                onClick: () => handleMoveToColumn(col.id)
+              }))
+            },
+            {
+              key: 'delete',
+              label: 'Delete',
+              onClick: (e) => {
+                e.domEvent.stopPropagation();
+                handleDelete();
+              }
+            }
+          ]
+        }}
+        trigger={['click']}
+      >
+        <button 
+          onClick={(e) => e.stopPropagation()}
+          className="p-1 rounded hover:bg-gray-200 cursor-pointer"
+        >
+         <MoreVertical className="size-4"/>
+        </button>
+      </Dropdown>
+    </div>
+  
+
 
         {/* Agar image mavjud bo'lsa */}
        {imageUrl && (
