@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import api from "../../api/base";
 import DepartmentCards from "./departments/Departments";
 import ChiefOfficers from "./chief-officers/ChiefOfficers";
 import Logo from "../../assets/mbc.jpg";
@@ -13,13 +13,10 @@ const AddMessageModal = ({ onClose }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post(
-        "https://prototype-production-2b67.up.railway.app/messenger/sos/",
-        {
-          name: reason,
-          body: description,
-        }
-      );
+      await api.post("/messenger/sos/", {
+        name: reason,
+        body: description,
+      });
       alert("SOS xabari muvaffaqiyatli yuborildi!");
       setReason("");
       setDescription("");
@@ -31,6 +28,8 @@ const AddMessageModal = ({ onClose }) => {
       setLoading(false);
     }
   };
+
+
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm p-4 sm:p-6">
       <div className="flex flex-col items-center gap-4 sm:gap-6 p-4 sm:p-6 md:p-8 bg-white rounded-2xl shadow-lg w-full max-w-md">
@@ -86,18 +85,22 @@ const AddMessageModal = ({ onClose }) => {
     </div>
   );
 };
+
 const Messenger = () => {
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem("departments") || "list");
   const [showModal, setShowModal] = useState(false);
+
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     localStorage.setItem("departments", tab);
   };
+
   return (
     <div className="flex flex-col gap-6 py-6 sm:py-8">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">Messenger</h2>
       </div>
+
       <div className="flex flex-col justify-center gap-6">
         <div className="flex flex-col items-center border rounded-2xl border-gray-200 bg-white gap-4 sm:gap-6 p-4 sm:p-6 shadow-sm w-full max-w-md mx-auto">
           <div className="w-full">
@@ -106,7 +109,7 @@ const Messenger = () => {
           <div className="flex flex-col gap-3 sm:gap-4 items-center text-center px-2 sm:px-4">
             <h5 className="text-xl sm:text-2xl font-bold text-gray-800">M Company Info</h5>
             <blockquote className="italic text-xs sm:text-sm md:text-base text-gray-600 leading-relaxed line-clamp-4">
-              Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s. Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.
+              Lorem Ipsum is simply dummy text of the printing and typesetting industry...
             </blockquote>
             <a
               href="https://t.me/frontend_25"
@@ -118,6 +121,7 @@ const Messenger = () => {
             </a>
           </div>
         </div>
+
         <div className="flex flex-col items-center border rounded-2xl border-gray-200 bg-white gap-4 sm:gap-6 p-4 sm:p-6 shadow-sm w-full max-w-md mx-auto">
           <div className="flex-shrink-0">
             <img
@@ -134,7 +138,7 @@ const Messenger = () => {
               <p className="text-sm sm:text-base text-gray-500">Founder</p>
             </span>
             <p className="text-xs sm:text-sm md:text-base text-gray-600 leading-relaxed line-clamp-4">
-              Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s. Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s.
+              Lorem Ipsum is simply dummy text of the printing and typesetting industry...
             </p>
             <button
               onClick={() => setShowModal(true)}
@@ -146,27 +150,27 @@ const Messenger = () => {
         </div>
       </div>
 
-     <div className="bg-gray-200 rounded-2xl  sm:w-fit max-w-lg mx-auto flex flex-wrap justify-center gap-2 mt-4 sm:mt-6 md:mt-8">
-  <button
-    onClick={() => handleTabChange("list")}
-    className={`rounded-full text-xs sm:text-sm md:text-base font-medium transition px-4 sm:px-6 md:px-8 py-2
-      ${activeTab === "list" ? "bg-blue-600 text-white shadow-md" : "text-gray-700 hover:text-blue-600"}`}
-  >
-    Departments
-  </button>
-  <button
-    onClick={() => handleTabChange("chief")}
-    className={`rounded-full text-xs sm:text-sm md:text-base font-medium transition px-4 sm:px-6 md:px-8 py-2
-      ${activeTab === "chief" ? "bg-blue-600 text-white shadow-md" : "text-gray-700 hover:text-blue-600"}`}
-  >
-    Chief Officers
-  </button>
-</div>
-
+      <div className="bg-gray-200 rounded-2xl sm:w-fit max-w-lg mx-auto flex flex-wrap justify-center gap-2 mt-4 sm:mt-6 md:mt-8">
+        <button
+          onClick={() => handleTabChange("list")}
+          className={`rounded-full text-xs sm:text-sm md:text-base font-medium transition px-4 sm:px-6 md:px-8 py-2
+            ${activeTab === "list" ? "bg-blue-600 text-white shadow-md" : "text-gray-700 hover:text-blue-600"}`}
+        >
+          Departments
+        </button>
+        <button
+          onClick={() => handleTabChange("chief")}
+          className={`rounded-full text-xs sm:text-sm md:text-base font-medium transition px-4 sm:px-6 md:px-8 py-2
+            ${activeTab === "chief" ? "bg-blue-600 text-white shadow-md" : "text-gray-700 hover:text-blue-600"}`}
+        >
+          Chief Officers
+        </button>
+      </div>
 
       <div className="mt-4 sm:mt-6 w-full">
         {activeTab === "list" ? <DepartmentCards /> : <ChiefOfficers />}
       </div>
+
       {showModal && <AddMessageModal onClose={() => setShowModal(false)} />}
     </div>
   );
