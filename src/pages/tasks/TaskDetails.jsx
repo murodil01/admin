@@ -1,5 +1,5 @@
 import { AiOutlinePaperClip } from "react-icons/ai";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { FiTrash } from "react-icons/fi";
 import { useState, useEffect } from "react";
 import {
@@ -22,39 +22,84 @@ import dayjs from "dayjs";
 
 const { TextArea } = Input;
 
-const tagOptions = [
-  "service work",
-  "training",
-  "learning",
-  "recruitment",
-  "client support",
-  "design",
-  "planning",
-  "event/PR",
-  "maintenance",
-  "blureaucracy",
-  "R&D/Innovation",
-  "internal systems",
-  "marketing & sales",
-];
+// Add this function to your taskService.js file
+const getTaskTags = async () => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    throw new Error("No authentication token found");
+  }
 
+  const response = await fetch('https://prototype-production-2b67.up.railway.app/project/tags/', {
+    method: 'GET',
+    headers: {
+      'accept': 'application/json',
+      'Authorization': `Bearer ${token}`, // Add Bearer token
+      'Content-Type': 'application/json',
+    },
+  });
 
-const TaskDetails = () => {
-  const { projectId } = useParams(); // URL dan projectId ni oladi
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error("Authentication failed");
+    }
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return await response.json();
+};
+
+const TaskDetails = ({ tagOptionsFromApi = [] }) => {
+  const { projectId } = useParams();
+  const navigate = useNavigate();
+  
+  // Initialize with empty array, will be populated from API
+  const [tagOptions, setTagOptions] = useState([]);
+  const [tags, setTags] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [notification, setNotification] = useState("Off");
   const [date, setDate] = useState(null);
   const [description, setDescription] = useState("");
-  const [tags, setTags] = useState([]);
   const [image, setImage] = useState(null);
   const [files, setFiles] = useState([]);
   const [checklist, setChecklist] = useState([]);
   const [cards, setCards] = useState([]);
   const [type, setType] = useState("assigned");
   const [selectedAssignee, setSelectedAssignee] = useState(null);
-const [assignees, setAssignees] = useState([]);
+  const [assignees, setAssignees] = useState([]);
   const [loadingAssignees, setLoadingAssignees] = useState(false);
+  const [loadingTags, setLoadingTags] = useState(false);
+
+  // Fetch tags when component mounts
+  useEffect(() => {
+    const fetchTags = async () => {
+      setLoadingTags(true);
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          message.error("Please log in to access tags");
+          return;
+        }
+
+        const tagsData = await getTaskTags();
+        setTagOptions(tagsData);
+      } catch (error) {
+        console.error("Error fetching tags:", error);
+        if (error.message.includes("Authentication")) {
+          message.error("Session expired. Please log in again.");
+        } else {
+          message.error("Failed to load tags");
+        }
+        // Set empty array as fallback
+        setTagOptions([]);
+      } finally {
+        setLoadingTags(false);
+      }
+    };
+
+    fetchTags();
+  }, []);
+
   // Fetch tasks on mount
   useEffect(() => {
     if (!projectId) return;
@@ -64,7 +109,7 @@ const [assignees, setAssignees] = useState([]);
       message.error("Please log in to access tasks");
       return;
     }
-
+   
     getProjectTaskById(projectId)
       .then((response) => {
         setCards(mapTasksToCards(response.data));
@@ -79,14 +124,13 @@ const [assignees, setAssignees] = useState([]);
       });
   }, [projectId]);
   
-   useEffect(() => {
+  useEffect(() => {
     if (isModalOpen && projectId) {
       fetchProjectUsers();
     }
   }, [isModalOpen, projectId]);
 
-
-    const fetchProjectUsers = async () => {
+  const fetchProjectUsers = async () => {
     setLoadingAssignees(true);
     try {
       const token = localStorage.getItem("token");
@@ -95,14 +139,11 @@ const [assignees, setAssignees] = useState([]);
         return;
       }
 
-      // Call getProjectUsers API with projectId
       const response = await getProjectUsers(projectId);
       
-      // Map the API response to Select options format
       const userOptions = response.data.map(user => ({
         label: user.name || user.username || `${user.first_name} ${user.last_name}`.trim() || "Unknown User",
-        value: user.id || user.user_id, // Adjust based on your API response structure
-        // You can add more user data if needed
+        value: user.id || user.user_id,
         avatar: user.avatar || user.profile_picture,
         email: user.email
       }));
@@ -111,14 +152,14 @@ const [assignees, setAssignees] = useState([]);
     } catch (error) {
       console.error("Error fetching project users:", error);
       message.error("Failed to load project users");
-      // Fallback to empty array if API fails
       setAssignees([]);
     } finally {
       setLoadingAssignees(false);
     }
   };
+
   // Helper to map API tasks to card format
-    const mapTasksToCards = (tasks) => {
+  const mapTasksToCards = (tasks) => {
     return tasks.map((task) => ({
       id: task.id.toString(),
       title: task.name,
@@ -140,7 +181,7 @@ const [assignees, setAssignees] = useState([]);
     }));
   };
 
- const addCheckItem = () => {
+  const addCheckItem = () => {
     setChecklist((prev) => [...prev, { text: "", done: false }]);
   };
 
@@ -160,11 +201,11 @@ const [assignees, setAssignees] = useState([]);
 
   const showModal = () => setIsModalOpen(true);
   
-   const handleCancel = () => {
+  const handleCancel = () => {
     setIsModalOpen(false);
     // Reset form
     setTitle("");
-    setType("Assigned");
+    setType("assigned");
     setNotification("Off");
     setDate(null);
     setSelectedAssignee(null);
@@ -175,7 +216,7 @@ const [assignees, setAssignees] = useState([]);
     setImage(null);
   };
 
-   const handleSave = async () => {
+  const handleSave = async () => {
     // Validation
     if (!title.trim()) {
       message.error("Please enter a column title");
@@ -194,15 +235,16 @@ const [assignees, setAssignees] = useState([]);
     }
 
     // Prepare task data for API
-     const taskData = {
+    const taskData = {
       name: title,
       description,
       tasks_type: type,
       deadline: date ? dayjs(date).format("YYYY-MM-DD") : null,
-      tags,
-      project: projectId || "5c112bdb-be91-4e09-a062-bf244691892b", // Use dynamic projectId
+      tags_ids: tags, // This now contains array of IDs like [1, 3, 5]
+      project: projectId || "5c112bdb-be91-4e09-a062-bf244691892b",
       assigned: selectedAssignee ? [selectedAssignee] : [],
     };
+
     try {
       // Call createTask API
       const response = await createTask(taskData);
@@ -216,8 +258,7 @@ const [assignees, setAssignees] = useState([]);
 
       // Find the assignee name from the assignees array
       const assigneeName = assignees.find(a => a.value === selectedAssignee)?.label || "Unknown";
-      
- 
+        
       const newCard = {
         id: newTask.id,
         title: newTask.name,
@@ -232,11 +273,11 @@ const [assignees, setAssignees] = useState([]);
           name: assigneeName,
           avatar: "bg-blue-500",
         },
-        tags: newTask.tags,
+        tags: newTask.tags || newTask.tags_ids || tags,
         checklistProgress: `${completedChecks}/${totalChecks || 0}`,
         column: newTask.tasks_type,
         files,
-      };
+      }
 
       // Update cards state
       setCards((prev) => [...prev, newCard]);
@@ -254,13 +295,15 @@ const [assignees, setAssignees] = useState([]);
     }
   };
 
-   const toggleTag = (tag) => {
-    if (tags.includes(tag)) {
-      setTags((prev) => prev.filter((t) => t !== tag));
-    } else {
-      setTags((prev) => [...prev, tag]);
-    }
-  }
+  const toggleTag = (tagId) => {
+    console.log("Toggling tag ID:", tagId, "Current tags:", tags);
+    setTags((prev) => {
+      if (prev.includes(tagId)) {
+        return prev.filter((id) => id !== tagId);
+      }
+      return [...prev, tagId];
+    });
+  };
 
   return (
     <div>
@@ -418,18 +461,18 @@ const [assignees, setAssignees] = useState([]);
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                     {tagOptions.map((tag) => (
-                      <label
-                        key={tag}
-                        className="flex items-center gap-2 text-[12px] cursor-pointer capitalize font-semi-bold text-gray-400"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={tags.includes(tag)}
-                          onChange={() => toggleTag(tag)}
-                        />
-                        {tag}
-                      </label>
-                    ))}
+                       <label
+                          key={tag.id}
+                          className="flex items-center gap-2 text-[12px] cursor-pointer capitalize font-semi-bold text-gray-400"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={tags.includes(tag.id)}
+                            onChange={() => toggleTag(tag.id)}
+                          />
+                          {tag.name}
+                        </label>
+                        ))}
                   </div>
                 </div>
               </div>
