@@ -8,32 +8,19 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import { BsFillGridFill } from "react-icons/bs";
 import { BiSupport } from "react-icons/bi";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { FaUsers } from "react-icons/fa";
 import { IoFileTrayFull, IoLibrary } from "react-icons/io5";
 import { TbReport } from "react-icons/tb";
-
-import side_blue3 from "../../assets/side_blue3.png";
 import { RiPieChart2Fill } from "react-icons/ri";
 import { HiTrophy } from "react-icons/hi2";
-import { ChevronRight } from "lucide-react";
+import side_blue3 from "../../assets/side_blue3.png";
 
 const menuItems = [
   { label: "Dashboard", icon: <BsFillGridFill size={20} />, path: "/" },
   { label: "Calendar", icon: <Calendar size={20} />, path: "/calendar" },
   { label: "Tasks", icon: <ClipboardList size={20} />, path: "/tasks" },
-
-  {
-    label: "Leads",
-    icon: <RiPieChart2Fill size={20} />,
-    path: "/leads",
-    children: [
-      { label: "All Leads", path: "/leads/all" },
-      { label: "New Lead", path: "/leads/new" },
-      { label: "Lead Reports", path: "/leads/reports" },
-    ],
-  },
-
+  { label: "Leads", icon: <RiPieChart2Fill size={20} />, path: "/leads" },
   { label: "Customers", icon: <HiTrophy size={20} />, path: "/customers" },
   { label: "Departments", icon: <Landmark size={20} />, path: "/departments" },
   { label: "Inner Circle", icon: <FaUsers size={20} />, path: "/employees" },
@@ -46,7 +33,6 @@ const menuItems = [
 const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [leadsOpen, setLeadsOpen] = useState(false);
 
   const handleNavigate = (path) => {
     navigate(path);
@@ -78,13 +64,14 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
 
   return (
     <>
+      {/* Desktop Sidebar */}
       <aside
         className={`hidden md:flex h-screen transition-all duration-300 bg-[#F2F2F2]
-    ${
-      collapsed
-        ? "w-20 px-2 pt-[20px] pb-[10px]"
-        : "w-64 pt-[20px] pr-[15px] pb-[5px] pl-[15px]"
-    }`}
+      ${
+        collapsed
+          ? "w-20 px-2 pt-[20px] pb-[10px]"
+          : "w-64 pt-[20px] pr-[15px] pb-[5px] pl-[15px]"
+      }`}
       >
         <div className="w-full h-full bg-white rounded-[24px] shadow-xl flex flex-col overflow-hidden">
           {/* Header */}
@@ -124,15 +111,10 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                   (item.path === "/employees" &&
                     location.pathname.startsWith("/profile"));
 
-                const baseButton = (
+                return (
                   <button
-                    onClick={() => {
-                      if (item.label === "Leads") {
-                        setLeadsOpen((prev) => !prev);
-                      } else {
-                        handleNavigate(item.path);
-                      }
-                    }}
+                    key={item.label}
+                    onClick={() => handleNavigate(item.path)}
                     className={`flex items-center gap-3 py-2 rounded-xl transition-all duration-200 text-left group h-[40px]
                       ${
                         collapsed
@@ -148,47 +130,11 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                   >
                     {item.icon}
                     {!collapsed && (
-                      <div className="w-full flex items-center justify-between relative">
-                        <span className="text-[16px] font-semibold">
-                          {item.label}
-                        </span>
-                        {item.children && (
-                          <span
-                            className={`transition-transform duration-200 ${
-                              leadsOpen ? "rotate-90" : ""
-                            }`}
-                          >
-                            <ChevronRight size={20} />
-                          </span>
-                        )}
-                      </div>
+                      <span className="text-[16px] font-semibold">
+                        {item.label}
+                      </span>
                     )}
                   </button>
-                );
-
-                return (
-                  <div key={item.label} className="relative">
-                    {baseButton}
-
-                    {/* Leads children */}
-                    {item.children && leadsOpen && !collapsed && (
-                      <div className="pl-8 flex flex-col gap-1 mt-1">
-                        {item.children.map((child) => (
-                          <button
-                            key={child.path}
-                            onClick={() => handleNavigate(child.path)}
-                            className={`text-left text-sm py-1 px-3 rounded-lg hover:bg-[#e5e7eb] ${
-                              location.pathname === child.path
-                                ? "bg-[#dbeafe] text-[#0061fe]"
-                                : "text-[#6b7280]"
-                            }`}
-                          >
-                            {child.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 );
               })}
             </nav>
@@ -200,31 +146,24 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
               collapsed ? "px-2 py-4" : "px-4 py-6"
             } flex justify-center`}
           >
-            {!collapsed ? (
-              <button
-                onClick={() =>
-                  window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
-                }
-                className="w-full flex items-center justify-center gap-2 bg-[#0061fe] text-white rounded-xl text-[18px] px-6 py-[8px] text-sm mx-auto transition-all duration-200 hover:bg-[#0056e0] hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] font-medium"
-              >
-                <BiSupport size={18} />
-                <span>Support</span>
-              </button>
-            ) : (
-              <button
-                onClick={() =>
-                  window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
-                }
-                className="bg-[#0061fe] text-white rounded-[14px] px-3 py-[10px] transition-all duration-200 hover:bg-[#0056e0] hover:shadow-lg hover:scale-[1.05] active:scale-[0.95] flex items-center justify-center"
-              >
-                <BiSupport size={22} />
-              </button>
-            )}
+            <button
+              onClick={() =>
+                window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
+              }
+              className={`${
+                collapsed
+                  ? "bg-[#0061fe] text-white rounded-[14px] px-3 py-[10px] flex items-center justify-center"
+                  : "w-full flex items-center justify-center gap-2 bg-[#0061fe] text-white rounded-xl px-6 py-[8px]"
+              } transition-all duration-200 hover:bg-[#0056e0] hover:shadow-lg`}
+            >
+              <BiSupport size={collapsed ? 22 : 18} />
+              {!collapsed && <span>Support</span>}
+            </button>
           </div>
         </div>
       </aside>
 
-      {/* Mobile */}
+      {/* Mobile Sidebar */}
       {isMobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div
@@ -248,15 +187,10 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
             <nav className="flex flex-col gap-1 sm:gap-2">
               {menuItems.map((item) => {
                 const isActive = location.pathname === item.path;
-                const baseButton = (
+                return (
                   <button
-                    onClick={() => {
-                      if (item.label === "Leads") {
-                        setLeadsOpen((prev) => !prev);
-                      } else {
-                        handleNavigate(item.path);
-                      }
-                    }}
+                    key={item.label}
+                    onClick={() => handleNavigate(item.path)}
                     className={`flex items-center w-full rounded-xl transition px-3 py-2 sm:px-4 sm:py-2.5
                       ${
                         isActive
@@ -267,42 +201,10 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                     <div className="w-5 h-5 mr-2 sm:mr-3 flex-shrink-0">
                       {item.icon}
                     </div>
-                    <span className="text-sm sm:text-base font-medium flex items-center gap-5">
+                    <span className="text-sm sm:text-base font-medium">
                       {item.label}
-                      {item.children && (
-                        <span
-                          className={`transition-transform duration-200 ${
-                            leadsOpen ? "rotate-90" : ""
-                          }`}
-                        >
-                          <ChevronRight size={20} />
-                        </span>
-                      )}
                     </span>
                   </button>
-                );
-
-                return (
-                  <div key={item.label} className="relative">
-                    {baseButton}
-                    {item.children && leadsOpen && (
-                      <div className="pl-8 flex flex-col gap-1 mt-1">
-                        {item.children.map((child) => (
-                          <button
-                            key={child.path}
-                            onClick={() => handleNavigate(child.path)}
-                            className={`text-left text-sm py-1 px-3 rounded-lg hover:bg-[#e5e7eb] ${
-                              location.pathname === child.path
-                                ? "bg-[#dbeafe] text-[#0061fe]"
-                                : "text-[#6b7280]"
-                            }`}
-                          >
-                            {child.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 );
               })}
             </nav>
@@ -312,7 +214,7 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 onClick={() =>
                   window.open("https://t.me/+11Tug631E_40YTQy", "_blank")
                 }
-                className="hover:shadow-lg hover:scale-[1.05] active:scale-[0.95]  flex items-center justify-center gap-2 border-[1px] border-[#0061fe] text-white bg-[#0061fe] rounded-xl font-bold text-[18px] px-6 py-[5px] text-sm w-full"
+                className="flex items-center justify-center gap-2 border-[1px] border-[#0061fe] text-white bg-[#0061fe] rounded-xl font-bold text-[18px] px-6 py-[5px] text-sm w-full hover:shadow-lg hover:scale-[1.05] active:scale-[0.95]"
               >
                 <BiSupport size={18} />
                 <span>Support</span>

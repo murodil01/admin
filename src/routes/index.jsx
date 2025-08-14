@@ -44,12 +44,11 @@ export const router = createBrowserRouter([
           { path: "departments", element: <Departments /> },
           { path: "calendar", element: <Calendar /> },
           { path: "leads", element: <Leads /> },
-          { path: "leads/all", element: <AllLeads /> },
-          { path: "leads/new", element: <NewLead /> },
-          { path: "leads/reports", element: <LeadReports /> },
           { path: "reports", element: <Reports /> },
           { path: "library", element: <Library /> },
-          { path: "library/:id", element: <CategoryDetailsPage /> },
+          { path: "library/id", element: <CategoryDetailsPage /> },
+          { path: "category/:id", element: <CategoryDetailsPage /> },
+
 
           { path: "archive", element: <Archive /> },
           { path: "activity", element: <Activity /> },
