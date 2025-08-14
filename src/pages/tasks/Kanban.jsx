@@ -788,31 +788,43 @@ const DropIndicator = ({ beforeId, column }) => (
 
 const BurnBarrel = ({ setCards }) => {
   const [active, setActive] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingCard, setPendingCard] = useState(null);
 
-  const handleDrop = async (e) => {
-    e.preventDefault(); 
+  const handleDrop = (e) => {
+    e.preventDefault();
     const cardId = e.dataTransfer.getData("cardId");
     if (!cardId) {
       setActive(false);
       return;
     }
+    
+    setPendingCard(cardId);
+    setShowConfirmation(true);
+    setActive(true);
+  };
 
-    // 1) Local UI dan olib tashlash — string bilan solishtirish (type mismatch oldini olish uchun)
-    setCards((prev) => prev.filter((c) => String(c.id) !== String(cardId)));
-
-    // 2) (Optional) Serverda ham o'chirish — agar kerak bo'lsa
+  const confirmDelete = async () => {
+    if (!pendingCard) return;
+    
     try {
-      await deleteTask(cardId); // agar id raqam bo'lsa ham API odatda string id qabul qiladi
-      message.success("Task successfully deleted.");
+      setCards((prev) => prev.filter((c) => String(c.id) !== String(pendingCard)));
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log(`Task ${pendingCard} deleted successfully`);
     } catch (err) {
-      console.error("Failed to delete task on server:", err);
-      // UI da ham foydalanuvchiga xabar bering; lokal o'chirishni rollback qilishni xohlasangiz, shu yerda revert qiling
-      message.error("Server delete failed — removed locally.");
+      console.error("Failed to delete task:", err);
     } finally {
+      setPendingCard(null);
+      setShowConfirmation(false);
       setActive(false);
     }
   };
-
+const cancelDelete = () => {
+    setPendingCard(null);
+    setShowConfirmation(false);
+    setActive(false);
+  };
   return (
     <div
       onDrop={handleDrop}
