@@ -239,6 +239,14 @@ const Projects = () => {
     },
   ];
 
+   const formatDate2 = (dateStr) => {
+        if (!dateStr) return 'N/A';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', {         
+          month: 'long', 
+          day: 'numeric',
+        });
+      };
    const formatDate = (dateStr) => {
         if (!dateStr) return 'N/A';
         const date = new Date(dateStr);
@@ -439,25 +447,13 @@ const Projects = () => {
     }
   };
 
-  const getOkText = () => {
-    switch (modalType) {
-      case "edit":
-        return "Save Task";
-      case "info":
-        return "Got it";
-      case "delete":
-        return "Delete";
-      default:
-        return "OK";
-    }
-  };
 
   return (
     <div className="">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
         <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
-          Tasks
+          Task
         </h3>
         <button
           onClick={handleAddOpen}
@@ -473,13 +469,15 @@ const Projects = () => {
         {projects.map((project) => (
           <div
             key={project.id}
-            className="max-w-[290px] w-full h-[250px] border border-[#D9D9D9]  rounded-[14px] p-3 bg-white shadow relative group flex flex-col gap-3 cursor-pointer"
+            className="max-w-[290px] w-full  border-2 border-[#EFEFEF]  rounded-[14px] p-3 bg-white  relative group flex flex-col gap-3 cursor-pointer"
           >
+            
             {project.image ? (
               <button
                 onClick={() => navigate(`/tasks/${project.id}`)}
                 className="cursor-pointer"
               >
+                
                 <img
                   onClick={() => navigate(`/tasks/${project.id}`)}
                   src={project.image}
@@ -495,10 +493,12 @@ const Projects = () => {
                 <span className="text-gray-500 text-sm">No Image</span>
               </button>
             )}
+            
             <button
               onClick={() => navigate(`/tasks/${project.id}`)}
               className="flex items-center gap-1 mb-2 cursor-pointer"
             >
+              
               <span className="text-xs font-bold text-gray-600 whitespace-nowrap">
                 {project?.progress}%
               </span>
@@ -507,23 +507,52 @@ const Projects = () => {
                   className="h-full bg-blue-500 rounded"
                   style={{ width: `${project?.progress}%` }}
                 ></div>
+                
               </div>
+              
             </button>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
-                <div className="flex items-center relative w-12 h-5">
-                  {[0, 1, 2].map((offset, index) => (
-                    <img
-                      key={index}
-                      src="https://cdn-icons-png.flaticon.com/512/25/25231.png"
-                      alt="logo"
-                      className={`w-5 h-5 rounded-full absolute left-${
-                        index * 3
-                      } z-${10 + index * 10} border border-white`}
-                    />
+                
+               <div className="flex items-center relative w-12 h-5">
+              {project?.departments?.length > 0 ? (
+                <div className="flex items-center">
+                  {/* Faqat birinchi 3 tasini ko'rsatish */}
+                  {project.departments.slice(0, 3).map((dept, index) => (
+                    <div 
+                      key={dept.id} 
+                      className="relative"
+                      style={{ marginLeft: index > 0 ? '-8px' : '0' }}
+                    >
+                      {dept.photo ? (
+                        <img
+                          src={dept.photo}
+                          alt={`Department ${dept.id}`}
+                          className="w-[24px] h-[24px] rounded-full border-2 border-white shadow-sm"
+                        />
+                      ) : (
+                        <div className="bg-gray-200 rounded-full flex items-center justify-center w-[24px] h-[24px] border-2 border-white shadow-sm">
+                          <span className="text-xs">D</span>
+                        </div>
+                      )}
+                    </div>
                   ))}
+                  
+                  {/* Agar 3 tadan ko'p bo'lsa, qolganlarini ko'rsatish */}
+                  {project.departments.length > 3 && (
+                    <div 
+                      className="w-[24px] h-[24px] bg-gray-500 rounded-full flex items-center justify-center border-2 border-white shadow-sm text-white text-xs font-medium"
+                      style={{ marginLeft: '-8px' }}
+                    >
+                      +{project.departments.length - 3}
+                    </div>
+                  )}
                 </div>
+              ) : (
+                <span>-</span>
+              )}
+            </div>
                 <button
                   onClick={() => navigate(`/tasks/${project.id}`)}
                   className="font-bold text-lg cursor-pointer troncate max-w-[180px] "
@@ -535,6 +564,7 @@ const Projects = () => {
                 >
                   {project.name}
                 </button>
+                
               </div>
 
               <Dropdown
@@ -548,6 +578,22 @@ const Projects = () => {
                 </button>
               </Dropdown>
             </div>
+  
+
+          <div className="flex mt-1 justify-between text-sm">
+            <div>
+              
+              <span className="text-gray-900 font-medium">
+                {formatDate2(project?.created_at)}
+              </span>
+            </div>
+            <div>
+            
+              <span className="text-gray-900 font-medium">
+                {formatDate2(project?.updated_at)}
+              </span>
+            </div>
+          </div>
           </div>
         ))}
       </div>

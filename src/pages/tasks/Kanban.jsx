@@ -33,7 +33,7 @@ import {
   Dropdown,
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
-// import { updateTaskType,deleteTask, } from "../../api/services/taskService";
+import { updateTaskType,deleteTask,getTaskById,getProjectUsers,getFiles } from "../../api/services/taskService";
 import { MoreVertical } from "lucide-react";
 import {
   updateTaskType,
@@ -48,12 +48,90 @@ import {
   deleteTaskFile 
 } from "../../api/services/taskService";
 
-const NotionKanban = ({ cards, setCards }) => {
+const NotionKanban = ({  cards, setCards, assignees, getAssigneeName }) => {
   return (
     <div className="flex gap-5 absolute top-0 right-0 left-0 pb-4 w-full overflow-x-auto hide-scrollbar">
-      <Board cards={cards} setCards={setCards} />
+      <Board   cards={cards} 
+        setCards={setCards} 
+        assignees={assignees}
+        getAssigneeName={getAssigneeName} />
     </div>
   );
+};
+
+const getFileIcon = (fileName) => {
+  if (!fileName) return '📄';
+  
+  const extension = fileName.split('.').pop()?.toLowerCase();
+  
+  switch (extension) {
+    case 'pdf':
+      return '📕';
+    case 'doc':
+    case 'docx':
+      return '📘';
+    case 'xls':
+    case 'xlsx':
+      return '📗';
+    case 'ppt':
+    case 'pptx':
+      return '📙';
+    case 'jpg':
+    case 'jpeg':
+    case 'png':
+    case 'gif':
+      return '🖼️';
+    case 'zip':
+    case 'rar':
+      return '📦';
+    case 'txt':
+      return '📄';
+    default:
+      return '📎';
+  }
+};
+
+const formatFileSize = (bytes) => {
+  if (!bytes) return '';
+  
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  
+  try {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch {
+    return dateString;
+  }
+};
+
+const handleFileDownload = (file) => {
+  try {
+    if (file.file_url || file.url || file.file) {
+      const link = document.createElement('a');
+      link.href = file.file_url || file.url || file.file;
+      link.download = file.original_name || file.name || 'download';
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      message.success('File download started');
+    } else {
+      message.error('File URL not available');
+    }
+  } catch (error) {
+    console.error('Download error:', error);
+    message.error('Failed to download file');
+  }
 };
 
 const taskColumns = [
@@ -159,7 +237,7 @@ const DEFAULT_CARDS = [
   },
 ];
 
-const Board = ({ cards, setCards }) => {
+const Board = ({ cards, setCards,assignees, getAssigneeName }) => {
   const [hasChecked, setHasChecked] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
@@ -212,7 +290,7 @@ const Board = ({ cards, setCards }) => {
           onEdit={handleEdit}
         />
       ))}
-      {/* <BurnBarrel setCards={setCards} /> */}
+      <BurnBarrel setCards={setCards} />
 
       {/* Edit Modal */}
       <EditCardModal
@@ -287,21 +365,17 @@ const Column = ({
   const handleDrop = async (e) => {
     setActive(false);
     clearHighlights();
-
     const cardId = e.dataTransfer.getData("cardId");
     const indicators = getIndicators();
     const { element } = getNearestIndicator(e, indicators);
     const before = element?.dataset.before || "-1";
-
     if (before !== cardId) {
       let copy = [...cards];
       let cardToTransfer = copy.find((c) => c.id === cardId);
       if (!cardToTransfer) return;
-
-      // 1. Optimistic UI update (darhol ko'rinishni yangilash)
       cardToTransfer = { ...cardToTransfer, column };
       copy = copy.filter((c) => c.id !== cardId);
-
+  
       if (before === "-1") {
         copy.push(cardToTransfer);
       } else {
@@ -309,9 +383,9 @@ const Column = ({
         if (insertAt === -1) return;
         copy.splice(insertAt, 0, cardToTransfer);
       }
-
+  
       setCards(copy); // UI ni yangilash
-
+  
       // 2. Backendga yangilash
       try {
         await updateTaskType(cardId, column); // API so'rovi
@@ -373,43 +447,63 @@ const Card = ({
   handleDragStart,
   onEdit,
   image,
-  setCards, //yangi props
+  setCards
+  
 }) => {
   const [hovered, setHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
   const [taskData, setTaskData] = useState(null);
-  const [projectUsers, setProjectUsers] = useState([]); // New state for project users
+  const [projectUsers, setProjectUsers] = useState([]); // State for project users
   const [loading, setLoading] = useState(false);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [imageUrl, setImageUrl] = useState(null);
+  const [selectedAssignee, setSelectedAssignee] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [filesLoading, setFilesLoading] = useState(false);
+ // "Got it" modal ochilganda card ma'lumotlarini saqlash
 
-  // "Got it" modal ochilganda card ma'lumotlarini saqlash
-  const openViewModal = async () => {
-    setIsModalOpen(true);
-    setLoading(true);
 
-    try {
-      const response = await getTaskById(id);
-      console.log("Task ma'lumotlari:", response.data);
-      setTaskData(response.data); // API dan kelgan ma'lumotlar
-      if (response.data.projectId) {
-        const usersResponse = await getProjectUsers(response.data.projectId);
-        console.log("Project users:", usersResponse.data);
-        setProjectUsers(usersResponse.data || []); // Set users array
-      } else {
-        console.warn("No project_id found in task data");
-        setProjectUsers([]);
-      }
-    } catch (error) {
-      console.error("Data olishda xatolik:", error);
-      message.error("Ma'lumotlar yuklab bo'lmadi");
-    } finally {
-      setLoading(false);
+   const getAssigneeName = (assigneeId) => {
+  console.log("Getting assignee name for ID:", assigneeId); // Debug uchun
+  console.log("Available project users:", projectUsers); // Debug uchun
+  
+  if (!assigneeId) return "Not assigned";
+  
+  // Agar assigneeId object bo'lsa (ba'zan API shunday qaytaradi)
+  if (typeof assigneeId === 'object' && assigneeId !== null) {
+    if (assigneeId.first_name && assigneeId.last_name) {
+      return `${assigneeId.first_name} ${assigneeId.last_name}`;
+    } else if (assigneeId.name) {
+      return assigneeId.name;
+    } else if (assigneeId.id) {
+      assigneeId = assigneeId.id; // ID ni olish
     }
-  };
+  }
+  
+  // Array ichidan qidirish
+  const user = projectUsers.find(u => {
+    // ID lar turli formatda bo'lishi mumkin (string/number)
+    return String(u.id) === String(assigneeId) || 
+           u.user_id === assigneeId || 
+           u.user === assigneeId;
+  });
+  
+  console.log("Found user:", user); // Debug uchun
+  
+  if (user) {
+    return `${user.first_name || ''} ${user.last_name || ''}`.trim() || 
+           user.full_name || 
+           user.username || 
+           user.name || 
+           'Unknown user';
+  }
+  
+  return "Unknown user";
+};
+
 
   const handleMoveToColumn = async (newColumn) => {
     try {
@@ -421,67 +515,39 @@ const Card = ({
       message.error("Failed to move task");
       console.error("Move error:", error);
     }
-  };
-
+  }; 
   const handleDelete = async () => {
     try {
       await deleteTask(id);
       message.success("Task deleted successfully");
       // Local state dan o'chirish
-      setCards((prev) => prev.filter((card) => card.id !== id));
+      // setCards(prev => prev.filter(card => card.id !== id));
     } catch (error) {
       message.error("Failed to delete task");
       console.error("Delete error:", error);
     }
   };
 
-  // Edit modalni ochish funksiyasi
-  const handleEditCard = async () => {
-    setLoading(true);
-    try {
-      const response = await getTaskById(id);
-      setSelectedCard(response.data);
-      setIsEditModalOpen(true);
-    } catch (error) {
-      console.error("Task olishda xatolik:", error);
-      message.error("Task ma'lumotlarini yuklab bo'lmadi");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!image) return;
-    if (image instanceof File) {
-      const url = URL.createObjectURL(image);
-      setImageUrl(url);
-      return () => URL.revokeObjectURL(url);
-    }
+   useEffect(() => {
+     if (!image) return;
+     if (image instanceof File) {
+       const url = URL.createObjectURL(image);
+       setImageUrl(url);
+       return () => URL.revokeObjectURL(url);
+     }
 
     setImageUrl(image);
   }, [image]);
-
+   
   const handleUpdateCard = (updatedCard) => {
     console.log("Updated card: ", updatedCard);
     // bu yerda serverga yoki local state'ga saqlash kodini yozasan
     setIsEditModalOpen(false);
-    // Cards state ni yangilash
-    setCards((prev) =>
-      prev.map((card) =>
-        card.id === updatedCard.id
-          ? {
-              ...card,
-              title: updatedCard.name,
-              time: updatedCard.deadline,
-              description: updatedCard.description,
-              column: updatedCard.tasks_type,
-            }
-          : card
-      )
-    );
   };
 
-  const handleAddComment = () => {
+ 
+
+   const handleAddComment = () => {
     if (!newComment.trim()) return;
 
     const updatedComments = [
@@ -498,6 +564,76 @@ const Card = ({
     }
   }, [taskData]);
 
+
+  const openViewModal = async () => {
+  setIsModalOpen(true);
+  setLoading(true);
+  
+  try {
+    // Fetch task details
+    const taskResponse = await getTaskById(id);
+    console.log("Task response:", taskResponse); // Debug uchun
+    setTaskData(taskResponse.data);
+
+    // Fetch project users if project ID exists
+    if (taskResponse.data.project_id || taskResponse.data.project) {
+      const projectId = taskResponse.data.project_id || taskResponse.data.project;
+      console.log("Fetching users for project:", projectId); // Debug uchun
+      
+      const usersResponse = await getProjectUsers(projectId);
+      console.log("Users response:", usersResponse); // Debug uchun
+      
+      setProjectUsers(usersResponse.data || usersResponse || []);
+      
+      // Set the selected assignee if task has one
+      if (taskResponse.data.assignee) {
+        setSelectedAssignee(taskResponse.data.assignee);
+        console.log("Selected assignee:", taskResponse.data.assignee); // Debug uchun
+      }
+    } else {
+      console.warn("No project_id found in task data:", taskResponse.data);
+    }
+
+    // Fetch files for this task
+    setFilesLoading(true);
+    try {
+      console.log("Fetching files for task ID:", id); // Debug uchun
+      const filesResponse = await getFiles(id);
+      console.log("Files response:", filesResponse); // Debug uchun
+      
+      // API javobini har xil formatlar uchun tekshirish
+      let filesList = [];
+      
+      if (filesResponse && filesResponse.data) {
+        filesList = Array.isArray(filesResponse.data) ? filesResponse.data : [filesResponse.data];
+      } else if (Array.isArray(filesResponse)) {
+        filesList = filesResponse;
+      } else if (filesResponse && filesResponse.results) {
+        filesList = Array.isArray(filesResponse.results) ? filesResponse.results : [filesResponse.results];
+      } else if (filesResponse && filesResponse.files) {
+        filesList = Array.isArray(filesResponse.files) ? filesResponse.files : [filesResponse.files];
+      }
+      
+      console.log("Processed files list:", filesList); // Debug uchun
+      setFiles(filesList);
+      
+    } catch (filesError) {
+      console.error("Error fetching files:", filesError);
+      message.error("Failed to load files");
+      setFiles([]);
+    } finally {
+      setFilesLoading(false);
+    }
+
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    message.error("Failed to load task details");
+  } finally {
+    setLoading(false);
+  }
+  }
+
+
   return (
     <>
       <DropIndicator beforeId={id} column={column} />
@@ -510,59 +646,63 @@ const Card = ({
         onMouseLeave={() => setHovered(false)}
         className="cursor-grab rounded-lg bg-white p-3 shadow-sm active:cursor-grabbing border border-gray-100 hover:shadow-md transition relative"
       >
-        {/* New 3 point button */}
-        <div className="absolute top-2 right-1">
-          <Dropdown
-            menu={{
-              items: [
-                {
-                  key: "edit",
-                  label: "Edit",
-                  onClick: (e) => {
-                    e.domEvent.stopPropagation();
-                    handleEditCard(); // Yangi funksiya chaqiriladi
-                  },
-                },
-                {
-                  key: "detail",
-                  label: "Detail",
-                  onClick: (e) => {
-                    e.domEvent.stopPropagation();
-                    openViewModal();
-                  },
-                },
-                {
-                  key: "move_to",
-                  label: "Move to",
-                  children: taskColumns.map((col) => ({
-                    key: col.id,
-                    label: col.title,
-                    onClick: () => handleMoveToColumn(col.id),
-                  })),
-                },
-                {
-                  key: "delete",
-                  label: "Delete",
-                  onClick: (e) => {
-                    e.domEvent.stopPropagation();
-                    handleDelete();
-                  },
-                },
-              ],
-            }}
-            trigger={["click"]}
-          >
-            <button
-              onClick={(e) => e.stopPropagation()}
-              className="p-1 rounded hover:bg-gray-200 cursor-pointer"
-            >
-              <MoreVertical className="size-4" />
-            </button>
-          </Dropdown>
-        </div>
+    
+    
+    {/* New 3 point button */}
+    <div className="absolute top-2 right-1">
+      <Dropdown 
+        menu={{
+          items: [
+            {
+              key: 'edit',
+              label: 'Edit',
+              onClick: (e) => {
+                e.domEvent.stopPropagation();
+                onEdit({ id, title, time, description, column });
+              }
+            },
+            {
+              key: 'detail',
+              label: 'Detail',
+              onClick: (e) => {
+                e.domEvent.stopPropagation();
+                openViewModal();
+              }
+            },
+            {
+              key: 'move_to',
+              label: 'Move to',
+              children: taskColumns.map(col => ({
+                key: col.id,
+                label: col.title,
+                onClick: () => handleMoveToColumn(col.id)
+              }))
+            },
+            {
+              key: 'delete',
+              label: 'Delete',
+              onClick: (e) => {
+                e.domEvent.stopPropagation();
+                handleDelete();
+              }
+            }
+          ]
+        }}
+        trigger={['click']}
+      >
+        <button 
+          onClick={(e) => e.stopPropagation()}
+          className="p-1 rounded hover:bg-gray-200 cursor-pointer"
+        >
+         <MoreVertical className="size-4"/>
+        </button>
+      </Dropdown>
+    </div>
+  
+
 
         {/* Agar image mavjud bo'lsa */}
-        {imageUrl && (
+       {imageUrl && (
           <div className="w-[100px] h-[100px] rounded overflow-hidden mb-2">
             <img
               src={imageUrl}
@@ -574,8 +714,10 @@ const Card = ({
 
         {/* Title */}
         <button
+
           className="text-sm font-semibold text-gray-900 mb-3 cursor-pointer"
           onClick={openViewModal}
+
         >
           {title}
         </button>
@@ -596,7 +738,7 @@ const Card = ({
               key="edit"
               onClick={() => {
                 setIsModalOpen(false); // eski modal yopiladi
-                handleEditCard(); // Bu yerda ham yangi funksiya
+                setIsEditModalOpen(true); // edit modal ochiladi
               }}
               style={{
                 borderRadius: "14px",
@@ -635,7 +777,11 @@ const Card = ({
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="w-full sm:w-[140px] h-[140px] bg-gray-200 flex items-center justify-center rounded">
                     <span role="img" aria-label="image" className="text-4xl">
-                      🖼️
+                  {taskData?.task_image ? (
+                      <img src={taskData.task_image} alt="" onError={(e) => (e.currentTarget.style.display = "none")} />
+                    ) : (
+                      <span>🖼️</span>
+                    )}
                     </span>
                   </div>
                   <div className="flex-1 text-sm text-gray-700 leading-6">
@@ -645,17 +791,61 @@ const Card = ({
 
                 {/* Files */}
                 <div>
-                  <h4 className="font-semibold text-sm mb-3">Files</h4>
-                  <div className="flex flex-wrap gap-3">
-                    <p className="text-sm text-gray-500">No files attached</p>
-                  </div>
+                  <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                    <span>📁</span>
+                    Files ({files.length})
+                  </h4>
+                  
+                  {filesLoading ? (
+                    <div className="flex items-center gap-2">
+                      <Spin size="small" />
+                      <span className="text-sm text-gray-500">Loading files...</span>
+                    </div>
+                  ) : files.length > 0 ? (
+                    <div className="space-y-2">
+                      {files.map((file, index) => (
+                        <div 
+                          key={file.id || index} 
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
+                        >
+                          <div className="flex items-center gap-3">
+                            {/* Fayl tipi ikonkasi */}
+                            <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
+                              {getFileIcon(file.file_type || file.name)}
+                            </div>
+                            
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {file.original_name || file.name || 'Unnamed file'}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {file.file_size ? formatFileSize(file.file_size) : ''} • 
+                                {file.uploaded_at ? formatDate(file.uploaded_at) : 'Unknown date'}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Download button */}
+                          <Button
+                            type="text"
+                            icon={<DownloadOutlined />}
+                            onClick={() => handleFileDownload(file)}
+                            className="text-blue-600 hover:text-blue-800"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg text-center">
+                      📄 No files attached to this task
+                    </p>
+                  )}
                 </div>
 
                 {/* Checklist */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-semibold text-sm">Check list</h4>
-                    <span className="text-xs text-gray-500">Show</span>
+                    <h4 className="font-semibold text-sm">Check list</h4>            
                   </div>
                   <div className="flex flex-col gap-3">
                     <p className="text-sm text-gray-500">No checklist items</p>
@@ -683,9 +873,7 @@ const Card = ({
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-gray-500 mb-3">
-                        No comments yet
-                      </p>
+                      <p className="text-sm text-gray-500 mb-3">No comments yet</p>
                     )}
 
                     {/* Add new comment */}
@@ -716,20 +904,29 @@ const Card = ({
                     <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
                       👤
                     </div>
-                    <span>
-                      {taskData && taskData.assignee
-                        ? `${taskData.assignee.first_name} ${taskData.assignee.last_name}`
-                        : "Not assigned"}
+                     <span>
+                      {(() => {
+                        // Debug ma'lumotlari
+                        console.log("Current taskData:", taskData);
+                        console.log("Current selectedAssignee:", selectedAssignee);
+                        console.log("Current projectUsers:", projectUsers);
+                        
+                        // Har xil assignee formatlarini tekshirish
+                        const assignee = selectedAssignee || 
+                                        taskData?.assignee || 
+                                        taskData?.assigned_to || 
+                                        taskData?.assigned?.[0];
+                                        
+                        console.log("Final assignee:", assignee);
+                        
+                        return getAssigneeName(assignee);
+                      })()}
                     </span>
                   </div>
                 </div>
                 <div>
                   <p className="text-gray-400">Date</p>
-                  <p className="mt-1">
-                    {taskData.deadline
-                      ? dayjs(taskData.deadline).format("YYYY-MM-DD")
-                      : "N/A"}
-                  </p>
+                  <p className="mt-1">{taskData.deadline ? dayjs(taskData.deadline).format('YYYY-MM-DD') : "N/A"}</p>
                 </div>
 
                 <div>
@@ -737,14 +934,11 @@ const Card = ({
                   <p className="mt-1">{taskData.is_active ? "On" : "Off"}</p>
                 </div>
 
-                <div>
-                  <p className="text-gray-400">Status</p>
-                  <p className="mt-1">{taskData.tasks_type || "N/A"}</p>
-                </div>
+              
 
                 <div>
                   <p className="text-gray-400">Type</p>
-                  <p className="mt-1">N/A</p>
+                  <p className="mt-1">{taskData.tasks_type || "N/A"}</p>
                 </div>
 
                 <div>
@@ -757,10 +951,7 @@ const Card = ({
                   <div className="flex flex-wrap gap-2 mt-1">
                     {taskData.tags && taskData.tags.length > 0 ? (
                       taskData.tags.map((tag, i) => (
-                        <span
-                          key={i}
-                          className="bg-gray-200 px-2 py-1 rounded text-xs"
-                        >
+                        <span key={i} className="bg-gray-200 px-2 py-1 rounded text-xs">
                           {tag.name}
                         </span>
                       ))
@@ -769,6 +960,8 @@ const Card = ({
                     )}
                   </div>
                 </div>
+
+                
               </div>
             </div>
           ) : (
@@ -781,10 +974,10 @@ const Card = ({
           onClose={() => setIsEditModalOpen(false)}
           cardData={selectedCard}
           onUpdate={handleUpdateCard}
-          // assignees={[
-          //   { value: "user1", label: "Botirov Shaxobiddin" },
-          //   { value: "user2", label: "John Doe" },
-          // ]}
+          assignees={[
+            { value: "user1", label: "Botirov Shaxobiddin" },
+            { value: "user2", label: "John Doe" },
+          ]}
         />
 
         {/* Bottom Row */}
@@ -806,11 +999,10 @@ const Card = ({
 
           {/* Right Side: Avatar + Checklist */}
           <div className="flex items-center gap-2">
-            <span className="bg-[#64C064] text-white text-[11px] px-2 py-0.5 rounded flex items-center gap-1">
-              <img src={checkList} alt="" />
-              {progress}
-              {` /10`}
-            </span>
+              <span className="bg-[#64C064] text-white text-[11px] px-2 py-0.5 rounded flex items-center gap-1">
+                <img src={checkList} alt="" />
+                {progress}{` /10`}
+              </span>
           </div>
         </div>
       </motion.div>
@@ -822,56 +1014,68 @@ const DropIndicator = ({ beforeId, column }) => (
   <div
     data-before={beforeId || "-1"}
     data-column={column}
-    className="my-0.5 h-2 w-full bg-violet-400 opacity-0"
+    className="my-0.5 h-0.5 w-full bg-violet-400 opacity-0"
   />
 );
 
-// const BurnBarrel = ({ setCards }) => {
-//   const [active, setActive] = useState(false);
+const BurnBarrel = ({ setCards }) => {
+  const [active, setActive] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [pendingCard, setPendingCard] = useState(null);
 
-//   const handleDrop = async (e) => {
-//     e.preventDefault();
-//     const cardId = e.dataTransfer.getData("cardId");
-//     if (!cardId) {
-//       setActive(false);
-//       return;
-//     }
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const cardId = e.dataTransfer.getData("cardId");
+    if (!cardId) {
+      setActive(false);
+      return;
+    }
+    
+    setPendingCard(cardId);
+    setShowConfirmation(true);
+    setActive(true);
+  };
 
-//     // 1) Local UI dan olib tashlash — string bilan solishtirish (type mismatch oldini olish uchun)
-//     setCards((prev) => prev.filter((c) => String(c.id) !== String(cardId)));
-
-//     // 2) (Optional) Serverda ham o'chirish — agar kerak bo'lsa
-//     try {
-//       await deleteTask(cardId); // agar id raqam bo'lsa ham API odatda string id qabul qiladi
-//       message.success("Task successfully deleted.");
-//     } catch (err) {
-//       console.error("Failed to delete task on server:", err);
-//       // UI da ham foydalanuvchiga xabar bering; lokal o'chirishni rollback qilishni xohlasangiz, shu yerda revert qiling
-//       message.error("Server delete failed — removed locally.");
-//     } finally {
-//       setActive(false);
-//     }
-//   };
-
-//   return (
-//     <div
-//       onDrop={handleDrop}
-//       onDragOver={(e) => {
-//         e.preventDefault();
-//         setActive(true);
-//       }}
-//       onDragLeave={() => setActive(false)}
-//       className={`mt-10 grid h-56 w-56 shrink-0 place-content-center rounded border text-3xl
-//         ${
-//           active
-//             ? "border-red-800 bg-red-800/20 text-red-500"
-//             : "border-neutral-500 bg-neutral-500/20 text-neutral-500"
-//         }`}
-//     >
-//       {active ? <FaFire className="animate-bounce" /> : <FiTrash />}
-//     </div>
-//   );
-// };
+  const confirmDelete = async () => {
+    if (!pendingCard) return;
+    
+    try {
+      setCards((prev) => prev.filter((c) => String(c.id) !== String(pendingCard)));
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      console.log(`Task ${pendingCard} deleted successfully`);
+    } catch (err) {
+      console.error("Failed to delete task:", err);
+    } finally {
+      setPendingCard(null);
+      setShowConfirmation(false);
+      setActive(false);
+    }
+  };
+const cancelDelete = () => {
+    setPendingCard(null);
+    setShowConfirmation(false);
+    setActive(false);
+  };
+  return (
+    <div
+      onDrop={handleDrop}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setActive(true);
+      }}
+      onDragLeave={() => setActive(false)}
+      className={`mt-10 grid h-56 w-56 shrink-0 place-content-center rounded border text-3xl
+        ${
+          active
+            ? "border-red-800 bg-red-800/20 text-red-500"
+            : "border-neutral-500 bg-neutral-500/20 text-neutral-500"
+        }`}
+    >
+      {active ? <FaFire className="animate-bounce" /> : <FiTrash />}
+    </div>
+  );
+};
 
 const AddCard = ({ column, setCards }) => {
   const [text, setText] = useState("");
@@ -879,7 +1083,7 @@ const AddCard = ({ column, setCards }) => {
   const [loading, setLoading] = useState(false);
   const { projectId } = useParams();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault();
     if (!text.trim()) return;
 
@@ -893,7 +1097,6 @@ const AddCard = ({ column, setCards }) => {
       // assignee: null,
       description: "", // default qiymat
       project: projectId, // loyiha ID sini dynamic qilib olish kerak
-      tags_ids: [], // loyiha ID sini dynamic qilib olish kerak
     };
     setLoading(true);
     try {
@@ -909,25 +1112,23 @@ const AddCard = ({ column, setCards }) => {
           title: createdTask.name,
           column: createdTask.tasks_type,
           time: createdTask.deadline || "",
-          assignee: createdTask.assigned
-            ? {
-                name: createdTask.assigned[0],
-                avatar: "bg-blue-500",
-              }
-            : null,
+          assignee: createdTask.assigned ? { 
+            name: createdTask.assigned[0], 
+            avatar: "bg-blue-500" 
+          } : null,
         },
       ]);
-      // setCards((prev) => [...prev, newCard]);
-      setText("");
-      setAdding(false);
-      message.success("Task created successfully!");
-    } catch (error) {
-      console.error("Failed to create task:", error);
-      message.error(error.response?.data?.message || "Failed to create task");
-    } finally {
-      setLoading(false);
-    }
-  };
+    // setCards((prev) => [...prev, newCard]);
+    setText("");
+    setAdding(false);
+    message.success("Task created successfully!");
+  } catch (error) {
+    console.error("Failed to create task:", error);
+    message.error(error.response?.data?.message || "Failed to create task");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return adding ? (
     <motion.form layout onSubmit={handleSubmit}>
@@ -959,7 +1160,7 @@ const AddCard = ({ column, setCards }) => {
           className="flex items-center gap-1.5 rounded-lg bg-neutral-50 font-bold px-3 py-1.5 text-xs text-neutral-95"
           disabled={loading}
         >
-          {loading ? "Creating..." : "Add"}
+           {loading ? "Creating..." : "Add"}
           {!loading && <FiPlus />}
         </button>
       </div>
@@ -1266,19 +1467,19 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                 />
               </div>
 
-              {/* Time, Notification, Assignee */}
-              <div className="flex justify-between items-center gap-[20px] flex-wrap">
-                <div>
-                  <label className="block text-[14px] font-bold text-[#7D8592] mt-4 mb-2">
-                    Due time
-                  </label>
-                  <DatePicker
-                    className="w-full"
-                    style={{ borderRadius: "14px", height: "54px" }}
-                    value={date}
-                    onChange={(date) => setDate(date)}
-                  />
-                </div>
+            {/* Time, Notification, Assignee */}
+            <div className="flex justify-between items-center gap-[20px] flex-wrap">
+              <div>
+                <label className="block text-[14px] font-bold text-[#7D8592] mt-4 mb-2">
+                  Due time
+                </label>
+                <DatePicker
+                  className="w-full"
+                  style={{ borderRadius: "14px", height: "54px" }}
+                  value={date ? dayjs(date) : null}
+                  onChange={(_, dateStr) => setDate(dateStr)}
+                />
+              </div>
 
                 <div>
                   <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
@@ -1329,87 +1530,82 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                 </div>
               </div>
 
-              {/* Description */}
-              <div>
-                <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
-                  Description
-                </label>
-                <TextArea
-                  style={{ borderRadius: "14px" }}
-                  rows={4}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Enter task description"
-                />
-              </div>
-
-              {/* Progress */}
-              <div>
-                <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
-                  Progress (%)
-                </label>
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  style={{ height: "54px", borderRadius: "14px" }}
-                  value={progress}
-                  onChange={(e) => setProgress(Number(e.target.value))}
-                  placeholder="Enter progress percentage"
-                />
-              </div>
-
-              {/* Tags */}
-              <div>
-                <label className="block text-[14px] text-[#7D8592] mb-2 font-bold">
-                  Task tags
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                  {availableTags.map((tag) => (
-                    <label
-                      key={tag.id}
-                      className="flex items-center gap-2 text-[12px] cursor-pointer capitalize font-semi-bold text-gray-400"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedTags.includes(tag.id)}
-                        onChange={() => toggleTag(tag.id)}
-                      />
-                      {tag.name}
-                    </label>
-                  ))}
-                </div>
-              </div>
+            {/* Description */}
+            <div>
+              <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
+                Description
+              </label>
+              <TextArea
+              style={{ borderRadius: "14px" }}
+                rows={4}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
             </div>
 
-            {/* RIGHT SIDE */}
-            <div className="xl:col-span-2 space-y-6">
-              {/* Image Upload */}
-              <div>
-                <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
-                  Image
-                </label>
-                <Upload
-                  style={{ width: "100%" }}
-                  showUploadList={true}
-                  beforeUpload={(file) => {
-                    // Handle file upload here
-                    return false;
+            {/* Tags */}
+            <div>
+              <label className="block text-[14px] text-[#7D8592] mb-2 font-bold">
+                Task tags
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                {tagOptions.map((tag) => (
+                  <label
+                    key={tag}
+                    className="flex items-center gap-2 text-[12px] cursor-pointer capitalize font-semi-bold text-gray-400"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={tags.includes(tag)}
+                      onChange={() =>
+                        setTags((prev) =>
+                          prev.includes(tag)
+                            ? prev.filter((t) => t !== tag)
+                            : [...prev, tag]
+                        )
+                      }
+                    />
+                    {tag}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT SIDE */}
+          <div className="xl:col-span-2 space-y-6">
+            {/* Image Upload */}
+            <div>
+              <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
+                Image
+              </label>
+              <Upload
+                style={{ width: "100%" }}
+                defaultFileList={files.map((f, idx) => ({
+                  uid: idx,
+                  name: f.name || `file-${idx}`,
+                  status: "done",
+                  url: f.url || "", // agar serverdan URL kelgan bo‘lsa
+                }))}
+                showUploadList={true}
+                beforeUpload={(file) => {
+                  setFiles((prev) => [...prev, file]);
+                  return false;
+                }}
+              >
+                <Button
+                  className="custom-upload-btn"
+                  style={{
+                    width: "100%",
+                    height: "54px",
+                    borderRadius: "14px",
+                    fontWeight: "500",
                   }}
                 >
-                  <Button
-                    className="custom-upload-btn"
-                    style={{
-                      width: "100%",
-                      height: "54px",
-                      borderRadius: "14px",
-                      fontWeight: "500",
-                    }}
-                  >
-                    Upload image
-                  </Button>
-                </Upload>
-              </div>
+                  Change image
+                </Button>
+              </Upload>
+            </div>
 
               {/* Files Section */}
               <div className="mt-4">
