@@ -32,16 +32,93 @@ import {
   Dropdown,
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
-import { updateTaskType,deleteTask,getTaskById,getProjectUsers } from "../../api/services/taskService";
+import { updateTaskType,deleteTask,getTaskById,getProjectUsers,getFiles } from "../../api/services/taskService";
 import { MoreVertical } from "lucide-react";
 
-
-const NotionKanban = ({ cards, setCards }) => {
+const NotionKanban = ({  cards, setCards, assignees, getAssigneeName }) => {
   return (
     <div className="flex gap-5 absolute top-0 right-0 left-0 pb-4 w-full overflow-x-auto hide-scrollbar">
-      <Board cards={cards} setCards={setCards} />
+      <Board   cards={cards} 
+        setCards={setCards} 
+        assignees={assignees}
+        getAssigneeName={getAssigneeName} />
     </div>
   );
+};
+
+const getFileIcon = (fileName) => {
+  if (!fileName) return '📄';
+  
+  const extension = fileName.split('.').pop()?.toLowerCase();
+  
+  switch (extension) {
+    case 'pdf':
+      return '📕';
+    case 'doc':
+    case 'docx':
+      return '📘';
+    case 'xls':
+    case 'xlsx':
+      return '📗';
+    case 'ppt':
+    case 'pptx':
+      return '📙';
+    case 'jpg':
+    case 'jpeg':
+    case 'png':
+    case 'gif':
+      return '🖼️';
+    case 'zip':
+    case 'rar':
+      return '📦';
+    case 'txt':
+      return '📄';
+    default:
+      return '📎';
+  }
+};
+
+const formatFileSize = (bytes) => {
+  if (!bytes) return '';
+  
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  
+  try {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch {
+    return dateString;
+  }
+};
+
+const handleFileDownload = (file) => {
+  try {
+    if (file.file_url || file.url || file.file) {
+      const link = document.createElement('a');
+      link.href = file.file_url || file.url || file.file;
+      link.download = file.original_name || file.name || 'download';
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      message.success('File download started');
+    } else {
+      message.error('File URL not available');
+    }
+  } catch (error) {
+    console.error('Download error:', error);
+    message.error('Failed to download file');
+  }
 };
 
 const taskColumns = [
@@ -147,7 +224,7 @@ const DEFAULT_CARDS = [
   },
 ];
 
-const Board = ({ cards, setCards }) => {
+const Board = ({ cards, setCards,assignees, getAssigneeName }) => {
   const [hasChecked, setHasChecked] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
@@ -275,18 +352,14 @@ const Column = ({
   const handleDrop = async (e) => {
     setActive(false);
     clearHighlights();
-  
     const cardId = e.dataTransfer.getData("cardId");
     const indicators = getIndicators();
     const { element } = getNearestIndicator(e, indicators);
     const before = element?.dataset.before || "-1";
-  
     if (before !== cardId) {
       let copy = [...cards];
       let cardToTransfer = copy.find((c) => c.id === cardId);
       if (!cardToTransfer) return;
-  
-      // 1. Optimistic UI update (darhol ko'rinishni yangilash)
       cardToTransfer = { ...cardToTransfer, column };
       copy = copy.filter((c) => c.id !== cardId);
   
@@ -361,7 +434,7 @@ const Card = ({
   handleDragStart,
   onEdit,
   image,
-  setCards //yangi props
+  setCards
   
 }) => {
   const [hovered, setHovered] = useState(false);
@@ -369,39 +442,56 @@ const Card = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
   const [taskData, setTaskData] = useState(null);
-  const [projectUsers, setProjectUsers] = useState([]); // New state for project users
+  const [projectUsers, setProjectUsers] = useState([]); // State for project users
   const [loading, setLoading] = useState(false);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [imageUrl, setImageUrl] = useState(null);
-
+  const [selectedAssignee, setSelectedAssignee] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [filesLoading, setFilesLoading] = useState(false);
  // "Got it" modal ochilganda card ma'lumotlarini saqlash
-  const openViewModal = async () => {
-    setIsModalOpen(true);
-    setLoading(true);
-    
-   try {
-      // Fetch task details
-      const taskResponse = await getTaskById(id);
-      console.log("Task ma'lumotlari:", taskResponse.data);
-      setTaskData(taskResponse.data);
 
-      // Fetch project users (assuming taskData has project_id; adjust if needed)
-      if (taskResponse.data.project_id) {
-        const usersResponse = await getProjectUsers(taskResponse.data.project_id);
-        console.log("Project users:", usersResponse.data);
-        setProjectUsers(usersResponse.data || []); // Set users array
-      } else {
-        console.warn("No project_id found in task data");
-        setProjectUsers([]);
-      }
-    } catch (error) {
-      console.error("Data olishda xatolik:", error);
-      message.error("Ma'lumotlar yuklab bo'lmadi");
-    } finally {
-      setLoading(false);
+
+   const getAssigneeName = (assigneeId) => {
+  console.log("Getting assignee name for ID:", assigneeId); // Debug uchun
+  console.log("Available project users:", projectUsers); // Debug uchun
+  
+  if (!assigneeId) return "Not assigned";
+  
+  // Agar assigneeId object bo'lsa (ba'zan API shunday qaytaradi)
+  if (typeof assigneeId === 'object' && assigneeId !== null) {
+    if (assigneeId.first_name && assigneeId.last_name) {
+      return `${assigneeId.first_name} ${assigneeId.last_name}`;
+    } else if (assigneeId.name) {
+      return assigneeId.name;
+    } else if (assigneeId.id) {
+      assigneeId = assigneeId.id; // ID ni olish
     }
-  };
+  }
+  
+  // Array ichidan qidirish
+  const user = projectUsers.find(u => {
+    // ID lar turli formatda bo'lishi mumkin (string/number)
+    return String(u.id) === String(assigneeId) || 
+           u.user_id === assigneeId || 
+           u.user === assigneeId;
+  });
+  
+  console.log("Found user:", user); // Debug uchun
+  
+  if (user) {
+    return `${user.first_name || ''} ${user.last_name || ''}`.trim() || 
+           user.full_name || 
+           user.username || 
+           user.name || 
+           'Unknown user';
+  }
+  
+  return "Unknown user";
+};
+
+
   const handleMoveToColumn = async (newColumn) => {
     try {
       await updateTaskType(id, newColumn);
@@ -412,14 +502,13 @@ const Card = ({
       message.error("Failed to move task");
       console.error("Move error:", error);
     }
-  };
-  
+  }; 
   const handleDelete = async () => {
     try {
       await deleteTask(id);
       message.success("Task deleted successfully");
       // Local state dan o'chirish
-      setCards(prev => prev.filter(card => card.id !== id));
+      // setCards(prev => prev.filter(card => card.id !== id));
     } catch (error) {
       message.error("Failed to delete task");
       console.error("Delete error:", error);
@@ -461,6 +550,76 @@ const Card = ({
       setComments(taskData.comments);
     }
   }, [taskData]);
+
+
+  const openViewModal = async () => {
+  setIsModalOpen(true);
+  setLoading(true);
+  
+  try {
+    // Fetch task details
+    const taskResponse = await getTaskById(id);
+    console.log("Task response:", taskResponse); // Debug uchun
+    setTaskData(taskResponse.data);
+
+    // Fetch project users if project ID exists
+    if (taskResponse.data.project_id || taskResponse.data.project) {
+      const projectId = taskResponse.data.project_id || taskResponse.data.project;
+      console.log("Fetching users for project:", projectId); // Debug uchun
+      
+      const usersResponse = await getProjectUsers(projectId);
+      console.log("Users response:", usersResponse); // Debug uchun
+      
+      setProjectUsers(usersResponse.data || usersResponse || []);
+      
+      // Set the selected assignee if task has one
+      if (taskResponse.data.assignee) {
+        setSelectedAssignee(taskResponse.data.assignee);
+        console.log("Selected assignee:", taskResponse.data.assignee); // Debug uchun
+      }
+    } else {
+      console.warn("No project_id found in task data:", taskResponse.data);
+    }
+
+    // Fetch files for this task
+    setFilesLoading(true);
+    try {
+      console.log("Fetching files for task ID:", id); // Debug uchun
+      const filesResponse = await getFiles(id);
+      console.log("Files response:", filesResponse); // Debug uchun
+      
+      // API javobini har xil formatlar uchun tekshirish
+      let filesList = [];
+      
+      if (filesResponse && filesResponse.data) {
+        filesList = Array.isArray(filesResponse.data) ? filesResponse.data : [filesResponse.data];
+      } else if (Array.isArray(filesResponse)) {
+        filesList = filesResponse;
+      } else if (filesResponse && filesResponse.results) {
+        filesList = Array.isArray(filesResponse.results) ? filesResponse.results : [filesResponse.results];
+      } else if (filesResponse && filesResponse.files) {
+        filesList = Array.isArray(filesResponse.files) ? filesResponse.files : [filesResponse.files];
+      }
+      
+      console.log("Processed files list:", filesList); // Debug uchun
+      setFiles(filesList);
+      
+    } catch (filesError) {
+      console.error("Error fetching files:", filesError);
+      message.error("Failed to load files");
+      setFiles([]);
+    } finally {
+      setFilesLoading(false);
+    }
+
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    message.error("Failed to load task details");
+  } finally {
+    setLoading(false);
+  }
+  }
+
 
   return (
     <>
@@ -605,7 +764,11 @@ const Card = ({
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="w-full sm:w-[140px] h-[140px] bg-gray-200 flex items-center justify-center rounded">
                     <span role="img" aria-label="image" className="text-4xl">
-                      🖼️
+                  {taskData?.task_image ? (
+                      <img src={taskData.task_image} alt="" onError={(e) => (e.currentTarget.style.display = "none")} />
+                    ) : (
+                      <span>🖼️</span>
+                    )}
                     </span>
                   </div>
                   <div className="flex-1 text-sm text-gray-700 leading-6">
@@ -615,17 +778,61 @@ const Card = ({
 
                 {/* Files */}
                 <div>
-                  <h4 className="font-semibold text-sm mb-3">Files</h4>
-                  <div className="flex flex-wrap gap-3">
-                    <p className="text-sm text-gray-500">No files attached</p>
-                  </div>
+                  <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                    <span>📁</span>
+                    Files ({files.length})
+                  </h4>
+                  
+                  {filesLoading ? (
+                    <div className="flex items-center gap-2">
+                      <Spin size="small" />
+                      <span className="text-sm text-gray-500">Loading files...</span>
+                    </div>
+                  ) : files.length > 0 ? (
+                    <div className="space-y-2">
+                      {files.map((file, index) => (
+                        <div 
+                          key={file.id || index} 
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
+                        >
+                          <div className="flex items-center gap-3">
+                            {/* Fayl tipi ikonkasi */}
+                            <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
+                              {getFileIcon(file.file_type || file.name)}
+                            </div>
+                            
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {file.original_name || file.name || 'Unnamed file'}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {file.file_size ? formatFileSize(file.file_size) : ''} • 
+                                {file.uploaded_at ? formatDate(file.uploaded_at) : 'Unknown date'}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Download button */}
+                          <Button
+                            type="text"
+                            icon={<DownloadOutlined />}
+                            onClick={() => handleFileDownload(file)}
+                            className="text-blue-600 hover:text-blue-800"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg text-center">
+                      📄 No files attached to this task
+                    </p>
+                  )}
                 </div>
 
                 {/* Checklist */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-semibold text-sm">Check list</h4>
-                    <span className="text-xs text-gray-500">Show</span>
+                    <h4 className="font-semibold text-sm">Check list</h4>            
                   </div>
                   <div className="flex flex-col gap-3">
                     <p className="text-sm text-gray-500">No checklist items</p>
@@ -685,10 +892,23 @@ const Card = ({
                     <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
                       👤
                     </div>
-                   <span>
-                      {taskData && taskData.assignee 
-                        ? `${taskData.assignee.first_name} ${taskData.assignee.last_name}`
-                        : "Not assigned"}
+                     <span>
+                      {(() => {
+                        // Debug ma'lumotlari
+                        console.log("Current taskData:", taskData);
+                        console.log("Current selectedAssignee:", selectedAssignee);
+                        console.log("Current projectUsers:", projectUsers);
+                        
+                        // Har xil assignee formatlarini tekshirish
+                        const assignee = selectedAssignee || 
+                                        taskData?.assignee || 
+                                        taskData?.assigned_to || 
+                                        taskData?.assigned?.[0];
+                                        
+                        console.log("Final assignee:", assignee);
+                        
+                        return getAssigneeName(assignee);
+                      })()}
                     </span>
                   </div>
                 </div>
@@ -702,14 +922,11 @@ const Card = ({
                   <p className="mt-1">{taskData.is_active ? "On" : "Off"}</p>
                 </div>
 
-                <div>
-                  <p className="text-gray-400">Status</p>
-                  <p className="mt-1">{taskData.tasks_type || "N/A"}</p>
-                </div>
+              
 
                 <div>
                   <p className="text-gray-400">Type</p>
-                  <p className="mt-1">N/A</p>
+                  <p className="mt-1">{taskData.tasks_type || "N/A"}</p>
                 </div>
 
                 <div>
@@ -962,8 +1179,9 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate, assignees }) => {
     cardData?.description || ""
   );
   const [tags, setTags] = React.useState(cardData?.tags || []);
-  const [files, setFiles] = React.useState(cardData?.files || []);
   const [checklist, setChecklist] = React.useState(cardData?.checklist || []);
+  const [files, setFiles] = useState([]);
+  
 
   React.useEffect(() => {
     if (visible && cardData) {
