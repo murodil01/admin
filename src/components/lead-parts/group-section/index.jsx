@@ -293,7 +293,7 @@ const GroupSection = ({
       {expanded && (
         <div className="bg-white">
           <div className="px-4 pb-4 pt-2 overflow-x-auto relative h-50">
-            <table className="table-fixed shrink-0 absolute min-w-[1200px] border-collapse font-normal border border-gray-300 text-sm">
+            <table className="table-fixed shrink-0 absolute min-w-[1100px] border-collapse font-normal border border-gray-300 text-sm">
               <thead className="bg-gray-50">
                 <tr>
                   <th
