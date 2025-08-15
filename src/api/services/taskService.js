@@ -11,4 +11,14 @@ export const updateTaskType = (id, tasks_type) => api.patch(endpoints.tasks.upda
 export const getTaskTags = () => api.get(endpoints.tasks.getTags);
 export const getProjectTaskById = (id) => api.get(endpoints.projects.getByIdTasks(id));
 
+export const getTaskFiles  = () => api.get(endpoints.tasks.getTaskFiles);
+export const uploadTaskFile = (formData) =>
+  api.post(endpoints.tasks.createTaskFile, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  export const deleteTaskFile = (id) => api.delete(endpoints.tasks.deleteTaskFile(id));
+
 export const getProjectUsers = (id) => api.get(endpoints.projects.getByIdUsers(id));

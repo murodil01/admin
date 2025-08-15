@@ -17,6 +17,7 @@ import checkList from "../../assets/icons/checklist.svg";
 import clock from "../../assets/icons/clock.svg";
 import dayjs from "dayjs";
 import { DownloadOutlined } from "@ant-design/icons";
+import memberSearch from "../../assets/icons/memberSearch.svg";
 import pencil from "../../assets/icons/pencil.svg";
 
 import {
@@ -42,6 +43,9 @@ import {
   getTaskTags,
   getProjectUsers,
   createTask,
+  getTaskFiles,      
+  uploadTaskFile,    
+  deleteTaskFile 
 } from "../../api/services/taskService";
 
 const NotionKanban = ({ cards, setCards }) => {
@@ -705,16 +709,15 @@ const Card = ({
               </div>
 
               {/* Right section */}
-              <div className="md:col-span-4 space-y-4 text-sm">        
-
-               <div>
+              <div className="md:col-span-4 space-y-4 text-sm">
+                <div>
                   <p className="text-gray-400">Assignee by</p>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
                       👤
                     </div>
-                   <span>
-                      {taskData && taskData.assignee 
+                    <span>
+                      {taskData && taskData.assignee
                         ? `${taskData.assignee.first_name} ${taskData.assignee.last_name}`
                         : "Not assigned"}
                     </span>
@@ -988,15 +991,21 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
   const [selectedTags, setSelectedTags] = React.useState([]);
   const [progress, setProgress] = React.useState(0);
 
+  // Files state - yetishmayotgan qism
+  const [files, setFiles] = React.useState([]);
+  const [uploadedFiles, setUploadedFiles] = React.useState([]);
+  const [fileUploading, setFileUploading] = React.useState(false);
+
   // API data state
   const [availableUsers, setAvailableUsers] = React.useState([]);
   const [availableTags, setAvailableTags] = React.useState([]);
   // Modal ochilganda API dan ma'lumotlarni yuklash
   React.useEffect(() => {
-    if (visible && projectId) {
+    if (visible && projectId && cardData?.id) {
       loadModalData();
+      loadTaskFiles();
     }
-  }, [visible, projectId]);
+  }, [visible, projectId,  cardData?.id]);
 
   // Card ma'lumotlarini form ga yuklash
   React.useEffect(() => {
@@ -1009,6 +1018,8 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       setDescription(cardData.description || "");
       setSelectedTags(cardData.tags ? cardData.tags.map((tag) => tag.id) : []);
       setProgress(cardData.progress || 0);
+      // New files list ni tozalash
+      setFiles([]);
     }
   }, [cardData, visible]);
 
@@ -1035,6 +1046,60 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       message.error("Ma'lumotlarni yuklashda xatolik yuz berdi");
     } finally {
       setLoading(false);
+    }
+  };
+
+   // Task files ni yuklash funksiyasi - YANGI
+   const loadTaskFiles = async () => {
+    try {
+      // ✅ axios o'rniga taskService funksiyasini ishlating
+      const response = await getTaskFiles();
+      
+      // Task ID ga mos fayllarni filtrlash
+      const taskFiles = response.data.filter(file => file.task === cardData.id);
+      setUploadedFiles(taskFiles);
+      
+      console.log("Yuklangan fayllar:", taskFiles);
+    } catch (error) {
+      console.error("Fayllarni yuklashda xatolik:", error);
+      message.error("Fayllarni yuklashda xatolik yuz berdi");
+      setUploadedFiles([]);
+    }
+  };
+
+   // File upload funksiyasi - yangi qo'shilgan
+   const uploadFile = async (file, taskId) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('task', taskId); // Task ID ni qo'shish
+  
+    try {
+      // ✅ axios o'rniga taskService funksiyasini ishlating
+      const response = await uploadTaskFile(formData);
+      return response.data;
+    } catch (error) {
+      console.error('File upload error:', error);
+      throw error;
+    }
+  };
+
+  // Multiple files upload
+  const uploadMultipleFiles = async (taskId) => {
+    if (files.length === 0) return [];
+
+    setFileUploading(true);
+    const uploadPromises = files.map(file => uploadFile(file, taskId));
+    
+    try {
+      const uploadResults = await Promise.all(uploadPromises);
+      message.success(`${uploadResults.length} ta fayl muvaffaqiyatli yuklandi!`);
+      return uploadResults;
+    } catch (error) {
+      message.error('Ba\'zi fayllar yuklanmadi');
+      console.error('Files upload error:', error);
+      return [];
+    } finally {
+      setFileUploading(false);
     }
   };
 
@@ -1068,20 +1133,30 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       console.log("Yuborilayotgan ma'lumotlar:", updateData); // Debug uchun
       console.log("Project ID:", projectId); // Project ID ni tekshirish
       const response = await updateTask(cardData.id, updateData);
+      
+       // 2. Yangi fayllarni yuklash (agar mavjud bo'lsa)
+       let newUploadedFiles = [];
+       if (files.length > 0) {
+         newUploadedFiles = await uploadMultipleFiles(cardData.id);
+       }
+ 
+       message.success("Task muvaffaqiyatli yangilandi!");
 
-      message.success("Task muvaffaqiyatli yangilandi!");
-
-      // onUpdate chaqirishdan oldin response tekshirish
-      if (response && response.data) {
-        onUpdate(response.data);
-      } else {
-        // Agar response.data yo'q bo'lsa, local ma'lumotni yuborish
-        onUpdate({
-          ...cardData,
-          ...updateData,
-          id: cardData.id,
-        });
-      }
+     // 3. State ni yangilash
+     if (response && response.data) {
+      const updatedCardData = {
+        ...response.data,
+        files: [...uploadedFiles, ...newUploadedFiles] // Eski va yangi fayllarni birlashtirish
+      };
+      onUpdate(updatedCardData);
+    } else {
+      onUpdate({
+        ...cardData,
+        ...updateData,
+        id: cardData.id,
+        files: [...uploadedFiles, ...newUploadedFiles]
+      });
+    }
       onClose();
     } catch (error) {
       console.error("Task yangilashda xatolik:", error);
@@ -1116,6 +1191,30 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
     );
   };
 
+   // File delete funksiyasi - YANGILANGAN
+   const deleteUploadedFile = async (fileId) => {
+    try {
+      // ✅ axios o'rniga taskService funksiyasini ishlating
+      await deleteTaskFile(fileId);
+      setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
+      message.success("Fayl o'chirildi");
+    } catch (error) {
+      message.error("Faylni o'chirishda xatolik");
+      console.error("File delete error:", error);
+    }
+  };
+
+    // File download funksiyasi - YANGI
+    const downloadFile = (file) => {
+      if (file.file) {
+        // Faylni yangi tabda ochish yoki download qilish
+        window.open(file.file, '_blank');
+      } else {
+        message.error("Fayl topilmadi");
+      }
+    };
+
+
   return (
     <Modal
       open={visible}
@@ -1124,11 +1223,11 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       centered
       width={1000}
       title={
-        <h2 className="px-5 text-2xl font-bold text-[#1F2937]">Edit Task</h2>
+        <h2 className="px-4 text-2xl font-bold text-[#1F2937]">Edit Task</h2>
       }
       className="custom-modal"
     >
-      <div className="px-5 py-8">
+      <div className="px-5 sm:px-4 py-8">
         {loading ? (
           <div className="flex justify-center items-center h-[400px]">
             <Spin size="large" />
@@ -1159,7 +1258,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                   className="custom-select w-full"
                   value={type}
                   onChange={setType}
-                  style={{ height: "54px" }}
+                  // style={{ height: "54px" }}
                   options={taskColumns.map((col) => ({
                     value: col.id,
                     label: col.title,
@@ -1186,8 +1285,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                     Notification
                   </label>
                   <Select
-                    className="custom-notif w-full"
-                    style={{ height: "54px" }}
+                    className="custom-notif"
                     value={notification}
                     onChange={setNotification}
                     options={[
@@ -1201,22 +1299,33 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                   <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
                     Assignee
                   </label>
-                  <Select
-                    className="custom-assigne"
-                    showSearch
-                    mode="multiple"
-                    placeholder="Select assignees"
-                    optionFilterProp="label"
-                    style={{ height: "54px" }}
-                    value={selectedAssignee}
-                    onChange={setSelectedAssignee}
-                    options={availableUsers}
-                    filterOption={(input, option) =>
-                      (option?.label ?? "")
-                        .toLowerCase()
-                        .includes(input.toLowerCase())
-                    }
-                  />
+                  <div className="relative">
+                    <Select
+                      showSearch
+                      placeholder="Select assignees"
+                      value={selectedAssignee}
+                      optionFilterProp="label"
+                      className="custom-assigne"
+                      // mode="multiple"
+                      onChange={setSelectedAssignee}
+                      options={availableUsers}
+                      filterOption={(input, option) =>
+                        (option?.label ?? "")
+                          .toLowerCase()
+                          .includes(input.toLowerCase())
+                      }
+                      notFoundContent={
+                        loadModalData ? "Loading..." : "No users found"
+                      }
+                    />
+                    <span className="absolute top-7 right-10 -translate-y-1/2 flex items-center pointer-events-none">
+                      <img
+                        src={memberSearch}
+                        alt="avatar"
+                        className="w-6 h-6 rounded-full object-cover"
+                      />  
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -1302,44 +1411,148 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                 </Upload>
               </div>
 
-              {/* Task Info Display */}
-              <div className="space-y-4">
-                <div>
-                  <p className="text-[14px] font-bold text-[#7D8592] mb-2">
-                    Task Information
-                  </p>
-                  <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                    <div>
-                      <span className="text-sm text-gray-600">Created:</span>
-                      <span className="text-sm ml-2">
-                        {cardData?.created_at
-                          ? dayjs(cardData.created_at).format("YYYY-MM-DD")
-                          : "N/A"}
-                      </span>
+              {/* Files Section */}
+              <div className="mt-4">
+                  <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
+                    Files
+                  </label>
+                  
+                  {/* Existing uploaded files */}
+                  {uploadedFiles.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs text-gray-500 mb-2">Yuklangan fayllar:</p>
+                      {uploadedFiles.map((file, index) => (
+                        <div key={`uploaded-${file.id}`} className="flex items-center gap-2 mb-2 p-2 border rounded-lg bg-green-50">
+                          <div className="flex-1 w-[60%]">
+                            <p className="max-w-full text-sm font-medium truncate">
+                              {file.file ? file.file.split('/').pop() : `File ${index + 1}`}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Created: {file.created_at ? new Date(file.created_at).toLocaleDateString() : 'N/A'}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => downloadFile(file)}
+                            className="text-blue-500 hover:text-blue-700 p-1"
+                            title="Download file"
+                          >
+                            <DownloadOutlined />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (window.confirm('Bu faylni o\'chirmoqchimisiz?')) {
+                                deleteUploadedFile(file.id);
+                              }
+                            }}
+                            className="text-red-500 hover:text-red-700 p-1"
+                            title="Delete file"
+                          >
+                            <FiTrash />
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                    <div>
-                      <span className="text-sm text-gray-600">Updated:</span>
-                      <span className="text-sm ml-2">
-                        {cardData?.updated_at
-                          ? dayjs(cardData.updated_at).format("YYYY-MM-DD")
-                          : "N/A"}
-                      </span>
+                  )}
+  
+                  {/* New files to be uploaded */}
+                  {files.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs text-gray-500 mb-2">Yangi fayllar (saqlaganda yuklanadi):</p>
+                      {files.map((file, index) => (
+                        <div key={`new-${index}`} className="flex items-center gap-2 mb-2 p-2 border rounded-lg bg-orange-50">
+                          <div className="flex-1 w-[60%]">
+                            <p className="max-w-full text-sm font-medium truncate">{file.name}</p>
+                            <p className="text-xs text-orange-600">Size: {(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                          </div>
+                          <span className="text-orange-500 text-xs px-2 py-1 bg-orange-200 rounded">Yangi</span>
+                          <button
+                            onClick={() =>
+                              setFiles((prev) => prev.filter((_, i) => i !== index))
+                            }
+                            className="text-red-500 hover:text-red-700 p-1"
+                            title="Remove file"
+                          >
+                            <FiTrash />
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                    <div>
-                      <span className="text-sm text-gray-600">Project:</span>
-                      <span className="text-sm ml-2">
-                        {cardData?.project || "N/A"}
-                      </span>
+                  )}
+  
+                  {/* File upload */}
+                  <Upload
+                    className="w-full"
+                    multiple
+                    showUploadList={false}
+                    beforeUpload={(file) => {
+                      // File size check (10MB limit)
+                      if (file.size > 10 * 1024 * 1024) {
+                        message.error(`${file.name} faylining hajmi 10MB dan katta!`);
+                        return false;
+                      }
+                      
+                      setFiles((prev) => [...prev, file]);
+                      return false;
+                    }}
+                    accept="*/*"
+                  >
+                    <button 
+                      className="text-blue-600 text-[14px] font-bold hover:text-blue-800 transition-colors"
+                      disabled={fileUploading}
+                    >
+                      {fileUploading ? "Uploading..." : "+ add file"}
+                    </button>
+                  </Upload>
+  
+                  {/* Files summary */}
+                  {(uploadedFiles.length > 0 || files.length > 0) && (
+                    <div className="mt-3 p-2 bg-gray-50 rounded text-xs text-gray-600">
+                      Jami fayllar: {uploadedFiles.length + files.length} 
+                      {files.length > 0 && ` (${files.length} ta yangi)`}
                     </div>
-                  </div>
+                  )}
                 </div>
-              </div>
+
+              {/* Instructions */}
+              {/* <div>
+                <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
+                  Check list
+                </label>
+                {checklist.map((check, index) => (
+                  <div key={index} className="flex items-center gap-2 mb-2">
+                    <input
+                      type="checkbox"
+                      checked={check.done}
+                      onChange={() => toggleCheckDone(index)}
+                    />
+                    <Input
+                      value={check.text}
+                      onChange={(e) => updateCheckText(index, e.target.value)}
+                      className="flex-1"
+                    />
+                    <FiTrash
+                      className="text-gray-500 cursor-pointer hover:text-red-500"
+                      onClick={() =>
+                        setChecklist((prev) =>
+                          prev.filter((_, i) => i !== index)
+                        )
+                      }
+                    />
+                  </div>
+                ))}
+                <button
+                  onClick={addCheckItem}
+                  className="text-blue-600 text-[14px] font-bold"
+                >
+                  + add new check
+                </button>
+              </div> */}
 
               {/* Buttons */}
               <div className="flex justify-center gap-5 pt-10 md:pt-65">
                 <Button
                   onClick={onClose}
-                  disabled={saveLoading}
+                  disabled={saveLoading || fileUploading}
                   style={{
                     width: "140px",
                     height: "48px",
@@ -1370,6 +1583,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                   onClick={handleSave}
                   type="primary"
                   loading={saveLoading}
+                  disabled={fileUploading}
                   style={{
                     width: "140px",
                     height: "48px",
@@ -1400,6 +1614,484 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
 };
 
 export default NotionKanban;
+
+
+
+// const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
+//   const { projectId } = useParams();
+//   const [loading, setLoading] = useState(false);
+//   const [saveLoading, setSaveLoading] = useState(false);
+
+//   // Form state variables
+//   const [title, setTitle] = React.useState("");
+//   const [type, setType] = React.useState("");
+//   const [date, setDate] = React.useState(null);
+//   const [notification, setNotification] = React.useState("Off");
+//   const [selectedAssignee, setSelectedAssignee] = React.useState([]);
+//   const [description, setDescription] = React.useState("");
+//   const [selectedTags, setSelectedTags] = React.useState([]);
+//   const [progress, setProgress] = React.useState(0);
+
+//   // API data state
+//   const [availableUsers, setAvailableUsers] = React.useState([]);
+//   const [availableTags, setAvailableTags] = React.useState([]);
+//   // Modal ochilganda API dan ma'lumotlarni yuklash
+//   React.useEffect(() => {
+//     if (visible && projectId) {
+//       loadModalData();
+//     }
+//   }, [visible, projectId]);
+
+//   // Card ma'lumotlarini form ga yuklash
+//   React.useEffect(() => {
+//     if (visible && cardData) {
+//       setTitle(cardData.name || "");
+//       setType(cardData.tasks_type || "");
+//       setDate(cardData.deadline ? dayjs(cardData.deadline) : null);
+//       setNotification(cardData.is_active ? "On" : "Off");
+//       setSelectedAssignee(cardData.assigned || []);
+//       setDescription(cardData.description || "");
+//       setSelectedTags(cardData.tags ? cardData.tags.map((tag) => tag.id) : []);
+//       setProgress(cardData.progress || 0);
+//     }
+//   }, [cardData, visible]);
+
+//   const loadModalData = async () => {
+//     setLoading(true);
+//     try {
+//       // Parallel ravishda users va tags yuklab olish
+//       const [usersResponse, tagsResponse] = await Promise.all([
+//         getProjectUsers(projectId),
+//         getTaskTags(),
+//       ]);
+
+//       // Users ma'lumotlarini formatlash
+//       const formattedUsers = usersResponse.data.map((user) => ({
+//         value: user.id,
+//         label: `${user.first_name} ${user.last_name}`,
+//         email: user.email,
+//       }));
+
+//       setAvailableUsers(formattedUsers);
+//       setAvailableTags(tagsResponse.data);
+//     } catch (error) {
+//       console.error("Modal ma'lumotlarini yuklashda xatolik:", error);
+//       message.error("Ma'lumotlarni yuklashda xatolik yuz berdi");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleSave = async () => {
+//     if (!cardData?.id) {
+//       message.error("Task ID topilmadi");
+//       return;
+//     }
+//     // Validatsiya qo'shish
+//     if (!title.trim()) {
+//       message.error("Task nomi kiritilishi shart");
+//       return;
+//     }
+
+//     setSaveLoading(true);
+
+//     try {
+//       const updateData = {
+//         name: title.trim(),
+//         description: description.trim() || null, // bo'sh bo'lsa null
+//         tasks_type: type,
+//         deadline: date ? date.format("YYYY-MM-DD") : null,
+//         project: projectId, // MUHIM: project maydoni majburiy (*)
+//         // assigned - UUID array formatida (swagger bo'yicha)
+//         assigned: selectedAssignee.length > 0 ? selectedAssignee : [],
+//         // tags_ids - UUID array formatida (swagger bo'yicha)
+//         tags_ids: selectedTags.length > 0 ? selectedTags : [],
+//         progress: Math.min(100, Math.max(0, progress)), // 0-100 orasida
+//         is_active: notification === "On",
+//       };
+//       console.log("Yuborilayotgan ma'lumotlar:", updateData); // Debug uchun
+//       console.log("Project ID:", projectId); // Project ID ni tekshirish
+//       const response = await updateTask(cardData.id, updateData);
+
+//       message.success("Task muvaffaqiyatli yangilandi!");
+
+//       // onUpdate chaqirishdan oldin response tekshirish
+//       if (response && response.data) {
+//         onUpdate(response.data);
+//       } else {
+//         // Agar response.data yo'q bo'lsa, local ma'lumotni yuborish
+//         onUpdate({
+//           ...cardData,
+//           ...updateData,
+//           id: cardData.id,
+//         });
+//       }
+//       onClose();
+//     } catch (error) {
+//       console.error("Task yangilashda xatolik:", error);
+
+//       // Xatolikni batafsil ko'rsatish
+//       if (error.response) {
+//         console.error("Server javobi:", error.response.data);
+//         console.error("Status:", error.response.status);
+
+//         // Server xatolik xabarini ko'rsatish
+//         const errorMessage =
+//           error.response.data?.message ||
+//           error.response.data?.error ||
+//           error.response.data?.detail ||
+//           `Server xatolik: ${error.response.status}`;
+//         message.error(errorMessage);
+//       } else if (error.request) {
+//         message.error("Serverga ulanishda xatolik");
+//       } else {
+//         message.error("Kutilmagan xatolik yuz berdi");
+//       }
+//     } finally {
+//       setSaveLoading(false);
+//     }
+//   };
+
+//   const toggleTag = (tagId) => {
+//     setSelectedTags((prev) =>
+//       prev.includes(tagId)
+//         ? prev.filter((id) => id !== tagId)
+//         : [...prev, tagId]
+//     );
+//   };
+
+//   return (
+//     <Modal
+//       open={visible}
+//       onCancel={onClose}
+//       footer={null}
+//       centered
+//       width={1000}
+//       title={
+//         <h2 className="px-4 text-2xl font-bold text-[#1F2937]">Edit Task</h2>
+//       }
+//       className="custom-modal"
+//     >
+//       <div className="px-5 sm:px-4 py-8">
+//         {loading ? (
+//           <div className="flex justify-center items-center h-[400px]">
+//             <Spin size="large" />
+//           </div>
+//         ) : (
+//           <div className="grid grid-cols-1 xl:grid-cols-5 gap-10">
+//             {/* LEFT SIDE */}
+//             <div className="xl:col-span-3 space-y-6">
+//               {/* Title */}
+//               <div>
+//                 <label className="block text-[14px] text-[#7D8592] mb-2 font-bold">
+//                   Task Title
+//                 </label>
+//                 <Input
+//                   style={{ height: "54px", borderRadius: "14px" }}
+//                   value={title}
+//                   onChange={(e) => setTitle(e.target.value)}
+//                   placeholder="Enter task title"
+//                 />
+//               </div>
+
+//               {/* Type */}
+//               <div>
+//                 <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
+//                   Status
+//                 </label>
+//                 <Select
+//                   className="custom-select w-full"
+//                   value={type}
+//                   onChange={setType}
+//                   // style={{ height: "54px" }}
+//                   options={taskColumns.map((col) => ({
+//                     value: col.id,
+//                     label: col.title,
+//                   }))}
+//                 />
+//               </div>
+
+//               {/* Time, Notification, Assignee */}
+//               <div className="flex justify-between items-center gap-[20px] flex-wrap">
+//                 <div>
+//                   <label className="block text-[14px] font-bold text-[#7D8592] mt-4 mb-2">
+//                     Due time
+//                   </label>
+//                   <DatePicker
+//                     className="w-full"
+//                     style={{ borderRadius: "14px", height: "54px" }}
+//                     value={date}
+//                     onChange={(_, date) => setDate(date)}
+//                   />
+//                 </div>
+
+//                 <div>
+//                   <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
+//                     Notification
+//                   </label>
+//                   <Select
+//                     className="custom-notif"
+//                     value={notification}
+//                     onChange={setNotification}
+//                     options={[
+//                       { value: "On", label: "On" },
+//                       { value: "Off", label: "Off" },
+//                     ]}
+//                   />
+//                 </div>
+
+//                 <div className="md:col-span-2">
+//                   <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
+//                     Assignee
+//                   </label>
+//                   <div className="relative">
+//                     <Select
+//                       showSearch
+//                       placeholder="Select assignees"
+//                       value={selectedAssignee}
+//                       optionFilterProp="label"
+//                       className="custom-assigne"
+//                       // mode="multiple"
+//                       onChange={setSelectedAssignee}
+//                       options={availableUsers}
+//                       filterOption={(input, option) =>
+//                         (option?.label ?? "")
+//                           .toLowerCase()
+//                           .includes(input.toLowerCase())
+//                       }
+//                       notFoundContent={
+//                         loadModalData ? "Loading..." : "No users found"
+//                       }
+//                     />
+//                     <span className="absolute top-7 right-10 -translate-y-1/2 flex items-center pointer-events-none">
+//                       <img
+//                         src={memberSearch}
+//                         alt="avatar"
+//                         className="w-6 h-6 rounded-full object-cover"
+//                       />  
+//                     </span>
+//                   </div>
+//                 </div>
+//               </div>
+
+//               {/* Description */}
+//               <div>
+//                 <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
+//                   Description
+//                 </label>
+//                 <TextArea
+//                   style={{ borderRadius: "14px" }}
+//                   rows={4}
+//                   value={description}
+//                   onChange={(e) => setDescription(e.target.value)}
+//                   placeholder="Enter task description"
+//                 />
+//               </div>
+
+//               {/* Progress */}
+//               <div>
+//                 <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
+//                   Progress (%)
+//                 </label>
+//                 <Input
+//                   type="number"
+//                   min={0}
+//                   max={100}
+//                   style={{ height: "54px", borderRadius: "14px" }}
+//                   value={progress}
+//                   onChange={(e) => setProgress(Number(e.target.value))}
+//                   placeholder="Enter progress percentage"
+//                 />
+//               </div>
+
+//               {/* Tags */}
+//               <div>
+//                 <label className="block text-[14px] text-[#7D8592] mb-2 font-bold">
+//                   Task tags
+//                 </label>
+//                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+//                   {availableTags.map((tag) => (
+//                     <label
+//                       key={tag.id}
+//                       className="flex items-center gap-2 text-[12px] cursor-pointer capitalize font-semi-bold text-gray-400"
+//                     >
+//                       <input
+//                         type="checkbox"
+//                         checked={selectedTags.includes(tag.id)}
+//                         onChange={() => toggleTag(tag.id)}
+//                       />
+//                       {tag.name}
+//                     </label>
+//                   ))}
+//                 </div>
+//               </div>
+//             </div>
+
+//             {/* RIGHT SIDE */}
+//             <div className="xl:col-span-2 space-y-6">
+//               {/* Image Upload */}
+//               <div>
+//                 <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
+//                   Image
+//                 </label>
+//                 <Upload
+//                   style={{ width: "100%" }}
+//                   showUploadList={true}
+//                   beforeUpload={(file) => {
+//                     // Handle file upload here
+//                     return false;
+//                   }}
+//                 >
+//                   <Button
+//                     className="custom-upload-btn"
+//                     style={{
+//                       width: "100%",
+//                       height: "54px",
+//                       borderRadius: "14px",
+//                       fontWeight: "500",
+//                     }}
+//                   >
+//                     Upload image
+//                   </Button>
+//                 </Upload>
+//               </div>
+
+//               {/* Files */}
+//               <div className="mt-4">
+//                 <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
+//                   Files
+//                 </label>
+//                 {files.map((file, index) => (
+//                   <div key={index} className="flex items-center gap-2 mb-2">
+//                     <Input
+//                       value={file.name}
+//                       disabled
+//                       className="flex-1"
+//                       style={{ height: "54px" }}
+//                     />
+//                     <FiTrash
+//                       className="text-gray-500 cursor-pointer hover:text-red-500"
+//                       onClick={() =>
+//                         setFiles((prev) => prev.filter((_, i) => i !== index))
+//                       }
+//                     />
+//                   </div>
+//                 ))}
+//                 <Upload
+//                   className="w-full"
+//                   multiple
+//                   showUploadList={false}
+//                   beforeUpload={(file) => {
+//                     setFiles((prev) => [...prev, file]);
+//                     return false;
+//                   }}
+//                 >
+//                   <button className="text-blue-600 text-[14px] font-bold">
+//                     + add file
+//                   </button>
+//                 </Upload>
+//               </div>
+
+//               {/* Instructions */}
+//               {/* <div>
+//                 <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
+//                   Check list
+//                 </label>
+//                 {checklist.map((check, index) => (
+//                   <div key={index} className="flex items-center gap-2 mb-2">
+//                     <input
+//                       type="checkbox"
+//                       checked={check.done}
+//                       onChange={() => toggleCheckDone(index)}
+//                     />
+//                     <Input
+//                       value={check.text}
+//                       onChange={(e) => updateCheckText(index, e.target.value)}
+//                       className="flex-1"
+//                     />
+//                     <FiTrash
+//                       className="text-gray-500 cursor-pointer hover:text-red-500"
+//                       onClick={() =>
+//                         setChecklist((prev) =>
+//                           prev.filter((_, i) => i !== index)
+//                         )
+//                       }
+//                     />
+//                   </div>
+//                 ))}
+//                 <button
+//                   onClick={addCheckItem}
+//                   className="text-blue-600 text-[14px] font-bold"
+//                 >
+//                   + add new check
+//                 </button>
+//               </div> */}
+
+//               {/* Buttons */}
+//               <div className="flex justify-center gap-5 pt-10 md:pt-65">
+//                 <Button
+//                   onClick={onClose}
+//                   disabled={saveLoading}
+//                   style={{
+//                     width: "140px",
+//                     height: "48px",
+//                     fontSize: "17px",
+//                     fontWeight: "600",
+//                     borderRadius: "14px",
+//                     border: "none",
+//                     transition: "all 0.3s ease",
+//                     boxShadow: "0 4px 12px rgba(217, 217, 217, 0.5)",
+//                     color: "#595959",
+//                     backgroundColor: "#fff",
+//                   }}
+//                   onMouseEnter={(e) => {
+//                     e.currentTarget.style.borderColor = "#d9d9d9";
+//                     e.currentTarget.style.color = "#595959";
+//                     e.currentTarget.style.backgroundColor = "#f5f5f5";
+//                   }}
+//                   onMouseLeave={(e) => {
+//                     e.currentTarget.style.borderColor = "transparent";
+//                     e.currentTarget.style.color = "#595959";
+//                     e.currentTarget.style.backgroundColor = "#fff";
+//                   }}
+//                 >
+//                   Cancel
+//                 </Button>
+
+//                 <Button
+//                   onClick={handleSave}
+//                   type="primary"
+//                   loading={saveLoading}
+//                   style={{
+//                     width: "140px",
+//                     height: "48px",
+//                     fontSize: "17px",
+//                     fontWeight: "600",
+//                     borderRadius: "14px",
+//                     boxShadow: "0 4px 12px rgba(24, 144, 255, 0.5)",
+//                     transition: "box-shadow 0.3s ease",
+//                   }}
+//                   onMouseEnter={(e) =>
+//                     (e.currentTarget.style.boxShadow =
+//                       "0 6px 20px rgba(24, 144, 255, 0.8)")
+//                   }
+//                   onMouseLeave={(e) =>
+//                     (e.currentTarget.style.boxShadow =
+//                       "0 4px 12px rgba(24, 144, 255, 0.5)")
+//                   }
+//                 >
+//                   {saveLoading ? "Saving..." : "Save"}
+//                 </Button>
+//               </div>
+//             </div>
+//           </div>
+//         )}
+//       </div>
+//     </Modal>
+//   );
+// };
+
+
 
 // import React, { useEffect, useState } from "react";
 // import { useParams } from "react-router-dom";
