@@ -256,7 +256,7 @@ const CategoryDetailsPage = () => {
       </div>
 
       {/* Yuklanish va xato xabarlari */}
-      {loading && <div className="text-center py-3 sm:py-4 text-gray-500">Yuklanmoqda...</div>}
+      {loading && <div className="text-center py-3 sm:py-4 text-gray-500">Sekin Yuklanmoqda...</div>}
       {error && !showModal && <p className="text-red-500 bg-red-50 p-2 sm:p-3 rounded-lg text-center text-sm sm:text-base">{error}</p>}
 
       {/* Kategoriya tafsilotlari */}
