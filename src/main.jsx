@@ -8,10 +8,10 @@ import { Toaster } from "react-hot-toast";
 import "aos/dist/aos.css";   // AOS CSS import qilinadi
 
 createRoot(document.getElementById("root")).render(
-  <StrictMode>
+  <>
     <>
       <RouterProvider router={router} />
       <Toaster position="top-center" />
     </>
-  </StrictMode>
+  </>
 );

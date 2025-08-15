@@ -87,6 +87,15 @@ const endpoints = {
 	userProjects: {
 		getAll: 'user-projects/',
 		getById: (id) => `user-projects/${id}/`,
+	},
+
+	notes: {
+		getAll: 'notes/',
+		getById: (id) => `notes/${id}/`,
+		create: 'notes/',
+		update: (id) => `notes/${id}/`,
+		updateStatus: id=> `/notes/${id}/`,
+		delete: (id) => `notes/${id}/`,
 	}
 }
 
