@@ -374,11 +374,13 @@ const Card = ({
   const [hovered, setHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
   const [selectedCard, setSelectedCard] = useState(null);
-
   const [taskData, setTaskData] = useState(null);
+  const [projectUsers, setProjectUsers] = useState([]); // New state for project users
   const [loading, setLoading] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+  const [imageUrl, setImageUrl] = useState(null);
 
   // "Got it" modal ochilganda card ma'lumotlarini saqlash
   const openViewModal = async () => {
@@ -389,9 +391,17 @@ const Card = ({
       const response = await getTaskById(id);
       console.log("Task ma'lumotlari:", response.data);
       setTaskData(response.data); // API dan kelgan ma'lumotlar
+      // if (taskResponse.data.project_id) {
+      //   const usersResponse = await getProjectUsers(taskResponse.data.project_id);
+      //   console.log("Project users:", usersResponse.data);
+      //   setProjectUsers(usersResponse.data || []); // Set users array
+      // } else {
+      //   console.warn("No project_id found in task data");
+      //   setProjectUsers([]);
+      // }
     } catch (error) {
-      console.error("Task olishda xatolik:", error);
-      message.error("Task ma'lumotlarini yuklab bo'lmadi");
+      console.error("Data olishda xatolik:", error);
+      message.error("Ma'lumotlar yuklab bo'lmadi");
     } finally {
       setLoading(false);
     }
@@ -699,31 +709,21 @@ const Card = ({
               </div>
 
               {/* Right section */}
-              <div className="md:col-span-4 space-y-4 text-sm">
-                <div>
-                  <p className="text-gray-400">Assigned by</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-                      👤
-                    </div>
-                    <span>N/A</span>
-                  </div>
-                </div>
+              <div className="md:col-span-4 space-y-4 text-sm">        
 
-                <div>
-                  <p className="text-gray-400">Assignee</p>
+               <div>
+                  <p className="text-gray-400">Assignee by</p>
                   <div className="flex items-center gap-2 mt-1">
                     <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
                       👤
                     </div>
-                    <span>
-                      {taskData.assigned && taskData.assigned.length > 0
-                        ? taskData.assigned.join(", ")
-                        : "N/A"}
+                   <span>
+                      {taskData && taskData.assignee 
+                        ? `${taskData.assignee.first_name} ${taskData.assignee.last_name}`
+                        : "Not assigned"}
                     </span>
                   </div>
                 </div>
-
                 <div>
                   <p className="text-gray-400">Date</p>
                   <p className="mt-1">

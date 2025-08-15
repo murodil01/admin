@@ -196,7 +196,7 @@ const MainLead = () => {
         ))}
       </div>
 
-      <div className="mt-8 py-3 px-6 bg-[#CBCBCB] rounded-[8px]">
+      <div className="mt-8 py-2 px-6 bg-[#CBCBCB] rounded-[8px]">
         {addingGroup ? (
           <AddGroupInput
             onSave={addGroup}
@@ -205,7 +205,7 @@ const MainLead = () => {
         ) : (
           <button
             onClick={() => setAddingGroup(true)}
-            className="flex items-center justify-center gap-2 bg-[#7D8592] hover:bg-gray-600 text-white px-5 py-[15px] text-[16px] rounded-[8px] font-medium transition-colors"
+            className="flex items-center justify-center gap-2 bg-[#7D8592] hover:bg-gray-600 text-white px-5 py-[5px] text-[16px] rounded-[8px] font-medium transition-colors"
             aria-label="Add new group"
           >
             <Plus className="w-5 h-5" />
@@ -331,4 +331,5 @@ const AddGroupInput = ({ onSave, onCancel }) => {
   );
 };
 
-export default MainLead;
+export default MainLead; 
+

@@ -8,8 +8,13 @@ import endpoints from "../endpoint";
 
 
 export const getDepartments = async () => {
-    const res = await api.get(endpoints.departments.getAll);
-    return res.data; // ✅ bu yerda count, next, previous, results bo‘ladi
+    try {
+        const res = await api.get(endpoints.departments.getAll);
+        return res.data; // {count, next, previous, results} yoki to'g'ridan-to'g'ri array qaytishi mumkin
+    } catch (error) {
+        console.error("Departmentlarni olishda xatolik:", error);
+        throw error; // Xatoni yuqoriga otish
+    }
 };
 
 export const getDepartmentById = async (id) => {

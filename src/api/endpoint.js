@@ -34,6 +34,9 @@ const endpoints = {
 	departments: {
 		getAll: 'department/departments/',
 		getById: id => `department/departments/${id}/`,
+		create: 'department/departments/',  // create endpointini qo'shdik
+		update: id => `department/departments/${id}/`,
+		delete: id => `department/departments/${id}/`,
 	},
 
 	boards: {
@@ -65,6 +68,8 @@ const endpoints = {
 		getById: (id) => `users/${id}/`,
 		create: 'users/',
 		update: (id) => `users/${id}/`,
+		updateStatus: id=> `/users/${id}/`,
+		delete: (id) => `users/${id}/`,
 	},
 
 	activities: {
