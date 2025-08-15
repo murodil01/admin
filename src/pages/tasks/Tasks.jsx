@@ -23,7 +23,7 @@ const Projects = () => {
   const { collapsed } = useSidebar();
   const [isSmallScreen, setIsSmallScreen] = useState(false);
 
-  useEffect(() => {
+  useEffect(() => { 
     const handleResize = () => {
       setIsSmallScreen(window.innerWidth < 768); // 768px = md breakpoint
     };
@@ -169,7 +169,7 @@ const Projects = () => {
   //     console.error("Error adding task:", error);
   //   }
   // };
-
+  
   const handleEditTask = async () => {
     try {
       await updateTask(selectedTask.id, {
@@ -239,9 +239,17 @@ const Projects = () => {
     },
   ];
 
-  {
-    /* Edit task vs views codes */
-  }
+   const formatDate = (dateStr) => {
+        if (!dateStr) return 'N/A';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      };
   const renderModalContent = () => {
     if (!selectedTask) return null;
 
@@ -342,9 +350,13 @@ const Projects = () => {
             </div>
           </div>
         );
+        
       case "info":
+        
         return (
-          <div className="flex flex-col gap-5 text-sm text-gray-700 my-5">
+          // det          
+          <div className="  flex flex-col gap-5 text-sm text-gray-700 my-5">
+            <h1 className=" text-[#0A1629] text-[22px] font-bold mb-3">Task Details</h1>
             <div className="grid grid-cols-3 w-full">
               <p className="text-gray-400 font-medium">Task name</p>
               <p className="text-gray-900 font-medium col-span-2">
@@ -355,48 +367,51 @@ const Projects = () => {
             <div className="grid grid-cols-3 w-full">
               <p className="text-gray-400 font-medium">Task Creation Date</p>
               <p className="text-gray-900 font-medium col-span-2">
-                16 March, 2025
+                {formatDate(selectedTask.created_at)}
               </p>
             </div>
-
-            <div className="grid grid-cols-3 w-full">
-              <p className="text-gray-400 font-medium">Created by</p>
-              <div className="w-6 h-6">
-                <img
-                  src="https://cdn-icons-png.flaticon.com/512/25/25231.png"
-                  alt="User"
-                  className="rounded-full col-span-2"
-                />
-              </div>
+             <div className="grid grid-cols-3 w-full">
+              <p className="text-gray-400 font-medium">Task's deadline</p>
+              <p className="text-gray-900 font-medium col-span-2">
+                 {formatDate(selectedTask.updated_at)}
+              </p>
             </div>
+         
 
-            <div className="grid grid-cols-3 w-full">
+            <div className="  grid grid-cols-3 w-full">
               <p className="text-gray-400 font-medium">Department</p>
-              <div className="w-6 h-6">
-                <img
-                  src="https://cdn-icons-png.flaticon.com/512/25/25231.png"
-                  alt="Dept"
-                  className="rounded-full col-span-2"
-                />
+              <div className="w-14 h-8 ">
+                <div className="flex gap-2 col-span-2">
+              {selectedTask.departments?.map(dept => (
+                <div key={dept.id} className=" flex flex-col items-center">
+                  {dept.photo ? (
+                    <img 
+                      src={dept.photo} 
+                      alt={`Department ${dept.id}`} 
+                      className="w-14 h-8 rounded-md "
+                    />
+                  ) : (
+                    <div className=" bg-gray-200 rounded-full flex items-center justify-center">
+                      <span className="text-xs">D</span>
+                    </div>
+                  )}
+                  
+                </div>
+              )) || '-'}
+            </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-3 w-full">
-              <p className="text-gray-400 font-medium">Views</p>
-              <p className="text-gray-900 font-medium col-span-2">38</p>
-            </div>
+           
 
             <div className="grid grid-cols-3 w-full">
               <p className="text-gray-400 font-medium">Description</p>
               <p className="text-gray-700 leading-relaxed col-span-2">
-                We need to design and develop a responsive user profile page for
-                the web application. This page will display key user information
-                including avatar, full name, email address, phone number, and
-                account status. We need to design and develop a responsive user
-                profile page for the web application.
+               {selectedTask.description || 'No description provided.'}
               </p>
             </div>
           </div>
+         
         );
       case "delete":
         return (
@@ -438,7 +453,7 @@ const Projects = () => {
   };
 
   return (
-    <div>
+    <div className="">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
         <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
@@ -684,108 +699,18 @@ const Projects = () => {
       </Modal>
 
       {/* Action Modal (Edit / Info / Delete) */}
-      <Modal
-        className="custom-modal"
-        open={!!selectedTask && isActionModalOpen}
-        onCancel={() => {
-          setIsActionModalOpen(false);
-          setSelectedTask(null);
-        }}
-        onOk={() => {
-          // actionlarga qarab handle qilinadi
-          if (modalType === "delete") {
-            console.log("Task deleted:", selectedTask);
-          } else if (modalType === "edit") {
-            console.log("Task edited:", selectedTask);
-          }
-          setIsActionModalOpen(false);
-          setSelectedTask(null);
-        }}
-        title={
-          <h2
-            style={{
-              color: "#0A1629",
-              fontWeight: "bold",
-              fontSize: "22px",
-              marginBottom: "10px",
-            }}
-          >
-            {getModalTitle()}
-          </h2>
-        }
-        okText={getOkText()}
-        cancelText="Cancel"
-        width={600}
-        footer={
-          modalType === "info"
-            ? [
-                <button
-                  key="gotIt"
-                  onClick={() => {
-                    setIsActionModalOpen(false);
-                    setSelectedTask(null);
-                  }}
-                  className="bg-[#0061fe] text-white font-bold px-5 py-2 rounded-xl cursor-pointer"
-                >
-                  Got it
-                </button>,
-              ]
-            : modalType === "edit"
-            ? [
-                <button
-                  key="saveTask"
-                  onClick={() => {
-                    setTasks(
-                      projects.map((t) =>
-                        t.id === selectedTask.id
-                          ? {
-                              ...t,
-                              name: taskName,
-                              description,
-                              image: selectedImage,
-                            }
-                          : t
-                      )
-                    );
-                    setIsActionModalOpen(false);
-                    setSelectedTask(null);
-                  }}
-                  className="bg-[#0061fe] hover:bg-[#3b77d7] text-white px-5 py-2 rounded-[14px] font-bold cursor-pointer"
-                >
-                  Save Task
-                </button>,
-              ]
-            : modalType === "delete"
-            ? [
-                <div className="flex items-center gap-2 justify-end">
-                  <button
-                    key="confirmDelete"
-                    onClick={() => {
-                      setTasks(tasks.filter((t) => t.id !== selectedTask.id));
-                      setIsActionModalOpen(false);
-                      setSelectedTask(null);
-                    }}
-                    className="border border-gray-400 text-gray-500 px-5 py-2 rounded-xl font-medium cursor-pointer"
-                  >
-                    Delete
-                  </button>
-                  <button
-                    key="cancelDelete"
-                    onClick={() => {
-                      setIsActionModalOpen(false);
-                      setSelectedTask(null);
-                    }}
-                    className="bg-blue-600 text-white px-5 py-2 rounded-xl shadow cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                </div>,
-              ]
-            : undefined
-        }
-      >
-        {renderModalContent()}
-      </Modal>
+    
+      <div className="">
+        <Modal
+        className=" "
+      open={isActionModalOpen}
+      onCancel={() => setIsActionModalOpen(false)}
+      width={814}
+      onOk={modalType === 'edit' ? handleEditProject : modalType === 'delete' ? handleDeleteProject : null}
+    >
+      {renderModalContent()}
+    </Modal>
+      </div>
     </div>
   );
 };

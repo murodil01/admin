@@ -2,9 +2,7 @@ import { useState, useEffect } from "react";
 import GroupSection from "../group-section";
 import { CiExport } from "react-icons/ci";
 import { BiArchiveIn } from "react-icons/bi";
-import { IoExtensionPuzzleOutline } from "react-icons/io5";
 import {
-  MessageCircleCode,
   ArrowRight,
   Trash2,
   Copy,
@@ -155,24 +153,15 @@ const MainLead = () => {
     setSelectedItems([]);
   };
 
-  const handleConvertSelected = () => {
-    alert("Items converted.");
-    setSelectedItems([]);
-  };
-
   const handleMoveTo = () => {
     alert("Moved items.");
     setSelectedItems([]);
   };
 
-  const handleApps = () => {
-    alert("Apps action performed.");
-    setSelectedItems([]);
-  };
 
   return (
-    <div className="bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 rounded-b-[8px] min-h-[calc(100vh-100px)] relative">
-      <div className="flex flex-col gap-6">
+    <div className="bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 rounded-b-[8px] relative overflow-x-auto">
+      <div className="flex flex-col gap-6 w-full overflow-x-auto">
         {groups.map((group) => (
           <GroupSection
             key={group.id}
@@ -196,7 +185,7 @@ const MainLead = () => {
         ))}
       </div>
 
-      <div className="mt-8 py-3 px-6 bg-[#CBCBCB] rounded-[8px]">
+      <div className="mt-8 py-2 px-6 bg-[#CBCBCB] rounded-[8px]">
         {addingGroup ? (
           <AddGroupInput
             onSave={addGroup}
@@ -205,7 +194,7 @@ const MainLead = () => {
         ) : (
           <button
             onClick={() => setAddingGroup(true)}
-            className="flex items-center justify-center gap-2 bg-[#7D8592] hover:bg-gray-600 text-white px-5 py-[15px] text-[16px] rounded-[8px] font-medium transition-colors"
+            className="flex items-center justify-center gap-2 bg-[#7D8592] hover:bg-gray-600 text-white px-5 py-[5px] text-[16px] rounded-[8px] font-medium transition-colors"
             aria-label="Add new group"
           >
             <Plus className="w-5 h-5" />
@@ -258,27 +247,11 @@ const MainLead = () => {
             </button>
 
             <button
-              onClick={handleConvertSelected}
-              className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px]"
-            >
-              <MessageCircleCode size={15} />
-              <span className="text-xs sm:text-sm">Convert</span>
-            </button>
-
-            <button
               onClick={handleMoveTo}
               className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px]"
             >
               <ArrowRight size={15} />
               <span className="text-xs sm:text-sm">Move to</span>
-            </button>
-
-            <button
-              onClick={handleApps}
-              className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px]"
-            >
-              <IoExtensionPuzzleOutline size={15} />
-              <span className="text-xs sm:text-sm">Apps</span>
             </button>
 
             <div className="hidden sm:block h-7 w-[1px] bg-[#313131] mx-2"></div>
@@ -331,4 +304,5 @@ const AddGroupInput = ({ onSave, onCancel }) => {
   );
 };
 
-export default MainLead;
+export default MainLead; 
+

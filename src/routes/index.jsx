@@ -6,7 +6,7 @@ import PrivateRoute from "../components/private-route";
 import AppLayout from "../components/home";
 
 import Tasks from "../pages/tasks/Tasks";
-import Employees from "../pages/employees/profile";
+import Employees from "../pages/employees/InnerCircle";
 import Messenger from "../pages/messenger";
 import Departments from "../pages/departments";
 import Calendar from "../pages/calendar";
@@ -22,7 +22,6 @@ import MainProfile from "../pages/main-profile";
 import TaskDetails from "../pages/tasks/TaskDetails";
 import Notification from "../pages/notification"
 import Customers from "../pages/customers";
- 
 
 export const router = createBrowserRouter([
   {
@@ -37,7 +36,7 @@ export const router = createBrowserRouter([
           { path: "tasks", element: <Tasks />,},
           { path: "tasks/:projectId", element: <TaskDetails />,},
           { path: "customers", element: <Customers /> },
-          { path: "employees", element: <Employees /> },
+          { path: "employees/", element: <Employees /> },
           { path: "messenger", element: <Messenger /> },
           { path: "departments", element: <Departments /> },
           { path: "calendar", element: <Calendar /> },
