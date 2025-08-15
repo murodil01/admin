@@ -36,7 +36,7 @@ export const router = createBrowserRouter([
           { path: "tasks", element: <Tasks />,},
           { path: "tasks/:projectId", element: <TaskDetails />,},
           { path: "customers", element: <Customers /> },
-          { path: "employees/", element: <Employees /> },
+          { path: "employees", element: <Employees /> },
           { path: "messenger", element: <Messenger /> },
           { path: "departments", element: <Departments /> },
           { path: "calendar", element: <Calendar /> },

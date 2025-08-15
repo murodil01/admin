@@ -1,35 +1,56 @@
 import { useEffect, useState } from "react";
-import { Pagination } from "antd";
 import { getActivities } from "../../../api/services/activityService";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const Activity = () => {
+  const [searchParams] = useSearchParams();
   const [activity, setActivity] = useState([]);
+  const [totalActivities, setTotalActivities] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [total, setTotal] = useState(0); // umumiy count
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 8; // har bir sahifada nechta ma'lumot
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchActivities();
+  }, []);
 
   const fetchActivities = async (page = 1) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const res = await getActivities(`?page=${page}&page_size=${pageSize}`);
+      const res = await getActivities(page);
+
+      // Faqat joriy sahifadagi ma'lumotlarni saqlang
       setActivity(res.results || []);
-      setTotal(res.count || 0);
+      // Umumiy sonni backenddan oling
+      setTotalActivities(res.count || 0);
     } catch (err) {
-      console.error("Failed to load activities:", err);
-      setError("Ma'lumotlarni olishda xatolik yuz berdi");
+      console.error("Error fetching employees:", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchActivities(currentPage);
-  }, [currentPage]);
+    const pageFromUrl = parseInt(searchParams.get('page_num') || '1', 10);
+    fetchActivities(pageFromUrl);
+  }, [searchParams]);
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
+  const handlePageChange = (newPage) => {
+    // 1. Joriy search parametrlarini saqlab qolish
+    const params = new URLSearchParams(searchParams);
+
+    // 2. Yangi sahifa parametrini o'rnatish
+    params.set('page_num', newPage);
+
+    // 3. Navigate funksiyasi bilan URLni yangilash
+    navigate(`?${params.toString()}`, { replace: true });
+
+    // Ma'lumotlarni yangilash
+    fetchActivities(newPage);
+
+    // 4. Debug uchun console.log
+    console.log('Navigating to:', params.toString());
+    console.log('URL updated to:', `?page_num=${newPage}`);
   };
 
   if (loading) return <p className="text-center">Yuklanmoqda...</p>;
@@ -94,17 +115,6 @@ const Activity = () => {
             </div>
           </div>
         ))}
-      </div>
-
-      {/* Pagination */}
-      <div className="flex justify-center mt-6">
-        <Pagination
-          current={currentPage}
-          pageSize={pageSize}
-          total={total}
-          onChange={handlePageChange}
-          showSizeChanger={false}
-        />
       </div>
     </div>
   );

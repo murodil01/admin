@@ -8,19 +8,14 @@ import { getEmployees, createEmployees, deleteEmployee } from '../../api/service
 import { message, Pagination, Modal } from 'antd';
 
 const InnerCircle = () => {
-    const [searchParams, setSearchParams] = useSearchParams();
-    const pageNum = parseInt(searchParams.get("page_num") || "1", 10);
-    const itemsPerPage = 10;
+    const [searchParams] = useSearchParams();
+    const itemsPerPage = 12;
     const [employees, setEmployees] = useState([]);
     const [totalEmployees, setTotalEmployees] = useState(0);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState(localStorage.getItem("innerCircleTab") || "list");
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const navigate = useNavigate();
-    const totalPages = Math.ceil(employees.length / itemsPerPage);
-    const startIndex = (pageNum - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const currentPageItems = employees.slice(startIndex, endIndex);
     const { confirm } = Modal;
 
     useEffect(() => {
@@ -31,7 +26,10 @@ const InnerCircle = () => {
         setLoading(true);
         try {
             const res = await getEmployees(page);
+
+            // Faqat joriy sahifadagi ma'lumotlarni saqlang
             setEmployees(res.results || []);
+            // Umumiy sonni backenddan oling
             setTotalEmployees(res.count || 0);
         } catch (err) {
             console.error("Error fetching employees:", err);
@@ -42,7 +40,6 @@ const InnerCircle = () => {
 
     useEffect(() => {
         const pageFromUrl = parseInt(searchParams.get('page_num') || '1', 10);
-        console.log('Current page from URL:', pageFromUrl);
         fetchEmployees(pageFromUrl);
     }, [searchParams]);
 
@@ -191,7 +188,7 @@ const InnerCircle = () => {
 
             {activeTab === "list" && (
                 <EmployeeList
-                    employees={currentPageItems}
+                    employees={employees}
                     loading={loading}
                     onDelete={handleDelete}
                     onStatusUpdate={fetchEmployees}
