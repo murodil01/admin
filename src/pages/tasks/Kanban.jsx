@@ -391,14 +391,14 @@ const Card = ({
       const response = await getTaskById(id);
       console.log("Task ma'lumotlari:", response.data);
       setTaskData(response.data); // API dan kelgan ma'lumotlar
-      // if (taskResponse.data.project_id) {
-      //   const usersResponse = await getProjectUsers(taskResponse.data.project_id);
-      //   console.log("Project users:", usersResponse.data);
-      //   setProjectUsers(usersResponse.data || []); // Set users array
-      // } else {
-      //   console.warn("No project_id found in task data");
-      //   setProjectUsers([]);
-      // }
+      if (response.data.projectId) {
+        const usersResponse = await getProjectUsers(response.data.projectId);
+        console.log("Project users:", usersResponse.data);
+        setProjectUsers(usersResponse.data || []); // Set users array
+      } else {
+        console.warn("No project_id found in task data");
+        setProjectUsers([]);
+      }
     } catch (error) {
       console.error("Data olishda xatolik:", error);
       message.error("Ma'lumotlar yuklab bo'lmadi");
@@ -406,10 +406,6 @@ const Card = ({
       setLoading(false);
     }
   };
-
-  const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState("");
-  const [imageUrl, setImageUrl] = useState(null);
 
   const handleMoveToColumn = async (newColumn) => {
     try {
