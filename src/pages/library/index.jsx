@@ -14,7 +14,6 @@ const LibraryPage = () => {
   const [deleteId, setDeleteId] = useState(null);
   const navigate = useNavigate();
 
-
   const handleCardClick = (id) => {
     navigate(`/category/${id}`);
   };
@@ -92,7 +91,6 @@ const LibraryPage = () => {
   return (
     <main className="min-h-screen">
       <header className="max-w-7xl mx-auto mt-5 md:mt-2">
-
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 space-y-3 sm:space-y-0">
           <h1 className="text-xl sm:text-[34px] font-semibold text-black">M Library</h1>
           <button
