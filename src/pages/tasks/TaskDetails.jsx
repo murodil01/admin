@@ -69,6 +69,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
   const [assignees, setAssignees] = useState([]);
   const [loadingAssignees, setLoadingAssignees] = useState(false);
   const [loadingTags, setLoadingTags] = useState(false);
+ 
 
   // Fetch tags when component mounts
   useEffect(() => {
@@ -141,7 +142,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
 
       const response = await getProjectUsers(projectId);
       
-      const userOptions = response.data.map(user => ({
+       const userOptions = response.data.map(user => ({
         label: user.name || user.username || `${user.first_name} ${user.last_name}`.trim() || "Unknown User",
         value: user.id || user.user_id,
         avatar: user.avatar || user.profile_picture,
@@ -158,6 +159,13 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
     }
   };
 
+   const getAssigneeName = (assigneeId) => {
+    if (!assigneeId) return "Not assigned";
+    
+    const user = assignees.find(u => u.value === assigneeId);
+    return user ? user.label : "Unknown user";
+  };
+   
   // Helper to map API tasks to card format
   const mapTasksToCards = (tasks) => {
     return tasks.map((task) => ({
@@ -478,7 +486,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
               </div>
 
               {/* RIGHT SIDE */}
-              <div className="xl:col-span-2 space-y-6">
+              <div className="space-y-6">
                 <div>
                   <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
                     Image
@@ -515,75 +523,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                   )}
                 </div>
 
-                <div className="mt-4">
-                  <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
-                    Files
-                  </label>
-                  {files.map((file, index) => (
-                    <div key={index} className="flex items-center gap-2 mb-2">
-                      <Input
-                        value={file.name}
-                        disabled
-                        className="flex-1"
-                        style={{ height: "54px" }}
-                      />
-                      <FiTrash
-                        className="text-gray-500 cursor-pointer hover:text-red-500"
-                        onClick={() =>
-                          setFiles((prev) => prev.filter((_, i) => i !== index))
-                        }
-                      />
-                    </div>
-                  ))}
-                  <Upload
-                    className="w-full"
-                    multiple
-                    showUploadList={false}
-                    beforeUpload={(file) => {
-                      setFiles((prev) => [...prev, file]);
-                      return false;
-                    }}
-                  >
-                    <button className="text-blue-600 text-[14px] font-bold">
-                      + add file
-                    </button>
-                  </Upload>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
-                    Check list
-                  </label>
-                  {checklist.map((check, index) => (
-                    <div key={index} className="flex items-center gap-2 mb-2">
-                      <input
-                        type="checkbox"
-                        checked={check.done}
-                        onChange={() => toggleCheckDone(index)}
-                      />
-                      <Input
-                        value={check.text}
-                        onChange={(e) => updateCheckText(index, e.target.value)}
-                        className="flex-1"
-                      />
-                      <FiTrash
-                        className="text-gray-500 cursor-pointer hover:text-red-500"
-                        onClick={() =>
-                          setChecklist((prev) =>
-                            prev.filter((_, i) => i !== index)
-                          )
-                        }
-                      />
-                    </div>
-                  ))}
-                  <button
-                    onClick={addCheckItem}
-                    className="text-blue-600 text-[14px] font-bold"
-                  >
-                    + add new check
-                  </button>
-                </div>
-
+            
                 <div className="flex justify-center gap-5 pt-10 md:pt-65">
                   <Button
                     onClick={handleCancel}
@@ -645,7 +585,10 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
 
       <div className="w-full">
         <div className="w-full pb-4 relative">
-          <Kanban cards={cards} setCards={setCards} />
+          <Kanban  cards={cards} 
+        setCards={setCards} 
+        assignees={assignees}
+        getAssigneeName={getAssigneeName} />
         </div>
       </div>
     </div>

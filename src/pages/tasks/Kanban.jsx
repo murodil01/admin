@@ -32,14 +32,17 @@ import {
   Dropdown,
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
-import { updateTaskType,deleteTask,getTaskById,getProjectUsers } from "../../api/services/taskService";
+import { updateTaskType,deleteTask,getTaskById,getProjectUsers, } from "../../api/services/taskService";
 import { MoreVertical } from "lucide-react";
 
 
-const NotionKanban = ({ cards, setCards }) => {
+const NotionKanban = ({  cards, setCards, assignees, getAssigneeName }) => {
   return (
     <div className="flex gap-5 absolute top-0 right-0 left-0 pb-4 w-full overflow-x-auto hide-scrollbar">
-      <Board cards={cards} setCards={setCards} />
+      <Board   cards={cards} 
+        setCards={setCards} 
+        assignees={assignees}
+        getAssigneeName={getAssigneeName} />
     </div>
   );
 };
@@ -147,7 +150,7 @@ const DEFAULT_CARDS = [
   },
 ];
 
-const Board = ({ cards, setCards }) => {
+const Board = ({ cards, setCards,assignees, getAssigneeName }) => {
   const [hasChecked, setHasChecked] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
@@ -361,47 +364,65 @@ const Card = ({
   handleDragStart,
   onEdit,
   image,
-  setCards //yangi props
+  setCards
   
 }) => {
-  const [hovered, setHovered] = useState(false);
+    const [hovered, setHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
   const [taskData, setTaskData] = useState(null);
-  const [projectUsers, setProjectUsers] = useState([]); // New state for project users
+  const [projectUsers, setProjectUsers] = useState([]); // State for project users
   const [loading, setLoading] = useState(false);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [imageUrl, setImageUrl] = useState(null);
+  const [selectedAssignee, setSelectedAssignee] = useState(null);
 
  // "Got it" modal ochilganda card ma'lumotlarini saqlash
-  const openViewModal = async () => {
+    const openViewModal = async () => {
     setIsModalOpen(true);
     setLoading(true);
     
-   try {
+    try {
       // Fetch task details
       const taskResponse = await getTaskById(id);
-      console.log("Task ma'lumotlari:", taskResponse.data);
       setTaskData(taskResponse.data);
 
-      // Fetch project users (assuming taskData has project_id; adjust if needed)
+      // Fetch project users if project ID exists
       if (taskResponse.data.project_id) {
         const usersResponse = await getProjectUsers(taskResponse.data.project_id);
-        console.log("Project users:", usersResponse.data);
-        setProjectUsers(usersResponse.data || []); // Set users array
+        setProjectUsers(usersResponse.data || []);
+        
+        // Set the selected assignee if task has one
+        if (taskResponse.data.assignee) {
+          setSelectedAssignee(taskResponse.data.assignee);
+        }
       } else {
         console.warn("No project_id found in task data");
-        setProjectUsers([]);
       }
     } catch (error) {
-      console.error("Data olishda xatolik:", error);
-      message.error("Ma'lumotlar yuklab bo'lmadi");
+      console.error("Error fetching data:", error);
+      message.error("Failed to load task details");
     } finally {
       setLoading(false);
     }
   };
+
+    const getAssigneeName = (assigneeId) => {
+    if (!assigneeId) return "Not assigned";
+    
+    const user = projectUsers.find(u => u.id === assigneeId);
+    console.log("Assignee user:", user);
+
+    return user 
+      ? `${user.first_name} ${user.last_name}` 
+      : "Unknown user";
+     
+  
+  };
+
+
   const handleMoveToColumn = async (newColumn) => {
     try {
       await updateTaskType(id, newColumn);
@@ -686,10 +707,8 @@ const Card = ({
                       👤
                     </div>
                    <span>
-                      {taskData && taskData.assignee 
-                        ? `${taskData.assignee.first_name} ${taskData.assignee.last_name}`
-                        : "Not assigned"}
-                    </span>
+                    {getAssigneeName(selectedAssignee)}
+                  </span>
                   </div>
                 </div>
                 <div>
