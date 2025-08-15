@@ -192,24 +192,6 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
     }));
   };
 
-  const addCheckItem = () => {
-    setChecklist((prev) => [...prev, { text: "", done: false }]);
-  };
-
-  const toggleCheckDone = (index) => {
-    setChecklist((prev) =>
-      prev.map((item, i) =>
-        i === index ? { ...item, done: !item.done } : item
-      )
-    );
-  };
-
-  const updateCheckText = (index, value) => {
-    setChecklist((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, text: value } : item))
-    );
-  };
-
   const showModal = () => setIsModalOpen(true);
   
   const handleCancel = () => {
@@ -325,12 +307,6 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
     });
   };
 
-  const handleFileUpload = (info) => {
-    let fileList = [...info.fileList];
-    // Limit to latest files if needed, but here we keep all
-    setFiles(fileList.map(file => file.originFileObj).filter(Boolean));
-  };
-    
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
@@ -350,7 +326,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
           onCancel={handleCancel}
           footer={null}
           centered
-          width={1000}
+          width={900}
           className="custom-modal"
           title={
             <h2 className="px-4 text-[22px] font-bold text-[#0A1629]">
@@ -362,11 +338,14 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
           }}
         >
           <div className="px-3 sm:px-4 py-8">
-            <div className="flex flex-wrap gap-4 mb-6">
+            <div className=" flex justify-center items-center md:justify-between flex-wrap gap-4 mb-6">
+              <div className=" w-[100%] flex md:max-w-[250px] flex-col">
+                <label className="mb-1" htmlFor="">Column title</label> 
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="name-1"
+                placeholder="name..."
+                className=" "
                 style={{
                   borderRadius: "14px",
                   height: "54px",
@@ -375,8 +354,11 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                   fontSize: "14px",
                 }}
               />
-              <Select
-                className="custom-select flex-1 min-w-[150px]"
+              </div>
+                    <div className="  w-[100%] md:max-w-[250px] flex flex-col ">
+              <label className=" mb-1" htmlFor="">Type</label>
+                  <Select
+                className="custom-select  flex-1 min-w-[250px]"
                 value={type}
                 onChange={setType}
                 options={[
@@ -390,7 +372,10 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                     { value: "approved", label: "Approved" },
                 ]}
               />
+             </div>
+              
               <Upload
+              className="w-[100%] md:max-w-[250px]"
                 style={{ width: "100%" }}
                 showUploadList={false}
                 beforeUpload={(file) => {
@@ -403,13 +388,17 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                   return false;
                 }}
               >
-                <Button
+                
+                <div className=" w-[100%] flex   flex-col">
+                  <label className=" mb-1" htmlFor="">Image</label>
+                  <Button
                   style={{ height: "54px", borderRadius: "14px" }}
-                  className="w-full flex items-center justify-between border border-gray-300"
+                  className="  flex justify-between border border-gray-300"
                 >
                   <span>Change image</span>
                   <AiOutlinePaperClip className="text-lg" />
                 </Button>
+                </div>
               </Upload>
             </div>
 
@@ -425,12 +414,11 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
               />
             </div>
 
-         <div className="flex flex-wrap gap-4 mb-6">
-             <div className=" relative w-full md:w-auto flex flex-col ">
+         <div className="flex flex-wrap gap-4 mb-6"> 
+             <div className="relative flex-1 flex flex-col flex-wrap md:col-span-2">
               <label className=" mb-1 font-bold text-[14px] text-[#7D8592]" htmlFor="">Deadline</label>
               <DatePicker
                 className=" w-full"
-                  optionFilterProp="label"
                 onChange={(_, dateStr) => setDate(dateStr)}
                 style={{
                   borderRadius: "8px",
@@ -438,10 +426,10 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                 }}
               />
               </div>
-              <div className="relative w-full  md:w-auto flex flex-col  ">
+              <div className="relative flex-1 flex flex-col flex-wrap md:col-span-2">
                   <label className=" mb-1 font-bold text-[14px] text-[#7D8592]" htmlFor="">Notification</label>
               <Select
-              className=" w-full "
+              className="w-full"
                 optionFilterProp="label"
                 style={{ borderRadius: "8px",  height: "40px", }}               
                 value={notification}
@@ -453,9 +441,9 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
               />
             
                </div>
-              <div className="relative w-[350px] md:w-auto flex flex-col flex-wrap ">
+              <div className="relative flex-1 flex flex-col flex-wrap md:col-span-2">
                  
-                <label className=" mb-1 font-bold text-[14px] text-[#7D8592]" htmlFor="">Assignee</label>
+                <label className="  mb-1 flex-1 font-bold text-[14px] text-[#7D8592]" htmlFor="">Assignee</label>
                 <Select
                 
                   showSearch
@@ -466,7 +454,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                   options={assignees}
                   loading={loadingAssignees}
                   disabled={loadingAssignees}
-                  className="w-full"
+                  className="w-full "
                    style={{
                   borderRadius: "8px",
                   height: "40px",

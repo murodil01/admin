@@ -18,7 +18,12 @@ const ProjectCard = ({ project }) => {
         </div>
         <div className="text-[#7D8592] text-[14px] font-semibold flex items-center gap-2">
           <CalendarDays size={16} />
-          Created {new Date(project.createdAt).toLocaleDateString()}
+            Created {new Date(project.createdAt).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric"
+          })}
+
         </div>
       </div>
 
@@ -40,7 +45,7 @@ const ProjectCard = ({ project }) => {
           </div>
 
           <div className="flex flex-col gap-1">
-            <p className="text-[#7D8592] text-[14px] font-semibold">Assignees</p>
+            <p className="text-[#7D8592] text-[14px] font-semibold">Dropped</p>
             <p className="text-center">{project.dropped_count || 0}</p>
           </div>
         </div>
