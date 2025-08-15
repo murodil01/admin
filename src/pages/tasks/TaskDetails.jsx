@@ -57,14 +57,14 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
   const [tags, setTags] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [title, setTitle] = useState("");
-  const [notification, setNotification] = useState("Off");
+  const [notification, setNotification] = useState("On");
   const [date, setDate] = useState(null);
   const [description, setDescription] = useState("");
   const [image, setImage] = useState(null);
   const [files, setFiles] = useState([]);
   const [checklist, setChecklist] = useState([]);
   const [cards, setCards] = useState([]);
-  const [type, setType] = useState("assigned");
+  const [type, setType] = useState("acknowledged");
   const [selectedAssignee, setSelectedAssignee] = useState(null);
   const [assignees, setAssignees] = useState([]);
   const [loadingAssignees, setLoadingAssignees] = useState(false);
@@ -124,12 +124,13 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
         }
       });
   }, [projectId]);
-  
+
+  // Fetch project users on mount (needed for assignee names in cards)
   useEffect(() => {
-    if (isModalOpen && projectId) {
+    if (projectId) {
       fetchProjectUsers();
     }
-  }, [isModalOpen, projectId]);
+  }, [projectId]);
 
   const fetchProjectUsers = async () => {
     setLoadingAssignees(true);
@@ -179,7 +180,9 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
         : "No due date",
       description: task.description,
       assignee: {
-        name: task.assigned?.length > 0 ? task.assigned : "Unknown",
+        name: task.assigned?.length > 0 
+          ? task.assigned.map(id => getAssigneeName(id)).filter(name => name !== "Unknown user").join(", ") || "Unknown"
+          : "Not assigned",
         avatar: "bg-blue-500",
       },
       progress: task.progress || 0,
@@ -216,7 +219,6 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
     setType("assigned");
     setNotification("Off");
     setDate(null);
-    setSelectedAssignee(null);
     setDescription("");
     setTags([]);
     setFiles([]);
@@ -242,20 +244,32 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
       return;
     }
 
-    // Prepare task data for API
-    const taskData = {
-      name: title,
-      description,
-      tasks_type: type,
-      deadline: date ? dayjs(date).format("YYYY-MM-DD") : null,
-      tags_ids: tags, // This now contains array of IDs like [1, 3, 5]
-      project: projectId || "5c112bdb-be91-4e09-a062-bf244691892b",
-      assigned: selectedAssignee ? [selectedAssignee] : [],
-    };
+    // Prepare FormData for API
+    const formData = new FormData();
+    formData.append('name', title);
+    formData.append('description', description);
+    formData.append('tasks_type', type);
+    formData.append('deadline', date ? dayjs(date).format("YYYY-MM-DD") : '');
+    formData.append('project', projectId || "5c112bdb-be91-4e09-a062-bf244691892b");
+
+    // Append tags_ids as array (repeat the key for each item)
+    tags.forEach(tagId => formData.append('tags_ids', tagId));
+
+    // Append assigned as array
+    if (selectedAssignee) {
+      formData.append('assigned', selectedAssignee);
+    }
+
+    // Append image if selected
+    if (image) {
+      formData.append('task_image', image);  // 'task_image' matches your backend field
+    } 
+    // Append other files if any (assuming setFiles is an array of File objects)
+    files.forEach(file => formData.append('files', file));
 
     try {
-      // Call createTask API
-      const response = await createTask(taskData);
+      // Call createTask API (ensure it handles FormData)
+      const response = await createTask(formData);
       const newTask = response.data;
 
       // Map the new task to card format
@@ -265,7 +279,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
       const totalChecks = checklist.length;
 
       // Find the assignee name from the assignees array
-      const assigneeName = assignees.find(a => a.value === selectedAssignee)?.label || "Unknown";
+      const assigneeName = assignees.find(a => a.value === selectedAssignee)?.label || "Unknown"
         
       const newCard = {
         id: newTask.id,
@@ -286,9 +300,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
         column: newTask.tasks_type,
         files,
       }
-
-      // Update cards state
-      setCards((prev) => [...prev, newCard]);
+     setCards((prev) => [...prev, newCard]);
       message.success("Task created successfully!");
 
       // Reset form
@@ -313,6 +325,12 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
     });
   };
 
+  const handleFileUpload = (info) => {
+    let fileList = [...info.fileList];
+    // Limit to latest files if needed, but here we keep all
+    setFiles(fileList.map(file => file.originFileObj).filter(Boolean));
+  };
+    
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
@@ -344,240 +362,207 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
           }}
         >
           <div className="px-3 sm:px-4 py-8">
-            <div className="grid grid-cols-1 xl:grid-cols-5 gap-10">
-              {/* LEFT SIDE */}
-              <div className="xl:col-span-3 space-y-6">
-                <div>
-                  <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
-                    <span className="text-bold">Column title</span>
-                  </label>
-                  <Input
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="name-1"
-                    style={{
-                      borderRadius: "14px",
-                      height: "54px",
-                      color: "#0A1629",
-                      fontWeight: "regular",
-                      fontSize: "14px",
-                    }}
-                  />
-                </div>
+            <div className="flex flex-wrap gap-4 mb-6">
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="name-1"
+                style={{
+                  borderRadius: "14px",
+                  height: "54px",
+                  color: "#0A1629",
+                  fontWeight: "regular",
+                  fontSize: "14px",
+                }}
+              />
+              <Select
+                className="custom-select flex-1 min-w-[150px]"
+                value={type}
+                onChange={setType}
+                options={[
+                    { value: "assigned", label: "Assigned" },
+                    { value: "acknowledged", label: "Acknowledged" },
+                    { value: "in_progress", label: "In Progress" },
+                    { value: "completed", label: "Completed" },
+                    { value: "in_review", label: "In Review" },
+                    { value: "return_for_fixes", label: "Return for Fixes" },
+                    { value: "dropped", label: "Dropped" },
+                    { value: "approved", label: "Approved" },
+                ]}
+              />
+              <Upload
+                style={{ width: "100%" }}
+                showUploadList={false}
+                beforeUpload={(file) => {
+                  const isImage = file.type.startsWith("image/");
+                  if (!isImage) {
+                    message.error("Only image files are allowed!");
+                    return false;
+                  }
+                  setImage(file);
+                  return false;
+                }}
+              >
+                <Button
+                  style={{ height: "54px", borderRadius: "14px" }}
+                  className="w-full flex items-center justify-between border border-gray-300"
+                >
+                  <span>Change image</span>
+                  <AiOutlinePaperClip className="text-lg" />
+                </Button>
+              </Upload>
+            </div>
 
-                <div>
-                  <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
-                    Type
-                  </label>
-                  <Select
-                    className="custom-select w-full"
-                    value={type}
-                    onChange={setType}
-                    options={[
-                        { value: "assigned", label: "Assigned" },
-                        { value: "acknowledged", label: "Acknowledged" },
-                        { value: "in_progress", label: "In Progress" },
-                        { value: "completed", label: "Completed" },
-                        { value: "in_review", label: "In Review" },
-                        { value: "return_for_fixes", label: "Return for Fixes" },
-                        { value: "dropped", label: "Dropped" },
-                        { value: "approved", label: "Approved" },
-                    ]}
-                  />
-                  
-                </div>
+            <div className="mb-6">
+              <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
+                Description
+              </label>
+              <TextArea
+                rows={4}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                style={{ borderRadius: "14px" }}
+              />
+            </div>
 
-                <div className="flex justify-between items-center gap-[20px] flex-wrap">
-                  <div>
-                    <label className="block font-bold text-[14px] text-[#7D8592] mt-4 mb-2">
-                      Due time
-                    </label>
-                    <DatePicker
-                      className="w-full"
-                      onChange={(_, dateStr) => setDate(dateStr)}
-                      style={{
-                        borderRadius: "14px",
-                        height: "54px",
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
-                      Notification
-                    </label>
-                    <Select
-                      style={{ borderRadius: "14px" }}
-                      className="custom-notif"
-                      value={notification}
-                      onChange={setNotification}
-                      options={[
-                        { value: "On", label: "On" },
-                        { value: "Off", label: "Off" },
-                      ]}
-                    />
-                  </div>
-
-                   <div className="md:col-span-2">
-                    <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
-                      Assignee
-                    </label>
-                    <div className="relative">
-                      <Select
-                        showSearch
-                        placeholder={loadingAssignees ? "Loading users..." : "Change assignee"}
-                        optionFilterProp="label"
-                        value={selectedAssignee}
-                        onChange={setSelectedAssignee}
-                        options={assignees}
-                        loading={loadingAssignees}
-                        disabled={loadingAssignees}
-                        className="custom-assigne"
-                        filterOption={(input, option) =>
-                          (option?.label ?? "")
-                            .toLowerCase()
-                            .includes(input.toLowerCase())
-                        }
-                        notFoundContent={loadingAssignees ? "Loading..." : "No users found"}
-                      />
-                      <span className="absolute top-7 right-10 -translate-y-1/2 flex items-center pointer-events-none">
-                        <img
-                          src={memberSearch}
-                          alt="avatar"
-                          className="w-6 h-6 rounded-full object-cover"
-                        />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
-                    Description
-                  </label>
-                  <TextArea
-                    rows={4}
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    style={{ borderRadius: "14px" }}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2 font-bold">
-                    Task tags
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                    {tagOptions.map((tag) => (
-                       <label
-                          key={tag.id}
-                          className="flex items-center gap-2 text-[12px] cursor-pointer capitalize font-semi-bold text-gray-400"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={tags.includes(tag.id)}
-                            onChange={() => toggleTag(tag.id)}
-                          />
-                          {tag.name}
-                        </label>
-                        ))}
-                  </div>
-                </div>
+         <div className="flex flex-wrap gap-4 mb-6">
+             <div className=" relative w-full md:w-auto flex flex-col ">
+              <label className=" mb-1 font-bold text-[14px] text-[#7D8592]" htmlFor="">Deadline</label>
+              <DatePicker
+                className=" w-full"
+                  optionFilterProp="label"
+                onChange={(_, dateStr) => setDate(dateStr)}
+                style={{
+                  borderRadius: "8px",
+                  height: "40px",
+                }}
+              />
               </div>
-
-              {/* RIGHT SIDE */}
-              <div className="space-y-6">
-                <div>
-                  <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
-                    Image
-                  </label>
-                  <Upload
-                    style={{ width: "100%" }}
-                    showUploadList={false}
-                    beforeUpload={(file) => {
-                      const isImage = file.type.startsWith("image/");
-                      if (!isImage) {
-                        message.error("Only image files are allowed!");
-                        return false;
-                      }
-                      setImage(file);
-                      return false;
-                    }}
-                  >
-                    <Button
-                      style={{ height: "54px", borderRadius: "14px" }}
-                      className="w-full flex items-center justify-between border border-gray-300"
-                    >
-                      <span>Change image</span>
-                      <AiOutlinePaperClip className="text-lg" />
-                    </Button>
-                  </Upload>
-                  {image && (
-                    <div className="flex items-center gap-2 mt-2">
-                      <Input value={image.name} disabled className="flex-1" />
-                      <FiTrash
-                        className="text-gray-500 cursor-pointer hover:text-red-500"
-                        onClick={() => setImage(null)}
-                      />
-                    </div>
-                  )}
-                </div>
-
+              <div className="relative w-full  md:w-auto flex flex-col  ">
+                  <label className=" mb-1 font-bold text-[14px] text-[#7D8592]" htmlFor="">Notification</label>
+              <Select
+              className=" w-full "
+                optionFilterProp="label"
+                style={{ borderRadius: "8px",  height: "40px", }}               
+                value={notification}
+                onChange={setNotification}
+                options={[
+                  { value: "On", label: "On" },
+                  { value: "Off", label: "Off" },
+                ]}
+              />
             
-                <div className="flex justify-center gap-5 pt-10 md:pt-65">
-                  <Button
-                    onClick={handleCancel}
-                    style={{
-                      width: "140px",
-                      height: "48px",
-                      fontSize: "17px",
-                      fontWeight: "600",
-                      borderRadius: "14px",
-                      border: "none",
-                      transition: "all 0.3s ease",
-                      boxShadow: "0 4px 12px rgba(217, 217, 217, 0.5)",
-                      color: "#595959",
-                      backgroundColor: "#fff",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = "#d9d9d9";
-                      e.currentTarget.style.color = "#595959";
-                      e.currentTarget.style.backgroundColor = "#f5f5f5";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "transparent";
-                      e.currentTarget.style.color = "#595959";
-                      e.currentTarget.style.backgroundColor = "#fff";
-                    }}
-                  >
-                    Cancel
-                  </Button>
-
-                  <Button
-                    onClick={handleSave}
-                    type="primary"
-                    style={{
-                      width: "140px",
-                      height: "48px",
-                      fontSize: "17px",
-                      fontWeight: "600",
-                      borderRadius: "14px",
-                      boxShadow: "0 4px 12px rgba(24, 144, 255, 0.5)",
-                      transition: "box-shadow 0.3s ease",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.boxShadow =
-                        "0 6px 20px rgba(24, 144, 255, 0.8)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.boxShadow =
-                        "0 4px 12px rgba(24, 144, 255, 0.5)")
-                    }
-                  >
-                    Save
-                  </Button>
-                </div>
+               </div>
+              <div className="relative w-[350px] md:w-auto flex flex-col flex-wrap ">
+                 
+                <label className=" mb-1 font-bold text-[14px] text-[#7D8592]" htmlFor="">Assignee</label>
+                <Select
+                
+                  showSearch
+                  placeholder={loadingAssignees ? "Loading users..." : "Change assignee"}
+                  optionFilterProp="label"
+                  value={selectedAssignee}
+                  onChange={setSelectedAssignee}
+                  options={assignees}
+                  loading={loadingAssignees}
+                  disabled={loadingAssignees}
+                  className="w-full"
+                   style={{
+                  borderRadius: "8px",
+                  height: "40px",
+                
+                }}
+                  filterOption={(input, option) =>
+                    (option?.label ?? "")
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
+                  }
+                  notFoundContent={loadingAssignees ? "Loading..." : "No users found"}
+                />
+                <span className="absolute inset-y-11.5 right-6 flex items-center pointer-events-none">
+                  <img
+                    src={memberSearch}
+                    alt="search"
+                    className="w-5 h-5"
+                  />
+                </span>
               </div>
+            </div> 
+
+            <div className="mb-6">
+              <label className="block text-sm text-gray-400 mb-2 font-bold">
+                Task tags
+              </label>
+              <div className="grid grid-cols-2 gap-2  w-[300px]">
+                {tagOptions.map((tag) => (
+                   <label
+                      key={tag.id}
+                      className="flex items-center gap-2    text-[12px] cursor-pointer capitalize font-semi-bold text-gray-400"
+                    >
+                      
+                      <input
+                        type="checkbox"
+                        checked={tags.includes(tag.id)}
+                        onChange={() => toggleTag(tag.id)}
+                      />
+                      {tag.name}
+                    </label>
+                    ))}
+              </div>
+            </div>
+
+            <div className="flex gap-5  flex-row-reverse ">
+              <Button
+                onClick={handleSave}
+                type="primary"
+                style={{
+                  width: "140px",
+                  height: "48px",
+                  fontSize: "17px",
+                  fontWeight: "600",
+                  borderRadius: "14px",
+                  boxShadow: "0 4px 12px rgba(24, 144, 255, 0.5)",
+                  transition: "box-shadow 0.3s ease",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.boxShadow =
+                    "0 6px 20px rgba(24, 144, 255, 0.8)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.boxShadow =
+                    "0 4px 12px rgba(24, 144, 255, 0.5)")
+                }
+              >
+                Create
+              </Button>
+
+              <Button
+                onClick={handleCancel}
+                style={{
+                  width: "140px",
+                  height: "48px",
+                  fontSize: "17px",
+                  fontWeight: "600",
+                  borderRadius: "14px",
+                  border: "none",
+                  transition: "all 0.3s ease",
+                  boxShadow: "0 4px 12px rgba(217, 217, 217, 0.5)",
+                  color: "#595959",
+                  backgroundColor: "#fff",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "#d9d9d9";
+                  e.currentTarget.style.color = "#595959";
+                  e.currentTarget.style.backgroundColor = "#f5f5f5";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "transparent";
+                  e.currentTarget.style.color = "#595959";
+                  e.currentTarget.style.backgroundColor = "#fff";
+                }}
+              >
+                Cancel
+              </Button>
             </div>
           </div>
         </Modal>
@@ -596,12 +581,6 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
 };
   
 export default TaskDetails;
-
-
-
-
-
-
 
 
 // import { AiOutlinePaperClip } from "react-icons/ai";

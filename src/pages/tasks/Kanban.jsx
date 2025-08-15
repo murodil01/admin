@@ -626,7 +626,11 @@ const Card = ({
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="w-full sm:w-[140px] h-[140px] bg-gray-200 flex items-center justify-center rounded">
                     <span role="img" aria-label="image" className="text-4xl">
-                      🖼️
+                  {taskData?.task_image ? (
+                      <img src={taskData.task_image} alt="" onError={(e) => (e.currentTarget.style.display = "none")} />
+                    ) : (
+                      <span>🖼️</span>
+                    )}
                     </span>
                   </div>
                   <div className="flex-1 text-sm text-gray-700 leading-6">
@@ -645,8 +649,7 @@ const Card = ({
                 {/* Checklist */}
                 <div>
                   <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-semibold text-sm">Check list</h4>
-                    <span className="text-xs text-gray-500">Show</span>
+                    <h4 className="font-semibold text-sm">Check list</h4>            
                   </div>
                   <div className="flex flex-col gap-3">
                     <p className="text-sm text-gray-500">No checklist items</p>
