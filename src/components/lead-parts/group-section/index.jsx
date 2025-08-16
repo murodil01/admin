@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { updateGroup } from "../../../api/services/groupService";
 
 const DatePickerCell = ({ value, onChange, onSave, onCancel }) => {
   const [date, setDate] = useState(value ? new Date(value) : null);
@@ -131,12 +132,18 @@ const GroupSection = ({
     if (!editingCell) return;
     const { row, field } = editingCell;
     let val = localItems[row]?.[field] ?? "";
+
+    // Agar qiymat bo'sh bo'lsa, "Unnamed" ga o'rnatish
     if (typeof val === "string") val = val.trim();
     if (val === "") val = field === "name" ? "Unnamed" : "";
+
     const newItems = [...localItems];
     newItems[row] = { ...newItems[row], [field]: val };
     setLocalItems(newItems);
+
+    // Yangilash funksiyasini chaqirish
     updateItem(id, row, newItems[row]);
+
     cancelEditCell();
   };
 
@@ -238,11 +245,30 @@ const GroupSection = ({
                 autoFocus
                 value={titleValue}
                 onChange={(e) => setTitleValue(e.target.value)}
-                onBlur={() => {
-                  updateTitle(id, titleValue.trim() || "Untitled Group");
+                onBlur={async () => {
+                  const newTitle = titleValue.trim() || "Untitled Group";
                   setEditingTitle(false);
+                  setTitleValue(newTitle);
+
+                  try {
+                    // API orqali yangilash
+                    await updateGroup(id, { name: newTitle });
+                  } catch (error) {
+                    console.error("Failed to update group title:", error);
+                    // Xatolik bo'lsa eski title’ni qaytarish
+                    setTitleValue(title);
+                  }
+
+                  // Parent component updateTitle funksiyasini chaqirish
+                  if (updateTitle) updateTitle(id, newTitle);
                 }}
-                onKeyDown={(e) => e.key === "Enter" && setEditingTitle(false)}
+                onKeyDown={async (e) => {
+                  if (e.key === "Enter") e.target.blur(); // onBlur orqali API chaqiriladi
+                  if (e.key === "Escape") {
+                    setEditingTitle(false);
+                    setTitleValue(title);
+                  }
+                }}
                 className="ml-2 text-[18px] font-medium focus:outline-none bg-transparent border-b border-gray-400 w-full"
               />
             ) : (
@@ -271,7 +297,7 @@ const GroupSection = ({
           </button>
 
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-32 bg-[#F5F7FF] rounded-[8px] shadow-md z-50">
+            <div className="absolute right-0 mt-[-50px] w-32 bg-[#F5F7FF] rounded-[8px] shadow-md z-50">
               <button
                 onClick={() => setEditingTitle(true)}
                 className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#E2E2E2] text-[12px] text-[#5A5A5A]"

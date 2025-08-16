@@ -4,7 +4,7 @@ import { CiExport } from "react-icons/ci";
 import { BiArchiveIn } from "react-icons/bi";
 import { ArrowRight, Trash2, Copy, Plus, X } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import {
   getGroups,
   createGroup,
@@ -64,7 +64,6 @@ const MainLead = () => {
         setGroups(formatted);
 
         if (!toastShownRef.current && formatted.length > 0) {
-          toast.success("Guruhlar yuklandi ✅");
           toastShownRef.current = true;
         }
       } catch (err) {
@@ -137,23 +136,25 @@ const MainLead = () => {
     setSelectedItems((prev) => prev.filter((s) => s.groupId !== groupId));
   };
 
-  // Guruh nomini update qilish
-  const updateGroupTitle = async (id, newTitle) => {
-    const oldTitle = groups.find((g) => g.id === id)?.title;
-
-    setGroups((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, title: newTitle } : g))
-    );
+  const updateGroupTitle = async (groupId, newTitle) => {
+    const oldTitle = groups.find((g) => g._id === groupId)?.title;
 
     try {
-      await updateGroup(id, { name: newTitle }, boardId); // boardId bilan
+      await updateGroup(groupId, { name: newTitle }, boardId);
       toast.success("Guruh nomi yangilandi ✅");
+
+      // 🔥 UI ni bevosita newTitle bilan yangilaymiz
+      setGroups((prev) =>
+        prev.map((g) => (g._id === groupId ? { ...g, title: newTitle } : g))
+      );
     } catch (err) {
       console.error("updateGroup xatosi:", err.response?.data || err);
-      setGroups((prev) =>
-        prev.map((g) => (g.id === id ? { ...g, title: oldTitle } : g))
-      );
       toast.error("Guruh nomini yangilashda xato ❌");
+
+      // ❌ Xato bo'lsa, eski title ga qaytarish
+      setGroups((prev) =>
+        prev.map((g) => (g._id === groupId ? { ...g, title: oldTitle } : g))
+      );
     }
   };
 
@@ -177,6 +178,11 @@ const MainLead = () => {
       })
     );
   };
+
+  // groups o'zgarganda localStorage ga saqlash (agar xohlasang bitta useEffect bilan qilsa ham bo‘ladi)
+  useEffect(() => {
+    localStorage.setItem("groups", JSON.stringify(groups));
+  }, [groups]);
 
   const deleteItemFromGroup = (groupId, itemIndex) => {
     setGroups((prev) =>
@@ -276,12 +282,10 @@ const MainLead = () => {
 
   return (
     <div className="bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 rounded-b-[8px] relative overflow-x-auto">
-      <Toaster position="top-right" />
-
       {showBoardSelector && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-md w-full">
-            <h3 className="text-lg font-bold mb-4">Board tanlang</h3>
+            <h3 className="text-lg font-bold mb-4">Select board</h3>
             <div className="space-y-2 max-h-60 overflow-y-auto">
               {availableBoards.map((board) => (
                 <div
@@ -300,7 +304,7 @@ const MainLead = () => {
               className="mt-4 bg-gray-300 px-4 py-2 rounded-md w-full"
               onClick={() => setShowBoardSelector(false)}
             >
-              Bekor qilish
+              Cansel
             </button>
           </div>
         </div>
@@ -314,7 +318,7 @@ const MainLead = () => {
               onClick={() => setAddingGroup(true)}
               className="flex items-center justify-center gap-2 bg-[#7D8592] hover:bg-gray-600 text-white px-5 py-2 text-base rounded-lg font-medium transition-colors mx-auto"
             >
-              <Plus className="w-5 h-5" /> Guruh qo'shish
+              <Plus className="w-5 h-5" /> Add group
             </button>
           </div>
         ) : (
@@ -350,9 +354,9 @@ const MainLead = () => {
       ) : groups.length > 0 ? (
         <button
           onClick={() => setAddingGroup(true)}
-          className="mt-5 flex items-center justify-center gap-2 bg-[#7D8592] hover:bg-gray-600 text-white px-5 py-[5px] text-[16px] rounded-[8px] font-medium transition-colors mx-auto"
+          className="mt-5 flex items-center justify-center gap-2 bg-[#7D8592] hover:bg-gray-600 text-white px-5 py-[6px] text-[16px] rounded-[8px] font-medium transition-colors "
         >
-          <Plus className="w-5 h-5" /> Yangi guruh qo'shish
+          <Plus className="w-5 h-5" /> Add new group
         </button>
       ) : null}
 
@@ -363,7 +367,7 @@ const MainLead = () => {
               <span className="bg-[#0061FE] px-2 sm:px-[10px] py-[2px] text-[14px] sm:text-[16px] text-white rounded-full">
                 {selectedItems.length}
               </span>
-              Tanlangan leadlar
+              Selected leads
             </div>
 
             <button
@@ -371,7 +375,7 @@ const MainLead = () => {
               className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px]"
             >
               <Copy size={15} />
-              <span className="text-xs sm:text-sm">Nusxalash</span>
+              <span className="text-xs sm:text-sm">Copy</span>
             </button>
 
             <button
@@ -379,7 +383,7 @@ const MainLead = () => {
               className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px]"
             >
               <CiExport size={15} />
-              <span className="text-xs sm:text-sm">Eksport</span>
+              <span className="text-xs sm:text-sm">Export</span>
             </button>
 
             <button
@@ -387,7 +391,7 @@ const MainLead = () => {
               className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px]"
             >
               <BiArchiveIn size={15} />
-              <span className="text-xs sm:text-sm">Arxivlash</span>
+              <span className="text-xs sm:text-sm">Archive</span>
             </button>
 
             <button
@@ -396,7 +400,7 @@ const MainLead = () => {
               className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px]"
             >
               <Trash2 size={15} />
-              <span className="text-xs sm:text-sm">O'chirish</span>
+              <span className="text-xs sm:text-sm">Delete</span>
             </button>
 
             <button
@@ -404,7 +408,7 @@ const MainLead = () => {
               className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px]"
             >
               <ArrowRight size={15} />
-              <span className="text-xs sm:text-sm">Ko'chirish</span>
+              <span className="text-xs sm:text-sm">Move to</span>
             </button>
 
             <div className="hidden sm:block h-7 w-[1px] bg-[#313131] mx-2"></div>
@@ -434,7 +438,7 @@ const AddGroupInput = ({ onSave, onCancel }) => {
   };
 
   return (
-    <div className="flex gap-3 max-w-max mt-4 mx-auto">
+    <div className="flex gap-2 max-w-max mt-4 ">
       <input
         autoFocus
         value={value}
@@ -458,5 +462,3 @@ const AddGroupInput = ({ onSave, onCancel }) => {
 };
 
 export default MainLead;
-
-
