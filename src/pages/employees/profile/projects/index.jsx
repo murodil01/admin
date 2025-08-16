@@ -18,7 +18,12 @@ const ProjectCard = ({ project }) => {
         </div>
         <div className="text-[#7D8592] text-[14px] font-semibold flex items-center gap-2">
           <CalendarDays size={16} />
-          Created {new Date(project.createdAt).toLocaleDateString()}
+            Created {new Date(project.createdAt).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric"
+          })}
+
         </div>
       </div>
 
@@ -40,19 +45,8 @@ const ProjectCard = ({ project }) => {
           </div>
 
           <div className="flex flex-col gap-1">
-            <p className="text-[#7D8592] text-[14px] font-semibold">
-              Assignees ({project.assignees?.length || 0})
-            </p>
-            <div className="flex items-center -space-x-2">
-              {project.assignees?.map((src, index) => (
-                <img
-                  key={index}
-                  className="w-[28px] h-[28px] rounded-full border border-white"
-                  src={src}
-                  alt={`User ${index + 1}`}
-                />
-              ))}
-            </div>
+            <p className="text-[#7D8592] text-[14px] font-semibold">Dropped</p>
+            <p className="text-center">{project.dropped_count || 0}</p>
           </div>
         </div>
       </div>
@@ -79,7 +73,7 @@ const Projects = () => {
             createdAt: p.created_at,
             allTasks: p.all_tasks,
             activeTasks: p.active_tasks,
-            assignees: (p.assigned || []).map(a => a.image)
+            dropped_count: p.dropped_count,
           }))
         );
 

@@ -1,49 +1,80 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  User,
   ChevronRight,
   ChevronDown,
-  Trash2,
   MoreVertical,
   Edit2,
+  Trash2,
+  X,
 } from "lucide-react";
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-// import { getBoardById, createBoard } from "../../api/services/boardService"; // Import your API service
+import { updateGroup } from "../../../api/services/groupService";
 
 const DatePickerCell = ({ value, onChange, onSave, onCancel }) => {
   const [date, setDate] = useState(value ? new Date(value) : null);
 
-  // Sana o'zgarganda value ni yyyy-mm-dd formatida onChange ga yuboramiz
   const handleChange = (date) => {
     setDate(date);
-    if (date) {
-      onChange(date.toISOString().split("T")[0]);
-    } else {
-      onChange("");
-    }
+    onChange(date ? date.toISOString().split("T")[0] : "");
   };
 
-  {
-    /* Date part */
-  }
   return (
-    <ReactDatePicker
-      selected={date}
+    <div className="relative w-full h-full">
+      <ReactDatePicker
+        selected={date}
+        onChange={handleChange}
+        dateFormat="yyyy-MM-dd"
+        onBlur={onSave}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onSave();
+          if (e.key === "Escape") onCancel();
+        }}
+        className="w-full h-full px-2 py-1 text-center focus:outline-none bg-transparent"
+        placeholderText="Select date"
+        tabIndex={-1}
+        popperClassName="react-datepicker-popper"
+        popperPlacement="bottom-start"
+      />
+    </div>
+  );
+};
+
+const StatusDropdown = ({ value, onChange, onSave, onCancel }) => {
+  const statusOptions = [
+    { value: "", label: "Select Status" },
+    { value: "Done", label: "Done" },
+    { value: "Stuck", label: "Stuck" },
+    { value: "Working on it", label: "Working on it" },
+    { value: "Not Started", label: "Not Started" },
+  ];
+
+  const handleChange = (e) => {
+    onChange(e.target.value);
+    onSave();
+  };
+
+  return (
+    <select
+      value={value || ""}
       onChange={handleChange}
-      dateFormat="yyyy-MM-dd"
       onBlur={onSave}
       onKeyDown={(e) => {
         if (e.key === "Enter") onSave();
         if (e.key === "Escape") onCancel();
       }}
-      className="w-full px-2 py-1 text-center focus:outline-none"
-      placeholderText="Select a date"
-      isClearable
-      autoFocus
-      // ReactDatePicker ichidagi kalitlarga to'g'ri ishlashi uchun tabIndex -1
-      tabIndex={-1}
-    />
+      className="w-full h-full text-center focus:outline-none border-none appearance-none bg-transparent"
+    >
+      {statusOptions.map((option) => (
+        <option
+          key={option.value}
+          value={option.value}
+          className="bg-white text-black" // Tanlash oynasida oq fon + qora matn
+        >
+          {option.label}
+        </option>
+      ))}
+    </select>
   );
 };
 
@@ -62,20 +93,31 @@ const GroupSection = ({
 }) => {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState(title);
-
-  const [localItems, setLocalItems] = useState(items || []);
-  useEffect(() => {
-    setLocalItems(items || []);
-  }, [items]);
-
+  const [localItems, setLocalItems] = useState((items || []).filter(Boolean));
   const [editingCell, setEditingCell] = useState(null);
-
+  const [addingItem, setAddingItem] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [editingColumnIndex, setEditingColumnIndex] = useState(null);
+  const [columnTitleValue, setColumnTitleValue] = useState("");
   const dropdownRef = useRef();
 
+  const [columns, setColumns] = useState([
+    { key: "name", label: "Leads", isCustom: false },
+    { key: "phoneNumber", label: "Phone Number", isCustom: false },
+    { key: "owner", label: "Owner", isCustom: false },
+    { key: "lastInteraction", label: "Last interaction", isCustom: false },
+    { key: "status", label: "Status", isCustom: false },
+    { key: "notes", label: "Notes", isCustom: false },
+    { key: "timeline", label: "Timeline", isCustom: false },
+    { key: "activeSequences", label: "Active sequences", isCustom: false },
+  ]);
+
+  useEffect(() => setLocalItems((items || []).filter(Boolean)), [items]);
+
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setDropdownOpen(false);
       }
     };
@@ -83,105 +125,161 @@ const GroupSection = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleTitleDoubleClick = () => setEditingTitle(true);
-  const handleTitleChange = (e) => setTitleValue(e.target.value);
-  const handleTitleBlur = () => {
-    updateTitle(id, titleValue.trim() || "Untitled Group");
-    setEditingTitle(false);
-  };
-
-  const onEditClick = () => {
-    setEditingTitle(true);
-    setDropdownOpen(false);
-  };
-
-  const onDeleteClick = () => {
-    if (confirm("Are you sure you want to delete this group?")) {
-      deleteGroup && deleteGroup(id);
-    }
-    setDropdownOpen(false);
-  };
-
   const startEditCell = (row, field) => setEditingCell({ row, field });
   const cancelEditCell = () => setEditingCell(null);
 
   const saveEditCell = () => {
     if (!editingCell) return;
-
     const { row, field } = editingCell;
-    let val = localItems[row][field];
-    if (typeof val === "string") val = val.trim();
+    let val = localItems[row]?.[field] ?? "";
 
-    if (val === "") {
-      val = field === "name" ? "Unnamed" : "";
-    }
+    // Agar qiymat bo'sh bo'lsa, "Unnamed" ga o'rnatish
+    if (typeof val === "string") val = val.trim();
+    if (val === "") val = field === "name" ? "Unnamed" : "";
 
     const newItems = [...localItems];
     newItems[row] = { ...newItems[row], [field]: val };
     setLocalItems(newItems);
 
+    // Yangilash funksiyasini chaqirish
     updateItem(id, row, newItems[row]);
 
     cancelEditCell();
   };
 
-  // Status class css colors
-  const getStatusClass = (status) => {
-    if (status === "Working")
-      return "bg-[#928EFF] text-white border border-[#FFFFFF]";
-    if (status === "Done")
-      return "bg-[#71DC98] text-white border border-[#FFFFFF]";
-    return "text-gray-800";
-  };
-
-  const [addingItem, setAddingItem] = useState(false);
-  const [newItemName, setNewItemName] = useState("");
-
   const saveNewItem = () => {
     if (newItemName.trim()) {
-      const newItem = { name: newItemName.trim(), status: "", date: "" };
-      setLocalItems((prev) => [...prev, newItem]);
+      const newItem = { name: newItemName.trim() };
+      columns.forEach((col) => {
+        if (!newItem[col.key]) newItem[col.key] = "";
+      });
+      setLocalItems((prev) => [...prev.filter(Boolean), newItem]);
       addItem(id, newItem);
       setNewItemName("");
       setAddingItem(false);
     }
   };
 
+  const addColumn = () => {
+    const newKey = `custom_${Date.now()}`;
+    const newLabel = `Custom ${
+      columns.filter((col) => col.isCustom).length + 1
+    }`;
+    setColumns((prev) => [
+      ...prev,
+      { key: newKey, label: newLabel, isCustom: true },
+    ]);
+    setLocalItems((prev) =>
+      prev.map((item) => ({
+        ...item,
+        [newKey]: "",
+      }))
+    );
+  };
+
+  const startEditColumnTitle = (index, currentLabel) => {
+    setEditingColumnIndex(index);
+    setColumnTitleValue(currentLabel);
+  };
+
+  const saveColumnTitle = () => {
+    if (editingColumnIndex !== null) {
+      const newLabel = columnTitleValue.trim() || "Untitled Column";
+      setColumns((prev) =>
+        prev.map((col, idx) =>
+          idx === editingColumnIndex ? { ...col, label: newLabel } : col
+        )
+      );
+      setEditingColumnIndex(null);
+      setColumnTitleValue("");
+    }
+  };
+
+  const cancelEditColumnTitle = () => {
+    setEditingColumnIndex(null);
+    setColumnTitleValue("");
+  };
+
+  const deleteColumn = (index) => {
+    const columnToDelete = columns[index];
+    if (columnToDelete.isCustom) {
+      setColumns((prev) => prev.filter((_, idx) => idx !== index));
+      setLocalItems((prev) =>
+        prev.map((item) => {
+          const newItem = { ...item };
+          delete newItem[columnToDelete.key];
+          return newItem;
+        })
+      );
+    }
+  };
+
+  const getStatusClass = (status) => {
+    switch (status) {
+      case "Working on it":
+        return "bg-[#FDAB3D] text-white font-medium";
+      case "Done":
+        return "bg-[#71DC98] text-white font-medium";
+      case "Stuck":
+        return "bg-[#DF2F4A] text-white font-medium";
+      case "Not Started":
+        return "bg-[#E7E7E7] text-[#A29F9F] font-medium";
+      default:
+        return "bg-white text-gray-800 font-medium";
+    }
+  };
+
   return (
-    <div className="mb-3 bg-[#CBCBCB] rounded-[8px] relative">
-      <div className="flex items-center justify-between w-full p-[15px] cursor-pointer rounded-[8px] select-none">
-        <div
-          onClick={onToggleExpanded}
-          className="flex items-center gap-3 font-medium text-gray-900 flex-1"
-          aria-label="Toggle group"
-        >
+    <div className="mb-3 rounded-[8px] relative">
+      {/* Header */}
+      <div className="flex items-center justify-between w-full p-4 cursor-pointer rounded-t-[8px] select-none bg-gray-200">
+        <div className="flex items-center flex-1" onClick={onToggleExpanded}>
           {expanded ? (
             <ChevronDown className="w-5 h-5 text-black" />
           ) : (
             <ChevronRight className="w-5 h-5 text-black" />
           )}
-
           <div className="flex flex-col">
             {editingTitle ? (
               <input
                 autoFocus
                 value={titleValue}
-                onChange={handleTitleChange}
-                onBlur={handleTitleBlur}
-                onKeyDown={(e) => e.key === "Enter" && handleTitleBlur()}
-                className="text-[18px] text-black font-medium focus:outline-none bg-transparent border-b border-gray-400 w-full"
+                onChange={(e) => setTitleValue(e.target.value)}
+                onBlur={async () => {
+                  const newTitle = titleValue.trim() || "Untitled Group";
+                  setEditingTitle(false);
+                  setTitleValue(newTitle);
+
+                  try {
+                    // API orqali yangilash
+                    await updateGroup(id, { name: newTitle });
+                  } catch (error) {
+                    console.error("Failed to update group title:", error);
+                    // Xatolik bo'lsa eski title’ni qaytarish
+                    setTitleValue(title);
+                  }
+
+                  // Parent component updateTitle funksiyasini chaqirish
+                  if (updateTitle) updateTitle(id, newTitle);
+                }}
+                onKeyDown={async (e) => {
+                  if (e.key === "Enter") e.target.blur(); // onBlur orqali API chaqiriladi
+                  if (e.key === "Escape") {
+                    setEditingTitle(false);
+                    setTitleValue(title);
+                  }
+                }}
+                className="ml-2 text-[18px] font-medium focus:outline-none bg-transparent border-b border-gray-400 w-full"
               />
             ) : (
               <span
-                onDoubleClick={handleTitleDoubleClick}
-                className="text-[18px] font-medium cursor-pointer"
-                title="Double click to edit title"
+                onDoubleClick={() => setEditingTitle(true)}
+                className="ml-2 text-[18px] font-medium cursor-pointer"
               >
                 {titleValue}
               </span>
             )}
-
-            <small className="font-normal text-[14px] text-black mt-1">
+            <small className="ml-2 text-[14px] mt-1">
               {localItems.length} item{localItems.length > 1 ? "s" : ""}
             </small>
           </div>
@@ -191,27 +289,24 @@ const GroupSection = ({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              setDropdownOpen((open) => !open);
+              setDropdownOpen((prev) => !prev);
             }}
             className="p-2 rounded-[8px] bg-[#E2E2E2] hover:bg-gray-300"
-            title="Options"
-            aria-haspopup="true"
-            aria-expanded={dropdownOpen}
           >
             <MoreVertical className="w-5 h-5 text-gray-700" />
           </button>
 
           {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-31 bg-[#F5F7FF] rounded-[8px] shadow-md z-50">
+            <div className="absolute right-0 mt-[-50px] w-32 bg-[#F5F7FF] rounded-[8px] shadow-md z-50">
               <button
-                onClick={onEditClick}
-                className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#E2E2E2] text-[12px] text-[#5A5A5A] rounded-t-[8px] justify-start"
+                onClick={() => setEditingTitle(true)}
+                className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#E2E2E2] text-[12px] text-[#5A5A5A]"
               >
                 <Edit2 size={15} /> Edit group
               </button>
               <button
-                onClick={onDeleteClick}
-                className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#E2E2E2] text-[12px] text-[#5A5A5A] rounded-b-[8px] justify-start"
+                onClick={() => deleteGroup && deleteGroup(id)}
+                className="flex items-center gap-2 w-full px-3 py-2 hover:bg-[#E2E2E2] text-[12px] text-[#5A5A5A]"
               >
                 <Trash2 size={15} /> Delete group
               </button>
@@ -220,173 +315,210 @@ const GroupSection = ({
         </div>
       </div>
 
+      {/* Table */}
       {expanded && (
-        <div className="px-6 pb-5 pt-3 bg-white">
-          <table className="w-full table-fixed border-collapse border border-gray-300 text-sm rounded-b-[8px]">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="border border-gray-300 p-2 w-8"></th>
-                <th className="border border-gray-300 p-2 text-center text-[16px] font-medium text-black cursor-pointer">
-                  Item
-                </th>
-                <th className="border border-gray-300 p-2 text-center text-[16px] font-medium text-black cursor-pointer">
-                  Person
-                </th>
-                <th className="border border-gray-300 p-2 text-center text-[16px] font-medium text-black cursor-pointer">
-                  Status
-                </th>
-                <th className="border border-gray-300 p-2 text-center text-[16px] font-medium text-black cursor-pointer">
-                  Date
-                </th>
-                <th className="border border-gray-300 p-2 text-center text-[16px] font-medium text-black cursor-pointer">
-                  +
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {localItems.map((item, i) => (
-                <tr key={i} className={i % 2 === 0 ? "bg-gray-50" : ""}>
-                  <td className="border border-gray-300 text-center p-2">
-                    <input
-                      type="checkbox"
-                      checked={selected.includes(i)}
-                      onChange={(e) => onToggleSelect(i, e.target.checked)}
-                    />
-                  </td>
-                  <td
-                    className="border border-gray-300 p-2 cursor-pointer text-center"
-                    onClick={() => startEditCell(i, "name")}
-                  >
-                    {editingCell?.row === i && editingCell?.field === "name" ? (
-                      <input
-                        autoFocus
-                        value={item.name}
-                        onChange={(e) => {
-                          const newVal = e.target.value;
-                          setLocalItems((prev) => {
-                            const copy = [...prev];
-                            copy[i] = { ...copy[i], name: newVal };
-                            return copy;
-                          });
-                        }}
-                        onBlur={saveEditCell}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") saveEditCell();
-                          if (e.key === "Escape") cancelEditCell();
-                        }}
-                        className="w-full text-center focus:outline-none"
-                      />
-                    ) : (
-                      item.name
-                    )}
-                  </td>
-                  <td className="border border-gray-300 p-2 text-center">
-                    <User className="inline w-4 h-4 text-gray-600" />
-                  </td>
-                  <td
-                    className={`border border-gray-300 p-2 cursor-pointer text-center transition-colors ${getStatusClass(
-                      item.status
-                    )}`}
-                    onClick={() => startEditCell(i, "status")}
-                  >
-                    {editingCell?.row === i &&
-                    editingCell?.field === "status" ? (
-                      <input
-                        autoFocus
-                        value={item.status}
-                        onChange={(e) => {
-                          const newVal = e.target.value;
-                          setLocalItems((prev) => {
-                            const copy = [...prev];
-                            copy[i] = { ...copy[i], status: newVal };
-                            return copy;
-                          });
-                        }}
-                        onBlur={saveEditCell}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") saveEditCell();
-                          if (e.key === "Escape") cancelEditCell();
-                        }}
-                        className="w-full text-center focus:outline-none"
-                      />
-                    ) : (
-                      item.status || "-"
-                    )}
-                  </td>
-                  <td
-                    className="border border-gray-300 p-2 cursor-pointer text-center"
-                    onClick={() => startEditCell(i, "date")}
-                  >
-                    {editingCell?.row === i && editingCell?.field === "date" ? (
-                      <DatePickerCell
-                        value={item.date}
-                        onChange={(val) => {
-                          setLocalItems((prev) => {
-                            const copy = [...prev];
-                            copy[i] = { ...copy[i], date: val };
-                            return copy;
-                          });
-                        }}
-                        onSave={saveEditCell}
-                        onCancel={cancelEditCell}
-                      />
-                    ) : (
-                      item.date || "-"
-                    )}
-                  </td>
-                  <td className="border border-gray-300 p-2 text-center"></td>
-                </tr>
-              ))}
-              {addingItem ? (
+        <div className="bg-white">
+          <div className="px-4 pb-4 pt-2 overflow-x-auto relative h-50">
+            <table className="table-fixed shrink-0 absolute min-w-[1100px] border-collapse font-normal border border-gray-300 text-sm">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td className="border border-gray-300 text-center p-2">
-                    <input type="checkbox" disabled />
-                  </td>
-                  <td className="border border-gray-300 p-2 text-center">
-                    <input
-                      autoFocus
-                      type="text"
-                      value={newItemName}
-                      onChange={(e) => setNewItemName(e.target.value)}
-                      onBlur={() => {
-                        if (newItemName.trim()) {
-                          saveNewItem();
-                        } else {
-                          setAddingItem(false);
+                  <th
+                    className="border border-gray-300 p-2"
+                    style={{ width: "48px", minWidth: "48px" }}
+                  ></th>
+                  {columns.map((col, index) => (
+                    <th
+                      key={col.key}
+                      className="border border-gray-300 p-2 text-center relative group"
+                      style={{ width: "160px", minWidth: "160px" }}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        {editingColumnIndex === index ? (
+                          <input
+                            autoFocus
+                            value={columnTitleValue}
+                            onChange={(e) =>
+                              setColumnTitleValue(e.target.value)
+                            }
+                            onBlur={saveColumnTitle}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") saveColumnTitle();
+                              if (e.key === "Escape") cancelEditColumnTitle();
+                            }}
+                            className="w-full text-center focus:outline-none bg-transparent border-b border-gray-400"
+                          />
+                        ) : (
+                          <span
+                            onDoubleClick={() =>
+                              startEditColumnTitle(index, col.label)
+                            }
+                            className="cursor-pointer"
+                          >
+                            {col.label}
+                          </span>
+                        )}
+                        {col.isCustom && (
+                          <button
+                            onClick={() => deleteColumn(index)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 rounded"
+                            title="Delete column"
+                          >
+                            <X size={12} className="text-red-500" />
+                          </button>
+                        )}
+                      </div>
+                    </th>
+                  ))}
+                  <th
+                    className="border border-gray-300 p-2 text-center cursor-pointer hover:bg-gray-200"
+                    style={{ width: "48px", minWidth: "48px" }}
+                    onClick={addColumn}
+                    title="Add column"
+                  >
+                    +
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {localItems.map((item, i) => (
+                  <tr key={i} className={i % 2 === 0 ? "bg-gray-50" : ""}>
+                    <td
+                      className="border border-gray-300 text-center p-2"
+                      style={{ width: "48px", minWidth: "48px" }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected.includes(i)}
+                        onChange={(e) => onToggleSelect(i, e.target.checked)}
+                      />
+                    </td>
+
+                    {columns.map((col) => (
+                      <td
+                        key={col.key}
+                        className="border border-gray-300 p-0 text-center"
+                        style={{ width: "160px", minWidth: "160px" }}
+                      >
+                        {col.key === "status" ? (
+                          <div
+                            className={`w-full h-full flex items-center justify-center ${getStatusClass(
+                              item[col.key]
+                            )}`}
+                            style={{ minHeight: "36px" }}
+                          >
+                            <StatusDropdown
+                              value={item[col.key] || ""}
+                              onChange={(val) => {
+                                setLocalItems((prev) => {
+                                  const copy = [...prev];
+                                  copy[i] = { ...copy[i], [col.key]: val };
+                                  return copy;
+                                });
+                              }}
+                              onSave={() => {}}
+                              onCancel={() => {}}
+                            />
+                          </div>
+                        ) : col.key === "timeline" ? (
+                          <DatePickerCell
+                            value={item[col.key]}
+                            onChange={(val) => {
+                              setLocalItems((prev) => {
+                                const copy = [...prev];
+                                copy[i] = { ...copy[i], [col.key]: val };
+                                return copy;
+                              });
+                            }}
+                            onSave={saveEditCell}
+                            onCancel={cancelEditCell}
+                          />
+                        ) : (
+                          <input
+                            value={item[col.key] || ""}
+                            onChange={(e) => {
+                              const newVal = e.target.value;
+                              setLocalItems((prev) => {
+                                const copy = [...prev];
+                                copy[i] = { ...copy[i], [col.key]: newVal };
+                                return copy;
+                              });
+                            }}
+                            onBlur={saveEditCell}
+                            onFocus={() => startEditCell(i, col.key)}
+                            className="w-full text-center focus:outline-none bg-transparent"
+                            placeholder={col.label}
+                          />
+                        )}
+                      </td>
+                    ))}
+
+                    <td
+                      className="border border-gray-300 p-2"
+                      style={{ width: "48px", minWidth: "48px" }}
+                    ></td>
+                  </tr>
+                ))}
+
+                {addingItem ? (
+                  <tr>
+                    <td
+                      className="border border-gray-300 text-center p-2"
+                      style={{ width: "48px", minWidth: "48px" }}
+                    >
+                      <input type="checkbox" disabled />
+                    </td>
+                    <td
+                      className="border border-gray-300 p-2 text-center"
+                      style={{ width: "160px", minWidth: "160px" }}
+                    >
+                      <input
+                        autoFocus
+                        value={newItemName}
+                        onChange={(e) => setNewItemName(e.target.value)}
+                        onBlur={() =>
+                          newItemName.trim()
+                            ? saveNewItem()
+                            : setAddingItem(false)
                         }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") saveNewItem();
-                        if (e.key === "Escape") setAddingItem(false);
-                      }}
-                      placeholder="Enter item name..."
-                      className="w-full px-3 py-1 rounded-[8px] border border-gray-400 focus:outline-none text-center"
-                    />
-                  </td>
-                  <td className="border border-gray-300 text-center p-2 text-gray-400">
-                    -
-                  </td>
-                  <td className="border border-gray-300 text-center p-2 text-gray-400">
-                    -
-                  </td>
-                  <td className="border border-gray-300 text-center p-2 text-gray-400">
-                    -
-                  </td>
-                  <td className="border border-gray-300 text-center p-2 text-gray-400"></td>
-                </tr>
-              ) : (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="border border-gray-300 p-2 text-black cursor-pointer font-normal text-center"
-                    onClick={() => setAddingItem(true)}
-                  >
-                    + Add item
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") saveNewItem();
+                          if (e.key === "Escape") setAddingItem(false);
+                        }}
+                        placeholder="Enter item name..."
+                        className="w-full px-2 py-1 rounded-[8px] focus:outline-none text-center bg-transparent"
+                      />
+                    </td>
+                    {Array(columns.length - 1)
+                      .fill(null)
+                      .map((_, idx) => (
+                        <td
+                          key={idx}
+                          className="border border-gray-300 p-2 text-center text-gray-400"
+                          style={{ width: "160px", minWidth: "160px" }}
+                        >
+                          -
+                        </td>
+                      ))}
+                    <td
+                      className="border border-gray-300 p-2"
+                      style={{ width: "48px", minWidth: "48px" }}
+                    ></td>
+                  </tr>
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={columns.length + 2}
+                      className="border border-gray-300 p-2 text-center cursor-pointer text-black hover:bg-gray-100"
+                      onClick={() => setAddingItem(true)}
+                    >
+                      + Add item
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

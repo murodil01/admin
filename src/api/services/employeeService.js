@@ -1,9 +1,18 @@
 import api from "../base";
 import endpoints from "../endpoint";
 
-export const getEmployees = async () => {
-    const res = await api.get(endpoints.employees.getAll);
-    return res.data; //  bu yerda count, next, previous, results bo‘ladi
+export const getEmployees = async (page = 1) => {
+    try {
+        const res = await api.get(endpoints.employees.getAll, {
+            params: {
+                page_num: page // Backend 'page' parametrini kutayotgan bo'lishi mumkin
+            }
+        });
+        return res.data;
+    } catch (error) {
+        console.error('Xodimlarni olishda xato:', error);
+        throw error;
+    }
 };
 
 export const getEmployeeById = async (id) => {
@@ -11,13 +20,23 @@ export const getEmployeeById = async (id) => {
     return res.data;
 };
 
-export const createEmployees = async (data) => {
-    const res = await api.post(endpoints.employees.create, data, {
-        headers: {
-            'Content-Type': 'application/json' // JSON formatida yuborish
+export const createEmployees = async (formData) => {
+    try {
+        // FormData-ni tekshirish
+        for (let [key, value] of formData.entries()) {
+            console.log(`${key}:`, value); // Debug uchun
         }
-    });
-    return res.data;
+
+        const res = await api.post(endpoints.employees.create, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        return res.data;
+    } catch (error) {
+        console.error('Error details:', error.response?.data);
+        throw error;
+    }
 };
 
 export const updateEmployees = async (id, data) => {
@@ -25,7 +44,20 @@ export const updateEmployees = async (id, data) => {
     return res.data;
 };
 
-// export const deleteEmployees = async (id) => {
-//     const res = await api.delete(endpoints.employees.delete(id));
-//     return res.data;
-// };
+export const updateEmployeeStatus = async (id, status) => {
+    const res = await api.patch(
+        endpoints.employees.updateStatus(id),
+        { status },
+        {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }
+    );
+    return res.data;
+};
+
+export const deleteEmployee = async (id) => {
+    const res = await api.delete(endpoints.employees.delete(id));
+    return res.data;
+};
