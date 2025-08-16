@@ -9,6 +9,9 @@ import {
     createEmployees,
 } from "../../api/services/employeeService";
 import { deleteUser } from "../../api/services/userService";
+import { Permission } from "../../components/Permissions";
+import { useAuth } from "../../hooks/useAuth";
+import { ROLES } from "../../components/constants/roles";
 
 import { message, Pagination, Modal } from "antd";
 
@@ -21,6 +24,7 @@ const InnerCircle = () => {
     const [activeTab, setActiveTab] = useState(
         localStorage.getItem("innerCircleTab") || "list"
     );
+    const { user, isAuthenticated } = useAuth();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const navigate = useNavigate();
     const { confirm } = Modal;
@@ -165,6 +169,8 @@ const InnerCircle = () => {
             </div>
         );
 
+        if (!isAuthenticated) return <div>Please login</div>;
+
     return (
         <div className="w-full max-w-screen-xl mx-auto ">
             {/* Header */}
@@ -174,10 +180,10 @@ const InnerCircle = () => {
                 </h1>
 
                 {/* Tabs */}
-                <div className="flex items-center bg-[#DBDBDB] rounded-4xl w-full md:w-[280px] xl:w-[350px] overflow-hidden">
+                <div className="flex items-center bg-[#DBDBDB] rounded-4xl w-full md:w-[280px] xl:w-[350px] overflow-hidden p-1">
                     <button
                         onClick={() => handleTabClick("list")}
-                        className={`py-2 sm:py-[9px] text-sm sm:text-base font-bold w-1/2 transition-all duration-200 ${activeTab === "list"
+                        className={`py-2 sm:py-[9px] text-sm sm:text-base font-bold w-1/2 transition-all duration-200 rounded-full ${activeTab === "list"
                                 ? "bg-[#0061fe] text-white"
                                 : "bg-[#DBDBDB] text-[#1F2937]"
                             }`}
@@ -186,7 +192,7 @@ const InnerCircle = () => {
                     </button>
                     <button
                         onClick={() => handleTabClick("activity")}
-                        className={`py-2 sm:py-[9px] text-sm sm:text-base font-bold w-1/2 transition-all duration-200 ${activeTab === "activity"
+                        className={`py-2 sm:py-[9px] text-sm sm:text-base font-bold w-1/2 transition-all duration-200 rounded-full ${activeTab === "activity"
                                 ? "bg-[#0061fe] text-white"
                                 : "bg-[#DBDBDB] text-[#1F2937]"
                             }`}
@@ -195,24 +201,30 @@ const InnerCircle = () => {
                     </button>
                 </div>
 
-                {/* Add Button */}
-                <div className="flex justify-center lg:justify-end">
-                    {/* Desktop Button - faqat lg: dan boshlab */}
-                    <button
-                        onClick={() => setIsAddModalOpen(true)}
-                        className="hidden lg:flex bg-[#0061fe] text-white text-sm sm:text-base rounded-2xl items-center gap-2 py-2 px-4 sm:py-3 sm:px-5 cursor-pointer"
-                    >
-                        <Plus size={18} /> <span>Add Employee</span>
-                    </button>
+                <div className="flex justify-center lg:justify-end w-[240px]">
 
-                    {/* Mobile + Tablet Floating Button */}
-                    <button
-                        onClick={() => setIsAddModalOpen(true)}
-                        className="lg:hidden fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#0061fe] text-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
-                    >
-                        <Plus size={24} />
-                    </button>
                 </div>
+
+                {/* Add Button */}
+                <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+                    <div className="flex justify-center lg:justify-end">
+                        {/* Desktop Button - faqat lg: dan boshlab */}
+                        <button
+                            onClick={() => setIsAddModalOpen(true)}
+                            className="hidden lg:flex bg-[#0061fe] text-white text-sm sm:text-base rounded-2xl items-center gap-2 py-2 px-4 sm:py-3 sm:px-5 cursor-pointer"
+                        >
+                            <Plus size={18} /> <span>Add Employee</span>
+                        </button>
+
+                        {/* Mobile + Tablet Floating Button */}
+                        <button
+                            onClick={() => setIsAddModalOpen(true)}
+                            className="lg:hidden fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#0061fe] text-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
+                        >
+                            <Plus size={24} />
+                        </button>
+                    </div>
+                </Permission>
             </div>
 
             {/* Content */}

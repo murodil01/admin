@@ -15,8 +15,6 @@ const EmployeeList = ({ employees, onDelete, onStatusUpdate }) => {
 
     const { user, isAuthenticated } = useAuth();
 
-    if (!isAuthenticated) return <div>Please login</div>;
-
     const toggleDropdown = (id, e) => {
         e.stopPropagation(); // Prevent event bubbling
 
@@ -46,6 +44,8 @@ const EmployeeList = ({ employees, onDelete, onStatusUpdate }) => {
         document.addEventListener('click', handleDocClick);
         return () => document.removeEventListener('click', handleDocClick);
     }, []);
+
+    if (!isAuthenticated) return <div>Please login</div>;
 
     return (
         <div className="bg-gray-50 rounded-2xl shadow">

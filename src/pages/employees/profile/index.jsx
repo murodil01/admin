@@ -144,8 +144,6 @@ const Profile = () => {
     localStorage.setItem("profileTab", activeTab);
   }, [activeTab]);
 
-    if (!isAuthenticated) return <div>Please login</div>;
-
   const SidebarSections = employee
     ? [
       {
@@ -240,6 +238,8 @@ const Profile = () => {
     return <div className="p-6">Loading...</div>;
   }
 
+  if (!isAuthenticated) return <div>Please login</div>;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="py-4 md:py-6 px-4 sm:px-6">
@@ -267,16 +267,18 @@ const Profile = () => {
           <div className="w-full lg:w-[350px] xl:w-[430px] bg-white border border-gray-100 rounded-[20px] md:rounded-[24px] p-4 md:p-6 shadow-sm relative">
             {/* Edit icon */}
             <div className="absolute top-4 md:top-5 right-4 md:right-5 z-10">
-              <button
-                id="edit-button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowEditDropdown((prev) => !prev);
-                }}
-                className="p-1 md:p-2 text-gray-600 hover:bg-gray-100 rounded-full"
-              >
-                <MoreVertical className="w-4 h-4 md:w-5 md:h-5" />
-              </button>
+              <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+                <button
+                  id="edit-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowEditDropdown((prev) => !prev);
+                  }}
+                  className="p-1 md:p-2 text-gray-600 hover:bg-gray-100 rounded-full"
+                >
+                  <MoreVertical className="w-4 h-4 md:w-5 md:h-5" />
+                </button>
+              </Permission>
 
               {showEditDropdown && (
                 <div
