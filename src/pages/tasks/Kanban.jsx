@@ -45,12 +45,11 @@ import {
   createTask,
   getTaskFiles,        
   uploadTaskFile,     
-  deleteTaskFile, 
-  
-  getTaskInstructions,
-  createInstruction,
-  updateInstruction,
-  deleteInstruction
+  // deleteTaskFile, 
+  getInst,
+  // createInstruction,
+  // updateInstruction,
+  // deleteInstruction
 } from "../../api/services/taskService";
 
 const NotionKanban = ({ cards, setCards }) => {
@@ -751,16 +750,16 @@ const Card = ({
     );
   };
 
-  const handleAddComment = () => {
-    if (!newComment.trim()) return;
+  // const handleAddComment = () => {
+  //   if (!newComment.trim()) return;
 
-    const updatedComments = [
-      ...comments,
-      { name: "Current User", text: newComment },
-    ];
-    setComments(updatedComments);
-    setNewComment("");
-  };
+  //   const updatedComments = [
+  //     ...comments,
+  //     { name: "Current User", text: newComment },
+  //   ];
+  //   setComments(updatedComments);
+  //   setNewComment("");
+  // };
 
   useEffect(() => {
     if (taskData && taskData.comments) {
@@ -1371,7 +1370,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
   
   setChecklistLoading(true);
   try {
-    const response = await getTaskInstructions(taskId);
+    const response = await getInst(taskId);
     console.log("Instructions ma'lumotlari:", response);
     
     // ✅ TUZATISH: response.data ni ishlatish kerak
