@@ -3,12 +3,17 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { MoreVertical } from "lucide-react";
 import EmployeeStatusModal from "./EmployeeStatusModal";
+import { Permission } from "../../components/Permissions";
+import { useAuth } from "../../hooks/useAuth";
+import { ROLES } from "../../components/constants/roles";
 
 const EmployeeList = ({ employees, onDelete, onStatusUpdate }) => {
     const [openDropdown, setOpenDropdown] = useState(null);
     const dropdownRef = useRef(null);
     const navigate = useNavigate();
     const [dropdownPosition, setDropdownPosition] = useState({});
+
+    const { user, isAuthenticated } = useAuth();
 
     const toggleDropdown = (id, e) => {
         e.stopPropagation(); // Prevent event bubbling
@@ -39,6 +44,8 @@ const EmployeeList = ({ employees, onDelete, onStatusUpdate }) => {
         document.addEventListener('click', handleDocClick);
         return () => document.removeEventListener('click', handleDocClick);
     }, []);
+
+    if (!isAuthenticated) return <div>Please login</div>;
 
     return (
         <div className="bg-gray-50 rounded-2xl shadow">
@@ -90,7 +97,6 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
         }, 100);
         setOpenDropdown(null);
     };
-
 
     return (
         <div className="bg-white border border-gray-200 rounded-lg shadow hover:shadow-md transition p-4 grid grid-cols-1 gap-3 lg:grid-cols-17 lg:items-center">
@@ -180,8 +186,8 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
                                     <div className="relative">
                                         <button
                                             onClick={(e) => {
-                                            e.stopPropagation();
-                                            toggleDropdown(emp.id, e);
+                                                e.stopPropagation();
+                                                toggleDropdown(emp.id, e);
                                             }}
                                             className="text-gray-500 hover:text-gray-700 p-2 more-vertical-button"
                                         >
@@ -190,28 +196,28 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
 
                                         {openDropdown === emp.id && (
                                             <div
-                                            className="absolute right-0 mt-2 z-50 w-40 bg-white rounded-lg shadow-lg border border-gray-200 dropdown-menu"
-                                            onClick={(e) => e.stopPropagation()}
+                                                className="absolute right-0 mt-2 z-50 w-40 bg-white rounded-lg shadow-lg border border-gray-200 dropdown-menu"
+                                                onClick={(e) => e.stopPropagation()}
                                             >
-                                            <button
-                                                onClick={handleEditStatus}
-                                                className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
-                                            >
-                                                Edit status
-                                            </button>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onDelete(emp.id); // <- onDelete(emp.id) deb to'g'rilang
-                                                    setOpenDropdown(null);
-                                                }}
-                                                className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100"
-                                            >
-                                                Delete
-                                            </button>
+                                                <button
+                                                    onClick={handleEditStatus}
+                                                    className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                                                >
+                                                    Edit status
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onDelete(emp.id); // <- onDelete(emp.id) deb to'g'rilang
+                                                        setOpenDropdown(null);
+                                                    }}
+                                                    className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100"
+                                                >
+                                                    Delete
+                                                </button>
                                             </div>
                                         )}
-                                        </div>
+                                    </div>
                                 </div>
 
                                 {/* Contact and Status Info */}
@@ -375,17 +381,9 @@ const EmployeeDropdownMenu = ({ emp, dropdownPosition, setIsStatusModalOpen, onD
         style={{ right: 0 }}
         onClick={(e) => e.stopPropagation()}
     >
-            <>
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setIsStatusModalOpen(true);
-                        setOpenDropdown(null);
-                    }}
-                    className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-green-500 cursor-pointer"
-                    >
-                    Edit status
-                </button>
+        <>
+            <div className="py-1">
+                {/* Always visible button */}
                 <button
                     type="button"
                     onMouseDown={(e) => {
@@ -397,17 +395,34 @@ const EmployeeDropdownMenu = ({ emp, dropdownPosition, setIsStatusModalOpen, onD
                 >
                     Details
                 </button>
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete(emp.id);
-                        setOpenDropdown(null);
-                    }}
-                    className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-red-500 cursor-pointer"
-                    >
-                    Delete
-                </button>
-            </>
+
+                {/* Founder/Manager only buttons */}
+                <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+                    <>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsStatusModalOpen(true);
+                                setOpenDropdown(null);
+                            }}
+                            className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-green-500 cursor-pointer"
+                        >
+                            Edit status
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(emp.id);
+                                setOpenDropdown(null);
+                            }}
+                            className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-red-500 cursor-pointer"
+                        >
+                            Delete
+                        </button>
+                    </>
+                </Permission>
+            </div>
+        </>
     </div>
 );
 
