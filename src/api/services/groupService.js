@@ -1,19 +1,41 @@
 import api from "../base";
 import endpoints from "../endpoint";
 
-// Barcha gruppalarni olish
-export const getGroups = () => api.get(endpoints.group.getAll);
+// Barcha gruppalarni olish (boardId bilan filtrlangan)
+export const getGroups = (boardId) => {
+  console.log("getGroups chaqirildi, boardId:", boardId);
+  return api.get(endpoints.group.getAll, {
+    params: { board: boardId } // Agar API query params orqali boardId kutsa
+  });
+};
 
-// ID bo'yicha group olish
-export const getGroupById = (id) => api.get(endpoints.group.getById(id));
+// ID bo'yicha group olish (boardId bilan tekshirish mumkin)
+export const getGroupById = (id, boardId) => {
+  console.log("getGroupById chaqirildi, id:", id, "boardId:", boardId);
+  return api.get(endpoints.group.getById(id), {
+    params: { board: boardId }
+  });
+};
 
 // Yangi group yaratish
-// data: { name: string, board: [boardId] }
-export const createGroup = (data) => api.post(endpoints.group.create, data);
+export const createGroup = (name, boardId) => {
+  console.log("createGroup chaqirildi, boardId:", boardId);
+  return api.post(endpoints.group.create, {
+    name,
+    board: boardId
+  });
+};
 
-// Group yangilash
-export const updateGroup = (id, data) =>
-  api.put(endpoints.group.update(id), data);
+// Group yangilash (boardId bilan)
+export const updateGroup = (id, data, boardId) => {
+  console.log("updateGroup chaqirildi, id:", id, "boardId:", boardId);
+  return api.put(endpoints.group.update(id), { ...data, board: boardId });
+};
 
-// Group o'chirish
-export const deleteGroup = (id) => api.delete(endpoints.group.delete(id));
+// Group o'chirish (boardId bilan)
+export const deleteGroup = (id, boardId) => {
+  console.log("deleteGroup chaqirildi, id:", id, "boardId:", boardId);
+  return api.delete(endpoints.group.delete(id), {
+    params: { board: boardId }
+  });
+};
