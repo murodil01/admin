@@ -8,11 +8,15 @@ export const getBoards = () => api.get(endpoints.boards.getAll);
 export const getBoardById = (id) => api.get(endpoints.boards.getById(id));
 
 // Yangi board yaratish
-export const createBoard = (data) => api.post(endpoints.boards.create, data);
+export const createBoard = (name, boardId) => {
+  return api.post(endpoints.boards.create, {
+    name,
+    board: boardId,
+  });
+};
 
-// Mavjud boardni yangilash
 export const updateBoard = (id, data) =>
-  api.put(endpoints.boards.update(id), data);
+  api.patch(endpoints.boards.update(id), data);
 
 // Boardni o'chirish
 export const deleteBoard = (id) => api.delete(endpoints.boards.delete(id));

@@ -2,30 +2,58 @@ import { useState, useEffect } from "react";
 import GroupSection from "../group-section";
 import { CiExport } from "react-icons/ci";
 import { BiArchiveIn } from "react-icons/bi";
+import { ArrowRight, Trash2, Copy, Plus, X } from "lucide-react";
 import {
-  ArrowRight,
-  Trash2,
-  Copy,
-  Plus,
-  X,
-} from "lucide-react";
+  getGroups,
+  // getGroupById,
+  createGroup,
+  // updateGroup,
+  // deleteGroup,
+} from "../../../api/services/groupService";
 
 const STORAGE_KEY_GROUPS = "my-app-groups";
 const STORAGE_KEY_EXPANDED = "my-app-groups-expanded";
 
 const MainLead = () => {
-  const [groups, setGroups] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY_GROUPS);
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [groups, setGroups] = useState([]);
+  const [expandedGroups, setExpandedGroups] = useState({});
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [addingGroup, setAddingGroup] = useState(false);
+  const [mainBoardId, setMainBoardId] = useState(null);
 
-  const [expandedGroups, setExpandedGroups] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY_EXPANDED);
-    return saved ? JSON.parse(saved) : {};
-  });
+  // Backend'dan boards olish
+  useEffect(() => {
+    const fetchBoards = async () => {
+      try {
+        const res = await getGroups();
+        console.log("✅ Backend javobi:", res.data);
 
-  const [selectedItems, setSelectedItems] = useState([]); // [{groupId, itemIndex}]
+        if (res.data.length > 0) {
+          setMainBoardId(res.data[0].id); // mavjud birinchi board ID ni saqlab qo'yamiz
+        }
 
+        const formatted = res.data.map((board) => ({
+          id: board.id,
+          title: board.name || "Untitled Group",
+          items: [],
+        }));
+
+        setGroups(formatted);
+      } catch (err) {
+        console.error("❌ getGroups xatosi:", err);
+        // Agar backend ishlamasa, localStorage’dan o‘qiymiz
+        const saved = localStorage.getItem(STORAGE_KEY_GROUPS);
+        if (saved) setGroups(JSON.parse(saved));
+      }
+    };
+
+    fetchBoards();
+
+    const savedExpanded = localStorage.getItem(STORAGE_KEY_EXPANDED);
+    if (savedExpanded) setExpandedGroups(JSON.parse(savedExpanded));
+  }, []);
+
+  // LocalStorage sync
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_GROUPS, JSON.stringify(groups));
   }, [groups]);
@@ -34,7 +62,41 @@ const MainLead = () => {
     localStorage.setItem(STORAGE_KEY_EXPANDED, JSON.stringify(expandedGroups));
   }, [expandedGroups]);
 
-  const deleteGroup = (groupId) => {
+  // Guruh qo‘shish
+  const addGroup = async (title) => {
+    const cleanName = String(title || "").trim();
+    if (!cleanName) return;
+
+    try {
+      const res = await createGroup(cleanName, mainBoardId || null);
+
+      console.log("✅ Yaratildi:", res.data);
+
+      setGroups((prev) => [
+        ...prev,
+        { id: res.data.id, title: res.data.name, items: [] },
+      ]);
+    } catch (err) {
+      console.error("❌ createGroup xatosi:", err.response?.data || err);
+
+      setGroups((prev) => [
+        ...prev,
+        { id: Date.now(), title: cleanName, items: [] },
+      ]);
+    }
+
+    setAddingGroup(false);
+  };
+
+  // Guruh o‘chirish
+  const deleteGroup = async (groupId) => {
+    try {
+      await deleteGroup(groupId);
+      console.log(`✅ O'chirildi: ${groupId}`);
+    } catch (err) {
+      console.error("❌ deleteGroup xatosi:", err.response?.data || err);
+    }
+
     setGroups((prev) => prev.filter((g) => g.id !== groupId));
     setExpandedGroups((prev) => {
       const copy = { ...prev };
@@ -84,19 +146,6 @@ const MainLead = () => {
     setSelectedItems((prev) =>
       prev.filter((s) => !(s.groupId === groupId && s.itemIndex === itemIndex))
     );
-  };
-
-  const [addingGroup, setAddingGroup] = useState(false);
-
-  const addGroup = (title) => {
-    if (!title.trim()) return;
-    const newGroup = {
-      id: Date.now(),
-      title,
-      items: [],
-    };
-    setGroups((prev) => [...prev, newGroup]);
-    setAddingGroup(false);
   };
 
   const toggleExpanded = (groupId) => {
@@ -158,34 +207,36 @@ const MainLead = () => {
     setSelectedItems([]);
   };
 
-
   return (
     <div className="bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 rounded-b-[8px] relative overflow-x-auto">
       <div className="flex flex-col gap-6 w-full overflow-x-auto">
-        {groups.map((group) => (
-          <GroupSection
-            key={group.id}
-            id={group.id}
-            title={group.title}
-            items={group.items}
-            expanded={!!expandedGroups[group.id]}
-            onToggleExpanded={() => toggleExpanded(group.id)}
-            updateTitle={updateGroupTitle}
-            addItem={addItemToGroup}
-            updateItem={updateItemInGroup}
-            deleteItem={deleteItemFromGroup}
-            deleteGroup={deleteGroup}
-            selected={selectedItems
-              .filter((s) => s.groupId === group.id)
-              .map((s) => s.itemIndex)}
-            onToggleSelect={(itemIndex, isSelected) =>
-              toggleSelectItem(group.id, itemIndex, isSelected)
-            }
-          />
-        ))}
+        {groups.length === 0 ? (
+          <p className="text-center text-gray-500">📭 Hali boardlar yo'q</p>
+        ) : (
+          groups.map((group) => (
+            <GroupSection
+              key={group.id}
+              id={group.id}
+              title={group.title}
+              items={group.items}
+              expanded={!!expandedGroups[group.id]}
+              onToggleExpanded={() => toggleExpanded(group.id)}
+              updateTitle={updateGroupTitle}
+              addItem={addItemToGroup}
+              updateItem={updateItemInGroup}
+              deleteItem={deleteItemFromGroup}
+              deleteGroup={deleteGroup}
+              selected={selectedItems
+                .filter((s) => s.groupId === group.id)
+                .map((s) => s.itemIndex)}
+              onToggleSelect={(itemIndex, isSelected) =>
+                toggleSelectItem(group.id, itemIndex, isSelected)
+              }
+            />
+          ))
+        )}
       </div>
 
-      <div className="mt-8 py-2 px-6 bg-[#CBCBCB] rounded-[8px]">
         {addingGroup ? (
           <AddGroupInput
             onSave={addGroup}
@@ -194,14 +245,13 @@ const MainLead = () => {
         ) : (
           <button
             onClick={() => setAddingGroup(true)}
-            className="flex items-center justify-center gap-2 bg-[#7D8592] hover:bg-gray-600 text-white px-5 py-[5px] text-[16px] rounded-[8px] font-medium transition-colors"
+            className="mt-5 flex items-center justify-center gap-2 bg-[#7D8592] hover:bg-gray-600 text-white px-5 py-[5px] text-[16px] rounded-[8px] font-medium transition-colors"
             aria-label="Add new group"
           >
             <Plus className="w-5 h-5" />
             Add new group
           </button>
         )}
-      </div>
 
       {selectedItems.length > 0 && (
         <div className="mt-5 max-w-[1000px] mx-auto bg-[#F2F2F2] p-4 flex flex-wrap items-center justify-center shadow-lg rounded-[8px]">
@@ -280,7 +330,7 @@ const AddGroupInput = ({ onSave, onCancel }) => {
   };
 
   return (
-    <div className="flex flex-col sm:flex-row gap-3">
+    <div className="flex flex-col sm:flex-row gap-3 max-w-max">
       <input
         autoFocus
         value={value}
@@ -291,18 +341,18 @@ const AddGroupInput = ({ onSave, onCancel }) => {
         }}
         onBlur={handleSave}
         placeholder="Enter group title..."
-        className="flex-grow px-4 py-3 rounded-[8px] border border-gray-400 focus:outline-none text-base"
+        className="flex-grow px-4 py-2 rounded-[8px] border border-gray-400 focus:outline-none text-base"
       />
       <button
         onClick={onCancel}
-        className="px-4 py-3 bg-gray-300 rounded-[8px]  text-gray-700 font-semibold"
+        className="px-3 py-2 bg-gray-300 rounded-[8px] text-gray-700 font-semibold"
         aria-label="Cancel adding group"
       >
-        ✕
+        <X size={20}/>
       </button>
     </div>
   );
 };
 
-export default MainLead; 
+export default MainLead;
 
