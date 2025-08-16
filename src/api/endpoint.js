@@ -3,20 +3,20 @@ const endpoints = {
 		login: '/auth/login',
 		register: '/auth/register',
 		me: '/auth/me',
+		logout: '/auth/logout', // Added logout endpoint
 	},
 
 	users: {
 		getAll: '/users',
 		getById: id => `/users/${id}/`,
 		update: id => `/users/${id}/`,
-		delete: id => `/users/${id}/`,
 	},
 
 	tasks: {
 		getAll: 'project/tasks/',
 		create: 'project/tasks/',
 		getTags: 'project/tags/',
-        getTaskFiles: 'project/files/', 
+        getTaskFiles: 'project/files/',
 		getById: id => `project/tasks/${id}/`,
 		update: id => `project/tasks/${id}/`,
 		delete: id => `project/tasks/${id}/`,
@@ -69,7 +69,7 @@ const endpoints = {
 		getById: (id) => `users/${id}/`,
 		create: 'users/',
 		update: (id) => `users/${id}/`,
-		updateStatus: id=> `/users/${id}/`,
+		updateStatus: id=> `users/${id}/`,
 		delete: (id) => `users/${id}/`,
 	},
 
@@ -80,9 +80,9 @@ const endpoints = {
 	},
 
 	controlData: {
-		getAll: 'control-data/',
-		getById: (id) => `control-data/${id}/`,
-		create: 'control-data/',
+		getByUserId: (userId) => `control-data/?user_id=${userId}/`,
+		createForUser: (userId) => `control-data/?user_id=${userId}/`, // Faqat o'sha user uchun yaratish
+		update: (userId) => `control-data/?user_id=${userId}/`,
 	},
 
 	userProjects: {

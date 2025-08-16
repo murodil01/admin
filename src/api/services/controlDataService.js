@@ -1,82 +1,104 @@
 import api from "../base";
 import endpoints from "../endpoint";
 
-export const getControlData = async () => {
+// export const getControlData = async () => {
+//     try {
+//         const response = await api.get(endpoints.controlData.getAll);
+//         console.log('GET Control Data Response:', response.data);
+//         return response.data;
+//     } catch (error) {
+//         console.error('Error fetching control data:', error);
+//         throw error;
+//     }
+// };
+
+export const getControlDataByUserId = async (userId) => {
     try {
-        const response = await api.get(endpoints.controlData.getAll);
-        console.log('GET Control Data Response:', response.data);
-        return response.data;
+        const response = await api.get(endpoints.controlData.getByUserId(userId));
+        // console.log('API Response:', response.data); // Debug uchun
+
+        return response.data; // To'g'ridan-to'g'ri response.data ni qaytaramiz
+
     } catch (error) {
-        console.error('Error fetching control data:', error);
+        console.error(`Error fetching control data for user ${userId}:`, error);
         throw error;
     }
 };
 
-export const getControlDataById = async (id) => {
+export const updateControlData = async (id, data) => {
     try {
-        const response = await api.get(endpoints.controlData.getById(id));
-        console.log(`GET Control Data by ID ${id} Response:`, response.data);
-        return response.data;
-    } catch (error) {
-        console.error(`Error fetching control data with ID ${id}:`, error);
-        throw error;
-    }
-};
-
-export const updateControlData = async (id, data, isFormData = false) => {
-    try {
-        const config = {
-            headers: isFormData ? {
-                'Content-Type': 'multipart/form-data',
-            } : {}
+        const dataToSend = {
+            ...data,
+            printl: data.pinfl ? parseInt(data.pinfl) : null
         };
 
-        // PUT o'rniga PATCH ishlatamiz, chunki faqat o'zgartirilgan maydonlarni yuborish yaxshi amaliyot
-        const response = await api.patch(endpoints.controlData.getById(id), data, config);
-        console.log(`UPDATE Control Data ${id} Response:`, response.data);
+        delete dataToSend.pinfl;
+        delete dataToSend.id;
+        delete dataToSend.employee;
+        delete dataToSend.user_info;  // user_info yangilanishda o'zgartirilmaydi
+
+        const response = await api.patch(
+            endpoints.controlData.update(id),
+            dataToSend
+        );
+
         return response.data;
     } catch (error) {
-        console.error(`Error updating control data with ID ${id}:`, error);
+        console.error('Update error:', error.response?.data || error.message);
         throw error;
     }
 };
 
-export const createControlData = async (data, isFormData = false) => {
+export const createControlDataForUser = async (userInfo, data) => {
     try {
-        const config = {
-            headers: isFormData ? {
-                'Content-Type': 'multipart/form-data',
-            } : {}
+        const dataToSend = {
+            ...data,
+            user_info: {  // user_info strukturasini to'g'ri shaklda yuboramiz
+                id: userInfo.id,
+                first_name: userInfo.first_name,
+                last_name: userInfo.last_name,
+                email: userInfo.email,
+                role: userInfo.role
+            },
+            printl: data.pinfl ? parseInt(data.pinfl) : null
         };
 
-        const response = await api.post(endpoints.controlData.getAll, data, config);
-        console.log('CREATE Control Data Response:', response.data);
+        delete dataToSend.pinfl;
+        delete dataToSend.id;
+        delete dataToSend.employee;
+
+        const response = await api.post(
+            endpoints.controlData.createForUser(userInfo), // User ID ni endpointga qo'shamiz
+            dataToSend
+        );
+
+        // console.log('CREATE for user response:', response.data);
         return response.data;
     } catch (error) {
-        console.error('Error creating control data:', error);
+        console.error('Error creating for user:', {
+            userInfo,
+            error: error.response?.data || error.message
+        });
         throw error;
     }
 };
 
-// Fayl yuklash uchun alohida funksiya
 export const uploadControlDataFile = async (id, file) => {
     try {
         const formData = new FormData();
-        formData.append('file', file);
-        formData.append('id', id);
+        formData.append('passport_picture', file);
 
-        const response = await api.post(
-            `${endpoints.controlData.getAll}upload/`,
+        // Mavjud update endpointidan foydalanamiz
+        const response = await api.patch(
+            endpoints.controlData.update(id),
             formData,
             {
                 headers: { 'Content-Type': 'multipart/form-data' }
             }
         );
-
-        console.log('File upload response:', response.data);
         return response.data;
     } catch (error) {
-        console.error('Error uploading file:', error);
+        console.error('File upload error:', error);
         throw error;
     }
-}
+};
