@@ -16,7 +16,7 @@ import memberSearch from "../../assets/icons/memberSearch.svg";
 import { 
   createTask, 
   getProjectTaskById,
-  getProjectUsers 
+  getProjectUsers,
 } from "../../api/services/taskService";
 import dayjs from "dayjs";
 
@@ -69,8 +69,20 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
   const [assignees, setAssignees] = useState([]);
   const [loadingAssignees, setLoadingAssignees] = useState(false);
   const [loadingTags, setLoadingTags] = useState(false);
- 
+  const [file, setFile] = useState(null);       // File object
+  const [preview, setPreview] = useState(null);
 
+  useEffect(() => {
+    if (!file) {
+      setPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(file);
+    setPreview(url);
+    return () => {
+      URL.revokeObjectURL(url);
+    };
+  }, [file]);
   // Fetch tags when component mounts
   useEffect(() => {
     const fetchTags = async () => {
@@ -384,6 +396,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                     message.error("Only image files are allowed!");
                     return false;
                   }
+                  setFile(file)
                   setImage(file);
                   return false;
                 }}
@@ -400,6 +413,31 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                 </Button>
                 </div>
               </Upload>
+                {file && (
+        <div className="mt-3 flex items-center gap-3">
+          <img
+            src={preview}
+            alt={file.name}
+            className="w-16 h-16 object-cover rounded-md border"
+          />
+          <div>
+            <div className="font-medium">{file.name}</div>
+            <div className="text-sm text-gray-500">
+              {(file.size / 1024).toFixed(1)} KB • {file.type}
+            </div>
+            <div className="mt-2">
+              <Button
+                size="small"
+                onClick={() => {
+                  setFile(null);
+                }}
+              >
+                Remove
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
             </div>
 
             <div className="mb-6">
