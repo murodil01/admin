@@ -38,51 +38,51 @@ const Profile = () => {
   }, [id]);
 
   const handleSave = () => {
-  if (!employee) return;
+    if (!employee) return;
 
-  const formattedBirthday = birthday
-    ? new Date(birthday).toISOString().split("T")[0]
-    : null;
+    const formattedBirthday = birthday
+      ? new Date(birthday).toISOString().split("T")[0]
+      : null;
 
-  // FormData yaratish
-  const formDataToSend = new FormData();
-  Object.entries({
-  ...employee,
-  birth_date: formattedBirthday,
-}).forEach(([key, value]) => {
-  if (key === "profile_picture") {
-    // Agar yangi fayl tanlangan bo‘lsa
-    if (value instanceof File) {
-      formDataToSend.append(key, value);
-    }
-    // Aks holda yubormaymiz
-  } else if (value !== null && value !== undefined) {
-    formDataToSend.append(key, value);
-  }
-});
-
-
-  updateEmployees(employee.id, formDataToSend, {
-    headers: { "Content-Type": "multipart/form-data" },
-  })
-    .then((data) => {
-      setEmployee(data);
-      setIsEditing(false);
-      setSaveMessage("✅ Ma'lumotlar muvaffaqiyatli saqlandi");
-      setTimeout(() => setSaveMessage(""), 3000);
-    })
-    .catch((err) => {
-      let errorMsg = "Noma'lum xatolik";
-      if (err.response?.data?.message) {
-        errorMsg = err.response.data.message;
-      } else if (err.message) {
-        errorMsg = err.message;
+    // FormData yaratish
+    const formDataToSend = new FormData();
+    Object.entries({
+      ...employee,
+      birth_date: formattedBirthday,
+    }).forEach(([key, value]) => {
+      if (key === "profile_picture") {
+        // Agar yangi fayl tanlangan bo‘lsa
+        if (value instanceof File) {
+          formDataToSend.append(key, value);
+        }
+        // Aks holda yubormaymiz
+      } else if (value !== null && value !== undefined) {
+        formDataToSend.append(key, value);
       }
-      console.error("❌ Error updating employee:", err.response?.data || err);
-      setSaveMessage(`❌ Saqlashda xatolik: ${errorMsg}`);
-      setTimeout(() => setSaveMessage(""), 5000);
     });
-};
+
+
+    updateEmployees(employee.id, formDataToSend, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+      .then((data) => {
+        setEmployee(data);
+        setIsEditing(false);
+        setSaveMessage("✅ Ma'lumotlar muvaffaqiyatli saqlandi");
+        setTimeout(() => setSaveMessage(""), 3000);
+      })
+      .catch((err) => {
+        let errorMsg = "Noma'lum xatolik";
+        if (err.response?.data?.message) {
+          errorMsg = err.response.data.message;
+        } else if (err.message) {
+          errorMsg = err.message;
+        }
+        console.error("❌ Error updating employee:", err.response?.data || err);
+        setSaveMessage(`❌ Saqlashda xatolik: ${errorMsg}`);
+        setTimeout(() => setSaveMessage(""), 5000);
+      });
+  };
 
 
   useEffect(() => {
@@ -118,11 +118,7 @@ const Profile = () => {
   useEffect(() => {
     if (!employee) return; // employee hali kelmagan bo'lsa chiqib ketamiz
 
-    const availableTabs =
-      employee.role?.toLowerCase() === "founder" ||
-        employee.role?.toLowerCase() === "manager"
-        ? ["Profile", "Projects", "Notes"]
-        : ["Projects"];
+    const availableTabs = ["Profile", "Projects", "Notes"];
 
     const savedTab = localStorage.getItem("profileTab");
     if (savedTab && availableTabs.includes(savedTab)) {
@@ -174,52 +170,51 @@ const Profile = () => {
     return <div className="p-6">Loading...</div>;
   }
 
-  const availableTabs =
-    employee.role?.toLowerCase() === "founder" ||
-      employee.role?.toLowerCase() === "manager"
-      ? ["Profile", "Projects", "Notes"]
-      : ["Projects"];
+  const availableTabs = ["Profile", "Projects", "Notes"];
 
+  // Profile komponentining return qismini quyidagicha o'zgartiring:
   return (
-    <div className="min-h-screen">
-      <div className="py-6">
-        <div className="mb-6 flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50">
+      <div className="py-4 md:py-6 px-4 sm:px-6">
+        {/* Orqaga qaytish tugmasi */}
+        <div className="mb-4 md:mb-6 flex items-center justify-between">
           <button
             onClick={() => navigate("/employees")}
-            className="flex justify-center rounded-[14px] items-center gap-2 text-[16px] font-bold text-[#1F2937] hover:text-[#6b82a8] shadow bg-white w-[133px] h-[48px]"
+            className="flex justify-center rounded-[14px] items-center gap-2 text-sm md:text-[16px] font-bold text-[#1F2937] hover:text-[#6b82a8] shadow bg-white w-[100px] md:w-[133px] h-[40px] md:h-[48px]"
           >
-            <ArrowLeft size={20} />
-            Go Back
+            <ArrowLeft size={16} className="md:size-5" />
+            <span className="hidden sm:inline">Go Back</span>
+            <span className="sm:hidden">Back</span>
           </button>
+
           {saveMessage && (
-            <div className="mb-4 p-3 rounded bg-green-100 text-green-700 text-sm">
+            <div className="text-xs md:text-sm p-2 md:p-3 rounded bg-green-100 text-green-700">
               {saveMessage}
             </div>
           )}
-
         </div>
 
-        <div className="flex flex-col xl:flex-row gap-6">
-          {/* SIDEBAR */}
-          <div className="w-full xl:w-[430px] bg-white border border-gray-100 rounded-[24px] p-6 shadow-sm relative">
+        {/* Asosiy kontent */}
+        <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
+          {/* SIDEBAR - Mobil versiyada birinchi */}
+          <div className="w-full lg:w-[350px] xl:w-[430px] bg-white border border-gray-100 rounded-[20px] md:rounded-[24px] p-4 md:p-6 shadow-sm relative">
             {/* Edit icon */}
-            {(employee.role?.toLowerCase() === "founder" || employee.role?.toLowerCase() === "manager") && (
-              <div className="absolute top-5 right-5 z-10">
+              <div className="absolute top-4 md:top-5 right-4 md:right-5 z-10">
                 <button
                   id="edit-button"
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowEditDropdown((prev) => !prev);
                   }}
-                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-full"
+                  className="p-1 md:p-2 text-gray-600 hover:bg-gray-100 rounded-full"
                 >
-                  <MoreVertical className="w-5 h-5" />
+                  <MoreVertical className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
 
                 {showEditDropdown && (
                   <div
                     id="edit-dropdown"
-                    className="absolute top-full right-0 mt-2 z-20 bg-white border border-gray-200 rounded-md shadow-md w-28"
+                    className="absolute top-full right-0 mt-1 md:mt-2 z-20 bg-white border border-gray-200 rounded-md shadow-md w-24 md:w-28"
                   >
                     <button
                       onClick={(e) => {
@@ -227,64 +222,52 @@ const Profile = () => {
                         setIsEditing(true);
                         setShowEditDropdown(false);
                       }}
-                      className="w-full px-4 py-2 text-sm text-left hover:bg-gray-100"
+                      className="w-full px-3 py-1 md:px-4 md:py-2 text-xs md:text-sm text-left hover:bg-gray-100"
                     >
                       Edit
                     </button>
                   </div>
                 )}
               </div>
-            )}
 
             {/* Profile section */}
             <div
-              className="flex items-center border-b border-[#E4E6E8] pb-5 cursor-pointer"
-              onClick={() =>
-                window.innerWidth < 1280 && setShowDetails(!showDetails)
-              }
+              className="flex items-center border-b border-[#E4E6E8] pb-4 md:pb-5 cursor-pointer"
+              onClick={() => setShowDetails(!showDetails)}
             >
               <img
                 src={employee.profile_picture}
                 alt="Profile"
-                className="w-[80px] h-[80px] sm:w-[100px] sm:h-[100px] md:w-[120px] md:h-[120px] lg:w-[140px] lg:h-[140px] rounded-full object-cover ring-4 ring-gray-100"
+                className="w-[60px] h-[60px] sm:w-[80px] sm:h-[80px] md:w-[100px] md:h-[100px] rounded-full object-cover ring-2 md:ring-4 ring-gray-100"
               />
-              <div className="ml-4 flex flex-col">
-                <h3 className="md:text-[22px] text-[18px] font-bold text-[#0061fe] whitespace-nowrap">
-                  {employee.first_name}
-                  {employee.last_name}
+              <div className="ml-3 md:ml-4 flex flex-col">
+                <h3 className="text-sm sm:text-[16px] md:text-[18px] lg:text-[20px] font-bold text-[#0061fe] whitespace-nowrap">
+                  {employee.first_name} {employee.last_name}
                 </h3>
-                <p className="text-[14px] md:text-[16px] lg:text-[18px] font-medium text-[#1F2937] flex items-center gap-2">
+                <p className="text-xs sm:text-[14px] md:text-[16px] font-medium text-[#1F2937] flex items-center gap-1 md:gap-2">
                   {employee.role}
-                  <span className="text-[10px] border border-[#7D8592] px-[2px] py-[2px] rounded-[4px]">
+                  <span className="text-[8px] md:text-[10px] border border-[#7D8592] px-1 py-0.5 md:px-[2px] md:py-[2px] rounded-[3px] md:rounded-[4px]">
                     {employee.level}
                   </span>
                 </p>
               </div>
-
-              {/* Dropdown icon */}
-              {/* <DropdownArrow
-                className={`w-5 h-5 text-gray-600 xl:hidden ml-auto transition-transform ${
-                  showDetails ? "rotate-180" : ""
-                }`}
-              /> */}
             </div>
 
-            {/* Content info */}
+            {/* Content info - Mobil versiyada yashirilgan */}
             <div
-              className={`mt-6 space-y-8 ${showDetails ? "block" : "hidden xl:block"
-                }`}
+              className={`mt-4 md:mt-6 space-y-6 md:space-y-8 ${showDetails ? "block" : "hidden lg:block"}`}
             >
               {SidebarSections.map((section, index) => (
                 <div key={index}>
                   {section.title && (
-                    <h4 className="text-[#0061fe] text-[18px] font-bold mb-4">
+                    <h4 className="text-[#0061fe] text-[16px] md:text-[18px] font-bold mb-3 md:mb-4">
                       {section.title}
                     </h4>
                   )}
-                  <div className="space-y-7">
+                  <div className="space-y-4 md:space-y-7">
                     {section.data.map((item, idx) => (
                       <div key={idx}>
-                        <div className="text-[14px] text-[#7D8592] font-bold mb-3">
+                        <div className="text-xs md:text-[14px] text-[#7D8592] font-bold mb-2 md:mb-3">
                           {item.label}
                         </div>
                         {item.input ? (
@@ -300,22 +283,19 @@ const Profile = () => {
                                     [item.name]: e.target.value,
                                   }))
                                 }
-                                className="w-full h-[48px] bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-4 py-2 font-normal text-[14px] text-[#7D8592] pr-10"
+                                className="w-full h-[40px] md:h-[48px] bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg md:rounded-xl px-3 md:px-4 py-1 md:py-2 font-normal text-xs md:text-[14px] text-[#7D8592] pr-8 md:pr-10"
                               />
                               {item.type === "date" && (
-                                <Calendar className="absolute right-3 top-2.5 text-gray-400 w-5 h-5 pointer-events-none" />
+                                <Calendar className="absolute right-2 md:right-3 top-2 md:top-2.5 text-gray-400 w-4 h-4 md:w-5 md:h-5 pointer-events-none" />
                               )}
                             </div>
                           ) : (
-                            <div
-                              className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-4 py-2 text-[14px] font-normal text-[#7D8592] h-[48px] flex items-center"
-                            >
+                            <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg md:rounded-xl px-3 md:px-4 py-1 md:py-2 text-xs md:text-[14px] font-normal text-[#7D8592] h-[40px] md:h-[48px] flex items-center">
                               {item.value || ""}
                             </div>
-
                           )
                         ) : (
-                          <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-xl px-4 py-2 text-[14px] font-normal text-[#7D8592] h-[48px] flex items-center">
+                          <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg md:rounded-xl px-3 md:px-4 py-1 md:py-2 text-xs md:text-[14px] font-normal text-[#7D8592] h-[40px] md:h-[48px] flex items-center">
                             {item.value}
                           </div>
                         )}
@@ -326,12 +306,13 @@ const Profile = () => {
               ))}
 
               {isEditing && (
-                <div>
+                <div className="mt-4 md:mt-6">
                   <button
                     onClick={handleSave}
-                    className="w-full h-[48px] bg-[#0061fe] text-white py-2 rounded-xl text-center text-sm flex items-center justify-center gap-2"
+                    className="w-full h-[40px] md:h-[48px] bg-[#0061fe] text-white py-1 md:py-2 rounded-lg md:rounded-xl text-center text-xs md:text-sm flex items-center justify-center gap-1 md:gap-2"
                   >
-                    <UploadIcon size={16} /> Save edit
+                    <UploadIcon size={14} className="md:size-4" />
+                    <span>Save edit</span>
                   </button>
                 </div>
               )}
@@ -340,22 +321,21 @@ const Profile = () => {
 
           {/* MAIN CONTENT */}
           <div className="flex-1">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
-              <div className="flex flex-wrap sm:flex-nowrap bg-[#E3EDFA] rounded-full p-1 w-full sm:w-auto">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-2 md:gap-4">
+              <div className="flex flex-wrap sm:flex-nowrap bg-[#E3EDFA] rounded-full p-0.5 md:p-1 w-full sm:w-auto">
                 {availableTabs.map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`flex-1 sm:flex-none px-4 sm:px-6 md:px-8 lg:px-[56px] py-2 md:py-[9px] text-xs sm:text-sm md:text-base font-medium rounded-full transition-all duration-200 ${activeTab === tab
-                      ? "bg-[#0061fe] text-white shadow-sm"
-                      : "text-[#0061fe] hover:bg-gray-200"
+                    className={`flex-1 sm:flex-none px-3 sm:px-4 md:px-6 lg:px-[40px] xl:px-[56px] py-1 md:py-2 text-xs md:text-sm lg:text-base font-medium rounded-full transition-all duration-200 ${activeTab === tab
+                        ? "bg-[#0061fe] text-white shadow-sm"
+                        : "text-[#0061fe] hover:bg-gray-200"
                       }`}
                   >
                     {tab}
                   </button>
                 ))}
               </div>
-
             </div>
             {renderTabContent()}
           </div>
