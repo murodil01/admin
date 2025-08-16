@@ -22,3 +22,16 @@ export const uploadTaskFile = (formData) =>
   export const deleteTaskFile = (id) => api.delete(endpoints.tasks.deleteTaskFile(id));
 
 export const getProjectUsers = (id) => api.get(endpoints.projects.getByIdUsers(id));
+
+
+
+// Instructions/Checklist API functions - YANGI QO'SHILGAN
+export const getTaskInstructions = (taskId) => api.get(endpoints.tasks.getTaskInstructions, {
+   params: { task: taskId }
+  });
+
+export const createInstruction = (instructionData) =>api.post(endpoints.tasks.createTaskInstructions, instructionData);
+
+export const updateInstruction = (id, instructionData) => api.put(endpoints.tasks.updateInstruction(id), instructionData);
+
+export const deleteInstruction = (id) => api.delete(endpoints.tasks.deleteTaskInstruction(id));
