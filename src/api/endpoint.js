@@ -21,14 +21,25 @@ const endpoints = {
 		getById: id => `project/tasks/${id}/`,
 		update: id => `project/tasks/${id}/`,
 		delete: id => `project/tasks/${id}/`,
+
+		createTaskFile: 'project/files/',
+		getTaskFiles: 'project/files/', // yangi qo'shildi
+		deleteTaskFile: id => `project/files/${id}/`, // yangi qo'shildi
+
+
+		getTaskInstructions: 'project/instructions/', // yangi qo'shildi
+		getTaskInstructionsById: id => `project/instructions/${id}/`,
+		createTaskInstructions: 'project/instructions/',
+		updateInstruction: id => `project/instructions/${id}/`, 
+		deleteTaskInstruction: id => `project/instructions/${id}/`, // yangi qo'shildi
 	},
 
     projects: {
         getAll: "project/projects/",
         create: "project/projects/",
-        getById: (id) => `project/projects/${id}`,
-        getByIdTasks: (id) => `project/projects/${id}/tasks`,
-        getByIdUsers: (id) => `project/projects/${id}/users`,
+        getById: (id) => `project/projects/${id}/`,
+        getByIdTasks: (id) => `project/projects/${id}/tasks/`,
+        getByIdUsers: (id) => `project/projects/${id}/users/`,
         update: (id) => `project/projects/${id}`,
         delete: (id) => `project/projects/${id}`,
     },
