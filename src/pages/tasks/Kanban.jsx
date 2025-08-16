@@ -45,14 +45,16 @@ import {
   createTask,
   getTaskFiles,        
   uploadTaskFile,     
+  getCommentTask,
+  createComment,
   // deleteTaskFile, 
   getInst,
-  // createInstruction,
-  // updateInstruction,
+  // createChecklistItem,
+  updateInstruction,
   // deleteInstruction
 } from "../../api/services/taskService";
 
-const NotionKanban = ({ cards, setCards }) => {
+const NotionKanban = ({ cards, setCards,assignees ,getAssigneeName}) => {
   return (
     <div className="flex gap-5 absolute top-0 right-0 left-0 pb-4 w-full overflow-x-auto hide-scrollbar">
       <Board   
@@ -61,7 +63,7 @@ const NotionKanban = ({ cards, setCards }) => {
         assignees={assignees}
         getAssigneeName={getAssigneeName} 
       />
-      <Board cards={cards} setCards={setCards} />
+      {/* <Board cards={cards} setCards={setCards} /> */}
     </div>
   );
 };
@@ -144,18 +146,20 @@ const Board = ({ cards, setCards }) => {
     );
   };
 
-  useEffect(() => {
-    const cardData = localStorage.getItem("cards");
-    try {
-      setCards(cardData ? JSON.parse(cardData) : DEFAULT_CARDS);
-    } catch (error) {
-      console.error("❌ Error parsing localStorage 'cards':", error);
-      setCards(DEFAULT_CARDS);
-    }
-    setHasChecked(true);
-  }, []);
 
-  useEffect(() => {
+   useEffect(() => {
+    if (!hasChecked) {
+      const cardData = localStorage.getItem("cards");
+      try {
+        setCards(cardData ? JSON.parse(cardData) : DEFAULT_CARDS);
+      } catch (error) {
+        console.error("❌ Error parsing localStorage 'cards':", error);
+        setCards(DEFAULT_CARDS);
+      }
+      setHasChecked(true);
+    }
+  }, [hasChecked, setCards]);
+    useEffect(() => {
     if (hasChecked) {
       localStorage.setItem("cards", JSON.stringify(cards));
     }
@@ -276,14 +280,19 @@ const Column = ({
       setCards(copy); // UI ni yangilash
 
       // 2. Backendga yangilash
-      try {
+           try {
         await updateTaskType(cardId, column);
         message.success("Task status updated!");
       } catch (error) {
-        setCards((prev) => [...prev]);
+        // Rollback on error
+        const originalCard = cards.find((c) => c.id === cardId);
+        if (originalCard) {
+          setCards(cards);
+        }
         message.error("Failed to update task status");
         console.error("Update error:", error);
       }
+
     }
   };
 
@@ -342,7 +351,7 @@ const Card = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
   const [taskData, setTaskData] = useState(null);
-  const [projectUsers, setProjectUsers] = useState([]); // New state for project users
+  const [projectUsers, setProjectUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
@@ -356,7 +365,52 @@ const Card = ({
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   
-  const getAssigneeName = (assigneeId) => {
+  const getFileIcon = (fileName) => {
+    if (!fileName) return "📄";
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    switch (extension) {
+      case 'pdf': return "📄";
+      case 'doc':
+      case 'docx': return "📝";
+      case 'xls':
+      case 'xlsx': return "📊";
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif': return "🖼️";
+      case 'zip':
+      case 'rar': return "🗜️";
+      default: return "📄";
+    }
+  };
+
+    const formatFileSize = (bytes) => {
+    if (!bytes) return "";
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    if (bytes === 0) return "0 Bytes";
+    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+  };
+
+    const formatDate = (date) => {
+    if (!date) return "";
+    return dayjs(date).format("MMM D, YYYY");
+  };
+
+     const handleFileDownload = (file) => {
+    if (file.file || file.url) {
+      const link = document.createElement('a');
+      link.href = file.file || file.url;
+      link.download = file.original_name || file.file_name || 'download';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      message.warning('File download not available');
+    }
+  };
+
+   const getAssigneeName = (assigneeId) => {
     console.log("Getting assignee name for ID:", assigneeId);
     console.log("Available project users:", projectUsers);
     
@@ -372,15 +426,14 @@ const Card = ({
       }
     }
     
-    const user = projectUsers.find(u => {
+      const user = projectUsers.find(u => {
       return String(u.id) === String(assigneeId) || 
              u.user_id === assigneeId || 
              u.user === assigneeId;
     });
-    
     console.log("Found user:", user);
     
-    if (user) {
+     if (user) {
       return `${user.first_name || ''} ${user.last_name || ''}`.trim() || 
              user.full_name || 
              user.username || 
@@ -392,132 +445,181 @@ const Card = ({
   };
 
   // Comments functions
-  const fetchComments = useCallback(async () => {
-    setCommentsLoading(true);
+ const fetchFiles = useCallback(async () => {
+    if (!id) return;
+    setFilesLoading(true);
     try {
-      console.log("🔄 Fetching comments for task ID:", id);
-      const response = await getCommentTask(id);
-      console.log("📥 Comments API Response:", response);
+      console.log("🔄 Fetching files for task ID:", id);
+      const response = await getTaskFiles(id);
+      console.log("📥 Files API Response:", response);
       
-      let commentsList = [];
+      let filesList = [];
       if (Array.isArray(response.data)) {
-        commentsList = response.data;
+        filesList = response.data;
       } else if (response.data && Array.isArray(response.data.results)) {
-        commentsList = response.data.results;
-      } else if (response.data && Array.isArray(response.data.comments)) {
-        commentsList = response.data.comments;
+        filesList = response.data.results;
+      } else if (response.data && Array.isArray(response.data.files)) {
+        filesList = response.data.files;
       }
       
-      console.log("📋 Extracted comments:", commentsList);
-      setComments(commentsList);
+      console.log("📁 Extracted files:", filesList);
+      setFiles(filesList);
     } catch (error) {
-      console.error('❌ Error fetching comments:', error);
-      message.error("Failed to load comments");
-      setComments([]);
+      console.error('❌ Error fetching files:', error);
+      message.error("Failed to load files");
+      setFiles([]);
     } finally {
-      setCommentsLoading(false);
+      setFilesLoading(false);
     }
   }, [id]);
  
-  const getCurrentUser = () => {
-  // This should come from your authentication system
-  const userData = localStorage.getItem('user');
-  if (userData) {
-    return JSON.parse(userData);
+    const fetchComments = useCallback(async () => {
+  if (!id) return;
+  setCommentsLoading(true);
+  try {
+    console.log("🔄 Fetching comments for task ID:", id);
+    const response = await getCommentTask(id);
+    console.log("📥 Comments API Response:", response);
+    
+    let commentsList = [];
+    if (Array.isArray(response.data)) {
+      commentsList = response.data;
+    } else if (response.data && Array.isArray(response.data.results)) {
+      commentsList = response.data.results;
+    } else if (response.data && Array.isArray(response.data.comments)) {
+      commentsList = response.data.comments;
+    }
+      
+     const mappedComments = commentsList.map(comment => ({
+      ...comment,
+      user_name: getAssigneeName(comment.user) || 'Unknown',
+    }));
+    
+    console.log("📋 Extracted and mapped comments:", mappedComments);
+    setComments(mappedComments);
+  } catch (error) {
+    console.error('❌ Error fetching comments:', error);
+    message.error("Failed to load comments");
+    setComments([]);
+  } finally {
+    setCommentsLoading(false);
   }
+}, [id, projectUsers])
+
+  
+ 
+// First, let's improve the getCurrentUser function with better debugging
+
+const getCurrentUser = () => {
+  // Check both localStorage and sessionStorage for user data
+  const userData = localStorage.getItem('user') || sessionStorage.getItem('user');
+  
+  if (userData) {
+    try {
+      const user = JSON.parse(userData);
+      console.log("✅ Current user retrieved:", user);
+      return user;
+    } catch (e) {
+      console.error("❌ Error parsing user data:", e);
+    }
+  }
+  
+  console.warn("⚠️ No user data found in storage");
   return null;
 };
-
- const handleAddComment = async () => {
+  
+const handleAddComment = async () => {
   if (!newComment.trim()) {
     message.warning("Please enter a comment");
     return;
   }
 
-  setSubmitLoading(true);
-  
-
-    const currentUser = getCurrentUser();
+  const currentUser = getCurrentUser();
   if (!currentUser || !currentUser.id) {
-    message.error("User authentication required");
+    message.error("Please log in to add a comment");
     return;
   }
 
   setSubmitLoading(true);
-  // Create temporary comment for optimistic UI
-   const tempComment = {
+  const commentMessage = newComment.trim();
+  const tempComment = {
     id: `temp-${Date.now()}`,
-    message: newComment.trim(),
-    user: currentUser.id,  // Actual UUID from auth system
-    user_name: `${currentUser.first_name} ${currentUser.last_name}` || "You",
+    message: commentMessage,
+    user: currentUser.id,
+    user_name: `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim() || "You",
     created_at: new Date().toISOString(),
-    isTemp: true
+    isTemp: true,
   };
 
+  // Optimistic update
   setComments(prev => [...prev, tempComment]);
-  const commentMessage = newComment;
-  setNewComment(""); // Clear input
+  setNewComment("");  // Clear input
 
-    try {
-      const payload = {
+   try {
+    
+    const payload = {
+      task: id,
       message: commentMessage,
-      user: currentUser.id,
-      task: id
+      user: currentUser.id
     };
-    console.log("📤 Creating comment:", {
-      task: id,
-      message: commentMessage,
-      
-    
-    });
-
-      // Call your API to create comment
-       const response = await createComment({
-      task: id,
-      message: commentMessage,
-    
-    });
-
-      console.log("📥 Create comment response:", response);
-
-      // Replace temporary comment with real one from server
-      setComments(prev => 
+     const response = await createComment(payload);
+     setComments(prev => 
       prev.map(comment => 
         comment.id === tempComment.id 
           ? { 
               ...response.data, 
               isTemp: false,
-              // Map API response to UI fields
-              text: response.data.message,
-              author: response.data.user_name || "You"
+              user_name: response.data.user_name || "You"
             }
           : comment
       )
-    );
+    ); 
+    message.success('Comment added successfully');
+    console.log("📥 Create comment response:", response);
 
+    if (response && response.data) {
+      // Fetch updated list (includes new comment with real data)
+      await fetchComments();
       message.success('Comment added successfully');
-      
-     } catch (error) {
+    } else {
+      throw new Error('Invalid response from server');
+    }
+  } catch (error) {
     console.error('❌ Error adding comment:', error);
-    
-    // Enhanced error logging
     if (error.response) {
       console.error('Error response:', error.response.data);
-      message.error(`Failed to add comment: ${error.response.data.message || error.response.statusText}`);
+      message.error(`Failed to add comment: ${error.response.data.detail || error.response.statusText}`);
     } else {
       message.error('Failed to add comment');
     }
-    
-    // Remove temporary comment on error
+    // Rollback optimistic update
     setComments(prev => prev.filter(comment => comment.id !== tempComment.id));
-    
-    // Restore the comment text in input
+    // Restore input on error
     setNewComment(commentMessage);
   } finally {
     setSubmitLoading(false);
   }
 };
-
+const getCurrentUserFromAPI = async () => {
+  try {
+    console.log("🔄 Fetching current user from API...");
+    const response = await getMe(); // Your API function
+    
+    if (response && response.data) {
+      console.log("✅ User fetched from API:", response.data);
+      
+      // Cache the user data
+      localStorage.setItem('currentUser', JSON.stringify(response.data));
+      
+      return response.data;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('❌ Error fetching user from API:', error);
+    return null;
+  }
+};
   // Checklist functions
   const addChecklistItem = async () => {
     if (!newChecklistItem.trim()) return;
@@ -532,27 +634,27 @@ const Card = ({
     
     console.log("➕ Adding new checklist item:", tempItem);
     
-    setChecklistItems(prev => {
+     setChecklistItems(prev => {
       const updated = [...prev, tempItem];
       console.log("📝 Updated checklist with temp item:", updated);
       return updated;
     });
-    
+    const itemName = newChecklistItem.trim();
     setNewChecklistItem("");
+  
     
-    try {
+     try {
       console.log("📤 Creating checklist item:", {
         task: id,
-        name: newChecklistItem.trim(),
+        name: itemName,
         status: false
       });
       
       const response = await createChecklistItem({
         task: id,
-        name: newChecklistItem.trim(),
+        name: itemName,
         status: false
       });
-      
       console.log("📥 Create API Response:", response);
       
       setChecklistItems(prev => 
@@ -572,6 +674,7 @@ const Card = ({
       console.error('❌ Error adding checklist item:', error);
       message.error('Failed to add checklist item');
       setChecklistItems(prev => prev.filter(item => item.id !== tempItem.id));
+      setNewChecklistItem(itemName); // Restore text on error
     }
   };
 
@@ -579,7 +682,7 @@ const Card = ({
     const originalItems = [...checklistItems];
     setChecklistItems(prev => prev.filter(item => item.id !== itemId));
     
-    try {
+        try {
       await deleteChecklistItem(itemId);
       message.success('Item deleted');
     } catch (error) {
@@ -588,41 +691,36 @@ const Card = ({
       setChecklistItems(originalItems);
     }
   };
-
   const handleUpdateChecklistItem = async (itemId, completed) => {
-    console.log("🔄 Updating checklist item:", { itemId, completed });
-    const originalItems = [...checklistItems];
-     
-    // Optimistic UI update
-    setChecklistItems(prev => 
-      prev.map(item => 
-        item.id === itemId ? { 
-          ...item, 
-          status: completed,
-          completed: completed
-        } : item
-      )
-    );
+  const originalItems = [...checklistItems];
+  
+  // Correct optimistic update
+  setChecklistItems(prev => 
+    prev.map(item => 
+      item.id === itemId ? { 
+        ...item, 
+        status: completed,
+        completed: completed  // Ensure both fields are updated
+      } : item
+    )
+  );
 
-    try {
-      console.log("📤 Sending correct API request:", { 
-        itemId, 
-        payload: { status: completed }
-      });
-      
-      const response = await updateChecklistItem(itemId, { 
-        status: completed
-      });
-      
-      message.success('Checklist updated');
-    } catch (error) {
-      console.error('Error updating checklist item:', error);
-      message.error('Failed to update checklist');
-      setChecklistItems(originalItems);
-    }
-  };
+  try {
+    // Correct API call with proper endpoint
+    await updateInstruction(itemId, { 
+      status: completed
+    });
+    
+    message.success('Checklist updated');
+  } catch (error) {
+    console.error('Error updating checklist item:', error);
+    message.error('Failed to update checklist');
+    setChecklistItems(originalItems);
+  }
+};
 
   const fetchChecklist = useCallback(async () => {
+    if (!id) return;
     setChecklistLoading(true);
     try {
       console.log("🔄 Fetching checklist for task ID:", id);
@@ -636,6 +734,8 @@ const Card = ({
         items = response.data.results;
       } else if (response.data && Array.isArray(response.data.data)) {
         items = response.data.data;
+      } else if (response.data && Array.isArray(response.data.instructions)) {
+        items = response.data.instructions;
       }
       console.log("📋 Extracted items:", items);
       
@@ -646,8 +746,7 @@ const Card = ({
           completed: item.status !== undefined ? item.status : false
         };
       });
-      
-      setChecklistItems(normalizedItems);
+        setChecklistItems(normalizedItems);
     } catch (error) {
       console.error('Error fetching checklist:', error);
       message.error("Failed to load checklist");
@@ -658,31 +757,48 @@ const Card = ({
   }, [id]);
 
   // "Got it" modal ochilganda card ma'lumotlarini saqlash
-  const openViewModal = async () => {
+   const openViewModal = async () => {
     setIsModalOpen(true);
     setLoading(true);
 
     try {
+      console.log("🔄 Fetching task data for ID:", id);
       const response = await getTaskById(id);
-      console.log("Task ma'lumotlari:", response.data);
-      setTaskData(response.data); // API dan kelgan ma'lumotlar
-      if (response.data.projectId) {
-        const usersResponse = await getProjectUsers(response.data.projectId);
-        console.log("Project users:", usersResponse.data);
-        setProjectUsers(usersResponse.data || []); // Set users array
+      console.log("📥 Task data:", response.data);
+      setTaskData(response.data);
+      
+      // Fetch project users
+      if (response.data.projectId || response.data.project_id || response.data.project) {
+        const projectId = response.data.projectId || response.data.project_id || response.data.project;
+        try {
+          const usersResponse = await getProjectUsers(projectId);
+          console.log("👥 Project users:", usersResponse.data);
+          setProjectUsers(usersResponse.data || []);
+        } catch (error) {
+          console.warn("⚠️ Failed to fetch project users:", error);
+          setProjectUsers([]);
+        }
       } else {
-        console.warn("No project_id found in task data");
+        console.warn("No project ID found in task data");
         setProjectUsers([]);
       }
+
+      // Fetch additional data concurrently
+      await Promise.all([
+        fetchComments(),
+        fetchChecklist(),
+        fetchFiles()
+      ]);
+
     } catch (error) {
-      console.error("Data olishda xatolik:", error);
-      message.error("Ma'lumotlar yuklab bo'lmadi");
+      console.error("❌ Error fetching task data:", error);
+      message.error("Failed to load task data");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleMoveToColumn = async (newColumn) => {
+   const handleMoveToColumn = async (newColumn) => {
     try {
       await updateTaskType(id, newColumn);
       message.success(`Task moved to ${newColumn}`);
@@ -697,28 +813,27 @@ const Card = ({
     try {
       await deleteTask(id);
       message.success("Task deleted successfully");
-      // Local state dan o'chirish
+      // Remove from local state
       setCards((prev) => prev.filter((card) => card.id !== id));
     } catch (error) {
       message.error("Failed to delete task");
       console.error("Delete error:", error);
     }
   };
-
   // Edit modalni ochish funksiyasi
-  const handleEditCard = async () => {
-    setLoading(true);
-    try {
-      const response = await getTaskById(id);
-      setSelectedCard(response.data);
-      setIsEditModalOpen(true);
-    } catch (error) {
-      console.error("Task olishda xatolik:", error);
-      message.error("Task ma'lumotlarini yuklab bo'lmadi");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const handleEditCard = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const response = await getTaskById(id);
+  //     setSelectedCard(response.data);
+  //     setIsEditModalOpen(true);
+  //   } catch (error) {
+  //     console.error("Task olishda xatolik:", error);
+  //     message.error("Task ma'lumotlarini yuklab bo'lmadi");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   useEffect(() => {
     if (!image) return;
@@ -730,11 +845,35 @@ const Card = ({
 
     setImageUrl(image);
   }, [image]);
-
-  const handleUpdateCard = (updatedCard) => {
+   
+    
+   
+    const handleEditCard = async () => {
+    setLoading(true);
+    try {
+      const response = await getTaskById(id);
+      setSelectedCard(response.data);
+      setIsEditModalOpen(true);
+    } catch (error) {
+      console.error("Error fetching task:", error);
+      message.error("Failed to load task data");
+    } finally {
+      setLoading(false);
+    }
+  };
+   useEffect(() => {
+    if (!image) return;
+    if (image instanceof File) {
+      const url = URL.createObjectURL(image);
+      setImageUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setImageUrl(image);
+  }, [image]);
+const handleUpdateCard = (updatedCard) => {
     console.log("Updated card: ", updatedCard);
     setIsEditModalOpen(false);
-    // Cards state ni yangilash
+    // Update cards state
     setCards((prev) =>
       prev.map((card) =>
         card.id === updatedCard.id
@@ -860,6 +999,7 @@ const Card = ({
           style={{
             top: 30, // px qiymati, modal yuqoriga yaqinlashadi
           }}
+          
           footer={[
             <Button
               key="edit"
@@ -892,25 +1032,30 @@ const Card = ({
             </Button>,
           ]}
         >
-          {loading ? (
+           {loading ? (
             <div className="flex justify-center items-center h-[400px]">
               <Spin size="large" />
             </div>
           ) : taskData ? (
-  <div className="grid grid-cols-1 md:grid-cols-10 gap-6 md:gap-10">
-    {/* Left section */}
-    <div className="md:col-span-6 space-y-6">
-      {/* Top section */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="w-full sm:w-[140px] h-[140px] bg-gray-200 flex items-center justify-center rounded">
-          <span role="img" aria-label="image" className="text-4xl">
-            🖼️
-          </span>
-        </div>
-        <div className="flex-1 text-sm text-gray-700 leading-6">
-          {taskData.description || "No description available"}
-        </div>
-      </div>
+            <div className="grid grid-cols-1 md:grid-cols-10 gap-6 md:gap-10">
+              {/* Left section */}
+              <div className="md:col-span-6 space-y-6">
+                {/* Top section */}
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="w-full sm:w-[140px] h-[140px] bg-gray-200 flex items-center justify-center rounded">
+                    <span role="img" aria-label="image" className="text-4xl">
+                  {taskData?.task_image ? (
+                      <img src={taskData.task_image} alt="" onError={(e) => (e.currentTarget.style.display = "none")} />
+                    ) : (
+                      <span>🖼️</span>
+                    )}
+                    </span>
+                  </div>
+                  <div className="flex-1 text-sm text-gray-700 leading-6">
+                    {taskData.description || "No description available"}
+                  </div>
+                </div>
+
 
       {/* Files */}
       <div>
@@ -1030,22 +1175,24 @@ const Card = ({
             <p className="text-sm text-gray-500 mb-3">No comments yet</p>
           )}
 
-          {/* Add new comment */}
-          <div className="mt-3 flex gap-2">
-            <input
-              type="text"
-              placeholder="Add a comment"
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none"
-            />
-            <button
-              onClick={handleAddComment}
-              className="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600"
-            >
-              ➤
-            </button>
-          </div>
+        {/* Add new comment */}
+<div className="mt-3 flex gap-2">
+  <input
+    type="text"
+    placeholder="Add a comment"
+    value={newComment}
+    onChange={(e) => setNewComment(e.target.value)}
+    onKeyPress={(e) => e.key === 'Enter' && handleAddComment()} // Enter bosilganda ham yuborish
+    className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none"
+  />
+  <button
+    onClick={handleAddComment}
+    disabled={submitLoading}
+    className="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600 disabled:opacity-50"
+  >
+    {submitLoading ? "..." : "➤"}
+  </button>
+</div>
         </div>
       </div>
     </div>
@@ -1056,11 +1203,25 @@ const Card = ({
         <p className="text-gray-400">Assignee by</p>
         <div className="flex items-center gap-2 mt-1">
           <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
-          <span>
-            {taskData && taskData.assignee
-              ? `${taskData.assignee.first_name} ${taskData.assignee.last_name}`
-              : "Not assigned"}
-          </span>
+        
+                     <span>
+                      {(() => {
+                        // Debug ma'lumotlari
+                        console.log("Current taskData:", taskData);
+                        console.log("Current selectedAssignee:", selectedAssignee);
+                        console.log("Current projectUsers:", projectUsers);
+                        
+                        // Har xil assignee formatlarini tekshirish
+                        const assignee = selectedAssignee || 
+                                        taskData?.assignee || 
+                                        taskData?.assigned_to || 
+                                        taskData?.assigned?.[0];
+                                        
+                        console.log("Final assignee:", assignee);
+                        
+                        return getAssigneeName(assignee);
+                      })()}
+                    </span>
         </div>
       </div>
 
@@ -1079,10 +1240,6 @@ const Card = ({
         <p className="mt-1">{taskData.tasks_type || "N/A"}</p>
       </div>
 
-      <div>
-        <p className="text-gray-400">Type</p>
-        <p className="mt-1">N/A</p>
-      </div>
 
       <div>
         <p className="text-gray-400">Progress</p>

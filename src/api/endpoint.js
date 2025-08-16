@@ -21,7 +21,7 @@ const endpoints = {
 		getById: id => `project/tasks/${id}/`,
 		update: id => `project/tasks/${id}/`,
 		delete: id => `project/tasks/${id}/`,
-
+        getComments: "project/comments/",
 		createTaskFile: 'project/files/',
 		getTaskFiles: 'project/files/', // yangi qo'shildi
 		deleteTaskFile: id => `project/files/${id}/`, // yangi qo'shildi
