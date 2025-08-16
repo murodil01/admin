@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { FaFire } from "react-icons/fa";
 import { FiPlus, FiTrash, FiEdit } from "react-icons/fi";
@@ -354,7 +354,9 @@ const Card = ({
   const [checklistItems, setChecklistItems] = useState([]);
   const [checklistLoading, setChecklistLoading] = useState(false);
   const [newChecklistItem, setNewChecklistItem] = useState("");
-
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  
   const getAssigneeName = (assigneeId) => {
     console.log("Getting assignee name for ID:", assigneeId);
     console.log("Available project users:", projectUsers);
@@ -390,105 +392,271 @@ const Card = ({
     return "Unknown user";
   };
 
+  // Comments functions
+  const fetchComments = useCallback(async () => {
+    setCommentsLoading(true);
+    try {
+      console.log("🔄 Fetching comments for task ID:", id);
+      const response = await getCommentTask(id);
+      console.log("📥 Comments API Response:", response);
+      
+      let commentsList = [];
+      if (Array.isArray(response.data)) {
+        commentsList = response.data;
+      } else if (response.data && Array.isArray(response.data.results)) {
+        commentsList = response.data.results;
+      } else if (response.data && Array.isArray(response.data.comments)) {
+        commentsList = response.data.comments;
+      }
+      
+      console.log("📋 Extracted comments:", commentsList);
+      setComments(commentsList);
+    } catch (error) {
+      console.error('❌ Error fetching comments:', error);
+      message.error("Failed to load comments");
+      setComments([]);
+    } finally {
+      setCommentsLoading(false);
+    }
+  }, [id]);
+ 
+  const getCurrentUser = () => {
+  // This should come from your authentication system
+  const userData = localStorage.getItem('user');
+  if (userData) {
+    return JSON.parse(userData);
+  }
+  return null;
+};
+
+ const handleAddComment = async () => {
+  if (!newComment.trim()) {
+    message.warning("Please enter a comment");
+    return;
+  }
+
+  setSubmitLoading(true);
+  
+
+    const currentUser = getCurrentUser();
+  if (!currentUser || !currentUser.id) {
+    message.error("User authentication required");
+    return;
+  }
+
+  setSubmitLoading(true);
+  // Create temporary comment for optimistic UI
+   const tempComment = {
+    id: `temp-${Date.now()}`,
+    message: newComment.trim(),
+    user: currentUser.id,  // Actual UUID from auth system
+    user_name: `${currentUser.first_name} ${currentUser.last_name}` || "You",
+    created_at: new Date().toISOString(),
+    isTemp: true
+  };
+
+  setComments(prev => [...prev, tempComment]);
+  const commentMessage = newComment;
+  setNewComment(""); // Clear input
+
+    try {
+      const payload = {
+      message: commentMessage,
+      user: currentUser.id,
+      task: id
+    };
+    console.log("📤 Creating comment:", {
+      task: id,
+      message: commentMessage,
+      
+    
+    });
+
+      // Call your API to create comment
+       const response = await createComment({
+      task: id,
+      message: commentMessage,
+    
+    });
+
+      console.log("📥 Create comment response:", response);
+
+      // Replace temporary comment with real one from server
+      setComments(prev => 
+      prev.map(comment => 
+        comment.id === tempComment.id 
+          ? { 
+              ...response.data, 
+              isTemp: false,
+              // Map API response to UI fields
+              text: response.data.message,
+              author: response.data.user_name || "You"
+            }
+          : comment
+      )
+    );
+
+      message.success('Comment added successfully');
+      
+     } catch (error) {
+    console.error('❌ Error adding comment:', error);
+    
+    // Enhanced error logging
+    if (error.response) {
+      console.error('Error response:', error.response.data);
+      message.error(`Failed to add comment: ${error.response.data.message || error.response.statusText}`);
+    } else {
+      message.error('Failed to add comment');
+    }
+    
+    // Remove temporary comment on error
+    setComments(prev => prev.filter(comment => comment.id !== tempComment.id));
+    
+    // Restore the comment text in input
+    setNewComment(commentMessage);
+  } finally {
+    setSubmitLoading(false);
+  }
+};
+
   // Checklist functions
   const addChecklistItem = async () => {
     if (!newChecklistItem.trim()) return;
-
+    
     const tempItem = {
       id: `temp-${Date.now()}`,
-      title: newChecklistItem.trim(),
+      name: newChecklistItem.trim(),
+      status: false,
       completed: false,
       isTemp: true
     };
-
-    setChecklistItems(prev => [...prev, tempItem]);
+    
+    console.log("➕ Adding new checklist item:", tempItem);
+    
+    setChecklistItems(prev => {
+      const updated = [...prev, tempItem];
+      console.log("📝 Updated checklist with temp item:", updated);
+      return updated;
+    });
+    
     setNewChecklistItem("");
-
+    
     try {
-      const response = await createChecklistItem(id, {
-        title: tempItem.title,
-        completed: false
+      console.log("📤 Creating checklist item:", {
+        task: id,
+        name: newChecklistItem.trim(),
+        status: false
       });
-
-      // Replace temp item with real item from server
+      
+      const response = await createChecklistItem({
+        task: id,
+        name: newChecklistItem.trim(),
+        status: false
+      });
+      
+      console.log("📥 Create API Response:", response);
+      
       setChecklistItems(prev => 
         prev.map(item => 
           item.id === tempItem.id 
-            ? { ...response.data, isTemp: false }
+            ? { 
+                ...response.data, 
+                completed: response.data.status,
+                isTemp: false 
+              } 
             : item
         )
       );
-      
+     
       message.success('Checklist item added');
     } catch (error) {
-      console.error('Error creating checklist item:', error);
+      console.error('❌ Error adding checklist item:', error);
       message.error('Failed to add checklist item');
-      // Remove temp item on error
       setChecklistItems(prev => prev.filter(item => item.id !== tempItem.id));
     }
   };
 
-  const removeChecklistItem = async (itemId) => {
-    // Optimistically remove from UI
+  const handleDeleteChecklistItem = async (itemId) => {
+    const originalItems = [...checklistItems];
     setChecklistItems(prev => prev.filter(item => item.id !== itemId));
-
+    
     try {
       await deleteChecklistItem(itemId);
-      message.success('Checklist item removed');
+      message.success('Item deleted');
     } catch (error) {
       console.error('Error deleting checklist item:', error);
-      message.error('Failed to remove checklist item');
-      // Reload checklist on error
-      fetchChecklist();
+      message.error('Failed to delete item');
+      setChecklistItems(originalItems);
     }
   };
 
-  const handleChecklistToggle = async (itemId, completed) => {
+  const handleUpdateChecklistItem = async (itemId, completed) => {
+    console.log("🔄 Updating checklist item:", { itemId, completed });
+    const originalItems = [...checklistItems];
+     
+    // Optimistic UI update
+    setChecklistItems(prev => 
+      prev.map(item => 
+        item.id === itemId ? { 
+          ...item, 
+          status: completed,
+          completed: completed
+        } : item
+      )
+    );
+
     try {
-      // Update local state immediately
-      setChecklistItems(prev => 
-        prev.map(item => 
-          item.id === itemId 
-            ? { ...item, completed, is_completed: completed }
-            : item
-        )
-      );
-
-      // Update on server
-      const item = checklistItems.find(item => item.id === itemId);
-      if (item && !item.isTemp) {
-        await updateChecklistItem(itemId, { 
-          title: item.title || item.name || item.description,
-          completed: completed 
-        });
-        message.success('Checklist updated');
-      }
+      console.log("📤 Sending correct API request:", { 
+        itemId, 
+        payload: { status: completed }
+      });
+      
+      const response = await updateChecklistItem(itemId, { 
+        status: completed
+      });
+      
+      message.success('Checklist updated');
     } catch (error) {
-      console.error("Error updating checklist item:", error);
-      message.error("Failed to update checklist item");
-      // Revert the change
-      setChecklistItems(prev => 
-        prev.map(item => 
-          item.id === itemId 
-            ? { ...item, completed: !completed, is_completed: !completed }
-            : item
-        )
-      );
+      console.error('Error updating checklist item:', error);
+      message.error('Failed to update checklist');
+      setChecklistItems(originalItems);
     }
   };
 
-  const fetchChecklist = async () => {
+  const fetchChecklist = useCallback(async () => {
     setChecklistLoading(true);
     try {
+      console.log("🔄 Fetching checklist for task ID:", id);
       const response = await getInst(id);
-      setChecklistItems(response.data || []);
+      console.log("📥 RAW API Response:", response);
+      
+      let items = [];
+      if (Array.isArray(response.data)) {
+        items = response.data;
+      } else if (response.data && Array.isArray(response.data.results)) {
+        items = response.data.results;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        items = response.data.data;
+      }
+      console.log("📋 Extracted items:", items);
+      
+      const normalizedItems = items.map(item => {
+        console.log("🔄 Processing item:", item);
+        return {
+          ...item,
+          completed: item.status !== undefined ? item.status : false
+        };
+      });
+      
+      setChecklistItems(normalizedItems);
     } catch (error) {
       console.error('Error fetching checklist:', error);
+      message.error("Failed to load checklist");
       setChecklistItems([]);
     } finally {
       setChecklistLoading(false);
     }
-  };
+  }, [id]);
 
   // "Got it" modal ochilganda card ma'lumotlarini saqlash
   const openViewModal = async () => {
@@ -730,236 +898,218 @@ const Card = ({
               <Spin size="large" />
             </div>
           ) : taskData ? (
-            <div className="grid grid-cols-1 md:grid-cols-10 gap-6 md:gap-10">
-              {/* Left section */}
-              <div className="md:col-span-6 space-y-6">
-                {/* Top section */}
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="w-full sm:w-[140px] h-[140px] bg-gray-200 flex items-center justify-center rounded">
-                    <span role="img" aria-label="image" className="text-4xl">
-                      🖼️
-                    </span>
-                  </div>
-                  <div className="flex-1 text-sm text-gray-700 leading-6">
-                    {taskData.description || "No description available"}
-                  </div>
-                </div>
+  <div className="grid grid-cols-1 md:grid-cols-10 gap-6 md:gap-10">
+    {/* Left section */}
+    <div className="md:col-span-6 space-y-6">
+      {/* Top section */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="w-full sm:w-[140px] h-[140px] bg-gray-200 flex items-center justify-center rounded">
+          <span role="img" aria-label="image" className="text-4xl">
+            🖼️
+          </span>
+        </div>
+        <div className="flex-1 text-sm text-gray-700 leading-6">
+          {taskData.description || "No description available"}
+        </div>
+      </div>
 
-                {/* Files */}
-                <div>
-                  <h4 className="font-semibold text-sm mb-3">Files</h4>
-                  <div className="flex flex-wrap gap-3">
-                    <p className="text-sm text-gray-500">No files attached</p>
+      {/* Files */}
+      <div>
+        <h4 className="font-semibold text-sm mb-3">Files</h4>
+
+        <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+          <span>📁</span>
+          Files ({files.length})
+        </h4>
+
+        {filesLoading ? (
+          <div className="flex items-center gap-2">
+            <Spin size="small" />
+            <span className="text-sm text-gray-500">Loading files...</span>
+          </div>
+        ) : files.length > 0 ? (
+          <div className="space-y-2">
+            {files.map((file, index) => (
+              <div
+                key={file.id || index}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
+              >
+                <div className="flex items-center gap-3">
+                  {/* Fayl tipi ikonkasi */}
+                  <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
+                    {getFileIcon(file.file_type || file.file_name)}
                   </div>
-                  <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                    <span>📁</span>
-                    Files ({files.length})
-                  </h4>
-                  
-                  {filesLoading ? (
-                    <div className="flex items-center gap-2">
-                      <Spin size="small" />
-                      <span className="text-sm text-gray-500">Loading files...</span>
-                    </div>
-                  ) : files.length > 0 ? (
-                    <div className="space-y-2">
-                      {files.map((file, index) => (
-                        <div 
-                          key={file.id || index} 
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
-                        >
-                          <div className="flex items-center gap-3">
-                            {/* Fayl tipi ikonkasi */}
-                            <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                              {getFileIcon(file.file_type || file.file_name)}
-                            </div>
-                            
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">
-                                {file.original_name || file.file_name || 'Unnamed file'}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {file.file_size ? formatFileSize(file.file_size) : ''} • 
-                                {file.created_at ? formatDate(file.created_at) : 'Unknown date'}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          {/* Download button */}
-                          <Button
-                            type="text"
-                            icon={<DownloadOutlined />}
-                            onClick={() => handleFileDownload(file)}
-                            className="text-blue-600 hover:text-blue-800"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg text-center">
-                      📄 No files attached to this task
+
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {file.original_name || file.file_name || "Unnamed file"}
                     </p>
-                  )}
-                </div>
-
-                {/* Checklist */} getInst
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-semibold text-sm">Check list</h4>
-                    <span className="text-xs text-gray-500">Show</span>
-                  <div className="flex justify-between items-center mb-3">
-                    <h4 className="font-semibold text-sm flex items-center gap-2">
-                      <img src={checkList} alt="checklist" className="w-4 h-4" />
-                      Check list ({checklistItems.length})
-                    </h4>
-                  </div>
-                  
-                  {checklistLoading ? (
-                    <div className="flex items-center gap-2">
-                      <Spin size="small" />
-                      <span className="text-sm text-gray-500">Loading checklist...</span>
-                    </div>
-                  ) : checklistItems.length > 0 ? (
-                    <div className="space-y-2">
-                      {checklistItems.map((item, index) => (
-                        <div key={item.id || index} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded">
-                          <Checkbox
-                            checked={item.completed || item.is_completed || false}
-                            onChange={(e) => handleChecklistToggle(item.id, e.target.checked)}
-                          />
-                          <span 
-                            className={`text-sm ${
-                              item.completed || item.is_completed 
-                                ? 'line-through text-gray-500' 
-                                : 'text-gray-900'
-                            }`}
-                          >
-                            {item.title || item.name || item.description || `Item ${index + 1}`}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="bg-gray-50 p-4 rounded-lg text-center">
-                      <img src={checkList} alt="checklist" className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm text-gray-500">No checklist items</p>
-                    </div>
-                  )}
-                </div>
-        
-
-                {/* Comments */}
-                <div>
-                  <h4 className="font-semibold text-sm mb-3">Comments</h4>
-                  <div className="p-4 bg-blue-50 rounded-xl">
-                    {comments.length > 0 ? (
-                      comments.map((c, i) => (
-                        <div key={i} className="rounded-lg bg-blue-50 mb-3">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
-                              👤
-                            </div>
-                            <span className="text-sm">{c.name || "User"}</span>
-                          </div>
-                          <div>
-                            <div className="bg-white p-1 rounded-sm">
-                              <p className="text-sm text-gray-700">{c.text}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-gray-500 mb-3">
-                        No comments yet
-                      </p>
-                    )}
-
-                    {/* Add new comment */}
-                    <div className="mt-3 flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Add a comment"
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none"
-                      />
-                      <button
-                        onClick={handleAddComment}
-                        className="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600"
-                      >
-                        ➤
-                      </button>
-                    </div>
+                    <p className="text-xs text-gray-500">
+                      {file.file_size ? formatFileSize(file.file_size) : ""} •{" "}
+                      {file.created_at ? formatDate(file.created_at) : "Unknown date"}
+                    </p>
                   </div>
                 </div>
+
+                {/* Download button */}
+                <Button
+                  type="text"
+                  icon={<DownloadOutlined />}
+                  onClick={() => handleFileDownload(file)}
+                  className="text-blue-600 hover:text-blue-800"
+                />
               </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg text-center">
+            📄 No files attached to this task
+          </p>
+        )}
+      </div>
 
-              {/* Right section */}
-              <div className="md:col-span-4 space-y-4 text-sm">
-                <div>
-                  <p className="text-gray-400">Assignee by</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-                      👤
-                    </div>
-                    <span>
-                      {taskData && taskData.assignee
-                        ? `${taskData.assignee.first_name} ${taskData.assignee.last_name}`
-                        : "Not assigned"}
-                    </span>
+      {/* Checklist */}
+      <div>
+        <div className="flex justify-between items-center mb-3">
+          <h4 className="font-semibold text-sm flex items-center gap-2">
+            <img src={checkList} alt="checklist" className="w-4 h-4" />
+            Check list ({checklistItems.length})
+          </h4>
+          <span className="text-xs text-gray-500">Show</span>
+        </div>
+
+        {checklistItems && checklistItems.length > 0 ? (
+          <div className="space-y-2">
+            {checklistItems.map((item, index) => (
+              <div
+                key={item.id || index}
+                className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded"
+              >
+                <Checkbox
+                  checked={item.completed}
+                  onChange={(e) => handleUpdateChecklistItem(item.id, e.target.checked)}
+                />
+                <span
+                  className={`text-sm flex-1 ${
+                    item.completed ? "line-through text-gray-500" : "text-gray-900"
+                  }`}
+                >
+                  {item.title || item.name || item.description || `Item ${index + 1}`}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">No checklist items</p>
+        )}
+      </div>
+
+      {/* Comments */}
+      <div>
+        <h4 className="font-semibold text-sm mb-3">Comments</h4>
+        <div className="p-4 bg-blue-50 rounded-xl">
+          {comments.length > 0 ? (
+            comments.map((c) => (
+              <div key={c.id} className="rounded-lg bg-blue-50 mb-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
+                    👤
                   </div>
-                </div>
-                <div>
-                  <p className="text-gray-400">Date</p>
-                  <p className="mt-1">
-                    {taskData.deadline
-                      ? dayjs(taskData.deadline).format("YYYY-MM-DD")
-                      : "N/A"}
+                  <span className="text-sm font-medium">{c.author || c.user_name || "You"}</span>
+                  <p className="text-xs text-gray-500 ml-2">
+                    {dayjs(c.created_at).format("MMM D, YYYY h:mm A")}
                   </p>
                 </div>
-
                 <div>
-                  <p className="text-gray-400">Notification</p>
-                  <p className="mt-1">{taskData.is_active ? "On" : "Off"}</p>
-                </div>
-
-                <div>
-                  <p className="text-gray-400">Status</p>
-                  <p className="mt-1">{taskData.tasks_type || "N/A"}</p>
-                </div>
-
-                <div>
-                  <p className="text-gray-400">Type</p>
-                  <p className="mt-1">N/A</p>
-                </div>
-
-                <div>
-                  <p className="text-gray-400">Progress</p>
-                  <p className="mt-1">{taskData.progress}%</p>
-                </div>
-
-                <div>
-                  <p className="text-gray-400">Tags</p>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {taskData.tags && taskData.tags.length > 0 ? (
-                      taskData.tags.map((tag, i) => (
-                        <span
-                          key={i}
-                          className="bg-gray-200 px-2 py-1 rounded text-xs"
-                        >
-                          {tag.name}
-                        </span>
-                      ))
-                    ) : (
-                      <p>N/A</p>
-                    )}
+                  <div className="bg-white p-1 rounded-sm">
+                    <p className="text-sm text-gray-700">{c.text || c.message}</p>
                   </div>
                 </div>
               </div>
-            </div>
+            ))
           ) : (
-            <p className="text-center text-gray-500">No task data available</p>
+            <p className="text-sm text-gray-500 mb-3">No comments yet</p>
           )}
+
+          {/* Add new comment */}
+          <div className="mt-3 flex gap-2">
+            <input
+              type="text"
+              placeholder="Add a comment"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none"
+            />
+            <button
+              onClick={handleAddComment}
+              className="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600"
+            >
+              ➤
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Right section */}
+    <div className="md:col-span-4 space-y-4 text-sm">
+      <div>
+        <p className="text-gray-400">Assignee by</p>
+        <div className="flex items-center gap-2 mt-1">
+          <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
+          <span>
+            {taskData && taskData.assignee
+              ? `${taskData.assignee.first_name} ${taskData.assignee.last_name}`
+              : "Not assigned"}
+          </span>
+        </div>
+      </div>
+
+      <div>
+        <p className="text-gray-400">Date</p>
+        <p className="mt-1">{taskData.deadline ? dayjs(taskData.deadline).format("YYYY-MM-DD") : "N/A"}</p>
+      </div>
+
+      <div>
+        <p className="text-gray-400">Notification</p>
+        <p className="mt-1">{taskData.is_active ? "On" : "Off"}</p>
+      </div>
+
+      <div>
+        <p className="text-gray-400">Status</p>
+        <p className="mt-1">{taskData.tasks_type || "N/A"}</p>
+      </div>
+
+      <div>
+        <p className="text-gray-400">Type</p>
+        <p className="mt-1">N/A</p>
+      </div>
+
+      <div>
+        <p className="text-gray-400">Progress</p>
+        <p className="mt-1">{taskData.progress}%</p>
+      </div>
+
+      <div>
+        <p className="text-gray-400">Tags</p>
+        <div className="flex flex-wrap gap-2 mt-1">
+          {taskData.tags && taskData.tags.length > 0 ? (
+            taskData.tags.map((tag, i) => (
+              <span key={i} className="bg-gray-200 px-2 py-1 rounded text-xs">
+                {tag.name}
+              </span>
+            ))
+          ) : (
+            <p>N/A</p>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+) : (
+  <p className="text-center text-gray-500">No task data available</p>
+)
+}
         
         </Modal>
 
