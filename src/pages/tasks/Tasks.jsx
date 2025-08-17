@@ -447,7 +447,7 @@ const Projects = () => {
         return "";
     }
   };
-
+  
   return (
     <div className="">
       {/* Header */}
@@ -588,11 +588,11 @@ const Projects = () => {
               </span>
             </div>
             <div>
-            
               <span className="text-gray-900 font-medium">
                 {formatDate2(project?.deadline)}
               </span>
             </div>
+          </div>
           </div>
           </div>
         ))}
