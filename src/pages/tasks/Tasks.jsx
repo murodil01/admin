@@ -590,7 +590,7 @@ const Projects = () => {
             <div>
             
               <span className="text-gray-900 font-medium">
-                {formatDate2(project?.updated_at)}
+                {formatDate2(project?.deadline)}
               </span>
             </div>
           </div>
