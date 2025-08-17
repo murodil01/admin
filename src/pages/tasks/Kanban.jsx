@@ -36,22 +36,27 @@ import TextArea from "antd/es/input/TextArea";
 // import { updateTaskType,deleteTask, } from "../../api/services/taskService";
 import { MoreVertical } from "lucide-react";
 import {
-  updateTaskType,
-  deleteTask,
   getTaskById,
+  updateTaskType,
+  createTask,
   updateTask,
+  deleteTask,
   getTaskTags,
   getProjectUsers,
-  createTask,
+
   getTaskFiles,        
   uploadTaskFile,     
-  getCommentTask,
-  createComment,
-  // deleteTaskFile, 
-  getInst,
+  deleteTaskFile, 
+
+  getCommentTask,///
+  createComment,//
   // createChecklistItem,
+  getTaskInstructions,
+  createInstruction,
+  updateTaskInstruction,
   updateInstruction,
-  // deleteInstruction
+  deleteInstruction,
+  deleteChecklistItem
 } from "../../api/services/taskService";
 
 const NotionKanban = ({ cards, setCards,assignees ,getAssigneeName}) => {
@@ -552,7 +557,7 @@ const Card = ({
     setChecklistLoading(true);
     try {
       console.log("🔄 Fetching checklist for task ID:", id);
-      const response = await getInst(id);
+      const response = await getTaskInstructions(id);
       console.log("📥 RAW API Response:", response);
       
       let items = [];
@@ -1462,7 +1467,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
   
   setChecklistLoading(true);
   try {
-    const response = await getInst(taskId);
+    const response = await getTaskInstructions(taskId);
     console.log("Instructions ma'lumotlari:", response);
     
     // ✅ TUZATISH: response.data ni ishlatish kerak
@@ -1518,7 +1523,7 @@ const toggleCheckDone = async (index) => {
   // Agar mavjud element bo'lsa (isNew: false), API ga yuborish
   if (!item.isNew && item.id) {
     try {
-      await updateInstruction(item.id, {
+      await updateTaskInstruction(item.id, {
         name: item.text,
         status: newStatus,
         task: cardData.id

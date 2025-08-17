@@ -10,23 +10,22 @@ const endpoints = {
 		getAll: '/users',
 		getById: id => `/users/${id}/`,
 		update: id => `/users/${id}/`,
+		delete: id => `/users/${id}/`,
 	},
 
 	tasks: {
 		getAll: 'project/tasks/',
 		create: 'project/tasks/',
 		getTags: 'project/tags/',
-        getTaskFiles: 'project/files/', 
-		getInstruction:"project/instructions/",
 		getById: id => `project/tasks/${id}/`,
 		update: id => `project/tasks/${id}/`,
 		delete: id => `project/tasks/${id}/`,
-        getComments: "project/comments/",
 		createTaskFile: 'project/files/',
 		getTaskFiles: 'project/files/', // yangi qo'shildi
 		deleteTaskFile: id => `project/files/${id}/`, // yangi qo'shildi
-
-
+		
+        getComments: "project/comments/",
+		
 		getTaskInstructions: 'project/instructions/', // yangi qo'shildi
 		getTaskInstructionsById: id => `project/instructions/${id}/`,
 		createTaskInstructions: 'project/instructions/',
