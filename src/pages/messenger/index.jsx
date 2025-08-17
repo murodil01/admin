@@ -35,7 +35,7 @@ const AddMessageModal = ({ onClose }) => {
       <div className="flex flex-col items-center gap-4 sm:gap-6 p-4 sm:p-6 md:p-8 bg-white rounded-2xl shadow-lg w-full max-w-md">
         <div className="w-full flex justify-between items-center">
           <b className="text-lg sm:text-xl md:text-2xl text-gray-800">
-            Add Message
+            Message Topic
           </b>
           <button
             onClick={onClose}
@@ -63,13 +63,13 @@ const AddMessageModal = ({ onClose }) => {
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs sm:text-sm font-medium text-gray-700">
-              Description
+              Message Box
             </label>
             <textarea
               required
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add some description of the event"
+              placeholder="⚠️This message goes directly to the Founder. Please use only when necessary."
               rows={4}
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm sm:text-base resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
             ></textarea>
@@ -77,14 +77,14 @@ const AddMessageModal = ({ onClose }) => {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full sm:w-auto sm:min-w-[200px] ml-auto font-medium rounded-lg px-4 py-2 sm:px-5 sm:py-2.5 shadow transition text-sm sm:text-base
+            className={`w-full sm:w-auto sm:min-w-[200px] mx-auto font-medium rounded-lg px-4 py-2 sm:px-5 sm:py-2.5 shadow transition text-sm sm:text-base
               ${
                 loading
                   ? "bg-gray-300 text-gray-600 cursor-not-allowed"
                   : "bg-white hover:text-white hover:bg-blue-700 text-black"
               }`}
           >
-            {loading ? "Sending..." : "Send SOS Message"}
+            {loading ? "Sending..." : "Send Directly to Founder"}
           </button>
         </form>
       </div>
