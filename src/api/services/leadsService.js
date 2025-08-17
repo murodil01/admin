@@ -1,8 +1,12 @@
 import api from "../base";
 import endpoints from "../endpoint";
 
-// Barcha leadlarni olish
-export const getLeads = () => {
+// Barcha leadlarni olish (agar groupId berilsa, shu groupga tegishlilarni oladi)
+export const getLeads = (groupId) => {
+  if (groupId) {
+    // Agar API shunday ishlasa: /leads?group=groupId
+    return api.get(`${endpoints.leads.getAll}?group=${groupId}`);
+  }
   return api.get(endpoints.leads.getAll);
 };
 
