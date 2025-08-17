@@ -371,7 +371,7 @@ const Projects = () => {
       case "info":
 
         return (
-          // det          
+          // det
           <div className="  flex flex-col gap-5 text-sm text-gray-700 my-5">
             <h1 className=" text-[#0A1629] text-[22px] font-bold mb-3">Task Details</h1>
             <div className="grid grid-cols-3 w-full">
@@ -405,7 +405,7 @@ const Projects = () => {
                         <img
                           src={dept.photo}
                           alt={`Department ${dept.id}`}
-                          className="w-14 h-8 rounded-md "
+                          className="w-10 h-10 shadow rounded-full border border-blue-100"
                         />
                       ) : (
                         <div className=" bg-gray-200 rounded-full flex items-center justify-center">
@@ -704,7 +704,7 @@ const Projects = () => {
                       key={id}
                       src={dept.avatar}
                       alt={dept.name}
-                      className="w-8 h-8 rounded-full bg-white p-1 border border-blue-300"
+                      className="w-8 h-8 rounded-full bg-white p-1 border border-blue-300 bg-red"
                     />
                   ) : null;
                 })}
