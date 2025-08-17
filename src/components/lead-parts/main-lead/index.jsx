@@ -243,34 +243,33 @@ const MainLead = () => {
     }
   };
 
-const deleteItemFromGroup = async (groupId, itemIndex) => {
-  const group = groups.find((g) => g.id === groupId);
-  if (!group) return;
+  const deleteItemFromGroup = async (groupId, itemIndex) => {
+    const group = groups.find((g) => g.id === groupId);
+    if (!group) return;
 
-  const item = group.items[itemIndex];
-  if (!item) return;
+    const item = group.items[itemIndex];
+    if (!item) return;
 
-  try {
-    await deleteLeads(item.group, item.id); // item.group va item.id yuboriladi
-    setGroups((prev) =>
-      prev.map((g) =>
-        g.id === groupId
-          ? { ...g, items: g.items.filter((_, idx) => idx !== itemIndex) }
-          : g
-      )
-    );
-    setSelectedItems((prev) =>
-      prev.filter(
-        (s) => !(s.groupId === groupId && s.itemIndex === itemIndex)
-      )
-    );
-    toast.success("Lead o'chirildi ✅");
-  } catch (err) {
-    console.error("deleteLeads xatosi:", err);
-    toast.error("Lead o‘chirilmadi ❌");
-  }
-};
-
+    try {
+      await deleteLeads(item.group, item.id); // item.group va item.id yuboriladi
+      setGroups((prev) =>
+        prev.map((g) =>
+          g.id === groupId
+            ? { ...g, items: g.items.filter((_, idx) => idx !== itemIndex) }
+            : g
+        )
+      );
+      setSelectedItems((prev) =>
+        prev.filter(
+          (s) => !(s.groupId === groupId && s.itemIndex === itemIndex)
+        )
+      );
+      toast.success("Lead o'chirildi ✅");
+    } catch (err) {
+      console.error("deleteLeads xatosi:", err);
+      toast.error("Lead o'chirilmadi ❌");
+    }
+  };
 
   const toggleExpanded = (groupId) => {
     setExpandedGroups((prev) => ({
@@ -383,7 +382,7 @@ const deleteItemFromGroup = async (groupId, itemIndex) => {
         </div>
       )}
 
-      <div className="flex flex-col gap-6 overflow-x-auto">
+      <div className="flex flex-col gap-6 overflow-x-auto max-w-full">
         {groups.length === 0 ? (
           <div className="py-6 text-center">
             <p className="text-gray-500 text-lg mb-4">📭 Hali guruhlar yo'q</p>
