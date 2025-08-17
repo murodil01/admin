@@ -50,7 +50,7 @@ import {
 
   getCommentTask,///
   createComment,//
-  // createChecklistItem,
+  createChecklistItem,
   getTaskInstructions,
   createInstruction,
   updateTaskInstruction,
