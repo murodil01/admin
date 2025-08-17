@@ -593,4 +593,3 @@ const GroupSection = ({
 };
 
 export default GroupSection;
-
