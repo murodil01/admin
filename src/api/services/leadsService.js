@@ -20,16 +20,17 @@ export const createLeads = (data) => {
   return api.post(endpoints.leads.create, data);
 };
 
-// Lead yangilash (boardId va leadId bilan)
-export const updateLeads = (boardId, leadId, data) => {
-  if (!boardId || !leadId) {
-    return Promise.reject(new Error("Board ID yoki Lead ID mavjud emas"));
-  }
-  return api.patch(endpoints.leads.update(boardId, leadId), data);
+// Lead yangilash (group va leadId bilan)
+// Lead yangilash
+export const updateLeads = (groupId, leadId, data) => {
+  if (!groupId || !leadId)
+    return Promise.reject(new Error("Group ID yoki Lead ID mavjud emas"));
+  return api.patch(endpoints.leads.update(groupId, leadId), data);
 };
 
-
 // Lead o‘chirish
-export const deleteLeads = (id) => {
-  return api.delete(endpoints.leads.delete(id));
+export const deleteLeads = (groupId, leadId) => {
+  if (!groupId || !leadId)
+    return Promise.reject(new Error("Group ID yoki Lead ID mavjud emas"));
+  return api.delete(endpoints.leads.delete(groupId, leadId));
 };
