@@ -43,19 +43,18 @@ import {
   deleteTask,
   getTaskTags,
   getProjectUsers,
-
-  getTaskFiles, uploadTaskFile,
+  getTaskFiles,
+  uploadTaskFile,
   deleteTaskFile,
-
-  getCommentTask,///
-  createComment,//
+  getCommentTask, ///
+  createComment, //
   createChecklistItem,
   getTaskInstructions,
   createInstruction,
   updateTaskInstruction,
   updateInstruction,
   deleteInstruction,
-  deleteChecklistItem
+  deleteChecklistItem,
 } from "../../api/services/taskService";
 
 const NotionKanban = ({ cards, setCards, assignees, getAssigneeName }) => {
@@ -123,14 +122,14 @@ const taskColumns = [
   },
 ];
 
-const DEFAULT_CARDS = [
-  {
-    id: "1",
-  },
-];
+// const DEFAULT_CARDS = [
+//   {
+//     id: "1",
+//   },
+// ];
 
 const Board = ({ cards, setCards }) => {
-  const [hasChecked, setHasChecked] = useState(false);
+  // const [hasChecked, setHasChecked] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
 
@@ -143,31 +142,28 @@ const Board = ({ cards, setCards }) => {
     setCards((prev) =>
       prev.map((c) => {
         const targetId = updatedCard.id ?? c.id;
-        return c.id === targetId
-          ? { ...updatedCard, id: targetId }
-          : c;
+        return c.id === targetId ? { ...updatedCard, id: targetId } : c;
       })
     );
   };
 
-
-  useEffect(() => {
-    if (!hasChecked) {
-      const cardData = localStorage.getItem("cards");
-      try {
-        setCards(cardData ? JSON.parse(cardData) : DEFAULT_CARDS);
-      } catch (error) {
-        console.error("❌ Error parsing localStorage 'cards':", error);
-        setCards(DEFAULT_CARDS);
-      }
-      setHasChecked(true);
-    }
-  }, [hasChecked, setCards]);
-  useEffect(() => {
-    if (hasChecked) {
-      localStorage.setItem("cards", JSON.stringify(cards));
-    }
-  }, [cards, hasChecked]);
+  //  useEffect(() => {
+  //   if (!hasChecked) {
+  //     const cardData = localStorage.getItem("cards");
+  //     try {
+  //       setCards(cardData ? JSON.parse(cardData) : DEFAULT_CARDS);
+  //     } catch (error) {
+  //       console.error("❌ Error parsing localStorage 'cards':", error);
+  //       setCards(DEFAULT_CARDS);
+  //     }
+  //     setHasChecked(true);
+  //   }
+  // }, [hasChecked, setCards]);
+  //   useEffect(() => {
+  //   if (hasChecked) {
+  //     localStorage.setItem("cards", JSON.stringify(cards));
+  //   }
+  // }, [cards, hasChecked]);
 
   const [activeColumn, setActiveColumn] = useState(taskColumns[0]?.id || null);
 
@@ -346,7 +342,6 @@ const Column = ({
         message.error("Failed to update task status");
         console.error("Update error:", error);
       }
-
     }
   };
 
@@ -443,29 +438,35 @@ const Card = ({
   // Helper functions
   const getFileIcon = (fileName) => {
     if (!fileName) return "📄";
-    const extension = fileName.split('.').pop()?.toLowerCase();
+    const extension = fileName.split(".").pop()?.toLowerCase();
     switch (extension) {
-      case 'pdf': return "📄";
-      case 'doc':
-      case 'docx': return "📝";
-      case 'xls':
-      case 'xlsx': return "📊";
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-      case 'gif': return "🖼️";
-      case 'zip':
-      case 'rar': return "🗜️";
-      default: return "📄";
+      case "pdf":
+        return "📄";
+      case "doc":
+      case "docx":
+        return "📝";
+      case "xls":
+      case "xlsx":
+        return "📊";
+      case "jpg":
+      case "jpeg":
+      case "png":
+      case "gif":
+        return "🖼️";
+      case "zip":
+      case "rar":
+        return "🗜️";
+      default:
+        return "📄";
     }
   };
 
   const formatFileSize = (bytes) => {
     if (!bytes) return "";
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     if (bytes === 0) return "0 Bytes";
     const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + " " + sizes[i];
   };
 
   const formatDate = (date) => {
@@ -475,21 +476,21 @@ const Card = ({
 
   const handleFileDownload = (file) => {
     if (file.file || file.url) {
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = file.file || file.url;
-      link.download = file.original_name || file.file_name || 'download';
+      link.download = file.original_name || file.file_name || "download";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } else {
-      message.warning('File download not available');
+      message.warning("File download not available");
     }
   };
 
   const getAssigneeName = (assignee) => {
     if (!assignee) return "Not assigned";
 
-    if (typeof assignee === 'object') {
+    if (typeof assignee === "object") {
       if (assignee.first_name && assignee.last_name) {
         return `${assignee.first_name} ${assignee.last_name}`;
       }
@@ -497,24 +498,25 @@ const Card = ({
         return assignee.name;
       }
       if (assignee.id) {
-        return projectUsers.find(u => u.id === assignee.id)?.name || 'Unknown';
+        return (
+          projectUsers.find((u) => u.id === assignee.id)?.name || "Unknown"
+        );
       }
-      return 'Unknown';
+      return "Unknown";
     }
 
-    const user = projectUsers.find(u =>
-      u.id === assignee ||
-      u.user_id === assignee
+    const user = projectUsers.find(
+      (u) => u.id === assignee || u.user_id === assignee
     );
 
-    return user ? `${user.first_name} ${user.last_name}` : 'Unknown';
+    return user ? `${user.first_name} ${user.last_name}` : "Unknown";
   };
 
   // getCurrentUser function
   const getCurrentUser = () => {
     console.log("🔍 Checking user storage...");
 
-    const possibleKeys = ['user', 'currentUser', 'authUser', 'userData'];
+    const possibleKeys = ["user", "currentUser", "authUser", "userData"];
 
     for (const key of possibleKeys) {
       const localData = localStorage.getItem(key);
@@ -525,7 +527,12 @@ const Card = ({
       if (userData) {
         try {
           const user = JSON.parse(userData);
-          console.log(`✅ Found user in ${localData ? 'localStorage' : 'sessionStorage'}[${key}]:`, user);
+          console.log(
+            `✅ Found user in ${
+              localData ? "localStorage" : "sessionStorage"
+            }[${key}]:`,
+            user
+          );
 
           if (user && user.id) {
             return user;
@@ -537,19 +544,22 @@ const Card = ({
     }
 
     // Check for JWT token
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token') ||
-      localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    const token =
+      localStorage.getItem("token") ||
+      sessionStorage.getItem("token") ||
+      localStorage.getItem("authToken") ||
+      sessionStorage.getItem("authToken");
 
-    if (token && token.includes('.')) {
+    if (token && token.includes(".")) {
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
+        const payload = JSON.parse(atob(token.split(".")[1]));
         console.log("🔑 User from JWT:", payload);
         if (payload.user_id || payload.id) {
           return {
             id: payload.user_id || payload.id,
             email: payload.email,
             first_name: payload.first_name,
-            last_name: payload.last_name
+            last_name: payload.last_name,
           };
         }
       } catch (e) {
@@ -582,7 +592,7 @@ const Card = ({
       console.log("📁 Extracted files:", filesList);
       setFiles(filesList);
     } catch (error) {
-      console.error('❌ Error fetching files:', error);
+      console.error("❌ Error fetching files:", error);
       message.error("Failed to load files");
       setFiles([]);
     } finally {
@@ -607,15 +617,15 @@ const Card = ({
         commentsList = response.data.comments;
       }
 
-      const mappedComments = commentsList.map(comment => ({
+      const mappedComments = commentsList.map((comment) => ({
         ...comment,
-        user_name: getAssigneeName(comment.user) || 'Unknown',
+        user_name: getAssigneeName(comment.user) || "Unknown",
       }));
 
       console.log("📋 Extracted and mapped comments:", mappedComments);
       setComments(mappedComments);
     } catch (error) {
-      console.error('❌ Error fetching comments:', error);
+      console.error("❌ Error fetching comments:", error);
       message.error("Failed to load comments");
       setComments([]);
     } finally {
@@ -643,16 +653,16 @@ const Card = ({
       }
       console.log("📋 Extracted items:", items);
 
-      const normalizedItems = items.map(item => {
+      const normalizedItems = items.map((item) => {
         console.log("🔄 Processing item:", item);
         return {
           ...item,
-          completed: item.status !== undefined ? item.status : false
+          completed: item.status !== undefined ? item.status : false,
         };
       });
       setChecklistItems(normalizedItems);
     } catch (error) {
-      console.error('Error fetching checklist:', error);
+      console.error("Error fetching checklist:", error);
       message.error("Failed to load checklist");
       setChecklistItems([]);
     } finally {
@@ -691,17 +701,20 @@ const Card = ({
 
       setNewComment("");
       await fetchComments();
-      message.success('Comment added successfully');
-
+      message.success("Comment added successfully");
     } catch (error) {
-      console.error('❌ Error adding comment:', error);
+      console.error("❌ Error adding comment:", error);
 
       if (error.response) {
-        console.error('Response data:', error.response.data);
-        console.error('Response status:', error.response.status);
-        message.error(`Failed to add comment: ${error.response.data?.message || error.response.status}`);
+        console.error("Response data:", error.response.data);
+        console.error("Response status:", error.response.status);
+        message.error(
+          `Failed to add comment: ${
+            error.response.data?.message || error.response.status
+          }`
+        );
       } else {
-        message.error('Failed to add comment');
+        message.error("Failed to add comment");
       }
     } finally {
       setSubmitLoading(false);
@@ -717,12 +730,12 @@ const Card = ({
       name: newChecklistItem.trim(),
       status: false,
       completed: false,
-      isTemp: true
+      isTemp: true,
     };
 
     console.log("➕ Adding new checklist item:", tempItem);
 
-    setChecklistItems(prev => {
+    setChecklistItems((prev) => {
       const updated = [...prev, tempItem];
       console.log("📝 Updated checklist with temp item:", updated);
       return updated;
@@ -735,47 +748,49 @@ const Card = ({
       console.log("📤 Creating checklist item:", {
         task: id,
         name: itemName,
-        status: false
+        status: false,
       });
 
       const response = await createChecklistItem({
         task: id,
         name: itemName,
-        status: false
+        status: false,
       });
       console.log("📥 Create API Response:", response);
 
-      setChecklistItems(prev =>
-        prev.map(item =>
+      setChecklistItems((prev) =>
+        prev.map((item) =>
           item.id === tempItem.id
             ? {
-              ...response.data,
-              completed: response.data.status,
-              isTemp: false
-            }
+                ...response.data,
+                completed: response.data.status,
+                isTemp: false,
+              }
             : item
         )
       );
 
-      message.success('Checklist item added');
+      message.success("Checklist item added");
     } catch (error) {
-      console.error('❌ Error adding checklist item:', error);
-      message.error('Failed to add checklist item');
-      setChecklistItems(prev => prev.filter(item => item.id !== tempItem.id));
+      console.error("❌ Error adding checklist item:", error);
+      message.error("Failed to add checklist item");
+      setChecklistItems((prev) =>
+        prev.filter((item) => item.id !== tempItem.id)
+      );
       setNewChecklistItem(itemName);
     }
   };
 
   const handleDeleteChecklistItem = async (itemId) => {
     const originalItems = [...checklistItems];
-    setChecklistItems(prev => prev.filter(item => item.id !== itemId));
+    setChecklistItems((prev) => prev.filter((item) => item.id !== itemId));
 
     try {
       await deleteChecklistItem(itemId);
-      message.success('Item deleted');
+      message.success("Item deleted");
     } catch (error) {
-      console.error('Error deleting checklist item:', error);
-      message.error('Failed to delete item');
+      console.error("Error deleting checklist item:", error);
+      message.error("Failed to delete item");
       setChecklistItems(originalItems);
     }
   };
@@ -784,37 +799,46 @@ const Card = ({
     const originalItems = [...checklistItems];
 
     // Optimistic update
-    const updatedItems = checklistItems.map(item =>
-      item.id === itemId ? {
-        ...item,
-        status: completed,
-        completed: completed
-      } : item
+    const updatedItems = checklistItems.map((item) =>
+      item.id === itemId
+        ? {
+            ...item,
+            status: completed,
+            completed: completed,
+          }
+        : item
     );
 
     setChecklistItems(updatedItems);
 
     // Calculate new progress
     const total = updatedItems.length;
-    const completedCount = updatedItems.filter(item => item.status).length;
-    const newProgress = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+    const completedCount = updatedItems.filter((item) => item.status).length;
+    const newProgress =
+      total > 0 ? Math.round((completedCount / total) * 100) : 0;
 
     setProgress(newProgress);
     setTotalCount(total);
 
     try {
       await updateInstruction(itemId, { status: completed });
-      message.success('Checklist updated');
+      message.success("Checklist updated");
     } catch (error) {
-      console.error('Error updating checklist item:', error);
-      message.error('Failed to update checklist');
+      console.error("Error updating checklist item:", error);
+      message.error("Failed to update checklist");
       setChecklistItems(originalItems);
       // Revert progress calculation
-      const originalCompleted = originalItems.filter(item => item.status).length;
-      setProgress(originalItems.length > 0 ? Math.round((originalCompleted / originalItems.length) * 100) : 0);
+      const originalCompleted = originalItems.filter(
+        (item) => item.status
+      ).length;
+      setProgress(
+        originalItems.length > 0
+          ? Math.round((originalCompleted / originalItems.length) * 100)
+          : 0
+      );
       setTotalCount(originalItems.length);
     }
-  }
+  };
   // Modal handlers
   const openViewModal = async () => {
     setIsModalOpen(true);
@@ -826,8 +850,15 @@ const Card = ({
       console.log("📥 Task data:", response.data);
       setTaskData(response.data);
 
-      if (response.data.projectId || response.data.project_id || response.data.project) {
-        const projectId = response.data.projectId || response.data.project_id || response.data.project;
+      if (
+        response.data.projectId ||
+        response.data.project_id ||
+        response.data.project
+      ) {
+        const projectId =
+          response.data.projectId ||
+          response.data.project_id ||
+          response.data.project;
         try {
           const usersResponse = await getProjectUsers(projectId);
           console.log("👥 Project users:", usersResponse.data);
@@ -841,12 +872,7 @@ const Card = ({
         setProjectUsers([]);
       }
 
-      await Promise.all([
-        fetchComments(),
-        fetchChecklist(),
-        fetchFiles()
-      ]);
-
+      await Promise.all([fetchComments(), fetchChecklist(), fetchFiles()]);
     } catch (error) {
       console.error("❌ Error fetching task data:", error);
       message.error("Failed to load task data");
@@ -859,7 +885,13 @@ const Card = ({
     try {
       await updateTaskType(id, newColumn);
       message.success(`Task moved to ${newColumn}`);
-      onEdit({ id, title, time, description, column: newColumn });
+      // onEdit({ id, title, time, description, column: newColumn });
+      //  onEdit o'rniga setCards
+      setCards((prev) =>
+        prev.map((card) =>
+          card.id === id ? { ...card, column: newColumn } : card
+        )
+      );
     } catch (error) {
       message.error("Failed to move task");
       console.error("Move error:", error);
@@ -943,7 +975,9 @@ const Card = ({
 
       if (taskData.checklist_items) {
         const total = taskData.checklist_items.length;
-        const completed = taskData.checklist_items.filter(item => item.status).length;
+        const completed = taskData.checklist_items.filter(
+          (item) => item.status
+        ).length;
         setProgress(total > 0 ? Math.round((completed / total) * 100) : 0);
         setTotalCount(total);
       }
@@ -1056,7 +1090,6 @@ const Card = ({
           style={{
             top: 30, // px qiymati, modal yuqoriga yaqinlashadi
           }}
-
           footer={[
             <Button
               key="edit"
@@ -1102,7 +1135,13 @@ const Card = ({
                   <div className="w-full sm:w-[140px] h-[140px] bg-gray-200 flex items-center justify-center rounded">
                     <span role="img" aria-label="image" className="text-4xl">
                       {taskData?.task_image ? (
-                        <img src={taskData.task_image} alt="" onError={(e) => (e.currentTarget.style.display = "none")} />
+                        <img
+                          src={taskData.task_image}
+                          alt=""
+                          onError={(e) =>
+                            (e.currentTarget.style.display = "none")
+                          }
+                        />
                       ) : (
                         <span>🖼️</span>
                       )}
@@ -1112,7 +1151,6 @@ const Card = ({
                     {taskData.description || "No description available"}
                   </div>
                 </div>
-
 
                 {/* Files */}
                 <div>
@@ -1126,7 +1164,9 @@ const Card = ({
                   {filesLoading ? (
                     <div className="flex items-center gap-2">
                       <Spin size="small" />
-                      <span className="text-sm text-gray-500">Loading files...</span>
+                      <span className="text-sm text-gray-500">
+                        Loading files...
+                      </span>
                     </div>
                   ) : files.length > 0 ? (
                     <div className="space-y-2">
@@ -1264,7 +1304,10 @@ const Card = ({
                       {(() => {
                         // Debug ma'lumotlari
                         console.log("Current taskData:", taskData);
-                        console.log("Current selectedAssignee:", selectedAssignee);
+                        console.log(
+                          "Current selectedAssignee:",
+                          selectedAssignee
+                        );
                         console.log("Current projectUsers:", projectUsers);
 
                         // Har xil assignee formatlarini tekshirish
@@ -1274,7 +1317,6 @@ const Card = ({
                           taskData?.assigned?.[0];
 
                         console.log("Final assignee:", assignee);
-                        console.log("Progress:", progress);
 
                         return getAssigneeName(assignee);
                       })()}
@@ -1296,7 +1338,6 @@ const Card = ({
                   <p className="text-gray-400">Status</p>
                   <p className="mt-1">{taskData.tasks_type || "N/A"}</p>
                 </div>
-
 
                 <div>
                   <p className="text-gray-400">Progress</p>
@@ -1345,7 +1386,6 @@ const Card = ({
             </div>
           )}
 
-
           {description && (
             <div>
               <img src={descriptionIcon} alt="Description Icon" />
@@ -1364,8 +1404,6 @@ const Card = ({
               </span>
             </div>
           )}
-
-
         </div>
       </motion.div>
     </>
@@ -1609,7 +1647,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       const response = await getTaskInstructions(taskId);
       // faqat shu taskga tegishli instructions qolsin
       const instructionsData = (response.data || []).filter(
-        instruction => instruction.task === taskId
+        (instruction) => instruction.task === taskId
       );
       console.log("Instructions ma'lumotlari:", response);
 
@@ -1753,7 +1791,9 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       const response = await getTaskFiles();
 
       // Task ID ga mos fayllarni filtrlash
-      const taskFiles = response.data.filter(file => file.task === cardData.id);
+      const taskFiles = response.data.filter(
+        (file) => file.task === cardData.id
+      );
       setUploadedFiles(taskFiles);
 
       console.log("Yuklangan fayllar:", taskFiles);
@@ -1775,7 +1815,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       const response = await uploadTaskFile(formData);
       return response.data;
     } catch (error) {
-      console.error('File upload error:', error);
+      console.error("File upload error:", error);
       throw error;
     }
   };
@@ -1789,11 +1829,13 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
 
     try {
       const uploadResults = await Promise.all(uploadPromises);
-      message.success(`${uploadResults.length} ta fayl muvaffaqiyatli yuklandi!`);
+      message.success(
+        `${uploadResults.length} ta fayl muvaffaqiyatli yuklandi!`
+      );
       return uploadResults;
     } catch (error) {
-      message.error('Ba\'zi fayllar yuklanmadi');
-      console.error('Files upload error:', error);
+      message.error("Ba'zi fayllar yuklanmadi");
+      console.error("Files upload error:", error);
       return [];
     } finally {
       setFileUploading(false);
@@ -1837,8 +1879,18 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
 
       // ✅ Debug uchun - yuborilayotgan ma'lumotlarni tekshiring
       console.log("🔍 Yuborilayotgan ma'lumotlar:", updateData);
-      console.log("📋 selectedAssignee:", selectedAssignee, "Type:", typeof selectedAssignee);
-      console.log("🏷️ selectedTags:", selectedTags, "Type:", typeof selectedTags);
+      console.log(
+        "📋 selectedAssignee:",
+        selectedAssignee,
+        "Type:",
+        typeof selectedAssignee
+      );
+      console.log(
+        "🏷️ selectedTags:",
+        selectedTags,
+        "Type:",
+        typeof selectedTags
+      );
 
       await saveChecklist();
       const response = await updateTask(cardData.id, updateData);
@@ -1855,7 +1907,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       if (response && response.data) {
         const updatedCardData = {
           ...response.data,
-          files: [...uploadedFiles, ...newUploadedFiles]
+          files: [...uploadedFiles, ...newUploadedFiles],
         };
         onUpdate(updatedCardData);
       } else {
@@ -1863,7 +1915,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
           ...cardData,
           ...updateData,
           id: cardData.id,
-          files: [...uploadedFiles, ...newUploadedFiles]
+          files: [...uploadedFiles, ...newUploadedFiles],
         });
       }
 
@@ -1880,10 +1932,12 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
         let errorMessage = "Task yangilashda xatolik";
 
         if (errorData.assigned && Array.isArray(errorData.assigned)) {
-          errorMessage = `Assigned field error: ${errorData.assigned.join(', ')}`;
+          errorMessage = `Assigned field error: ${errorData.assigned.join(
+            ", "
+          )}`;
         } else if (errorData.tags_ids && Array.isArray(errorData.tags_ids)) {
-          errorMessage = `Tags error: ${errorData.tags_ids.join(', ')}`;
-        } else if (typeof errorData === 'object') {
+          errorMessage = `Tags error: ${errorData.tags_ids.join(", ")}`;
+        } else if (typeof errorData === "object") {
           const firstError = Object.values(errorData)[0];
           errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
         }
@@ -1908,7 +1962,11 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       setNotification(cardData.is_active ? "On" : "Off");
 
       // ✅ TUZATISH: assigned maydonini to'g'ri formatlash
-      if (cardData.assigned && Array.isArray(cardData.assigned) && cardData.assigned.length > 0) {
+      if (
+        cardData.assigned &&
+        Array.isArray(cardData.assigned) &&
+        cardData.assigned.length > 0
+      ) {
         setSelectedAssignee(cardData.assigned[0]); // Birinchi elementni olish
       } else {
         setSelectedAssignee(null);
@@ -1935,7 +1993,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
     try {
       // ✅ axios o'rniga taskService funksiyasini ishlating
       await deleteTaskFile(fileId);
-      setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
+      setUploadedFiles((prev) => prev.filter((file) => file.id !== fileId));
       message.success("Fayl o'chirildi");
     } catch (error) {
       message.error("Faylni o'chirishda xatolik");
@@ -1947,7 +2005,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
   const downloadFile = (file) => {
     if (file.file) {
       // Faylni yangi tabda ochish yoki download qilish
-      window.open(file.file, '_blank');
+      window.open(file.file, "_blank");
     } else {
       message.error("Fayl topilmadi");
     }
@@ -1955,16 +2013,16 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
 
   // Yangi checklist elementlarini saqlash funksiyasi
   const saveChecklist = async () => {
-    const newItems = checklist.filter(item => item.isNew && item.text.trim());
+    const newItems = checklist.filter((item) => item.isNew && item.text.trim());
 
     if (newItems.length === 0) return;
 
     try {
-      const savePromises = newItems.map(item =>
+      const savePromises = newItems.map((item) =>
         createInstruction({
           name: item.text.trim(),
           status: item.done,
-          task: cardData.id
+          task: cardData.id,
         })
       );
 
@@ -1975,8 +2033,6 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       message.error("Ba'zi checklist elementlari saqlanmadi");
     }
   };
-
-
 
   return (
     <Modal
@@ -2286,19 +2342,26 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                 {checklistLoading ? (
                   <div className="text-center py-4">
                     <Spin size="small" />
-                    <p className="text-xs text-gray-500 mt-2">Loading checklist...</p>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Loading checklist...
+                    </p>
                   </div>
                 ) : (
                   <>
                     {checklist.map((check, index) => (
-                      <div key={check.id} className="flex items-center gap-2 mb-2">
+                      <div
+                        key={check.id}
+                        className="flex items-center gap-2 mb-2"
+                      >
                         <Checkbox
                           checked={check.done}
                           onChange={() => toggleCheckDone(index)}
                         />
                         <Input
                           value={check.text}
-                          onChange={(e) => updateCheckText(index, e.target.value)}
+                          onChange={(e) =>
+                            updateCheckText(index, e.target.value)
+                          }
                           className="flex-1"
                           placeholder="Enter checklist item"
                           style={{ borderRadius: "8px" }}
@@ -2306,7 +2369,11 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                         <FiTrash
                           className="text-gray-500 cursor-pointer hover:text-red-500 transition-colors"
                           onClick={() => {
-                            if (window.confirm('Bu checklist elementini o\'chirmoqchimisiz?')) {
+                            if (
+                              window.confirm(
+                                "Bu checklist elementini o'chirmoqchimisiz?"
+                              )
+                            ) {
                               deleteCheckItem(index);
                             }
                           }}
@@ -2325,13 +2392,13 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
 
                     {checklist.length === 0 && !checklistLoading && (
                       <p className="text-xs text-gray-400 italic">
-                        No checklist items yet. Click "add new check" to create one.
+                        No checklist items yet. Click "add new check" to create
+                        one.
                       </p>
                     )}
                   </>
                 )}
               </div>
-
 
               {/* Buttons */}
               <div className="flex justify-center gap-5 pt-10 md:pt-65">
@@ -2399,8 +2466,6 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
 };
 
 export default NotionKanban;
-
-
 
 // const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
 //   const { projectId } = useParams();
@@ -2875,8 +2940,6 @@ export default NotionKanban;
 //     </Modal>
 //   );
 // };
-
-
 
 // import React, { useEffect, useState } from "react";
 // import { useParams } from "react-router-dom";
