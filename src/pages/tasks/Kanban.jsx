@@ -43,30 +43,28 @@ import {
   deleteTask,
   getTaskTags,
   getProjectUsers,
-
-  getTaskFiles,        
-  uploadTaskFile,     
-  deleteTaskFile, 
-
-  getCommentTask,///
-  createComment,//
+  getTaskFiles,
+  uploadTaskFile,
+  deleteTaskFile,
+  getCommentTask, ///
+  createComment, //
   createChecklistItem,
   getTaskInstructions,
   createInstruction,
   updateTaskInstruction,
   updateInstruction,
   deleteInstruction,
-  deleteChecklistItem
+  deleteChecklistItem,
 } from "../../api/services/taskService";
 
-const NotionKanban = ({ cards, setCards,assignees ,getAssigneeName}) => {
+const NotionKanban = ({ cards, setCards, assignees, getAssigneeName }) => {
   return (
     <div className="flex gap-5 absolute top-0 right-0 left-0 pb-4 w-full overflow-x-auto hide-scrollbar">
-      <Board   
-        cards={cards} 
-        setCards={setCards} 
+      <Board
+        cards={cards}
+        setCards={setCards}
         assignees={assignees}
-        getAssigneeName={getAssigneeName} 
+        getAssigneeName={getAssigneeName}
       />
       {/* <Board cards={cards} setCards={setCards} /> */}
     </div>
@@ -124,14 +122,14 @@ const taskColumns = [
   },
 ];
 
-const DEFAULT_CARDS = [
-  {
-    id: "1",
-  },
-];
+// const DEFAULT_CARDS = [
+//   {
+//     id: "1",
+//   },
+// ];
 
 const Board = ({ cards, setCards }) => {
-  const [hasChecked, setHasChecked] = useState(false);
+  // const [hasChecked, setHasChecked] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
 
@@ -144,31 +142,28 @@ const Board = ({ cards, setCards }) => {
     setCards((prev) =>
       prev.map((c) => {
         const targetId = updatedCard.id ?? c.id;
-        return c.id === targetId
-          ? { ...updatedCard, id: targetId }
-          : c;
+        return c.id === targetId ? { ...updatedCard, id: targetId } : c;
       })
     );
   };
 
-
-   useEffect(() => {
-    if (!hasChecked) {
-      const cardData = localStorage.getItem("cards");
-      try {
-        setCards(cardData ? JSON.parse(cardData) : DEFAULT_CARDS);
-      } catch (error) {
-        console.error("❌ Error parsing localStorage 'cards':", error);
-        setCards(DEFAULT_CARDS);
-      }
-      setHasChecked(true);
-    }
-  }, [hasChecked, setCards]);
-    useEffect(() => {
-    if (hasChecked) {
-      localStorage.setItem("cards", JSON.stringify(cards));
-    }
-  }, [cards, hasChecked]);
+  //  useEffect(() => {
+  //   if (!hasChecked) {
+  //     const cardData = localStorage.getItem("cards");
+  //     try {
+  //       setCards(cardData ? JSON.parse(cardData) : DEFAULT_CARDS);
+  //     } catch (error) {
+  //       console.error("❌ Error parsing localStorage 'cards':", error);
+  //       setCards(DEFAULT_CARDS);
+  //     }
+  //     setHasChecked(true);
+  //   }
+  // }, [hasChecked, setCards]);
+  //   useEffect(() => {
+  //   if (hasChecked) {
+  //     localStorage.setItem("cards", JSON.stringify(cards));
+  //   }
+  // }, [cards, hasChecked]);
 
   return (
     <div className="flex h-full w-full gap-3 overflow-scroll items-start">
@@ -285,7 +280,7 @@ const Column = ({
       setCards(copy); // UI ni yangilash
 
       // 2. Backendga yangilash
-           try {
+      try {
         await updateTaskType(cardId, column);
         message.success("Task status updated!");
       } catch (error) {
@@ -297,7 +292,6 @@ const Column = ({
         message.error("Failed to update task status");
         console.error("Update error:", error);
       }
-
     }
   };
 
@@ -373,29 +367,35 @@ const Card = ({
   // Helper functions
   const getFileIcon = (fileName) => {
     if (!fileName) return "📄";
-    const extension = fileName.split('.').pop()?.toLowerCase();
+    const extension = fileName.split(".").pop()?.toLowerCase();
     switch (extension) {
-      case 'pdf': return "📄";
-      case 'doc':
-      case 'docx': return "📝";
-      case 'xls':
-      case 'xlsx': return "📊";
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-      case 'gif': return "🖼️";
-      case 'zip':
-      case 'rar': return "🗜️";
-      default: return "📄";
+      case "pdf":
+        return "📄";
+      case "doc":
+      case "docx":
+        return "📝";
+      case "xls":
+      case "xlsx":
+        return "📊";
+      case "jpg":
+      case "jpeg":
+      case "png":
+      case "gif":
+        return "🖼️";
+      case "zip":
+      case "rar":
+        return "🗜️";
+      default:
+        return "📄";
     }
   };
 
   const formatFileSize = (bytes) => {
     if (!bytes) return "";
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     if (bytes === 0) return "0 Bytes";
     const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+    return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + " " + sizes[i];
   };
 
   const formatDate = (date) => {
@@ -405,58 +405,64 @@ const Card = ({
 
   const handleFileDownload = (file) => {
     if (file.file || file.url) {
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = file.file || file.url;
-      link.download = file.original_name || file.file_name || 'download';
+      link.download = file.original_name || file.file_name || "download";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } else {
-      message.warning('File download not available');
+      message.warning("File download not available");
     }
   };
 
   const getAssigneeName = (assignee) => {
     if (!assignee) return "Not assigned";
-    
-    if (typeof assignee === 'object') {
+
+    if (typeof assignee === "object") {
       if (assignee.first_name && assignee.last_name) {
         return `${assignee.first_name} ${assignee.last_name}`;
-      } 
+      }
       if (assignee.name) {
         return assignee.name;
       }
       if (assignee.id) {
-        return projectUsers.find(u => u.id === assignee.id)?.name || 'Unknown';
+        return (
+          projectUsers.find((u) => u.id === assignee.id)?.name || "Unknown"
+        );
       }
-      return 'Unknown';
+      return "Unknown";
     }
-    
-    const user = projectUsers.find(u => 
-      u.id === assignee || 
-      u.user_id === assignee
+
+    const user = projectUsers.find(
+      (u) => u.id === assignee || u.user_id === assignee
     );
-    
-    return user ? `${user.first_name} ${user.last_name}` : 'Unknown';
+
+    return user ? `${user.first_name} ${user.last_name}` : "Unknown";
   };
 
   // getCurrentUser function
   const getCurrentUser = () => {
     console.log("🔍 Checking user storage...");
-    
-    const possibleKeys = ['user', 'currentUser', 'authUser', 'userData'];
-    
+
+    const possibleKeys = ["user", "currentUser", "authUser", "userData"];
+
     for (const key of possibleKeys) {
       const localData = localStorage.getItem(key);
       const sessionData = sessionStorage.getItem(key);
-      
+
       const userData = localData || sessionData;
-      
+
       if (userData) {
         try {
           const user = JSON.parse(userData);
-          console.log(`✅ Found user in ${localData ? 'localStorage' : 'sessionStorage'}[${key}]:`, user);
-          
+          console.log(
+            `✅ Found user in ${
+              localData ? "localStorage" : "sessionStorage"
+            }[${key}]:`,
+            user
+          );
+
           if (user && user.id) {
             return user;
           }
@@ -465,28 +471,31 @@ const Card = ({
         }
       }
     }
-    
+
     // Check for JWT token
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || 
-                  localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-    
-    if (token && token.includes('.')) {
+    const token =
+      localStorage.getItem("token") ||
+      sessionStorage.getItem("token") ||
+      localStorage.getItem("authToken") ||
+      sessionStorage.getItem("authToken");
+
+    if (token && token.includes(".")) {
       try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
+        const payload = JSON.parse(atob(token.split(".")[1]));
         console.log("🔑 User from JWT:", payload);
         if (payload.user_id || payload.id) {
           return {
             id: payload.user_id || payload.id,
             email: payload.email,
             first_name: payload.first_name,
-            last_name: payload.last_name
+            last_name: payload.last_name,
           };
         }
       } catch (e) {
         console.error("❌ Failed to decode JWT:", e);
       }
     }
-    
+
     console.warn("⚠️ No user data found anywhere");
     return null;
   };
@@ -499,7 +508,7 @@ const Card = ({
       console.log("🔄 Fetching files for task ID:", id);
       const response = await getTaskFiles(id);
       console.log("📥 Files API Response:", response);
-      
+
       let filesList = [];
       if (Array.isArray(response.data)) {
         filesList = response.data;
@@ -508,11 +517,11 @@ const Card = ({
       } else if (response.data && Array.isArray(response.data.files)) {
         filesList = response.data.files;
       }
-      
+
       console.log("📁 Extracted files:", filesList);
       setFiles(filesList);
     } catch (error) {
-      console.error('❌ Error fetching files:', error);
+      console.error("❌ Error fetching files:", error);
       message.error("Failed to load files");
       setFiles([]);
     } finally {
@@ -527,7 +536,7 @@ const Card = ({
       console.log("🔄 Fetching comments for task ID:", id);
       const response = await getCommentTask(id);
       console.log("📥 Comments API Response:", response);
-      
+
       let commentsList = [];
       if (Array.isArray(response.data)) {
         commentsList = response.data;
@@ -536,16 +545,16 @@ const Card = ({
       } else if (response.data && Array.isArray(response.data.comments)) {
         commentsList = response.data.comments;
       }
-        
-      const mappedComments = commentsList.map(comment => ({
+
+      const mappedComments = commentsList.map((comment) => ({
         ...comment,
-        user_name: getAssigneeName(comment.user) || 'Unknown',
+        user_name: getAssigneeName(comment.user) || "Unknown",
       }));
-      
+
       console.log("📋 Extracted and mapped comments:", mappedComments);
       setComments(mappedComments);
     } catch (error) {
-      console.error('❌ Error fetching comments:', error);
+      console.error("❌ Error fetching comments:", error);
       message.error("Failed to load comments");
       setComments([]);
     } finally {
@@ -560,7 +569,7 @@ const Card = ({
       console.log("🔄 Fetching checklist for task ID:", id);
       const response = await getTaskInstructions(id);
       console.log("📥 RAW API Response:", response);
-      
+
       let items = [];
       if (Array.isArray(response.data)) {
         items = response.data;
@@ -572,17 +581,17 @@ const Card = ({
         items = response.data.instructions;
       }
       console.log("📋 Extracted items:", items);
-      
-      const normalizedItems = items.map(item => {
+
+      const normalizedItems = items.map((item) => {
         console.log("🔄 Processing item:", item);
         return {
           ...item,
-          completed: item.status !== undefined ? item.status : false
+          completed: item.status !== undefined ? item.status : false,
         };
       });
       setChecklistItems(normalizedItems);
     } catch (error) {
-      console.error('Error fetching checklist:', error);
+      console.error("Error fetching checklist:", error);
       message.error("Failed to load checklist");
       setChecklistItems([]);
     } finally {
@@ -596,7 +605,7 @@ const Card = ({
       message.warning("Please enter a comment");
       return;
     }
-    
+
     const currentUser = getCurrentUser();
     if (!currentUser || !currentUser.id) {
       message.error("Please log in to add a comment");
@@ -607,7 +616,7 @@ const Card = ({
     }
 
     setSubmitLoading(true);
-    
+
     try {
       const payload = {
         task: id,
@@ -621,17 +630,20 @@ const Card = ({
 
       setNewComment("");
       await fetchComments();
-      message.success('Comment added successfully');
-      
+      message.success("Comment added successfully");
     } catch (error) {
-      console.error('❌ Error adding comment:', error);
-      
+      console.error("❌ Error adding comment:", error);
+
       if (error.response) {
-        console.error('Response data:', error.response.data);
-        console.error('Response status:', error.response.status);
-        message.error(`Failed to add comment: ${error.response.data?.message || error.response.status}`);
+        console.error("Response data:", error.response.data);
+        console.error("Response status:", error.response.status);
+        message.error(
+          `Failed to add comment: ${
+            error.response.data?.message || error.response.status
+          }`
+        );
       } else {
-        message.error('Failed to add comment');
+        message.error("Failed to add comment");
       }
     } finally {
       setSubmitLoading(false);
@@ -641,71 +653,73 @@ const Card = ({
   // Checklist handlers
   const addChecklistItem = async () => {
     if (!newChecklistItem.trim()) return;
-    
+
     const tempItem = {
       id: `temp-${Date.now()}`,
       name: newChecklistItem.trim(),
       status: false,
       completed: false,
-      isTemp: true
+      isTemp: true,
     };
-    
+
     console.log("➕ Adding new checklist item:", tempItem);
-    
-    setChecklistItems(prev => {
+
+    setChecklistItems((prev) => {
       const updated = [...prev, tempItem];
       console.log("📝 Updated checklist with temp item:", updated);
       return updated;
     });
-    
+
     const itemName = newChecklistItem.trim();
     setNewChecklistItem("");
-    
+
     try {
       console.log("📤 Creating checklist item:", {
         task: id,
         name: itemName,
-        status: false
+        status: false,
       });
-      
+
       const response = await createChecklistItem({
         task: id,
         name: itemName,
-        status: false
+        status: false,
       });
       console.log("📥 Create API Response:", response);
-      
-      setChecklistItems(prev => 
-        prev.map(item => 
-          item.id === tempItem.id 
-            ? { 
-                ...response.data, 
+
+      setChecklistItems((prev) =>
+        prev.map((item) =>
+          item.id === tempItem.id
+            ? {
+                ...response.data,
                 completed: response.data.status,
-                isTemp: false 
-              } 
+                isTemp: false,
+              }
             : item
         )
       );
-     
-      message.success('Checklist item added');
+
+      message.success("Checklist item added");
     } catch (error) {
-      console.error('❌ Error adding checklist item:', error);
-      message.error('Failed to add checklist item');
-      setChecklistItems(prev => prev.filter(item => item.id !== tempItem.id));
+      console.error("❌ Error adding checklist item:", error);
+      message.error("Failed to add checklist item");
+      setChecklistItems((prev) =>
+        prev.filter((item) => item.id !== tempItem.id)
+      );
       setNewChecklistItem(itemName);
     }
   };
 
   const handleDeleteChecklistItem = async (itemId) => {
     const originalItems = [...checklistItems];
-    setChecklistItems(prev => prev.filter(item => item.id !== itemId));
-    
+    setChecklistItems((prev) => prev.filter((item) => item.id !== itemId));
+
     try {
       await deleteChecklistItem(itemId);
-      message.success('Item deleted');
+      message.success("Item deleted");
     } catch (error) {
-      console.error('Error deleting checklist item:', error);
-      message.error('Failed to delete item');
+      console.error("Error deleting checklist item:", error);
+      message.error("Failed to delete item");
       setChecklistItems(originalItems);
     }
   };
@@ -714,37 +728,46 @@ const Card = ({
     const originalItems = [...checklistItems];
 
     // Optimistic update
-    const updatedItems = checklistItems.map(item =>
-      item.id === itemId ? {
-        ...item,
-        status: completed,
-        completed: completed
-      } : item
+    const updatedItems = checklistItems.map((item) =>
+      item.id === itemId
+        ? {
+            ...item,
+            status: completed,
+            completed: completed,
+          }
+        : item
     );
 
     setChecklistItems(updatedItems);
 
     // Calculate new progress
     const total = updatedItems.length;
-    const completedCount = updatedItems.filter(item => item.status).length;
-    const newProgress = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+    const completedCount = updatedItems.filter((item) => item.status).length;
+    const newProgress =
+      total > 0 ? Math.round((completedCount / total) * 100) : 0;
 
     setProgress(newProgress);
     setTotalCount(total);
 
     try {
       await updateInstruction(itemId, { status: completed });
-      message.success('Checklist updated');
+      message.success("Checklist updated");
     } catch (error) {
-      console.error('Error updating checklist item:', error);
-      message.error('Failed to update checklist');
+      console.error("Error updating checklist item:", error);
+      message.error("Failed to update checklist");
       setChecklistItems(originalItems);
       // Revert progress calculation
-      const originalCompleted = originalItems.filter(item => item.status).length;
-      setProgress(originalItems.length > 0 ? Math.round((originalCompleted / originalItems.length) * 100) : 0);
+      const originalCompleted = originalItems.filter(
+        (item) => item.status
+      ).length;
+      setProgress(
+        originalItems.length > 0
+          ? Math.round((originalCompleted / originalItems.length) * 100)
+          : 0
+      );
       setTotalCount(originalItems.length);
     }
-  }
+  };
   // Modal handlers
   const openViewModal = async () => {
     setIsModalOpen(true);
@@ -755,9 +778,16 @@ const Card = ({
       const response = await getTaskById(id);
       console.log("📥 Task data:", response.data);
       setTaskData(response.data);
-      
-      if (response.data.projectId || response.data.project_id || response.data.project) {
-        const projectId = response.data.projectId || response.data.project_id || response.data.project;
+
+      if (
+        response.data.projectId ||
+        response.data.project_id ||
+        response.data.project
+      ) {
+        const projectId =
+          response.data.projectId ||
+          response.data.project_id ||
+          response.data.project;
         try {
           const usersResponse = await getProjectUsers(projectId);
           console.log("👥 Project users:", usersResponse.data);
@@ -771,12 +801,7 @@ const Card = ({
         setProjectUsers([]);
       }
 
-      await Promise.all([
-        fetchComments(),
-        fetchChecklist(),
-        fetchFiles()
-      ]);
-
+      await Promise.all([fetchComments(), fetchChecklist(), fetchFiles()]);
     } catch (error) {
       console.error("❌ Error fetching task data:", error);
       message.error("Failed to load task data");
@@ -789,7 +814,13 @@ const Card = ({
     try {
       await updateTaskType(id, newColumn);
       message.success(`Task moved to ${newColumn}`);
-      onEdit({ id, title, time, description, column: newColumn });
+      // onEdit({ id, title, time, description, column: newColumn });
+      //  onEdit o'rniga setCards
+      setCards((prev) =>
+        prev.map((card) =>
+          card.id === id ? { ...card, column: newColumn } : card
+        )
+      );
     } catch (error) {
       message.error("Failed to move task");
       console.error("Move error:", error);
@@ -873,7 +904,9 @@ const Card = ({
 
       if (taskData.checklist_items) {
         const total = taskData.checklist_items.length;
-        const completed = taskData.checklist_items.filter(item => item.status).length;
+        const completed = taskData.checklist_items.filter(
+          (item) => item.status
+        ).length;
         setProgress(total > 0 ? Math.round((completed / total) * 100) : 0);
         setTotalCount(total);
       }
@@ -986,7 +1019,6 @@ const Card = ({
           style={{
             top: 30, // px qiymati, modal yuqoriga yaqinlashadi
           }}
-          
           footer={[
             <Button
               key="edit"
@@ -1019,7 +1051,7 @@ const Card = ({
             </Button>,
           ]}
         >
-           {loading ? (
+          {loading ? (
             <div className="flex justify-center items-center h-[400px]">
               <Spin size="large" />
             </div>
@@ -1031,11 +1063,17 @@ const Card = ({
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="w-full sm:w-[140px] h-[140px] bg-gray-200 flex items-center justify-center rounded">
                     <span role="img" aria-label="image" className="text-4xl">
-                  {taskData?.task_image ? (
-                      <img src={taskData.task_image} alt="" onError={(e) => (e.currentTarget.style.display = "none")} />
-                    ) : (
-                      <span>🖼️</span>
-                    )}
+                      {taskData?.task_image ? (
+                        <img
+                          src={taskData.task_image}
+                          alt=""
+                          onError={(e) =>
+                            (e.currentTarget.style.display = "none")
+                          }
+                        />
+                      ) : (
+                        <span>🖼️</span>
+                      )}
                     </span>
                   </div>
                   <div className="flex-1 text-sm text-gray-700 leading-6">
@@ -1043,217 +1081,257 @@ const Card = ({
                   </div>
                 </div>
 
-
-      {/* Files */}
-      <div>
-        <h4 className="font-semibold text-sm mb-3">Files</h4>
-
-        <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-          <span>📁</span>
-          Files ({files.length})
-        </h4>
-
-        {filesLoading ? (
-          <div className="flex items-center gap-2">
-            <Spin size="small" />
-            <span className="text-sm text-gray-500">Loading files...</span>
-          </div>
-        ) : files.length > 0 ? (
-          <div className="space-y-2">
-            {files.map((file, index) => (
-              <div
-                key={file.id || index}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
-              >
-                <div className="flex items-center gap-3">
-                  {/* Fayl tipi ikonkasi */}
-                  <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                    {getFileIcon(file.file_type || file.file_name)}
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {file.original_name || file.file_name || "Unnamed file"}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {file.file_size ? formatFileSize(file.file_size) : ""} •{" "}
-                      {file.created_at ? formatDate(file.created_at) : "Unknown date"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Download button */}
-                <Button
-                  type="text"
-                  icon={<DownloadOutlined />}
-                  onClick={() => handleFileDownload(file)}
-                  className="text-blue-600 hover:text-blue-800"
-                />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg text-center">
-            📄 No files attached to this task
-          </p>
-        )}
-      </div>
-
-      {/* Checklist */}
-      <div>
-        <div className="flex justify-between items-center mb-3">
-          <h4 className="font-semibold text-sm flex items-center gap-2">
-            <img src={checkList} alt="checklist" className="w-4 h-4" />
-            Check list ({checklistItems.length})
-          </h4>
-          <span className="text-xs text-gray-500">Show</span>
-        </div>
-
-        {checklistItems && checklistItems.length > 0 ? (
-          <div className="space-y-2">
-            {checklistItems.map((item, index) => (
-              <div
-                key={item.id || index}
-                className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded"
-              >
-                <Checkbox
-                  checked={item.completed}
-                  onChange={(e) => handleUpdateChecklistItem(item.id, e.target.checked)}
-                />
-                <span
-                  className={`text-sm flex-1 ${
-                    item.completed ? "line-through text-gray-500" : "text-gray-900"
-                  }`}
-                >
-                  {item.title || item.name || item.description || `Item ${index + 1}`}
-                </span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-gray-500">No checklist items</p>
-        )}
-      </div>
-
-      {/* Comments */}
-      <div>
-        <h4 className="font-semibold text-sm mb-3">Comments</h4>
-        <div className="p-4 bg-blue-50 rounded-xl">
-          {comments.length > 0 ? (
-            comments.map((c) => (
-              <div key={c.id} className="rounded-lg bg-blue-50 mb-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
-                    👤 {c.user_name[0]}
-                  </div>
-                  <span className="text-sm font-medium">{c.user_name || "You"}</span>
-                  <p className="text-xs text-gray-500 ml-2">
-                    {dayjs(c.created_at).format("MMM D, YYYY h:mm A")}
-                  </p>
-                </div>
+                {/* Files */}
                 <div>
-                  <div className="bg-white p-1 rounded-sm">
-                    <p className="text-sm text-gray-700">{c.text || c.message}</p>
+                  <h4 className="font-semibold text-sm mb-3">Files</h4>
+
+                  <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                    <span>📁</span>
+                    Files ({files.length})
+                  </h4>
+
+                  {filesLoading ? (
+                    <div className="flex items-center gap-2">
+                      <Spin size="small" />
+                      <span className="text-sm text-gray-500">
+                        Loading files...
+                      </span>
+                    </div>
+                  ) : files.length > 0 ? (
+                    <div className="space-y-2">
+                      {files.map((file, index) => (
+                        <div
+                          key={file.id || index}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
+                        >
+                          <div className="flex items-center gap-3">
+                            {/* Fayl tipi ikonkasi */}
+                            <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
+                              {getFileIcon(file.file_type || file.file_name)}
+                            </div>
+
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {file.original_name ||
+                                  file.file_name ||
+                                  "Unnamed file"}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {file.file_size
+                                  ? formatFileSize(file.file_size)
+                                  : ""}{" "}
+                                •{" "}
+                                {file.created_at
+                                  ? formatDate(file.created_at)
+                                  : "Unknown date"}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Download button */}
+                          <Button
+                            type="text"
+                            icon={<DownloadOutlined />}
+                            onClick={() => handleFileDownload(file)}
+                            className="text-blue-600 hover:text-blue-800"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg text-center">
+                      📄 No files attached to this task
+                    </p>
+                  )}
+                </div>
+
+                {/* Checklist */}
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="font-semibold text-sm flex items-center gap-2">
+                      <img
+                        src={checkList}
+                        alt="checklist"
+                        className="w-4 h-4"
+                      />
+                      Check list ({checklistItems.length})
+                    </h4>
+                    <span className="text-xs text-gray-500">Show</span>
+                  </div>
+
+                  {checklistItems && checklistItems.length > 0 ? (
+                    <div className="space-y-2">
+                      {checklistItems.map((item, index) => (
+                        <div
+                          key={item.id || index}
+                          className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded"
+                        >
+                          <Checkbox
+                            checked={item.completed}
+                            onChange={(e) =>
+                              handleUpdateChecklistItem(
+                                item.id,
+                                e.target.checked
+                              )
+                            }
+                          />
+                          <span
+                            className={`text-sm flex-1 ${
+                              item.completed
+                                ? "line-through text-gray-500"
+                                : "text-gray-900"
+                            }`}
+                          >
+                            {item.title ||
+                              item.name ||
+                              item.description ||
+                              `Item ${index + 1}`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">No checklist items</p>
+                  )}
+                </div>
+
+                {/* Comments */}
+                <div>
+                  <h4 className="font-semibold text-sm mb-3">Comments</h4>
+                  <div className="p-4 bg-blue-50 rounded-xl">
+                    {comments.length > 0 ? (
+                      comments.map((c) => (
+                        <div key={c.id} className="rounded-lg bg-blue-50 mb-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
+                              👤 {c.user_name[0]}
+                            </div>
+                            <span className="text-sm font-medium">
+                              {c.user_name || "You"}
+                            </span>
+                            <p className="text-xs text-gray-500 ml-2">
+                              {dayjs(c.created_at).format("MMM D, YYYY h:mm A")}
+                            </p>
+                          </div>
+                          <div>
+                            <div className="bg-white p-1 rounded-sm">
+                              <p className="text-sm text-gray-700">
+                                {c.text || c.message}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500 mb-3">
+                        No comments yet
+                      </p>
+                    )}
+
+                    {/* Add new comment */}
+                    <div className="mt-3 flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Add a comment"
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        onKeyPress={(e) =>
+                          e.key === "Enter" && handleAddComment()
+                        } // Enter bosilganda ham yuborish
+                        className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none"
+                      />
+                      <button
+                        onClick={handleAddComment}
+                        disabled={submitLoading}
+                        className="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600 disabled:opacity-50"
+                      >
+                        {submitLoading ? "..." : "➤"}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            ))
-          ) : (
-            <p className="text-sm text-gray-500 mb-3">No comments yet</p>
-          )}
 
-        {/* Add new comment */}
-<div className="mt-3 flex gap-2">
-  <input
-    type="text"
-    placeholder="Add a comment"
-    value={newComment}
-    onChange={(e) => setNewComment(e.target.value)}
-    onKeyPress={(e) => e.key === 'Enter' && handleAddComment()} // Enter bosilganda ham yuborish
-    className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none"
-  />
-  <button
-    onClick={handleAddComment}
-    disabled={submitLoading}
-    className="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600 disabled:opacity-50"
-  >
-    {submitLoading ? "..." : "➤"}
-  </button>
-</div>
-        </div>
-      </div>
-    </div>
+              {/* Right section */}
+              <div className="md:col-span-4 space-y-4 text-sm">
+                <div>
+                  <p className="text-gray-400">Assignee by</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                      👤
+                    </div>
 
-    {/* Right section */}
-    <div className="md:col-span-4 space-y-4 text-sm">
-      <div>
-        <p className="text-gray-400">Assignee by</p>
-        <div className="flex items-center gap-2 mt-1">
-          <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
-        
-                     <span>
+                    <span>
                       {(() => {
                         // Debug ma'lumotlari
                         console.log("Current taskData:", taskData);
-                        console.log("Current selectedAssignee:", selectedAssignee);
+                        console.log(
+                          "Current selectedAssignee:",
+                          selectedAssignee
+                        );
                         console.log("Current projectUsers:", projectUsers);
-                        
+
                         // Har xil assignee formatlarini tekshirish
-                        const assignee = selectedAssignee || 
-                                        taskData?.assignee || 
-                                        taskData?.assigned_to || 
-                                        taskData?.assigned?.[0];
-                                        
+                        const assignee =
+                          selectedAssignee ||
+                          taskData?.assignee ||
+                          taskData?.assigned_to ||
+                          taskData?.assigned?.[0];
+
                         console.log("Final assignee:", assignee);
-                        
+
                         return getAssigneeName(assignee);
                       })()}
                     </span>
-        </div>
-      </div>
+                  </div>
+                </div>
 
-      <div>
-        <p className="text-gray-400">Date</p>
-        <p className="mt-1">{taskData.deadline ? dayjs(taskData.deadline).format("YYYY-MM-DD") : "N/A"}</p>
-      </div>
+                <div>
+                  <p className="text-gray-400">Date</p>
+                  <p className="mt-1">
+                    {taskData.deadline
+                      ? dayjs(taskData.deadline).format("YYYY-MM-DD")
+                      : "N/A"}
+                  </p>
+                </div>
 
-      <div>
-        <p className="text-gray-400">Notification</p>
-        <p className="mt-1">{taskData.is_active ? "On" : "Off"}</p>
-      </div>
+                <div>
+                  <p className="text-gray-400">Notification</p>
+                  <p className="mt-1">{taskData.is_active ? "On" : "Off"}</p>
+                </div>
 
-      <div>
-        <p className="text-gray-400">Status</p>
-        <p className="mt-1">{taskData.tasks_type || "N/A"}</p>
-      </div>
+                <div>
+                  <p className="text-gray-400">Status</p>
+                  <p className="mt-1">{taskData.tasks_type || "N/A"}</p>
+                </div>
 
+                <div>
+                  <p className="text-gray-400">Progress</p>
+                  <p className="mt-1">{taskData.progress}%</p>
+                </div>
 
-      <div>
-        <p className="text-gray-400">Progress</p>
-        <p className="mt-1">{taskData.progress}%</p>
-      </div>
-
-      <div>
-        <p className="text-gray-400">Tags</p>
-        <div className="flex flex-wrap gap-2 mt-1">
-          {taskData.tags && taskData.tags.length > 0 ? (
-            taskData.tags.map((tag, i) => (
-              <span key={i} className="bg-gray-200 px-2 py-1 rounded text-xs">
-                {tag.name}
-              </span>
-            ))
+                <div>
+                  <p className="text-gray-400">Tags</p>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {taskData.tags && taskData.tags.length > 0 ? (
+                      taskData.tags.map((tag, i) => (
+                        <span
+                          key={i}
+                          className="bg-gray-200 px-2 py-1 rounded text-xs"
+                        >
+                          {tag.name}
+                        </span>
+                      ))
+                    ) : (
+                      <p>N/A</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           ) : (
-            <p>N/A</p>
+            <p className="text-center text-gray-500">No task data available</p>
           )}
-        </div>
-      </div>
-    </div>
-  </div>
-) : (
-  <p className="text-center text-gray-500">No task data available</p>
-)
-}
-        
         </Modal>
 
         <EditCardModal
@@ -1277,7 +1355,6 @@ const Card = ({
             </div>
           )}
 
-
           {description && (
             <div>
               <img src={descriptionIcon} alt="Description Icon" />
@@ -1296,8 +1373,6 @@ const Card = ({
               </span>
             </div>
           )}
-
-
         </div>
       </motion.div>
     </>
@@ -1497,12 +1572,12 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       loadTaskFiles();
       loadTaskInstructions(cardData.id); // Yangi qo'shildi
     }
-      // ✅ MUHIM: Modal yopilganda state ni tozalash
-      if (!visible) {
-        setChecklist([]);
-        setUploadedFiles([]);
-        setFiles([]);
-      }
+    // ✅ MUHIM: Modal yopilganda state ni tozalash
+    if (!visible) {
+      setChecklist([]);
+      setUploadedFiles([]);
+      setFiles([]);
+    }
   }, [visible, cardData?.id]);
 
   // Card ma'lumotlarini form ga yuklash
@@ -1514,13 +1589,17 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       setNotification(cardData.is_active ? "On" : "Off");
       // setSelectedAssignee(cardData.assigned || []);
 
-            // Assigned maydonini to'g'ri formatlash
-            if (cardData.assigned && Array.isArray(cardData.assigned) && cardData.assigned.length > 0) {
-              setSelectedAssignee(cardData.assigned[0]);
-            } else {
-              setSelectedAssignee(null);
-            }
-      
+      // Assigned maydonini to'g'ri formatlash
+      if (
+        cardData.assigned &&
+        Array.isArray(cardData.assigned) &&
+        cardData.assigned.length > 0
+      ) {
+        setSelectedAssignee(cardData.assigned[0]);
+      } else {
+        setSelectedAssignee(null);
+      }
+
       setDescription(cardData.description || "");
       setSelectedTags(cardData.tags ? cardData.tags.map((tag) => tag.id) : []);
       setProgress(cardData.progress || 0);
@@ -1530,125 +1609,134 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
     }
   }, [cardData, visible]);
 
- // Checklist ma'lumotlarini yuklash
- const loadTaskInstructions = async (taskId) => {
-  if (!taskId) return;
+  // Checklist ma'lumotlarini yuklash
+  const loadTaskInstructions = async (taskId) => {
+    if (!taskId) return;
 
-  setChecklistLoading(true);
-  try {
-    const response = await getTaskInstructions(taskId);
-     // faqat shu taskga tegishli instructions qolsin
-    const instructionsData = (response.data || []).filter(
-      instruction => instruction.task === taskId
-    );
-    console.log("Instructions ma'lumotlari:", response);
+    setChecklistLoading(true);
+    try {
+      const response = await getTaskInstructions(taskId);
+      // faqat shu taskga tegishli instructions qolsin
+      const instructionsData = (response.data || []).filter(
+        (instruction) => instruction.task === taskId
+      );
+      console.log("Instructions ma'lumotlari:", response);
 
-    // Calculate progress and total count
-    const totalCount = instructionsData.length;
-    const completedCount = instructionsData.filter(item => item.status).length;
-    const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+      // Calculate progress and total count
+      const totalCount = instructionsData.length;
+      const completedCount = instructionsData.filter(
+        (item) => item.status
+      ).length;
+      const progress =
+        totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
-    // API dan kelgan ma'lumotlarni checklist formatiga o'zgartirish
-    const formattedChecklist = instructionsData.map(instruction => ({
-      id: instruction.id,
-      text: instruction.name,
-      done: instruction.status,
-      isNew: false // mavjud elementlar uchun
-    }));
+      // API dan kelgan ma'lumotlarni checklist formatiga o'zgartirish
+      const formattedChecklist = instructionsData.map((instruction) => ({
+        id: instruction.id,
+        text: instruction.name,
+        done: instruction.status,
+        isNew: false, // mavjud elementlar uchun
+      }));
 
-    // Update state
-    setChecklistItems(instructionsData);
-    setTotalCount(totalCount);
-    setProgress(progress);
+      // Update state
+      setChecklistItems(instructionsData);
+      setTotalCount(totalCount);
+      setProgress(progress);
 
-    setChecklist(formattedChecklist);
-  } catch (error) {
-    console.error("Instructions yuklashda xatolik:", error);
-    message.error("Checklist ma'lumotlarini yuklashda xatolik");
-    setChecklist([]);
-  } finally {
-    setChecklistLoading(false);
-  }
-};
-
-// Modal ochilganda instructions ham yuklansin
-React.useEffect(() => {
-  if (visible && cardData?.id) {
-    loadModalData();
-    loadTaskFiles();
-    loadTaskInstructions(cardData.id); // Yangi qo'shildi
-  }
-}, [visible, cardData?.id]);
-
-// Checklist funksiyalari
-const addCheckItem = () => {
-  const newItem = {
-    id: Date.now().toString(), // Temporary ID for new items
-    text: "",
-    done: false,
-    isNew: true // yangi elementlar uchun
+      setChecklist(formattedChecklist);
+    } catch (error) {
+      console.error("Instructions yuklashda xatolik:", error);
+      message.error("Checklist ma'lumotlarini yuklashda xatolik");
+      setChecklist([]);
+    } finally {
+      setChecklistLoading(false);
+    }
   };
-  setChecklist(prev => [...prev, newItem]);
-};
 
-const toggleCheckDone = async (index) => {
-  const item = checklist[index];
-  const newStatus = !item.done;
-  
-  // Optimistic update
-  setChecklist(prev => prev.map((check, i) => 
-    i === index ? { ...check, done: newStatus } : check
-  ));
-
-  // Agar mavjud element bo'lsa (isNew: false), API ga yuborish
-  if (!item.isNew && item.id) {
-    try {
-      await updateTaskInstruction(item.id, {
-        name: item.text,
-        status: newStatus,
-        task: cardData.id
-      });
-      message.success("Checklist item updated!");
-    } catch (error) {
-      console.error("Checklist update error:", error);
-      message.error("Failed to update checklist item");
-      // Rollback
-      setChecklist(prev => prev.map((check, i) => 
-        i === index ? { ...check, done: !newStatus } : check
-      ));
+  // Modal ochilganda instructions ham yuklansin
+  React.useEffect(() => {
+    if (visible && cardData?.id) {
+      loadModalData();
+      loadTaskFiles();
+      loadTaskInstructions(cardData.id); // Yangi qo'shildi
     }
-  }
-};
+  }, [visible, cardData?.id]);
 
-const updateCheckText = (index, newText) => {
-  setChecklist(prev => prev.map((check, i) => 
-    i === index ? { ...check, text: newText } : check
-  ));
-};
+  // Checklist funksiyalari
+  const addCheckItem = () => {
+    const newItem = {
+      id: Date.now().toString(), // Temporary ID for new items
+      text: "",
+      done: false,
+      isNew: true, // yangi elementlar uchun
+    };
+    setChecklist((prev) => [...prev, newItem]);
+  };
 
-const deleteCheckItem = async (index) => {
-  const item = checklist[index];
-  
-  // Optimistic update
-  setChecklist(prev => prev.filter((_, i) => i !== index));
+  const toggleCheckDone = async (index) => {
+    const item = checklist[index];
+    const newStatus = !item.done;
 
-  // Agar mavjud element bo'lsa, API dan ham o'chirish
-  if (!item.isNew && item.id) {
-    try {
-      await deleteInstruction(item.id);
-      message.success("Checklist item deleted!");
-    } catch (error) {
-      console.error("Checklist delete error:", error);
-      message.error("Failed to delete checklist item");
-      // Rollback - elementni qaytarish
-      setChecklist(prev => {
-        const newList = [...prev];
-        newList.splice(index, 0, item);
-        return newList;
-      });
+    // Optimistic update
+    setChecklist((prev) =>
+      prev.map((check, i) =>
+        i === index ? { ...check, done: newStatus } : check
+      )
+    );
+
+    // Agar mavjud element bo'lsa (isNew: false), API ga yuborish
+    if (!item.isNew && item.id) {
+      try {
+        await updateTaskInstruction(item.id, {
+          name: item.text,
+          status: newStatus,
+          task: cardData.id,
+        });
+        message.success("Checklist item updated!");
+      } catch (error) {
+        console.error("Checklist update error:", error);
+        message.error("Failed to update checklist item");
+        // Rollback
+        setChecklist((prev) =>
+          prev.map((check, i) =>
+            i === index ? { ...check, done: !newStatus } : check
+          )
+        );
+      }
     }
-  }
-};
+  };
+
+  const updateCheckText = (index, newText) => {
+    setChecklist((prev) =>
+      prev.map((check, i) =>
+        i === index ? { ...check, text: newText } : check
+      )
+    );
+  };
+
+  const deleteCheckItem = async (index) => {
+    const item = checklist[index];
+
+    // Optimistic update
+    setChecklist((prev) => prev.filter((_, i) => i !== index));
+
+    // Agar mavjud element bo'lsa, API dan ham o'chirish
+    if (!item.isNew && item.id) {
+      try {
+        await deleteInstruction(item.id);
+        message.success("Checklist item deleted!");
+      } catch (error) {
+        console.error("Checklist delete error:", error);
+        message.error("Failed to delete checklist item");
+        // Rollback - elementni qaytarish
+        setChecklist((prev) => {
+          const newList = [...prev];
+          newList.splice(index, 0, item);
+          return newList;
+        });
+      }
+    }
+  };
 
   const loadModalData = async () => {
     setLoading(true);
@@ -1676,16 +1764,18 @@ const deleteCheckItem = async (index) => {
     }
   };
 
-   // Task files ni yuklash funksiyasi - YANGI
-   const loadTaskFiles = async () => {
+  // Task files ni yuklash funksiyasi - YANGI
+  const loadTaskFiles = async () => {
     try {
       // ✅ axios o'rniga taskService funksiyasini ishlating
       const response = await getTaskFiles();
-      
+
       // Task ID ga mos fayllarni filtrlash
-      const taskFiles = response.data.filter(file => file.task === cardData.id);
+      const taskFiles = response.data.filter(
+        (file) => file.task === cardData.id
+      );
       setUploadedFiles(taskFiles);
-      
+
       console.log("Yuklangan fayllar:", taskFiles);
     } catch (error) {
       console.error("Fayllarni yuklashda xatolik:", error);
@@ -1694,18 +1784,18 @@ const deleteCheckItem = async (index) => {
     }
   };
 
-   // File upload funksiyasi - yangi qo'shilgan
-   const uploadFile = async (file, taskId) => {
+  // File upload funksiyasi - yangi qo'shilgan
+  const uploadFile = async (file, taskId) => {
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('task', taskId); // Task ID ni qo'shish
-  
+    formData.append("file", file);
+    formData.append("task", taskId); // Task ID ni qo'shish
+
     try {
       // ✅ axios o'rniga taskService funksiyasini ishlating
       const response = await uploadTaskFile(formData);
       return response.data;
     } catch (error) {
-      console.error('File upload error:', error);
+      console.error("File upload error:", error);
       throw error;
     }
   };
@@ -1715,15 +1805,17 @@ const deleteCheckItem = async (index) => {
     if (files.length === 0) return [];
 
     setFileUploading(true);
-    const uploadPromises = files.map(file => uploadFile(file, taskId));
-    
+    const uploadPromises = files.map((file) => uploadFile(file, taskId));
+
     try {
       const uploadResults = await Promise.all(uploadPromises);
-      message.success(`${uploadResults.length} ta fayl muvaffaqiyatli yuklandi!`);
+      message.success(
+        `${uploadResults.length} ta fayl muvaffaqiyatli yuklandi!`
+      );
       return uploadResults;
     } catch (error) {
-      message.error('Ba\'zi fayllar yuklanmadi');
-      console.error('Files upload error:', error);
+      message.error("Ba'zi fayllar yuklanmadi");
+      console.error("Files upload error:", error);
       return [];
     } finally {
       setFileUploading(false);
@@ -1735,14 +1827,14 @@ const deleteCheckItem = async (index) => {
       message.error("Task ID topilmadi");
       return;
     }
-    
+
     if (!title.trim()) {
       message.error("Task nomi kiritilishi shart");
       return;
     }
-  
+
     setSaveLoading(true);
-  
+
     try {
       const updateData = {
         name: title.trim(),
@@ -1750,42 +1842,56 @@ const deleteCheckItem = async (index) => {
         tasks_type: type,
         deadline: date ? date.format("YYYY-MM-DD") : null,
         project: projectId,
-        
+
         // ✅ TUZATISH: assigned maydonini to'g'ri formatlash
-        assigned: selectedAssignee && selectedAssignee.length > 0 
-          ? (Array.isArray(selectedAssignee) ? selectedAssignee : [selectedAssignee])
-          : [],
-        
-        // ✅ TUZATISH: tags_ids maydonini to'g'ri formatlash  
-        tags_ids: Array.isArray(selectedTags) && selectedTags.length > 0 
-          ? selectedTags 
-          : [],
-        
+        assigned:
+          selectedAssignee && selectedAssignee.length > 0
+            ? Array.isArray(selectedAssignee)
+              ? selectedAssignee
+              : [selectedAssignee]
+            : [],
+
+        // ✅ TUZATISH: tags_ids maydonini to'g'ri formatlash
+        tags_ids:
+          Array.isArray(selectedTags) && selectedTags.length > 0
+            ? selectedTags
+            : [],
+
         progress: Math.min(100, Math.max(0, progress)),
         is_active: notification === "On",
       };
-  
+
       // ✅ Debug uchun - yuborilayotgan ma'lumotlarni tekshiring
       console.log("🔍 Yuborilayotgan ma'lumotlar:", updateData);
-      console.log("📋 selectedAssignee:", selectedAssignee, "Type:", typeof selectedAssignee);
-      console.log("🏷️ selectedTags:", selectedTags, "Type:", typeof selectedTags);
-  
+      console.log(
+        "📋 selectedAssignee:",
+        selectedAssignee,
+        "Type:",
+        typeof selectedAssignee
+      );
+      console.log(
+        "🏷️ selectedTags:",
+        selectedTags,
+        "Type:",
+        typeof selectedTags
+      );
+
       await saveChecklist();
       const response = await updateTask(cardData.id, updateData);
-      
+
       // Fayllarni yuklash
       let newUploadedFiles = [];
       if (files.length > 0) {
         newUploadedFiles = await uploadMultipleFiles(cardData.id);
       }
-  
+
       message.success("Task muvaffaqiyatli yangilandi!");
-  
+
       // State ni yangilash
       if (response && response.data) {
         const updatedCardData = {
           ...response.data,
-          files: [...uploadedFiles, ...newUploadedFiles]
+          files: [...uploadedFiles, ...newUploadedFiles],
         };
         onUpdate(updatedCardData);
       } else {
@@ -1793,31 +1899,33 @@ const deleteCheckItem = async (index) => {
           ...cardData,
           ...updateData,
           id: cardData.id,
-          files: [...uploadedFiles, ...newUploadedFiles]
+          files: [...uploadedFiles, ...newUploadedFiles],
         });
       }
-      
+
       onClose();
     } catch (error) {
       console.error("❌ Task yangilashda xatolik:", error);
-      
+
       if (error.response) {
         console.error("🔍 Server javobi:", error.response.data);
         console.error("📊 Status:", error.response.status);
-        
+
         // Server validation xatoliklarini batafsil ko'rsatish
         const errorData = error.response.data;
         let errorMessage = "Task yangilashda xatolik";
-        
+
         if (errorData.assigned && Array.isArray(errorData.assigned)) {
-          errorMessage = `Assigned field error: ${errorData.assigned.join(', ')}`;
+          errorMessage = `Assigned field error: ${errorData.assigned.join(
+            ", "
+          )}`;
         } else if (errorData.tags_ids && Array.isArray(errorData.tags_ids)) {
-          errorMessage = `Tags error: ${errorData.tags_ids.join(', ')}`;
-        } else if (typeof errorData === 'object') {
+          errorMessage = `Tags error: ${errorData.tags_ids.join(", ")}`;
+        } else if (typeof errorData === "object") {
           const firstError = Object.values(errorData)[0];
           errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
         }
-        
+
         message.error(errorMessage);
       } else if (error.request) {
         message.error("Serverga ulanishda xatolik");
@@ -1828,7 +1936,7 @@ const deleteCheckItem = async (index) => {
       setSaveLoading(false);
     }
   };
-  
+
   // ✅ Assignee state ni ham tekshiring:
   React.useEffect(() => {
     if (visible && cardData) {
@@ -1836,9 +1944,13 @@ const deleteCheckItem = async (index) => {
       setType(cardData.tasks_type || "");
       setDate(cardData.deadline ? dayjs(cardData.deadline) : null);
       setNotification(cardData.is_active ? "On" : "Off");
-      
+
       // ✅ TUZATISH: assigned maydonini to'g'ri formatlash
-      if (cardData.assigned && Array.isArray(cardData.assigned) && cardData.assigned.length > 0) {
+      if (
+        cardData.assigned &&
+        Array.isArray(cardData.assigned) &&
+        cardData.assigned.length > 0
+      ) {
         setSelectedAssignee(cardData.assigned[0]); // Birinchi elementni olish
       } else {
         setSelectedAssignee(null);
@@ -1860,12 +1972,12 @@ const deleteCheckItem = async (index) => {
     );
   };
 
-   // File delete funksiyasi - YANGILANGAN
-   const deleteUploadedFile = async (fileId) => {
+  // File delete funksiyasi - YANGILANGAN
+  const deleteUploadedFile = async (fileId) => {
     try {
       // ✅ axios o'rniga taskService funksiyasini ishlating
       await deleteTaskFile(fileId);
-      setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
+      setUploadedFiles((prev) => prev.filter((file) => file.id !== fileId));
       message.success("Fayl o'chirildi");
     } catch (error) {
       message.error("Faylni o'chirishda xatolik");
@@ -1873,28 +1985,28 @@ const deleteCheckItem = async (index) => {
     }
   };
 
-    // File download funksiyasi - YANGI
-    const downloadFile = (file) => {
-      if (file.file) {
-        // Faylni yangi tabda ochish yoki download qilish
-        window.open(file.file, '_blank');
-      } else {
-        message.error("Fayl topilmadi");
-      }
-    };
+  // File download funksiyasi - YANGI
+  const downloadFile = (file) => {
+    if (file.file) {
+      // Faylni yangi tabda ochish yoki download qilish
+      window.open(file.file, "_blank");
+    } else {
+      message.error("Fayl topilmadi");
+    }
+  };
 
-     // Yangi checklist elementlarini saqlash funksiyasi
+  // Yangi checklist elementlarini saqlash funksiyasi
   const saveChecklist = async () => {
-    const newItems = checklist.filter(item => item.isNew && item.text.trim());
-    
+    const newItems = checklist.filter((item) => item.isNew && item.text.trim());
+
     if (newItems.length === 0) return;
 
     try {
-      const savePromises = newItems.map(item => 
+      const savePromises = newItems.map((item) =>
         createInstruction({
           name: item.text.trim(),
           status: item.done,
-          task: cardData.id
+          task: cardData.id,
         })
       );
 
@@ -1905,8 +2017,6 @@ const deleteCheckItem = async (index) => {
       message.error("Ba'zi checklist elementlari saqlanmadi");
     }
   };
-
-
 
   return (
     <Modal
@@ -2016,7 +2126,7 @@ const deleteCheckItem = async (index) => {
                         src={memberSearch}
                         alt="avatar"
                         className="w-6 h-6 rounded-full object-cover"
-                      />  
+                      />
                     </span>
                   </div>
                 </div>
@@ -2106,129 +2216,163 @@ const deleteCheckItem = async (index) => {
 
               {/* Files Section */}
               <div className="mt-4">
-                  <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
-                    Files
-                  </label>
-                  
-                  {/* Existing uploaded files */}
-                  {uploadedFiles.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-xs text-gray-500 mb-2">Yuklangan fayllar:</p>
-                      {uploadedFiles.map((file, index) => (
-                        <div key={`uploaded-${file.id}`} className="flex items-center gap-2 mb-2 p-2 border rounded-lg bg-green-50">
-                          <div className="flex-1 w-[60%]">
-                            <p className="text-sm font-medium truncate">
-                              {file.file ? file.file.split('/').pop() : `File ${index + 1}`}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Created: {file.created_at ? new Date(file.created_at).toLocaleDateString() : 'N/A'}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => downloadFile(file)}
-                            className="text-blue-500 hover:text-blue-700 p-1"
-                            title="Download file"
-                          >
-                            <DownloadOutlined />
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (window.confirm('Bu faylni o\'chirmoqchimisiz?')) {
-                                deleteUploadedFile(file.id);
-                              }
-                            }}
-                            className="text-red-500 hover:text-red-700 p-1"
-                            title="Delete file"
-                          >
-                            <FiTrash />
-                          </button>
+                <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
+                  Files
+                </label>
+
+                {/* Existing uploaded files */}
+                {uploadedFiles.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-500 mb-2">
+                      Yuklangan fayllar:
+                    </p>
+                    {uploadedFiles.map((file, index) => (
+                      <div
+                        key={`uploaded-${file.id}`}
+                        className="flex items-center gap-2 mb-2 p-2 border rounded-lg bg-green-50"
+                      >
+                        <div className="flex-1 w-[60%]">
+                          <p className="text-sm font-medium truncate">
+                            {file.file
+                              ? file.file.split("/").pop()
+                              : `File ${index + 1}`}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Created:{" "}
+                            {file.created_at
+                              ? new Date(file.created_at).toLocaleDateString()
+                              : "N/A"}
+                          </p>
                         </div>
-                      ))}
-                    </div>
-                  )}
-  
-                  {/* New files to be uploaded */}
-                  {files.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-xs text-gray-500 mb-2">Yangi fayllar (saqlaganda yuklanadi):</p>
-                      {files.map((file, index) => (
-                        <div key={`new-${index}`} className="flex items-center gap-2 mb-2 p-2 border rounded-lg bg-orange-50">
-                          <div className="flex-1  w-[60%]">
-                            <p className="text-sm font-medium truncate">{file.name}</p>
-                            <p className="text-xs text-orange-600">Size: {(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                          </div>
-                          <span className="text-orange-500 text-xs px-2 py-1 bg-orange-200 rounded">Yangi</span>
-                          <button
-                            onClick={() =>
-                              setFiles((prev) => prev.filter((_, i) => i !== index))
+                        <button
+                          onClick={() => downloadFile(file)}
+                          className="text-blue-500 hover:text-blue-700 p-1"
+                          title="Download file"
+                        >
+                          <DownloadOutlined />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (
+                              window.confirm("Bu faylni o'chirmoqchimisiz?")
+                            ) {
+                              deleteUploadedFile(file.id);
                             }
-                            className="text-red-500 hover:text-red-700 p-1"
-                            title="Remove file"
-                          >
-                            <FiTrash />
-                          </button>
+                          }}
+                          className="text-red-500 hover:text-red-700 p-1"
+                          title="Delete file"
+                        >
+                          <FiTrash />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* New files to be uploaded */}
+                {files.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-500 mb-2">
+                      Yangi fayllar (saqlaganda yuklanadi):
+                    </p>
+                    {files.map((file, index) => (
+                      <div
+                        key={`new-${index}`}
+                        className="flex items-center gap-2 mb-2 p-2 border rounded-lg bg-orange-50"
+                      >
+                        <div className="flex-1  w-[60%]">
+                          <p className="text-sm font-medium truncate">
+                            {file.name}
+                          </p>
+                          <p className="text-xs text-orange-600">
+                            Size: {(file.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
                         </div>
-                      ))}
-                    </div>
-                  )}
-  
-                  {/* File upload */}
-                  <Upload
-                    className="w-full"
-                    multiple
-                    showUploadList={false}
-                    beforeUpload={(file) => {
-                      // File size check (10MB limit)
-                      if (file.size > 10 * 1024 * 1024) {
-                        message.error(`${file.name} faylining hajmi 10MB dan katta!`);
-                        return false;
-                      }
-                      
-                      setFiles((prev) => [...prev, file]);
+                        <span className="text-orange-500 text-xs px-2 py-1 bg-orange-200 rounded">
+                          Yangi
+                        </span>
+                        <button
+                          onClick={() =>
+                            setFiles((prev) =>
+                              prev.filter((_, i) => i !== index)
+                            )
+                          }
+                          className="text-red-500 hover:text-red-700 p-1"
+                          title="Remove file"
+                        >
+                          <FiTrash />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* File upload */}
+                <Upload
+                  className="w-full"
+                  multiple
+                  showUploadList={false}
+                  beforeUpload={(file) => {
+                    // File size check (10MB limit)
+                    if (file.size > 10 * 1024 * 1024) {
+                      message.error(
+                        `${file.name} faylining hajmi 10MB dan katta!`
+                      );
                       return false;
-                    }}
-                    accept="*/*"
+                    }
+
+                    setFiles((prev) => [...prev, file]);
+                    return false;
+                  }}
+                  accept="*/*"
+                >
+                  <button
+                    className="text-blue-600 text-[14px] font-bold hover:text-blue-800 transition-colors"
+                    disabled={fileUploading}
                   >
-                    <button 
-                      className="text-blue-600 text-[14px] font-bold hover:text-blue-800 transition-colors"
-                      disabled={fileUploading}
-                    >
-                      {fileUploading ? "Uploading..." : "+ add file"}
-                    </button>
-                  </Upload>
-  
-                  {/* Files summary */}
-                  {(uploadedFiles.length > 0 || files.length > 0) && (
-                    <div className="mt-3 p-2 bg-gray-50 rounded text-xs text-gray-600">
-                      Jami fayllar: {uploadedFiles.length + files.length} 
-                      {files.length > 0 && ` (${files.length} ta yangi)`}
-                    </div>
-                  )}
-                </div>
+                    {fileUploading ? "Uploading..." : "+ add file"}
+                  </button>
+                </Upload>
+
+                {/* Files summary */}
+                {(uploadedFiles.length > 0 || files.length > 0) && (
+                  <div className="mt-3 p-2 bg-gray-50 rounded text-xs text-gray-600">
+                    Jami fayllar: {uploadedFiles.length + files.length}
+                    {files.length > 0 && ` (${files.length} ta yangi)`}
+                  </div>
+                )}
+              </div>
 
               {/* Instructions */}
-               {/* Instructions/Checklist */}
-               <div>
+              {/* Instructions/Checklist */}
+              <div>
                 <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
                   Check list
                 </label>
-                
+
                 {checklistLoading ? (
                   <div className="text-center py-4">
                     <Spin size="small" />
-                    <p className="text-xs text-gray-500 mt-2">Loading checklist...</p>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Loading checklist...
+                    </p>
                   </div>
                 ) : (
                   <>
                     {checklist.map((check, index) => (
-                      <div key={check.id} className="flex items-center gap-2 mb-2">
+                      <div
+                        key={check.id}
+                        className="flex items-center gap-2 mb-2"
+                      >
                         <Checkbox
                           checked={check.done}
                           onChange={() => toggleCheckDone(index)}
                         />
                         <Input
                           value={check.text}
-                          onChange={(e) => updateCheckText(index, e.target.value)}
+                          onChange={(e) =>
+                            updateCheckText(index, e.target.value)
+                          }
                           className="flex-1"
                           placeholder="Enter checklist item"
                           style={{ borderRadius: "8px" }}
@@ -2236,7 +2380,11 @@ const deleteCheckItem = async (index) => {
                         <FiTrash
                           className="text-gray-500 cursor-pointer hover:text-red-500 transition-colors"
                           onClick={() => {
-                            if (window.confirm('Bu checklist elementini o\'chirmoqchimisiz?')) {
+                            if (
+                              window.confirm(
+                                "Bu checklist elementini o'chirmoqchimisiz?"
+                              )
+                            ) {
                               deleteCheckItem(index);
                             }
                           }}
@@ -2244,7 +2392,7 @@ const deleteCheckItem = async (index) => {
                         />
                       </div>
                     ))}
-                    
+
                     <button
                       onClick={addCheckItem}
                       className="text-blue-600 text-[14px] font-bold hover:text-blue-800 transition-colors"
@@ -2255,13 +2403,13 @@ const deleteCheckItem = async (index) => {
 
                     {checklist.length === 0 && !checklistLoading && (
                       <p className="text-xs text-gray-400 italic">
-                        No checklist items yet. Click "add new check" to create one.
+                        No checklist items yet. Click "add new check" to create
+                        one.
                       </p>
                     )}
                   </>
                 )}
               </div>
-
 
               {/* Buttons */}
               <div className="flex justify-center gap-5 pt-10 md:pt-65">
@@ -2329,8 +2477,6 @@ const deleteCheckItem = async (index) => {
 };
 
 export default NotionKanban;
-
-
 
 // const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
 //   const { projectId } = useParams();
@@ -2583,7 +2729,7 @@ export default NotionKanban;
 //                         src={memberSearch}
 //                         alt="avatar"
 //                         className="w-6 h-6 rounded-full object-cover"
-//                       />  
+//                       />
 //                     </span>
 //                   </div>
 //                 </div>
@@ -2805,8 +2951,6 @@ export default NotionKanban;
 //     </Modal>
 //   );
 // };
-
-
 
 // import React, { useEffect, useState } from "react";
 // import { useParams } from "react-router-dom";
