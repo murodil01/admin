@@ -23,13 +23,11 @@ const endpoints = {
 		createTaskFile: 'project/files/',
 		getTaskFiles: 'project/files/', // yangi qo'shildi
 		deleteTaskFile: id => `project/files/${id}/`, // yangi qo'shildi
-		
-        getComments: "project/comments/",
-		
+    getComments: "project/comments/",
 		getTaskInstructions: 'project/instructions/', // yangi qo'shildi
 		getTaskInstructionsById: id => `project/instructions/${id}/`,
 		createTaskInstructions: 'project/instructions/',
-		updateInstruction: id => `project/instructions/${id}/`, 
+		updateInstruction: id => `project/instructions/${id}/`,
 		deleteTaskInstruction: id => `project/instructions/${id}/`, // yangi qo'shildi
 	},
 
