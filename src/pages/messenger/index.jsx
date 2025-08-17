@@ -190,7 +190,7 @@ const Messenger = () => {
             </div>
 
             <a
-              href="https://t.me/frontend_25"
+              href="https://t.me/+11Tug631E_40YTQy"
               target="_blank"
               rel="noreferrer"
               className="px-4 py-2 sm:px-5 sm:py-2.5 mt-4 sm:mt-5 bg-[#0061fe] text-white font-medium rounded-lg shadow-md hover:shadow-lg hover:bg-blue-700 transition w-full max-w-xs text-sm sm:text-base"
