@@ -333,7 +333,6 @@ const Column = ({
     </div>
   );
 };
-
 const Card = ({
   title,
   id,
@@ -344,7 +343,7 @@ const Card = ({
   handleDragStart,
   onEdit,
   image,
-  setCards, //yangi props
+  setCards,
 }) => {
   const [hovered, setHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -365,6 +364,7 @@ const Card = ({
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   
+  // Helper functions
   const getFileIcon = (fileName) => {
     if (!fileName) return "📄";
     const extension = fileName.split('.').pop()?.toLowerCase();
@@ -384,7 +384,7 @@ const Card = ({
     }
   };
 
-    const formatFileSize = (bytes) => {
+  const formatFileSize = (bytes) => {
     if (!bytes) return "";
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     if (bytes === 0) return "0 Bytes";
@@ -392,12 +392,12 @@ const Card = ({
     return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
   };
 
-    const formatDate = (date) => {
+  const formatDate = (date) => {
     if (!date) return "";
     return dayjs(date).format("MMM D, YYYY");
   };
 
-     const handleFileDownload = (file) => {
+  const handleFileDownload = (file) => {
     if (file.file || file.url) {
       const link = document.createElement('a');
       link.href = file.file || file.url;
@@ -410,33 +410,83 @@ const Card = ({
     }
   };
 
-   const getAssigneeName = (assignee) => {
-  if (!assignee) return "Not assigned";
-  
-  // If assignee is an object
-  if (typeof assignee === 'object') {
-    if (assignee.first_name && assignee.last_name) {
-      return `${assignee.first_name} ${assignee.last_name}`;
-    } 
-    if (assignee.name) {
-      return assignee.name;
+  const getAssigneeName = (assignee) => {
+    if (!assignee) return "Not assigned";
+    
+    if (typeof assignee === 'object') {
+      if (assignee.first_name && assignee.last_name) {
+        return `${assignee.first_name} ${assignee.last_name}`;
+      } 
+      if (assignee.name) {
+        return assignee.name;
+      }
+      if (assignee.id) {
+        return projectUsers.find(u => u.id === assignee.id)?.name || 'Unknown';
+      }
+      return 'Unknown';
     }
-    if (assignee.id) {
-      return projectUsers.find(u => u.id === assignee.id)?.name || 'Unknown';
+    
+    const user = projectUsers.find(u => 
+      u.id === assignee || 
+      u.user_id === assignee
+    );
+    
+    return user ? `${user.first_name} ${user.last_name}` : 'Unknown';
+  };
+
+  // getCurrentUser function
+  const getCurrentUser = () => {
+    console.log("🔍 Checking user storage...");
+    
+    const possibleKeys = ['user', 'currentUser', 'authUser', 'userData'];
+    
+    for (const key of possibleKeys) {
+      const localData = localStorage.getItem(key);
+      const sessionData = sessionStorage.getItem(key);
+      
+      const userData = localData || sessionData;
+      
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          console.log(`✅ Found user in ${localData ? 'localStorage' : 'sessionStorage'}[${key}]:`, user);
+          
+          if (user && user.id) {
+            return user;
+          }
+        } catch (e) {
+          console.error(`❌ Error parsing ${key}:`, e);
+        }
+      }
     }
-    return 'Unknown';
-  }
-  
-  // If assignee is an ID string
-  const user = projectUsers.find(u => 
-    u.id === assignee || 
-    u.user_id === assignee
-  );
-  
-  return user ? `${user.first_name} ${user.last_name}` : 'Unknown';
-};
-  // Comments functions
- const fetchFiles = useCallback(async () => {
+    
+    // Check for JWT token
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || 
+                  localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    
+    if (token && token.includes('.')) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        console.log("🔑 User from JWT:", payload);
+        if (payload.user_id || payload.id) {
+          return {
+            id: payload.user_id || payload.id,
+            email: payload.email,
+            first_name: payload.first_name,
+            last_name: payload.last_name
+          };
+        }
+      } catch (e) {
+        console.error("❌ Failed to decode JWT:", e);
+      }
+    }
+    
+    console.warn("⚠️ No user data found anywhere");
+    return null;
+  };
+
+  // Fetch functions
+  const fetchFiles = useCallback(async () => {
     if (!id) return;
     setFilesLoading(true);
     try {
@@ -463,192 +513,126 @@ const Card = ({
       setFilesLoading(false);
     }
   }, [id]);
- 
-    const fetchComments = useCallback(async () => {
-  if (!id) return;
-  setCommentsLoading(true);
-  try {
-    console.log("🔄 Fetching comments for task ID:", id);
-    const response = await getCommentTask(id);
-    console.log("📥 Comments API Response:", response);
-    
-    let commentsList = [];
-    if (Array.isArray(response.data)) {
-      commentsList = response.data;
-    } else if (response.data && Array.isArray(response.data.results)) {
-      commentsList = response.data.results;
-    } else if (response.data && Array.isArray(response.data.comments)) {
-      commentsList = response.data.comments;
-    }
-      
-    // Map comments using assignee instead of user
-    const mappedComments = commentsList.map(comment => ({
-      ...comment,
-      user_name: getAssigneeName(comment.assignee) || 'Unknown', // Use assignee
-    }));
-    
-    console.log("📋 Extracted and mapped comments:", mappedComments);
-    setComments(mappedComments);
-  } catch (error) {
-    console.error('❌ Error fetching comments:', error);
-    message.error("Failed to load comments");
-    setComments([]);
-  } finally {
-    setCommentsLoading(false);
-  }
-}, [id, projectUsers])
 
-  
- 
-// First, let's improve the getCurrentUser function with better debugging
-
-const getCurrentUser = () => {
-  // Check both localStorage and sessionStorage for user data
-  const userData = localStorage.getItem('user') || sessionStorage.getItem('user');
-  
-  if (userData) {
+  const fetchComments = useCallback(async () => {
+    if (!id) return;
+    setCommentsLoading(true);
     try {
-      const user = JSON.parse(userData);
-      console.log("✅ Current user retrieved:", user);
-      return user;
-    } catch (e) {
-      console.error("❌ Error parsing user data:", e);
+      console.log("🔄 Fetching comments for task ID:", id);
+      const response = await getCommentTask(id);
+      console.log("📥 Comments API Response:", response);
+      
+      let commentsList = [];
+      if (Array.isArray(response.data)) {
+        commentsList = response.data;
+      } else if (response.data && Array.isArray(response.data.results)) {
+        commentsList = response.data.results;
+      } else if (response.data && Array.isArray(response.data.comments)) {
+        commentsList = response.data.comments;
+      }
+        
+      const mappedComments = commentsList.map(comment => ({
+        ...comment,
+        user_name: getAssigneeName(comment.user) || 'Unknown',
+      }));
+      
+      console.log("📋 Extracted and mapped comments:", mappedComments);
+      setComments(mappedComments);
+    } catch (error) {
+      console.error('❌ Error fetching comments:', error);
+      message.error("Failed to load comments");
+      setComments([]);
+    } finally {
+      setCommentsLoading(false);
     }
-  }
-  
-  console.warn("⚠️ No user data found in storage");
-  return null;
-};
-  
-const handleAddComment = async () => {
-  if (!newComment.trim()) {
-    message.warning("Please enter a comment");
-    return;
-  }
-  
-  const currentUser = getCurrentUser();
-  if (!currentUser || !currentUser.id) {
-    message.error("Please log in to add a comment");
-    return;
-  }
+  }, [id, projectUsers]);
 
-  setSubmitLoading(true);
-  const commentMessage = newComment.trim();
-  const tempComment = {
-    id: `temp-${Date.now()}`,
-    message: commentMessage,
-    assignee: currentUser.id, // Use assignee instead of user
-    user_name: `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim() || "You",
-    created_at: new Date().toISOString(),
-    isTemp: true,
-  };
+  const fetchChecklist = useCallback(async () => {
+    if (!id) return;
+    setChecklistLoading(true);
+    try {
+      console.log("🔄 Fetching checklist for task ID:", id);
+      const response = await getInst(id);
+      console.log("📥 RAW API Response:", response);
+      
+      let items = [];
+      if (Array.isArray(response.data)) {
+        items = response.data;
+      } else if (response.data && Array.isArray(response.data.results)) {
+        items = response.data.results;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        items = response.data.data;
+      } else if (response.data && Array.isArray(response.data.instructions)) {
+        items = response.data.instructions;
+      }
+      console.log("📋 Extracted items:", items);
+      
+      const normalizedItems = items.map(item => {
+        console.log("🔄 Processing item:", item);
+        return {
+          ...item,
+          completed: item.status !== undefined ? item.status : false
+        };
+      });
+      setChecklistItems(normalizedItems);
+    } catch (error) {
+      console.error('Error fetching checklist:', error);
+      message.error("Failed to load checklist");
+      setChecklistItems([]);
+    } finally {
+      setChecklistLoading(false);
+    }
+  }, [id]);
+
+  // Comment handlers
+  const handleAddComment = async () => {
+    if (!newComment.trim()) {
+      message.warning("Please enter a comment");
+      return;
+    }
+    
+    const currentUser = getCurrentUser();
+    if (!currentUser || !currentUser.id) {
+      message.error("Please log in to add a comment");
+      console.error("❌ No user found. Available storage:");
+      console.log("localStorage keys:", Object.keys(localStorage));
+      console.log("sessionStorage keys:", Object.keys(sessionStorage));
+      return;
+    }
+
+    setSubmitLoading(true);
+    
+    try {
+      const payload = {
+        task: id,
+        message: newComment.trim(),
+        user: currentUser.id,
+      };
+
+      console.log("📤 Creating comment with payload:", payload);
       const response = await createComment(payload);
-    setComments(prev => 
-      prev.map(comment => 
-        comment.id === tempComment.id 
-          ? { 
-              ...response.data, 
-              isTemp: false,
-              user_name: tempComment.user_name  // Keep the user name
-            }
-          : comment
-      )
-    );
-  setNewComment("");  // Clear input
-  try {
-    // Payload: include both 'user' and 'assignee' to cover backend ambiguity
-    const payload = {
-      task: id,
-      message: commentMessage,
-      user: currentUser.id,
-      assignee: currentUser.id, // <- qo'shdim: agar backend shu nomni kutsa ishlaydi
-    };
+      console.log("📥 createComment response:", response);
 
-    console.log("📤 Creating comment payload:", payload);
-    const response = await createComment(payload);
-    console.log("📥 createComment response:", response);
-
-    // Try to extract created comment from various possible response shapes
-    let createdComment = null;
-    const d = response?.data;
-
-    if (!d) {
-      // no body — reload full list (safest fallback)
-      await fetchComments();
       setNewComment("");
-      message.success('Comment added (reloaded).');
-      return;
-    }
-
-    if (Array.isArray(d)) {
-      createdComment = d[0];
-    } else if (d && d.id) {
-      createdComment = d;
-    } else if (d && Array.isArray(d.results) && d.results.length) {
-      createdComment = d.results[0];
-    } else if (d && Array.isArray(d.comments) && d.comments.length) {
-      createdComment = d.comments[0];
-    } else if (d && d.comment) {
-      createdComment = d.comment;
-    } else if (d && d.data && d.data.id) {
-      createdComment = d.data;
-    }
-
-    // Agar server yangi commentni qaytarmagan yoki format noaniq boʻlsa — qayta yuklash
-    if (!createdComment) {
-      console.warn("Couldn't extract created comment from response — reloading comments.");
       await fetchComments();
-      setNewComment("");
-      message.success('Comment added (reloaded).');
-      return;
-    }
-
-    // Add fallback user_name same way as GET mapping does
-    const commentWithName = {
-      ...createdComment,
-      user_name: createdComment.user_name || getAssigneeName(createdComment.user || createdComment.assignee) || 'Unknown',
-    };
-
-    // Combine with existing comments list (comments state may already be mapped)
-    const combined = Array.isArray(comments) ? [...comments, commentWithName] : [commentWithName];
-
-    const mappedComments = combined.map(comment => ({
-      ...comment,
-      user_name: comment.user_name || getAssigneeName(comment.user || comment.assignee) || 'Unknown',
-    }));
-
-    setComments(mappedComments);
-    setNewComment("");
-    message.success('Comment added successfully');
-  } catch (error) {
-    console.error('Error adding comment:', error);
-    // Agar 4xx/5xx bo'lsa — tarmoq panelidan tekshashni tavsiya qilaman
-    message.error('Failed to add comment');
-  } finally {
-    setSubmitLoading(false);
-  }
-};
-const getCurrentUserFromAPI = async () => {
-  try {
-    console.log("🔄 Fetching current user from API...");
-    const response = await getMe(); // Your API function
-    
-    if (response && response.data) {
-      console.log("✅ User fetched from API:", response.data);
+      message.success('Comment added successfully');
       
-      // Cache the user data
-      localStorage.setItem('currentUser', JSON.stringify(response.data));
+    } catch (error) {
+      console.error('❌ Error adding comment:', error);
       
-      return response.data;
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+        message.error(`Failed to add comment: ${error.response.data?.message || error.response.status}`);
+      } else {
+        message.error('Failed to add comment');
+      }
+    } finally {
+      setSubmitLoading(false);
     }
-    
-    return null;
-  } catch (error) {
-    console.error('❌ Error fetching user from API:', error);
-    return null;
-  }
-};
-  // Checklist functions
+  };
+
+  // Checklist handlers
   const addChecklistItem = async () => {
     if (!newChecklistItem.trim()) return;
     
@@ -662,16 +646,16 @@ const getCurrentUserFromAPI = async () => {
     
     console.log("➕ Adding new checklist item:", tempItem);
     
-     setChecklistItems(prev => {
+    setChecklistItems(prev => {
       const updated = [...prev, tempItem];
       console.log("📝 Updated checklist with temp item:", updated);
       return updated;
     });
+    
     const itemName = newChecklistItem.trim();
     setNewChecklistItem("");
-  
     
-     try {
+    try {
       console.log("📤 Creating checklist item:", {
         task: id,
         name: itemName,
@@ -702,35 +686,15 @@ const getCurrentUserFromAPI = async () => {
       console.error('❌ Error adding checklist item:', error);
       message.error('Failed to add checklist item');
       setChecklistItems(prev => prev.filter(item => item.id !== tempItem.id));
-      setNewChecklistItem(itemName); // Restore text on error
+      setNewChecklistItem(itemName);
     }
   };
-  const handleCommentSubmit = async () => {
-  if (!newComment.trim()) {
-    message.warning("Comment cannot be empty!");
-    return;
-  }
 
-  setSubmitLoading(true);
-  try {
-    // Create comment using API service
-    await createComment(id, newComment);
-    
-    message.success("Comment added successfully!");
-    setNewComment("");
-    fetchComments(); // Refresh comments list
-  } catch (error) {
-    console.error("Error posting comment:", error);
-    message.error("Failed to post comment");
-  } finally {
-    setSubmitLoading(false);
-  }
-};
   const handleDeleteChecklistItem = async (itemId) => {
     const originalItems = [...checklistItems];
     setChecklistItems(prev => prev.filter(item => item.id !== itemId));
     
-        try {
+    try {
       await deleteChecklistItem(itemId);
       message.success('Item deleted');
     } catch (error) {
@@ -739,73 +703,35 @@ const getCurrentUserFromAPI = async () => {
       setChecklistItems(originalItems);
     }
   };
+
   const handleUpdateChecklistItem = async (itemId, completed) => {
-  const originalItems = [...checklistItems];
-  
-  // Correct optimistic update
-  setChecklistItems(prev => 
-    prev.map(item => 
-      item.id === itemId ? { 
-        ...item, 
-        status: completed,
-        completed: completed  // Ensure both fields are updated
-      } : item
-    )
-  );
-
-  try {
-    // Correct API call with proper endpoint
-    await updateInstruction(itemId, { 
-      status: completed
-    });
+    const originalItems = [...checklistItems];
     
-    message.success('Checklist updated');
-  } catch (error) {
-    console.error('Error updating checklist item:', error);
-    message.error('Failed to update checklist');
-    setChecklistItems(originalItems);
-  }
-};
+    setChecklistItems(prev => 
+      prev.map(item => 
+        item.id === itemId ? { 
+          ...item, 
+          status: completed,
+          completed: completed
+        } : item
+      )
+    );
 
-  const fetchChecklist = useCallback(async () => {
-    if (!id) return;
-    setChecklistLoading(true);
     try {
-      console.log("🔄 Fetching checklist for task ID:", id);
-      const response = await getInst(id);
-      console.log("📥 RAW API Response:", response);
-      
-      let items = [];
-      if (Array.isArray(response.data)) {
-        items = response.data;
-      } else if (response.data && Array.isArray(response.data.results)) {
-        items = response.data.results;
-      } else if (response.data && Array.isArray(response.data.data)) {
-        items = response.data.data;
-      } else if (response.data && Array.isArray(response.data.instructions)) {
-        items = response.data.instructions;
-      }
-      console.log("📋 Extracted items:", items);
-      
-      const normalizedItems = items.map(item => {
-        console.log("🔄 Processing item:", item);
-        return {
-          ...item,
-          completed: item.status !== undefined ? item.status : false
-        };
+      await updateInstruction(itemId, { 
+        status: completed
       });
-        setChecklistItems(normalizedItems);
+      
+      message.success('Checklist updated');
     } catch (error) {
-      console.error('Error fetching checklist:', error);
-      message.error("Failed to load checklist");
-      setChecklistItems([]);
-    } finally {
-      setChecklistLoading(false);
+      console.error('Error updating checklist item:', error);
+      message.error('Failed to update checklist');
+      setChecklistItems(originalItems);
     }
-  }, [id]);
+  };
 
-  // "Got it" modal ochilganda card ma'lumotlarini saqlash
-   const openViewModal = async () => {
+  // Modal handlers
+  const openViewModal = async () => {
     setIsModalOpen(true);
     setLoading(true);
 
@@ -815,7 +741,6 @@ const getCurrentUserFromAPI = async () => {
       console.log("📥 Task data:", response.data);
       setTaskData(response.data);
       
-      // Fetch project users
       if (response.data.projectId || response.data.project_id || response.data.project) {
         const projectId = response.data.projectId || response.data.project_id || response.data.project;
         try {
@@ -831,7 +756,6 @@ const getCurrentUserFromAPI = async () => {
         setProjectUsers([]);
       }
 
-      // Fetch additional data concurrently
       await Promise.all([
         fetchComments(),
         fetchChecklist(),
@@ -846,7 +770,7 @@ const getCurrentUserFromAPI = async () => {
     }
   };
 
-   const handleMoveToColumn = async (newColumn) => {
+  const handleMoveToColumn = async (newColumn) => {
     try {
       await updateTaskType(id, newColumn);
       message.success(`Task moved to ${newColumn}`);
@@ -861,42 +785,14 @@ const getCurrentUserFromAPI = async () => {
     try {
       await deleteTask(id);
       message.success("Task deleted successfully");
-      // Remove from local state
       setCards((prev) => prev.filter((card) => card.id !== id));
     } catch (error) {
       message.error("Failed to delete task");
       console.error("Delete error:", error);
     }
   };
-  // Edit modalni ochish funksiyasi
-  // const handleEditCard = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const response = await getTaskById(id);
-  //     setSelectedCard(response.data);
-  //     setIsEditModalOpen(true);
-  //   } catch (error) {
-  //     console.error("Task olishda xatolik:", error);
-  //     message.error("Task ma'lumotlarini yuklab bo'lmadi");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
-  useEffect(() => {
-    if (!image) return;
-    if (image instanceof File) {
-      const url = URL.createObjectURL(image);
-      setImageUrl(url);
-      return () => URL.revokeObjectURL(url);
-    }
-
-    setImageUrl(image);
-  }, [image]);
-   
-    
-   
-    const handleEditCard = async () => {
+  const handleEditCard = async () => {
     setLoading(true);
     try {
       const response = await getTaskById(id);
@@ -909,19 +805,10 @@ const getCurrentUserFromAPI = async () => {
       setLoading(false);
     }
   };
-   useEffect(() => {
-    if (!image) return;
-    if (image instanceof File) {
-      const url = URL.createObjectURL(image);
-      setImageUrl(url);
-      return () => URL.revokeObjectURL(url);
-    }
-    setImageUrl(image);
-  }, [image]);
-const handleUpdateCard = (updatedCard) => {
+
+  const handleUpdateCard = (updatedCard) => {
     console.log("Updated card: ", updatedCard);
     setIsEditModalOpen(false);
-    // Update cards state
     setCards((prev) =>
       prev.map((card) =>
         card.id === updatedCard.id
@@ -937,16 +824,16 @@ const handleUpdateCard = (updatedCard) => {
     );
   };
 
-  // const handleAddComment = () => {
-  //   if (!newComment.trim()) return;
-
-  //   const updatedComments = [
-  //     ...comments,
-  //     { name: "Current User", text: newComment },
-  //   ];
-  //   setComments(updatedComments);
-  //   setNewComment("");
-  // };
+  // Effects
+  useEffect(() => {
+    if (!image) return;
+    if (image instanceof File) {
+      const url = URL.createObjectURL(image);
+      setImageUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setImageUrl(image);
+  }, [image]);
 
   useEffect(() => {
     if (taskData && taskData.comments) {
