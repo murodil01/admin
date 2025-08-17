@@ -1,4 +1,5 @@
 const endpoints = {
+
 	auth: {
 		login: '/auth/login',
 		register: '/auth/register',
@@ -6,13 +7,12 @@ const endpoints = {
 		logout: '/auth/logout', // Added logout endpoint
 	},
 
-	users: {
-		getAll: '/users',
-		getById: id => `/users/${id}/`,
-		update: id => `/users/${id}/`,
-		delete: id => `/users/${id}/`,
-	},
-
+  users: {
+    getAll: "/users",
+    getById: (id) => `/users/${id}/`,
+    update: (id) => `/users/${id}/`,
+    delete: (id) => `/users/${id}/`,
+  },
 	tasks: {
 		getAll: 'project/tasks/',
 		create: 'project/tasks/',
@@ -43,37 +43,37 @@ const endpoints = {
         delete: (id) => `project/projects/${id}`,
     },
 
-	departments: {
-		getAll: 'department/departments/',
-		getById: id => `department/departments/${id}/`,
-		create: 'department/departments/',  // create endpointini qo'shdik
-		update: id => `department/departments/${id}/`,
-		delete: id => `department/departments/${id}/`,
-	},
+  departments: {
+    getAll: "department/departments/",
+    getById: (id) => `department/departments/${id}/`,
+    create: "department/departments/", // create endpointini qo'shdik
+    update: (id) => `department/departments/${id}/`,
+    delete: (id) => `department/departments/${id}/`,
+  },
 
-	boards: {
-		getAll: 'board/list/',
-		create: 'board/list/',
-		getById: id => `board/board/${id}/`,
-		update: id => `board/board/${id}/`,
-		delete: id => `board/board/${id}/`,
-	},
+  boards: {
+    getAll: "board/list/",
+    create: "board/list/",
+    getById: (id) => `board/board/${id}/`,
+    update: (id) => `board/board/${id}/`,
+    delete: (id) => `board/board/${id}/`,
+  },
 
-	group: {
-		getAll: 'board/groups/',
-		create: 'board/groups/',
-		getById: id => `board/groups/${id}/`,
-		update: id => `board/groups/${id}/`,
-		delete: id => `board/groups/${id}/`,
-	},
+  group: {
+    getAll: "board/groups/",
+    create: "board/groups/",
+    getById: (id) => `board/groups/${id}/`,
+    update: (id) => `board/groups/${id}/`,
+    delete: (id) => `board/groups/${id}/`,
+  },
 
-	leads: {
-		getAll: 'board/leads/',
-		create: 'board/leads/',
-		getById: id => `board/leads/${id}/`,
-		update: id => `board/leads/${id}/`,
-		delete: id => `board/leads/${id}/`,
-	},
+  leads: {
+    getAll: "board/leads/",
+    create: "board/leads/",
+    getById: (id) => `board/leads/${id}/`,
+    update: (groupId, leadId) => `board/leads/${leadId}/?group=${groupId}`,
+    delete: (groupId, leadId) => `board/leads/${leadId}/?group=${groupId}`,
+  },
 
 	employees: {
 		getAll: 'employees/',
@@ -84,12 +84,11 @@ const endpoints = {
 		delete: (id) => `users/${id}/`,
 	},
 
-	activities: {
-		getAll: 'user-activities/',
-		getById: 'user-activities/{id}/',
-		create: 'users/',
-	},
-
+  activities: {
+    getAll: "user-activities/",
+    getById: "user-activities/{id}/",
+    create: "users/",
+  },
 	controlData: {
 		getByUserId: (userId) => `control-data/?user_id=${userId}/`,
 		createForUser: (userId) => `control-data/?user_id=${userId}/`, // Faqat o'sha user uchun yaratish

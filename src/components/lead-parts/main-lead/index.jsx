@@ -195,7 +195,7 @@ const MainLead = () => {
       toast.error("Lead qo'shishda xato ❌");
     }
   };
-  // index.jsx yoki GroupSection ichida
+
   const updateItemInGroup = async (groupId, itemIndex, updatedItem) => {
     const group = groups.find((g) => g.id === groupId);
     if (!group) {
@@ -209,17 +209,20 @@ const MainLead = () => {
       return;
     }
 
-    if (!group.boardId || !oldItem.id) {
-      toast.error("Board ID yoki Lead ID topilmadi!");
-      console.error("group.boardId:", group.boardId, "oldItem.id:", oldItem.id);
-      return;
-    }
+    const leadId = oldItem.id;
+    const realGroupId = oldItem.group; // backend kutadi
+
+    console.log("Lead yangilanmoqda:", {
+      groupId,
+      realGroupId,
+      leadId,
+      oldItem,
+      updatedItem,
+    });
 
     try {
-      // Backend update: boardId va leadId bilan
-      const res = await updateLeads(group.boardId, oldItem.id, updatedItem);
+      const res = await updateLeads(realGroupId, leadId, updatedItem);
 
-      // UI state update
       setGroups((prev) =>
         prev.map((g) =>
           g.id === groupId
@@ -235,36 +238,39 @@ const MainLead = () => {
 
       toast.success("Lead yangilandi ✅");
     } catch (err) {
-      console.error("updateLeads xatosi:", err);
+      console.error("updateLeads xatosi:", err.response?.data || err);
       toast.error("Lead yangilashda xato ❌");
     }
   };
 
-  // Lead o‘chirish
-  const deleteItemFromGroup = async (groupId, itemIndex) => {
-    const group = groups.find((g) => g.id === groupId);
-    const item = group.items[itemIndex];
+const deleteItemFromGroup = async (groupId, itemIndex) => {
+  const group = groups.find((g) => g.id === groupId);
+  if (!group) return;
 
-    try {
-      await deleteLeads(item.id);
-      setGroups((prev) =>
-        prev.map((g) =>
-          g.id === groupId
-            ? { ...g, items: g.items.filter((_, idx) => idx !== itemIndex) }
-            : g
-        )
-      );
-      setSelectedItems((prev) =>
-        prev.filter(
-          (s) => !(s.groupId === groupId && s.itemIndex === itemIndex)
-        )
-      );
-      toast.success("Lead o'chirildi ✅");
-    } catch (err) {
-      console.error("deleteLeads xatosi:", err);
-      toast.error("Lead o‘chirilmadi ❌");
-    }
-  };
+  const item = group.items[itemIndex];
+  if (!item) return;
+
+  try {
+    await deleteLeads(item.group, item.id); // item.group va item.id yuboriladi
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.id === groupId
+          ? { ...g, items: g.items.filter((_, idx) => idx !== itemIndex) }
+          : g
+      )
+    );
+    setSelectedItems((prev) =>
+      prev.filter(
+        (s) => !(s.groupId === groupId && s.itemIndex === itemIndex)
+      )
+    );
+    toast.success("Lead o'chirildi ✅");
+  } catch (err) {
+    console.error("deleteLeads xatosi:", err);
+    toast.error("Lead o‘chirilmadi ❌");
+  }
+};
+
 
   const toggleExpanded = (groupId) => {
     setExpandedGroups((prev) => ({
