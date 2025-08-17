@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { MdCreateNewFolder, MdMoreVert } from 'react-icons/md';
 import { FaFolder, FaFile, FaHdd } from 'react-icons/fa';
@@ -15,6 +15,7 @@ const CategoryDetailsPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const dropdownRefs = useRef({});
+  const navigate = useNavigate();
 
   // Ma'lumotlarni yuklash funksiyasi
   const fetchCategoryDetails = async () => {
@@ -235,28 +236,28 @@ const CategoryDetailsPage = () => {
           M Library
         </h1>
 
-        <div className="flex flex-row items-center gap-2">
+        <div className="flex flex-row items-center gap-3">
           <button
             onClick={() => openModal('addFolder')}
             className="p-2 text-gray-800 hover:text-gray-600 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-all"
             disabled={loading}
           >
-            <MdCreateNewFolder className="w-8 h-8" />
+            <MdCreateNewFolder className="w-12 h-12" />
           </button>
 
           <button
             onClick={() => openModal('addFile')}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all min-w-[90px]"
+            className="flex items-center px-11 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all min-w-[150px]"
             disabled={loading}
           >
-            <Plus className="w-5 h-5 mr-1" />
+            <Plus className="w-5 h-5 mr-2" />
             <span>Add File</span>
           </button>
+
         </div>
       </div>
-
       {/* Yuklanish va xato xabarlari */}
-      {loading && <div className="text-center py-3 sm:py-4 text-gray-500">Sekin Yuklanmoqda...</div>}
+      {loading && <div className="text-center py-3 sm:py-4 text-gray-500">Yuklanmoqda...</div>}
       {error && !showModal && <p className="text-red-500 bg-red-50 p-2 sm:p-3 rounded-lg text-center text-sm sm:text-base">{error}</p>}
 
       {/* Kategoriya tafsilotlari */}
@@ -326,7 +327,12 @@ const CategoryDetailsPage = () => {
         {items.map((item) => (
           <div
             key={`${item.type}-${item.id}`}
-            className="p-2 sm:p-4 bg-white rounded-lg shadow-sm border border-gray-100 active:shadow-md sm:hover:shadow-md transition-all"
+            className="p-2 sm:p-4 bg-white rounded-lg shadow-sm border border-gray-100 active:shadow-md sm:hover:shadow-md transition-all cursor-pointer"
+            onClick={() => {
+              if (item.type === 'folder') {
+                navigate(`/library/folders/${item.id}`);
+              }
+            }}
           >
             <div className="flex items-center gap-3 sm:gap-4 flex-wrap sm:flex-nowrap">
               <div className="p-2 sm:p-3 bg-blue-50 rounded-lg">
@@ -345,6 +351,7 @@ const CategoryDetailsPage = () => {
                   {item.created_by?.first_name || ''} {item.created_by?.last_name || ''} tomonidan
                 </p>
               </div>
+
               <div className="flex items-center gap-1 sm:gap-3 flex-wrap">
                 {(item.type === 'file' && item.file_size_mb != null) ||
                   (item.type === 'folder' && item.total_files_size_mb != null) ? (
@@ -373,6 +380,7 @@ const CategoryDetailsPage = () => {
                   </p>
                 </div>
               </div>
+
               <div
                 className="relative"
                 ref={(ref) => (dropdownRefs.current[item.id] = { current: ref })}
@@ -381,19 +389,17 @@ const CategoryDetailsPage = () => {
                   className="w-6 h-6 text-gray-500 cursor-pointer active:bg-gray-100 active:scale-95 rounded-full p-1 transition-all"
                   onClick={(e) => {
                     e.preventDefault();
-                    e.stopPropagation();
+                    e.stopPropagation(); // Navigatsiyani to‘xtatadi
                     toggleDropdown(item.id);
                   }}
                   onTouchEnd={(e) => {
                     e.preventDefault();
-                    e.stopPropagation();
+                    e.stopPropagation(); // Navigatsiyani to‘xtatadi
                     toggleDropdown(item.id);
                   }}
                 />
                 {showDropdown === item.id && (
-                  <div
-                    className="absolute right-0 top-7 bg-white shadow-md rounded-lg p-1 flex flex-col space-y-1 z-[1000] w-24 border border-gray-200"
-                  >
+                  <div className="absolute right-0 top-7 bg-white shadow-md rounded-lg p-1 flex flex-col space-y-1 z-[1000] w-24 border border-gray-200">
                     <button
                       className="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs font-medium text-left"
                       onClick={(e) => {

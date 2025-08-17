@@ -30,18 +30,31 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+    const levelOptions = [
+        { value: 'intern', label: 'Intern' },
+        { value: 'junior', label: 'Junior' },
+        { value: 'middle', label: 'Middle' },
+        { value: 'senior', label: 'Senior' },
+        { value: 'expert', label: 'Expert' },
+        { value: 'specialist', label: 'Specialist' },
+        { value: '', label: 'None' }
+    ]
+
     // Departmentlarni yuklash
     useEffect(() => {
         const fetchDepartments = async () => {
             setLoadingDepartments(true);
             try {
-                const res = await getDepartments();
-                // API javobi strukturasi bo'yicha moslashtirish
-                const depts = res.results || res.data || res;
-                setDepartments(res.results || res.data || []);
-                console.log('Departments loaded:', res.results || res.data);
+                const response = await getDepartments();
+                // Check different possible response structures
+                const departmentsData = response.results || response.data || response;
+
+                if (Array.isArray(departmentsData)) {
+                    setDepartments(departmentsData);
+                } else {
+                    message.error('Failed to load departments - invalid data format');
+                }
             } catch (err) {
-                console.error('Departments olishda xato:', err);
                 message.error('Failed to load departments');
             } finally {
                 setLoadingDepartments(false);
@@ -51,7 +64,7 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
         if (visible && departments.length === 0) {
             fetchDepartments();
         }
-    }, [visible]);
+    }, [visible, departments.length]);
 
     const handleDepartmentChange = (e) => {
         const deptId = e.target.value;
@@ -61,6 +74,7 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
             department: deptId,
             department_name: selectedDept?.name || ''
         }));
+        setSelectedDepartment(selectedDept);
     };
 
     const handleChange = (e) => {
@@ -81,7 +95,7 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
         e.preventDefault();
 
         // Tug'ilgan kunini to'g'ri formatga keltirish
-        let formattedBirthDate = null;
+        // let formattedBirthDate = null;
         if (formData.birth_date) {
             const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
             // Agar inputdan string kelgan bo'lsa (YYYY-MM-DD)
@@ -90,9 +104,9 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                 return;
             }
             // Agar Date obyekti bo'lsa
-            else if (formData.birth_date instanceof Date) {
-                formattedBirthDate = formData.birth_date.toISOString().split('T')[0];
-            }
+            // else if (formData.birth_date instanceof Date) {
+            //     formattedBirthDate = formData.birth_date.toISOString().split('T')[0];
+            // }
         }
 
         const submitData = {
@@ -128,6 +142,7 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
         }
 
         onSubmit({ ...formData, avatarFile });
+        console.log("Form data before submit:", formData);  // Forma ma'lumotlarini ko'rish
     };
 
     return (
@@ -135,12 +150,13 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
             open={visible}
             onCancel={onClose}
             footer={null}
-            width={900}
+            width="100%"
+            style={{ maxWidth: 900 }}
             centered
             className="custom-modal"
         >
-            <div className='px-10'>
-                <h2 className="text-2xl font-semibold text-[#1F2937]">
+            <div className='px-10 sm:px-6 lg:px-10'>
+                <h2 className="text-xl sm:text-2xl font-semibold text-[#1F2937] mb-6">
                     Add Employee
                 </h2>
                 <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-[50px]">
@@ -269,10 +285,11 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                             </label>
                             <select
                                 name="department"
-                                value={formData.department || ''} // undefined bo'lmasligi uchun
+                                value={formData.department || ''}
                                 onChange={handleDepartmentChange}
                                 className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
                                 disabled={loadingDepartments}
+                                required
                             >
                                 <option value="">Select department</option>
                                 {departments.map(dept => (
@@ -387,10 +404,11 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                                 className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
                             >
                                 <option value="">Select level</option>
-                                <option value="junior">Junior</option>
-                                <option value="middle">Middle</option>
-                                <option value="senior">Senior</option>
-                                <option value="none">None</option>
+                                {levelOptions.map(option => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label}
+                                    </option>
+                                ))}
                             </select>
                         </div>
 
