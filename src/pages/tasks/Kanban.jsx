@@ -1269,7 +1269,6 @@ const Card = ({
 
         {/* Bottom Row */}
         <div className="flex items-center justify-between text-xs text-gray-500">
-          {/* Deadline */}
           {/* Deadline faqat time mavjud bo'lsa ko'rinadi */}
           {time && time !== "No due date" && (
             <div className="flex items-center gap-1 bg-gray-100 rounded p-1">
