@@ -301,7 +301,7 @@ const MainLead = () => {
               ))}
             </div>
             <button
-              className="mt-4 bg-gray-300 px-4 py-2 rounded-md w-full"
+              className="mt-4 bg-gray-300 px-4 py-2 rounded-[8px] w-full"
               onClick={() => setShowBoardSelector(false)}
             >
               Cansel
@@ -310,15 +310,15 @@ const MainLead = () => {
         </div>
       )}
 
-      <div className="flex flex-col gap-6 w-full overflow-x-auto">
+      <div className="flex flex-col gap-6 overflow-x-auto">
         {groups.length === 0 ? (
-          <div className="text-center py-6">
+          <div className="py-6 text-center">
             <p className="text-gray-500 text-lg mb-4">📭 Hali guruhlar yo'q</p>
             <button
               onClick={() => setAddingGroup(true)}
-              className="flex items-center justify-center gap-2 bg-[#7D8592] hover:bg-gray-600 text-white px-5 py-2 text-base rounded-lg font-medium transition-colors mx-auto"
+              className="flex items-center justify-center gap-2 bg-[#7D8592] hover:bg-gray-600 text-white px-5 py-2 text-base rounded-lg font-medium transition-colors"
             >
-              <Plus className="w-5 h-5" /> Add group
+              <Plus className="w-5 h-5" /> Add new group
             </button>
           </div>
         ) : (
@@ -438,7 +438,7 @@ const AddGroupInput = ({ onSave, onCancel }) => {
   };
 
   return (
-    <div className="flex gap-2 max-w-max mt-4 ">
+    <div className="flex gap-2 max-w-max mt-4">
       <input
         autoFocus
         value={value}
@@ -448,8 +448,8 @@ const AddGroupInput = ({ onSave, onCancel }) => {
           if (e.key === "Escape") onCancel();
         }}
         onBlur={handleSave}
-        placeholder="Guruh nomini kiriting..."
-        className="flex-grow px-4 py-2 rounded-[8px] border border-gray-400 focus:outline-none text-base w-64"
+        placeholder="Enter group title"
+        className="flex-grow px-4 py-2 rounded-[8px] border border-gray-400 focus:outline-none text-base w-60"
       />
       <button
         onClick={onCancel}
