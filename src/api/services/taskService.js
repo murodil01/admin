@@ -25,7 +25,7 @@ export const uploadTaskFile = (formData) =>
   });
 
   export const deleteTaskFile = (id) => api.delete(endpoints.tasks.deleteTaskFile(id));
-
+  
 
   // Instructions/Checklist API functions 
 // export const getInst = (taskId) => 
@@ -52,8 +52,9 @@ export const deleteChecklistItem = (id) =>
 export const getCommentTask = async (taskId) => {
   try {
     // Make sure you're using the correct endpoint
-    const response = await api.get(`/project/comments/?task=${taskId}`);
-    return response;
+    // const response = await api.get(`/project/comments/?task=${taskId}`);
+    // return response;
+    return await api.get(`${endpoints.tasks.getComments}?task=${taskId}`);
   } catch (error) {
     console.error('API Error in getCommentTask:', error);
     throw error;
@@ -62,8 +63,9 @@ export const getCommentTask = async (taskId) => {
 
 export const createComment = async (commentData) => {
   try {
-    const response = await api.post('/project/comments/', commentData);
-    return response;
+    // const response = await api.post('/project/comments/', commentData);
+    // return response;
+    return await api.post(endpoints.tasks.getComments, commentData);
   } catch (error) {
     console.error('API Error in createComment:', error);
     throw error;
