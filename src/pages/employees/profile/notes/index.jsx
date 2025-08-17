@@ -7,8 +7,7 @@ import {
   deleteNote
 } from "../../../../api/services/notesService";
 import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-
+ 
 const Notes = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);

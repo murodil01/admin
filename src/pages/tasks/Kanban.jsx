@@ -165,21 +165,45 @@ const Board = ({ cards, setCards }) => {
   //   }
   // }, [cards, hasChecked]);
 
+  const [activeColumn, setActiveColumn] = useState(taskColumns[0]?.id || null);
+
   return (
-    <div className="flex h-full w-full gap-3 overflow-scroll items-start">
-      {taskColumns.map((col) => (
+    <div className="flex flex-col w-full">
+      {/* Column selector */}
+      {/* Bu qism faqat mobil uchun, shuning uchun desktopda ko'rinmaydi */}
+      <div className="items-start sm:hidden flex gap-2 overflow-x-auto mb-4 p-2 bg-white rounded-lg shadow-sm border border-gray-200">
+        {taskColumns.map((col) => (
+          <button
+            key={col.id}
+            onClick={() => setActiveColumn(col.id)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap
+        ${activeColumn === col.id
+                ? "bg-blue-500 text-white shadow-md"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-lg">{col.icon}</span>
+              <span>{col.title}</span>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Faqat active column */}
+      <div className="flex-1 w-full sm:hidden">
         <Column
-          key={col.id}
-          icon={col.icon}
-          title={col.title}
-          column={col.id}
-          backgroundColor={col.color}
-          cards={cards}
+          key={activeColumn}
+          icon={taskColumns.find((c) => c.id === activeColumn)?.icon}
+          title={taskColumns.find((c) => c.id === activeColumn)?.title}
+          column={activeColumn}
+          backgroundColor={taskColumns.find((c) => c.id === activeColumn)?.color}
+          cards={cards.filter((c) => c.column === activeColumn)}
           setCards={setCards}
           onEdit={handleEdit}
+          showHeader={false}
         />
-      ))}
-      {/* <BurnBarrel setCards={setCards} /> */}
+      </div>
 
       {/* Edit Modal */}
       <EditCardModal
@@ -188,6 +212,22 @@ const Board = ({ cards, setCards }) => {
         cardData={selectedCard}
         onUpdate={handleSaveEdit}
       />
+
+      {/* Desktop: barcha columnlarni yonma-yon chiqarish */}
+      <div className="hidden sm:flex items-start gap-4 overflow-x-auto pb-4">
+        {taskColumns.map((col) => (
+          <Column
+            key={col.id}
+            icon={col.icon}
+            title={col.title}
+            column={col.id}
+            backgroundColor={col.color}
+            cards={cards.filter((c) => c.column === col.id)}
+            setCards={setCards}
+            onEdit={handleEdit}
+          />
+        ))}
+      </div>
     </div>
   );
 };
@@ -200,6 +240,7 @@ const Column = ({
   cards,
   setCards,
   onEdit,
+  showHeader = true,
 }) => {
   const [active, setActive] = useState(false);
 
@@ -252,6 +293,7 @@ const Column = ({
   const handleDragLeave = () => setActive(false);
 
   const handleDrop = async (e) => {
+    e.preventDefault();
     setActive(false);
     clearHighlights();
 
@@ -264,6 +306,14 @@ const Column = ({
       let copy = [...cards];
       let cardToTransfer = copy.find((c) => c.id === cardId);
       if (!cardToTransfer) return;
+
+      setCards((prev) =>
+        prev.map((c) =>
+          c.id === cardId
+            ? { ...c, column } // card ning column ni hozirgi column ga o‘tkazamiz
+            : c
+        )
+      );
 
       // 1. Optimistic UI update (darhol ko'rinishni yangilash)
       cardToTransfer = { ...cardToTransfer, column };
@@ -299,24 +349,45 @@ const Column = ({
 
   return (
     <div
-      className={`max-w-[270px] min-w-[260px] sm:max-w-[270px] rounded-xl p-4 ${backgroundColor} shadow-sm flex flex-col my-1`}
+      className={`w-full sm:min-w-[260px] sm:max-w-[270px] rounded-xl p-4 ${backgroundColor} shadow-sm flex flex-col my-1`}
     >
-      <div className="border-b border-gray-300 pb-2 mb-3 z-10 flex items-center gap-2">
-        <span>{icon}</span>
-        <h3 className={`font-semibold text-lg text-gray-800`}>{title}</h3>
-        <span className="rounded text-sm text-black">
-          {filteredCards.length}
-        </span>
-      </div>
+      {showHeader && (
+        <div className="border-b border-gray-300 pb-2 mb-3 z-10 flex items-center gap-2">
+          <span>{icon}</span>
+          <h3 className={`font-semibold text-lg text-gray-800`}>{title}</h3>
+          <span className="rounded text-sm text-black">
+            {filteredCards.length}
+          </span>
+        </div>
+      )}
       <AddCard column={column} setCards={setCards} />
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`w-full transition-colors ${
-          active ? "bg-neutral-800/50 border-dashed" : "bg-neutral-800/0"
-        }`}
+        className={`w-full transition-colors hidden md:block ${active ? "bg-neutral-800/50 border-dashed" : "bg-neutral-800/0"
+          }`}
       >
+        {filteredCards.map((c) => (
+          <Card
+            key={c.id}
+            {...c}
+            handleDragStart={handleDragStart}
+            onEdit={onEdit}
+            image={c.image}
+            setCards={setCards}
+          />
+        ))}
+        <DropIndicator beforeId="-1" column={column} />
+      </div>
+
+      {/* Cards list - Mobile */}
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`w-full transition-colors md:hidden space-y-3 ${active ? "bg-neutral-800/50 border-dashed" : "bg-neutral-800/0"
+          }`}>
         {filteredCards.map((c) => (
           <Card
             key={c.id}
@@ -338,12 +409,10 @@ const Card = ({
   column,
   time,
   description,
-  progress,
   handleDragStart,
   onEdit,
   image,
   setCards,
-  totalCount,
 }) => {
   const [hovered, setHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -358,11 +427,13 @@ const Card = ({
   const [selectedAssignee, setSelectedAssignee] = useState(null);
   const [files, setFiles] = useState([]);
   const [filesLoading, setFilesLoading] = useState(false);
-  const [checklistItems, setChecklistItems] = useState([]);
   const [checklistLoading, setChecklistLoading] = useState(false);
+  const [checklistItems, setChecklistItems] = useState("");
   const [newChecklistItem, setNewChecklistItem] = useState("");
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Helper functions
   const getFileIcon = (fileName) => {
@@ -874,12 +945,12 @@ const Card = ({
       prev.map((card) =>
         card.id === updatedCard.id
           ? {
-              ...card,
-              title: updatedCard.name,
-              time: updatedCard.deadline,
-              description: updatedCard.description,
-              column: updatedCard.tasks_type,
-            }
+            ...card,
+            title: updatedCard.name,
+            time: updatedCard.deadline,
+            description: updatedCard.description,
+            column: updatedCard.tasks_type,
+          }
           : card
       )
     );
@@ -1112,18 +1183,11 @@ const Card = ({
 
                             <div>
                               <p className="text-sm font-medium text-gray-900">
-                                {file.original_name ||
-                                  file.file_name ||
-                                  "Unnamed file"}
+                                {file.original_name || file.file_name || "Unnamed file"}
                               </p>
                               <p className="text-xs text-gray-500">
-                                {file.file_size
-                                  ? formatFileSize(file.file_size)
-                                  : ""}{" "}
-                                •{" "}
-                                {file.created_at
-                                  ? formatDate(file.created_at)
-                                  : "Unknown date"}
+                                {file.file_size ? formatFileSize(file.file_size) : ""} •{" "}
+                                {file.created_at ? formatDate(file.created_at) : "Unknown date"}
                               </p>
                             </div>
                           </div>
@@ -1149,11 +1213,7 @@ const Card = ({
                 <div>
                   <div className="flex justify-between items-center mb-3">
                     <h4 className="font-semibold text-sm flex items-center gap-2">
-                      <img
-                        src={checkList}
-                        alt="checklist"
-                        className="w-4 h-4"
-                      />
+                      <img src={checkList} alt="checklist" className="w-4 h-4" />
                       Check list ({checklistItems.length})
                     </h4>
                     <span className="text-xs text-gray-500">Show</span>
@@ -1168,24 +1228,13 @@ const Card = ({
                         >
                           <Checkbox
                             checked={item.completed}
-                            onChange={(e) =>
-                              handleUpdateChecklistItem(
-                                item.id,
-                                e.target.checked
-                              )
-                            }
+                            onChange={(e) => handleUpdateChecklistItem(item.id, e.target.checked)}
                           />
                           <span
-                            className={`text-sm flex-1 ${
-                              item.completed
-                                ? "line-through text-gray-500"
-                                : "text-gray-900"
-                            }`}
+                            className={`text-sm flex-1 ${item.completed ? "line-through text-gray-500" : "text-gray-900"
+                              }`}
                           >
-                            {item.title ||
-                              item.name ||
-                              item.description ||
-                              `Item ${index + 1}`}
+                            {item.title || item.name || item.description || `Item ${index + 1}`}
                           </span>
                         </div>
                       ))}
@@ -1206,26 +1255,20 @@ const Card = ({
                             <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
                               👤 {c.user_name[0]}
                             </div>
-                            <span className="text-sm font-medium">
-                              {c.user_name || "You"}
-                            </span>
+                            <span className="text-sm font-medium">{c.user_name || "You"}</span>
                             <p className="text-xs text-gray-500 ml-2">
                               {dayjs(c.created_at).format("MMM D, YYYY h:mm A")}
                             </p>
                           </div>
                           <div>
                             <div className="bg-white p-1 rounded-sm">
-                              <p className="text-sm text-gray-700">
-                                {c.text || c.message}
-                              </p>
+                              <p className="text-sm text-gray-700">{c.text || c.message}</p>
                             </div>
                           </div>
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-gray-500 mb-3">
-                        No comments yet
-                      </p>
+                      <p className="text-sm text-gray-500 mb-3">No comments yet</p>
                     )}
 
                     {/* Add new comment */}
@@ -1235,9 +1278,7 @@ const Card = ({
                         placeholder="Add a comment"
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
-                        onKeyPress={(e) =>
-                          e.key === "Enter" && handleAddComment()
-                        } // Enter bosilganda ham yuborish
+                        onKeyPress={(e) => e.key === 'Enter' && handleAddComment()} // Enter bosilganda ham yuborish
                         className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none"
                       />
                       <button
@@ -1257,9 +1298,7 @@ const Card = ({
                 <div>
                   <p className="text-gray-400">Assignee by</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-                      👤
-                    </div>
+                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
 
                     <span>
                       {(() => {
@@ -1272,8 +1311,7 @@ const Card = ({
                         console.log("Current projectUsers:", projectUsers);
 
                         // Har xil assignee formatlarini tekshirish
-                        const assignee =
-                          selectedAssignee ||
+                        const assignee = selectedAssignee ||
                           taskData?.assignee ||
                           taskData?.assigned_to ||
                           taskData?.assigned?.[0];
@@ -1288,11 +1326,7 @@ const Card = ({
 
                 <div>
                   <p className="text-gray-400">Date</p>
-                  <p className="mt-1">
-                    {taskData.deadline
-                      ? dayjs(taskData.deadline).format("YYYY-MM-DD")
-                      : "N/A"}
-                  </p>
+                  <p className="mt-1">{taskData.deadline ? dayjs(taskData.deadline).format("YYYY-MM-DD") : "N/A"}</p>
                 </div>
 
                 <div>
@@ -1315,10 +1349,7 @@ const Card = ({
                   <div className="flex flex-wrap gap-2 mt-1">
                     {taskData.tags && taskData.tags.length > 0 ? (
                       taskData.tags.map((tag, i) => (
-                        <span
-                          key={i}
-                          className="bg-gray-200 px-2 py-1 rounded text-xs"
-                        >
+                        <span key={i} className="bg-gray-200 px-2 py-1 rounded text-xs">
                           {tag.name}
                         </span>
                       ))
@@ -1331,18 +1362,18 @@ const Card = ({
             </div>
           ) : (
             <p className="text-center text-gray-500">No task data available</p>
-          )}
+          )
+          }
         </Modal>
-
         <EditCardModal
           visible={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
           cardData={selectedCard}
           onUpdate={handleUpdateCard}
-          // assignees={[
-          //   { value: "user1", label: "Botirov Shaxobiddin" },
-          //   { value: "user2", label: "John Doe" },
-          // ]}
+        // assignees={[
+        //   { value: "user1", label: "Botirov Shaxobiddin" },
+        //   { value: "user2", label: "John Doe" },
+        // ]}
         />
 
         {/* Bottom Row */}
@@ -1472,9 +1503,9 @@ const AddCard = ({ column, setCards }) => {
           time: createdTask.deadline || "",
           assignee: createdTask.assigned
             ? {
-                name: createdTask.assigned[0],
-                avatar: "bg-blue-500",
-              }
+              name: createdTask.assigned[0],
+              avatar: "bg-blue-500",
+            }
             : null,
         },
       ]);
@@ -1550,6 +1581,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
   const [selectedAssignee, setSelectedAssignee] = React.useState([]);
   const [description, setDescription] = React.useState("");
   const [selectedTags, setSelectedTags] = React.useState([]);
+
   const [progress, setProgress] = React.useState(0);
   const [totalCount, setTotalCount] = React.useState(0);
 
@@ -1590,11 +1622,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       // setSelectedAssignee(cardData.assigned || []);
 
       // Assigned maydonini to'g'ri formatlash
-      if (
-        cardData.assigned &&
-        Array.isArray(cardData.assigned) &&
-        cardData.assigned.length > 0
-      ) {
+      if (cardData.assigned && Array.isArray(cardData.assigned) && cardData.assigned.length > 0) {
         setSelectedAssignee(cardData.assigned[0]);
       } else {
         setSelectedAssignee(null);
@@ -1604,6 +1632,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       setSelectedTags(cardData.tags ? cardData.tags.map((tag) => tag.id) : []);
       setProgress(cardData.progress || 0);
       setTotalCount(cardData.totalCount || 0);
+
       // New files list ni tozalash
       setFiles([]);
     }
@@ -1624,18 +1653,15 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
 
       // Calculate progress and total count
       const totalCount = instructionsData.length;
-      const completedCount = instructionsData.filter(
-        (item) => item.status
-      ).length;
-      const progress =
-        totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+      const completedCount = instructionsData.filter(item => item.status).length;
+      const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
       // API dan kelgan ma'lumotlarni checklist formatiga o'zgartirish
-      const formattedChecklist = instructionsData.map((instruction) => ({
+      const formattedChecklist = instructionsData.map(instruction => ({
         id: instruction.id,
         text: instruction.name,
         done: instruction.status,
-        isNew: false, // mavjud elementlar uchun
+        isNew: false // mavjud elementlar uchun
       }));
 
       // Update state
@@ -1668,9 +1694,9 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       id: Date.now().toString(), // Temporary ID for new items
       text: "",
       done: false,
-      isNew: true, // yangi elementlar uchun
+      isNew: true // yangi elementlar uchun
     };
-    setChecklist((prev) => [...prev, newItem]);
+    setChecklist(prev => [...prev, newItem]);
   };
 
   const toggleCheckDone = async (index) => {
@@ -1678,11 +1704,9 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
     const newStatus = !item.done;
 
     // Optimistic update
-    setChecklist((prev) =>
-      prev.map((check, i) =>
-        i === index ? { ...check, done: newStatus } : check
-      )
-    );
+    setChecklist(prev => prev.map((check, i) =>
+      i === index ? { ...check, done: newStatus } : check
+    ));
 
     // Agar mavjud element bo'lsa (isNew: false), API ga yuborish
     if (!item.isNew && item.id) {
@@ -1690,35 +1714,31 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
         await updateTaskInstruction(item.id, {
           name: item.text,
           status: newStatus,
-          task: cardData.id,
+          task: cardData.id
         });
         message.success("Checklist item updated!");
       } catch (error) {
         console.error("Checklist update error:", error);
         message.error("Failed to update checklist item");
         // Rollback
-        setChecklist((prev) =>
-          prev.map((check, i) =>
-            i === index ? { ...check, done: !newStatus } : check
-          )
-        );
+        setChecklist(prev => prev.map((check, i) =>
+          i === index ? { ...check, done: !newStatus } : check
+        ));
       }
     }
   };
 
   const updateCheckText = (index, newText) => {
-    setChecklist((prev) =>
-      prev.map((check, i) =>
-        i === index ? { ...check, text: newText } : check
-      )
-    );
+    setChecklist(prev => prev.map((check, i) =>
+      i === index ? { ...check, text: newText } : check
+    ));
   };
 
   const deleteCheckItem = async (index) => {
     const item = checklist[index];
 
     // Optimistic update
-    setChecklist((prev) => prev.filter((_, i) => i !== index));
+    setChecklist(prev => prev.filter((_, i) => i !== index));
 
     // Agar mavjud element bo'lsa, API dan ham o'chirish
     if (!item.isNew && item.id) {
@@ -1729,7 +1749,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
         console.error("Checklist delete error:", error);
         message.error("Failed to delete checklist item");
         // Rollback - elementni qaytarish
-        setChecklist((prev) => {
+        setChecklist(prev => {
           const newList = [...prev];
           newList.splice(index, 0, item);
           return newList;
@@ -1787,8 +1807,8 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
   // File upload funksiyasi - yangi qo'shilgan
   const uploadFile = async (file, taskId) => {
     const formData = new FormData();
-    formData.append("file", file);
-    formData.append("task", taskId); // Task ID ni qo'shish
+    formData.append('file', file);
+    formData.append('task', taskId); // Task ID ni qo'shish
 
     try {
       // ✅ axios o'rniga taskService funksiyasini ishlating
@@ -1805,7 +1825,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
     if (files.length === 0) return [];
 
     setFileUploading(true);
-    const uploadPromises = files.map((file) => uploadFile(file, taskId));
+    const uploadPromises = files.map(file => uploadFile(file, taskId));
 
     try {
       const uploadResults = await Promise.all(uploadPromises);
@@ -1844,18 +1864,14 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
         project: projectId,
 
         // ✅ TUZATISH: assigned maydonini to'g'ri formatlash
-        assigned:
-          selectedAssignee && selectedAssignee.length > 0
-            ? Array.isArray(selectedAssignee)
-              ? selectedAssignee
-              : [selectedAssignee]
-            : [],
+        assigned: selectedAssignee && selectedAssignee.length > 0
+          ? (Array.isArray(selectedAssignee) ? selectedAssignee : [selectedAssignee])
+          : [],
 
-        // ✅ TUZATISH: tags_ids maydonini to'g'ri formatlash
-        tags_ids:
-          Array.isArray(selectedTags) && selectedTags.length > 0
-            ? selectedTags
-            : [],
+        // ✅ TUZATISH: tags_ids maydonini to'g'ri formatlash  
+        tags_ids: Array.isArray(selectedTags) && selectedTags.length > 0
+          ? selectedTags
+          : [],
 
         progress: Math.min(100, Math.max(0, progress)),
         is_active: notification === "On",
@@ -2223,25 +2239,15 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                 {/* Existing uploaded files */}
                 {uploadedFiles.length > 0 && (
                   <div className="mb-4">
-                    <p className="text-xs text-gray-500 mb-2">
-                      Yuklangan fayllar:
-                    </p>
+                    <p className="text-xs text-gray-500 mb-2">Yuklangan fayllar:</p>
                     {uploadedFiles.map((file, index) => (
-                      <div
-                        key={`uploaded-${file.id}`}
-                        className="flex items-center gap-2 mb-2 p-2 border rounded-lg bg-green-50"
-                      >
+                      <div key={`uploaded-${file.id}`} className="flex items-center gap-2 mb-2 p-2 border rounded-lg bg-green-50">
                         <div className="flex-1 w-[60%]">
                           <p className="text-sm font-medium truncate">
-                            {file.file
-                              ? file.file.split("/").pop()
-                              : `File ${index + 1}`}
+                            {file.file ? file.file.split('/').pop() : `File ${index + 1}`}
                           </p>
                           <p className="text-xs text-gray-500">
-                            Created:{" "}
-                            {file.created_at
-                              ? new Date(file.created_at).toLocaleDateString()
-                              : "N/A"}
+                            Created: {file.created_at ? new Date(file.created_at).toLocaleDateString() : 'N/A'}
                           </p>
                         </div>
                         <button
@@ -2253,9 +2259,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                         </button>
                         <button
                           onClick={() => {
-                            if (
-                              window.confirm("Bu faylni o'chirmoqchimisiz?")
-                            ) {
+                            if (window.confirm('Bu faylni o\'chirmoqchimisiz?')) {
                               deleteUploadedFile(file.id);
                             }
                           }}
@@ -2272,30 +2276,17 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                 {/* New files to be uploaded */}
                 {files.length > 0 && (
                   <div className="mb-4">
-                    <p className="text-xs text-gray-500 mb-2">
-                      Yangi fayllar (saqlaganda yuklanadi):
-                    </p>
+                    <p className="text-xs text-gray-500 mb-2">Yangi fayllar (saqlaganda yuklanadi):</p>
                     {files.map((file, index) => (
-                      <div
-                        key={`new-${index}`}
-                        className="flex items-center gap-2 mb-2 p-2 border rounded-lg bg-orange-50"
-                      >
+                      <div key={`new-${index}`} className="flex items-center gap-2 mb-2 p-2 border rounded-lg bg-orange-50">
                         <div className="flex-1  w-[60%]">
-                          <p className="text-sm font-medium truncate">
-                            {file.name}
-                          </p>
-                          <p className="text-xs text-orange-600">
-                            Size: {(file.size / 1024 / 1024).toFixed(2)} MB
-                          </p>
+                          <p className="text-sm font-medium truncate">{file.name}</p>
+                          <p className="text-xs text-orange-600">Size: {(file.size / 1024 / 1024).toFixed(2)} MB</p>
                         </div>
-                        <span className="text-orange-500 text-xs px-2 py-1 bg-orange-200 rounded">
-                          Yangi
-                        </span>
+                        <span className="text-orange-500 text-xs px-2 py-1 bg-orange-200 rounded">Yangi</span>
                         <button
                           onClick={() =>
-                            setFiles((prev) =>
-                              prev.filter((_, i) => i !== index)
-                            )
+                            setFiles((prev) => prev.filter((_, i) => i !== index))
                           }
                           className="text-red-500 hover:text-red-700 p-1"
                           title="Remove file"
@@ -2315,9 +2306,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                   beforeUpload={(file) => {
                     // File size check (10MB limit)
                     if (file.size > 10 * 1024 * 1024) {
-                      message.error(
-                        `${file.name} faylining hajmi 10MB dan katta!`
-                      );
+                      message.error(`${file.name} faylining hajmi 10MB dan katta!`);
                       return false;
                     }
 
@@ -2457,12 +2446,12 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                     transition: "box-shadow 0.3s ease",
                   }}
                   onMouseEnter={(e) =>
-                    (e.currentTarget.style.boxShadow =
-                      "0 6px 20px rgba(24, 144, 255, 0.8)")
+                  (e.currentTarget.style.boxShadow =
+                    "0 6px 20px rgba(24, 144, 255, 0.8)")
                   }
                   onMouseLeave={(e) =>
-                    (e.currentTarget.style.boxShadow =
-                      "0 4px 12px rgba(24, 144, 255, 0.5)")
+                  (e.currentTarget.style.boxShadow =
+                    "0 4px 12px rgba(24, 144, 255, 0.5)")
                   }
                 >
                   {saveLoading ? "Saving..." : "Save"}
