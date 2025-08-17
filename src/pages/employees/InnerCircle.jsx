@@ -27,7 +27,6 @@ const InnerCircle = () => {
     const { user, isAuthenticated } = useAuth();
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const navigate = useNavigate();
-    const { confirm } = Modal;
 
     useEffect(() => {
         fetchEmployees();
@@ -59,32 +58,46 @@ const InnerCircle = () => {
         fetchEmployees(newPage);
     };
 
-    const handleDelete = async (id) => {
-        confirm({
-            title: "Are you sure you want to delete this employee?",
-            content: "This action cannot be undone",
-            okText: "Yes, delete",
-            okType: "danger",
-            cancelText: "Cancel",
-            onOk: async () => {
-            try {
-                await deleteUser(id);   // <-- shu joy service ichidagi endpointga ketadi
-                message.success("Employee deleted successfully");
-                fetchEmployees();
-            } catch (err) {
-                console.error("Delete error details:", {
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [selectedId, setSelectedId] = useState(null);
+
+    // Delete modalni ochish
+    const showDeleteModal = (id) => {
+        setSelectedId(id);
+        setIsDeleteModalOpen(true);
+    };
+
+    // Bekor qilish
+    const handleCancelDelete = () => {
+        setIsDeleteModalOpen(false);
+        setSelectedId(null);
+    };
+
+    // Tasdiqlash
+    const handleConfirmDelete = async () => {
+        if (!selectedId) return;
+
+        try {
+            setLoading(true);
+            await deleteUser(selectedId); // service endpoint chaqiriladi
+            message.success("Employee deleted successfully");
+            fetchEmployees(); // listni yangilash
+        } catch (err) {
+            console.error("Delete error details:", {
                 status: err.response?.status,
                 data: err.response?.data,
                 headers: err.response?.headers,
-                });
-                message.error(
+            });
+            message.error(
                 err.response?.data?.message ||
                 err.response?.data?.detail ||
                 "Failed to delete employee"
-                );
-            }
-            },
-        });
+            );
+        } finally {
+            setLoading(false);
+            setIsDeleteModalOpen(false);
+            setSelectedId(null);
+        }
     };
 
     const handleAddEmployee = async (employeeData) => {
@@ -201,9 +214,9 @@ const InnerCircle = () => {
                     </button>
                 </div>
 
-                <div className="flex justify-center lg:justify-end w-[240px]">
-
-                </div>
+                <Permission anyOf={[ROLES.EMPLOYEE, ROLES.HEADS]}>
+                    <div className="flex justify-center lg:justify-end w-[240px]"></div>
+                </Permission>
 
                 {/* Add Button */}
                 <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
@@ -232,10 +245,23 @@ const InnerCircle = () => {
                 <EmployeeList
                     employees={employees}
                     loading={loading}
-                    onDelete={handleDelete}
+                    onDelete={showDeleteModal}
                     onStatusUpdate={fetchEmployees}
                 />
             )}
+
+            <Modal
+                title={`Are you sure you want to delete ${employees.first_name} employee?`}
+                open={isDeleteModalOpen}
+                onOk={handleConfirmDelete}
+                onCancel={handleCancelDelete}
+                okText="Yes, delete"
+                cancelText="Cancel"
+                okButtonProps={{ danger: true, loading }}
+                className="delete-modal"
+            >
+                <p>This action cannot be undone.</p>
+            </Modal>
             {activeTab === "activity" && <Activity />}
 
             {/* Modal */}
