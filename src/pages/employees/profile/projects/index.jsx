@@ -63,7 +63,6 @@ const Projects = () => {
     const fetchProjects = async () => {
       try {
         const data = await getUserProjects();
-        console.log("Fetched projects:", data); // bu yerda array chiqadi
 
         // data array bo‘lgani uchun to‘g‘ridan-to‘g‘ri flatMap ishlatamiz
         const formatted = data.flatMap(user =>

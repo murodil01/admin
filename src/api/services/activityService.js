@@ -1,9 +1,19 @@
 import api from "../base";
 import endpoints from "../endpoint";
 
-export const getActivities = async () => {
-    const res = await api.get(endpoints.activities.getAll);
-    return res.data; //  bu yerda count, next, previous, results bo‘ladi
+export const getActivities = async (page = 1) => {
+    console.log('Soʻrov manzili:', `${endpoints.activities.getAll}?page_num=${page}`);
+    try {
+        const res = await api.get(endpoints.activities.getAll, {
+            params: {
+                page_num: page // Backend 'page' parametrini kutayotgan bo'lishi mumkin
+            }
+        });
+        return res.data;
+    } catch (error) {
+        console.error('Xodimlarni olishda xato:', error);
+        throw error;
+    }
 };
 
 // export const getEmployeeById = async (id) => {

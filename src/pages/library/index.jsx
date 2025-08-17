@@ -3,12 +3,14 @@ import { MoreVertical, Plus } from "lucide-react";
 import CreateCategoryModal from "../../components/m-library/CreateCategoryModal";
 import api from "../../api/base";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify"; 
 
 const LibraryPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [menuId, setMenuId] = useState(null);
   const [loadingDelete, setLoadingDelete] = useState(false);
+  const [loadingEdit, setLoadingEdit] = useState(false); 
   const [editCategory, setEditCategory] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
@@ -28,6 +30,7 @@ const LibraryPage = () => {
       setCategories(res.data);
     } catch (error) {
       console.error("Error fetching categories:", error);
+      toast.error("Failed to fetch categories. Please try again.");
     }
   };
 
@@ -41,6 +44,10 @@ const LibraryPage = () => {
   }, []);
 
   const handleCreateCategory = async (name, imageFile) => {
+    if (!name.trim()) {
+      toast.error("Category name cannot be empty.");
+      return;
+    }
     try {
       const formData = new FormData();
       formData.append("name", name);
@@ -49,12 +56,19 @@ const LibraryPage = () => {
       const res = await api.post("/library/categories/", formData);
       setCategories((prev) => [res.data, ...prev]);
       setIsModalOpen(false);
+      toast.success("Category created successfully!");
     } catch (error) {
       console.error("Error creating category:", error);
+      toast.error("Failed to create category. Please try again.");
     }
   };
 
   const handleEditCategory = async (id, name, imageFile) => {
+    if (!name.trim()) {
+      toast.error("Category name cannot be empty.");
+      return;
+    }
+    setLoadingEdit(true);
     try {
       const formData = new FormData();
       formData.append("name", name);
@@ -66,8 +80,12 @@ const LibraryPage = () => {
       );
       setIsModalOpen(false);
       setEditCategory(null);
+      toast.success("Category updated successfully!");
     } catch (error) {
       console.error("Error editing category:", error);
+      toast.error("Failed to update category. Please try again.");
+    } finally {
+      setLoadingEdit(false);
     }
   };
 
@@ -80,12 +98,15 @@ const LibraryPage = () => {
         prev.filter((category) => category.id !== deleteId)
       );
       setMenuId(null);
+      toast.success("Category deleted successfully!");
     } catch (error) {
       console.error("Error deleting category:", error);
+      toast.error("Failed to delete category. Please try again.");
+    } finally {
+      setLoadingDelete(false);
+      setConfirmOpen(false);
+      setDeleteId(null);
     }
-    setLoadingDelete(false);
-    setConfirmOpen(false);
-    setDeleteId(null);
   };
 
   return (
@@ -99,6 +120,7 @@ const LibraryPage = () => {
               setIsModalOpen(true);
             }}
             className="inline-flex items-center justify-center px-3 py-2 sm:px-6 sm:py-3 bg-[#0061fe] text-white text-sm sm:text-base font-bold rounded-[14px] hover:bg-blue-700 transition-colors whitespace-nowrap"
+            aria-label="Add new category"
           >
             <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1" />
             Add Category
@@ -111,6 +133,9 @@ const LibraryPage = () => {
               key={category.id}
               onClick={() => handleCardClick(category.id)}
               className="border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 bg-white flex flex-col relative"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === "Enter" && handleCardClick(category.id)}
             >
               <div className="flex items-center justify-between mb-4" data-card-menu>
                 <h2 className="text-lg font-semibold truncate">{category.name}</h2>
@@ -121,21 +146,26 @@ const LibraryPage = () => {
                       toggleMenu(category.id);
                     }}
                     className="cursor-pointer text-gray-500 hover:text-gray-700"
+                    aria-label={`More options for ${category.name}`}
                   />
                   {menuId === category.id && (
                     <div className="absolute top-8 right-0 bg-white border border-gray-200 shadow-lg rounded-lg z-50 w-36 overflow-hidden">
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation(); 
                           setEditCategory(category);
                           setIsModalOpen(true);
                           setMenuId(null);
                         }}
                         className="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50 text-blue-600"
+                        disabled={loadingEdit}
                       >
-                        Edit
+                        {loadingEdit ? "Editing..." : "Edit"}
                       </button>
+
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation(); 
                           setDeleteId(category.id);
                           setConfirmOpen(true);
                         }}
@@ -160,7 +190,7 @@ const LibraryPage = () => {
                   {category.created_by?.profile_picture && (
                     <img
                       src={category.created_by?.profile_picture}
-                      alt="profile"
+                      alt={`${category.created_by?.name}'s profile`}
                       className="w-10 h-10 rounded-full object-cover border border-gray-300"
                     />
                   )}
@@ -190,6 +220,7 @@ const LibraryPage = () => {
             : handleCreateCategory(data.name, data.file);
         }}
         initialData={editCategory}
+        loading={loadingEdit} 
       />
 
       {confirmOpen && (
@@ -202,14 +233,17 @@ const LibraryPage = () => {
               <button
                 onClick={() => setConfirmOpen(false)}
                 className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100"
+                aria-label="Cancel deletion"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
                 className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600"
+                disabled={loadingDelete}
+                aria-label="Confirm deletion"
               >
-                Delete
+                {loadingDelete ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>
