@@ -59,6 +59,10 @@ import {
   deleteChecklistItem
 } from "../../api/services/taskService";
 
+import { Permission } from "../../components/Permissions";
+import { useAuth } from "../../hooks/useAuth";
+import { ROLES } from "../../components/constants/roles";
+
 const NotionKanban = ({ cards, setCards, assignees, getAssigneeName }) => {
   return (
     <div className="flex gap-5 absolute top-0 right-0 left-0 pb-4 w-full overflow-x-auto hide-scrollbar">
@@ -134,6 +138,7 @@ const Board = ({ cards, setCards }) => {
   const [hasChecked, setHasChecked] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
+  const { user, isAuthenticated } = useAuth();
 
   const handleEdit = (card) => {
     setSelectedCard(card);
@@ -169,6 +174,8 @@ const Board = ({ cards, setCards }) => {
       localStorage.setItem("cards", JSON.stringify(cards));
     }
   }, [cards, hasChecked]);
+
+  if (!isAuthenticated) return <div>Please login</div>;
 
   return (
     <div className="flex h-full w-full gap-3 overflow-scroll items-start">
@@ -883,7 +890,7 @@ const Card = ({
                   label: "Edit",
                   onClick: (e) => {
                     e.domEvent.stopPropagation();
-                    handleEditCard(); // Yangi funksiya chaqiriladi
+                    handleEditCard();
                   },
                 },
                 {
@@ -905,11 +912,18 @@ const Card = ({
                 },
                 {
                   key: "delete",
-                  label: "Delete",
-                  onClick: (e) => {
-                    e.domEvent.stopPropagation();
-                    showDeleteModal();
-                  },
+                  label: (
+                    <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          showDeleteModal();
+                        }}
+                      >
+                        Delete
+                      </span>
+                    </Permission>
+                  ),
                 },
               ],
             }}
@@ -1251,10 +1265,12 @@ const Card = ({
         {/* Bottom Row */}
         <div className="flex items-center justify-between text-xs text-gray-500">
           {/* Deadline */}
-          <div className="flex items-center gap-1 bg-gray-100 rounded p-1">
-            <img src={clock} alt="Deadline" />
-            <span>{time || "No due date"}</span>
-          </div>
+          {time && (
+            <div className="flex items-center gap-1 bg-gray-100 rounded p-1">
+              <img src={clock} alt="Deadline" />
+              <span>{time}</span>
+            </div>
+          )}
 
           {description && (
             <div>
