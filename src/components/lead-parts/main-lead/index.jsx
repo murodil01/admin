@@ -212,14 +212,6 @@ const MainLead = () => {
     const leadId = oldItem.id;
     const realGroupId = oldItem.group; // backend kutadi
 
-    console.log("Lead yangilanmoqda:", {
-      groupId,
-      realGroupId,
-      leadId,
-      oldItem,
-      updatedItem,
-    });
-
     try {
       const res = await updateLeads(realGroupId, leadId, updatedItem);
 
