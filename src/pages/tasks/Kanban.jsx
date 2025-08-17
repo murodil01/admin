@@ -44,9 +44,8 @@ import {
   getTaskTags,
   getProjectUsers,
 
-  getTaskFiles,        
-  uploadTaskFile,     
-  deleteTaskFile, 
+  getTaskFiles,  uploadTaskFile,
+  deleteTaskFile,
 
   getCommentTask,///
   createComment,//
@@ -62,11 +61,11 @@ import {
 const NotionKanban = ({ cards, setCards,assignees ,getAssigneeName}) => {
   return (
     <div className="flex gap-5 absolute top-0 right-0 left-0 pb-4 w-full overflow-x-auto hide-scrollbar">
-      <Board   
-        cards={cards} 
-        setCards={setCards} 
+      <Board
+        cards={cards}
+        setCards={setCards}
         assignees={assignees}
-        getAssigneeName={getAssigneeName} 
+        getAssigneeName={getAssigneeName}
       />
       {/* <Board cards={cards} setCards={setCards} /> */}
     </div>
@@ -152,7 +151,7 @@ const Board = ({ cards, setCards }) => {
   };
 
 
-   useEffect(() => {
+  useEffect(() => {
     if (!hasChecked) {
       const cardData = localStorage.getItem("cards");
       try {
@@ -170,21 +169,45 @@ const Board = ({ cards, setCards }) => {
     }
   }, [cards, hasChecked]);
 
+  const [activeColumn, setActiveColumn] = useState(taskColumns[0]?.id || null);
+
   return (
-    <div className="flex h-full w-full gap-3 overflow-scroll items-start">
-      {taskColumns.map((col) => (
+    <div className="flex flex-col h-full w-full">
+      {/* Column selector */}
+      {/* Bu qism faqat mobil uchun, shuning uchun desktopda ko'rinmaydi */}
+      <div className="sm:hidden flex gap-2 overflow-x-auto mb-4 p-2 bg-white rounded-lg shadow-sm border border-gray-200">
+        {taskColumns.map((col) => (
+          <button
+            key={col.id}
+            onClick={() => setActiveColumn(col.id)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap
+        ${activeColumn === col.id
+                ? "bg-blue-500 text-white shadow-md"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-lg">{col.icon}</span>
+              <span>{col.title}</span>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Faqat active column */}
+      <div className="flex-1 w-full sm:hidden">
         <Column
-          key={col.id}
-          icon={col.icon}
-          title={col.title}
-          column={col.id}
-          backgroundColor={col.color}
-          cards={cards}
+          key={activeColumn}
+          icon={taskColumns.find((c) => c.id === activeColumn)?.icon}
+          title={taskColumns.find((c) => c.id === activeColumn)?.title}
+          column={activeColumn}
+          backgroundColor={taskColumns.find((c) => c.id === activeColumn)?.color}
+          cards={cards.filter((c) => c.column === activeColumn)}
           setCards={setCards}
           onEdit={handleEdit}
+          showHeader={false}
         />
-      ))}
-      {/* <BurnBarrel setCards={setCards} /> */}
+      </div>
 
       {/* Edit Modal */}
       <EditCardModal
@@ -193,6 +216,22 @@ const Board = ({ cards, setCards }) => {
         cardData={selectedCard}
         onUpdate={handleSaveEdit}
       />
+
+      {/* Desktop: barcha columnlarni yonma-yon chiqarish */}
+      <div className="hidden sm:flex gap-4 overflow-x-auto pb-4">
+        {taskColumns.map((col) => (
+          <Column
+            key={col.id}
+            icon={col.icon}
+            title={col.title}
+            column={col.id}
+            backgroundColor={col.color}
+            cards={cards.filter((c) => c.column === col.id)}
+            setCards={setCards}
+            onEdit={handleEdit}
+          />
+        ))}
+      </div>
     </div>
   );
 };
@@ -205,6 +244,7 @@ const Column = ({
   cards,
   setCards,
   onEdit,
+  showHeader = true,
 }) => {
   const [active, setActive] = useState(false);
 
@@ -257,6 +297,7 @@ const Column = ({
   const handleDragLeave = () => setActive(false);
 
   const handleDrop = async (e) => {
+    e.preventDefault();
     setActive(false);
     clearHighlights();
 
@@ -269,6 +310,14 @@ const Column = ({
       let copy = [...cards];
       let cardToTransfer = copy.find((c) => c.id === cardId);
       if (!cardToTransfer) return;
+
+      setCards((prev) =>
+        prev.map((c) =>
+          c.id === cardId
+            ? { ...c, column } // card ning column ni hozirgi column ga o‘tkazamiz
+            : c
+        )
+      );
 
       // 1. Optimistic UI update (darhol ko'rinishni yangilash)
       cardToTransfer = { ...cardToTransfer, column };
@@ -305,24 +354,46 @@ const Column = ({
 
   return (
     <div
-      className={`max-w-[270px] min-w-[260px] sm:max-w-[270px] rounded-xl p-4 ${backgroundColor} shadow-sm flex flex-col my-1`}
+      className={`w-full sm:min-w-[260px] sm:max-w-[270px] rounded-xl p-4 ${backgroundColor} shadow-sm flex flex-col my-1`}
     >
-      <div className="border-b border-gray-300 pb-2 mb-3 z-10 flex items-center gap-2">
-        <span>{icon}</span>
-        <h3 className={`font-semibold text-lg text-gray-800`}>{title}</h3>
-        <span className="rounded text-sm text-black">
-          {filteredCards.length}
-        </span>
-      </div>
+      {showHeader && (
+        <div className="border-b border-gray-300 pb-2 mb-3 z-10 flex items-center gap-2">
+          <span>{icon}</span>
+          <h3 className={`font-semibold text-lg text-gray-800`}>{title}</h3>
+          <span className="rounded text-sm text-black">
+            {filteredCards.length}
+          </span>
+        </div>
+      )}
       <AddCard column={column} setCards={setCards} />
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`w-full transition-colors ${
+        className={`w-full transition-colors hidden md:block space-y-3 ${
           active ? "bg-neutral-800/50 border-dashed" : "bg-neutral-800/0"
         }`}
       >
+        {filteredCards.map((c) => (
+          <Card
+            key={c.id}
+            {...c}
+            handleDragStart={handleDragStart}
+            onEdit={onEdit}
+            image={c.image}
+            setCards={setCards}
+          />
+        ))}
+        <DropIndicator beforeId="-1" column={column} />
+      </div>
+
+      {/* Cards list - Mobile */}
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`w-full transition-colors md:hidden space-y-3 ${active ? "bg-neutral-800/50 border-dashed" : "bg-neutral-800/0"
+          }`}>
         {filteredCards.map((c) => (
           <Card
             key={c.id}
@@ -344,12 +415,10 @@ const Card = ({
   column,
   time,
   description,
-  progress,
   handleDragStart,
   onEdit,
   image,
   setCards,
-  totalCount,
 }) => {
   const [hovered, setHovered] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -364,11 +433,13 @@ const Card = ({
   const [selectedAssignee, setSelectedAssignee] = useState(null);
   const [files, setFiles] = useState([]);
   const [filesLoading, setFilesLoading] = useState(false);
-  const [checklistItems, setChecklistItems] = useState([]);
   const [checklistLoading, setChecklistLoading] = useState(false);
+  const [checklistItems, setChecklistItems] = useState("");
   const [newChecklistItem, setNewChecklistItem] = useState("");
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Helper functions
   const getFileIcon = (fileName) => {
@@ -1205,6 +1276,7 @@ const Card = ({
                                         taskData?.assigned?.[0];
                                         
                         console.log("Final assignee:", assignee);
+                        console.log("Progress:", progress);
                         
                         return getAssigneeName(assignee);
                       })()}
@@ -1253,9 +1325,7 @@ const Card = ({
   <p className="text-center text-gray-500">No task data available</p>
 )
 }
-        
         </Modal>
-
         <EditCardModal
           visible={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
@@ -1475,6 +1545,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
   const [selectedAssignee, setSelectedAssignee] = React.useState([]);
   const [description, setDescription] = React.useState("");
   const [selectedTags, setSelectedTags] = React.useState([]);
+
   const [progress, setProgress] = React.useState(0);
   const [totalCount, setTotalCount] = React.useState(0);
 
@@ -1520,11 +1591,12 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
             } else {
               setSelectedAssignee(null);
             }
-      
+
       setDescription(cardData.description || "");
       setSelectedTags(cardData.tags ? cardData.tags.map((tag) => tag.id) : []);
       setProgress(cardData.progress || 0);
       setTotalCount(cardData.totalCount || 0);
+
       // New files list ni tozalash
       setFiles([]);
     }
