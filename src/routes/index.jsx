@@ -22,6 +22,8 @@ import MainProfile from "../pages/main-profile";
 import TaskDetails from "../pages/tasks/TaskDetails";
 import Notification from "../pages/notification";
 import Customers from "../pages/customers";
+import CategoryCard from "../components/m-library/CategoryCard";
+
 import LeadSide from "../components/lead-parts/leads-side";
 import LeadsRight from "../components/lead-parts/leads-right";
 
@@ -35,10 +37,11 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: "", element: <Home /> },
-          { path: "tasks", element: <Tasks /> },
-          { path: "tasks/:projectId", element: <TaskDetails /> },
+          { path: "tasks", element: <Tasks />, },
+          { path: "tasks/:projectId", element: <TaskDetails />, },
+
           { path: "customers", element: <Customers /> },
-          { path: "employees/", element: <Employees /> },
+          { path: "employees", element: <Employees /> },
           { path: "messenger", element: <Messenger /> },
           { path: "departments", element: <Departments /> },
           { path: "calendar", element: <Calendar /> },
@@ -49,6 +52,9 @@ export const router = createBrowserRouter([
           { path: "library", element: <Library /> },
           { path: "library/id", element: <CategoryDetailsPage /> },
           { path: "category/:id", element: <CategoryDetailsPage /> },
+          { path: "folder/category", element: <CategoryCard /> },
+          { path: "library/folders/:id", element: <CategoryCard /> },
+
 
           { path: "archive", element: <Archive /> },
           { path: "activity", element: <Activity /> },

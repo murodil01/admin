@@ -2,11 +2,10 @@ import api from "../base";
 import endpoints from "../endpoint";
 
 export const getEmployees = async (page = 1) => {
-    console.log('Soʻrov manzili:', `${endpoints.employees.getAll}?page_num=${page}`);
     try {
         const res = await api.get(endpoints.employees.getAll, {
             params: {
-                page: page // Backend 'page' parametrini kutayotgan bo'lishi mumkin
+                page_num: page // Backend 'page' parametrini kutayotgan bo'lishi mumkin
             }
         });
         return res.data;
