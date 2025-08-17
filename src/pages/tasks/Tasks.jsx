@@ -1,3 +1,4 @@
+////////////////////////////////////////////////////////////////////////Task.jsx
 import { useState, useEffect, useRef } from "react";
 import { message } from "antd";
 import { MoreVertical,Paperclip } from "lucide-react";
@@ -362,7 +363,7 @@ const Projects = () => {
       case "info":
         
         return (
-          // det
+          // det          
           <div className="  flex flex-col gap-5 text-sm text-gray-700 my-5">
             <h1 className=" text-[#0A1629] text-[22px] font-bold mb-3">Task Details</h1>
             <div className="grid grid-cols-3 w-full">
@@ -390,7 +391,6 @@ const Projects = () => {
               <p className="text-gray-400 font-medium">Department</p>
               <div className="w-14 h-8 ">
                 <div className="flex gap-2 col-span-2">
-
               {selectedTask.departments?.map(dept => (
                 <div key={dept.id} className=" flex flex-col items-center">
                   {dept.photo ? (
@@ -447,8 +447,7 @@ const Projects = () => {
         return "";
     }
   };
-
-
+  
   return (
     <div className="">
       {/* Header */}
@@ -589,11 +588,11 @@ const Projects = () => {
               </span>
             </div>
             <div>
-            
               <span className="text-gray-900 font-medium">
                 {formatDate2(project?.deadline)}
               </span>
             </div>
+          </div>
           </div>
           </div>
         ))}
@@ -692,7 +691,7 @@ const Projects = () => {
                       key={id}
                       src={dept.avatar}
                       alt={dept.name}
-                      className="w-8 h-8 rounded-full bg-white p-1 border border-blue-300 bg-red"
+                      className="w-8 h-8 rounded-full bg-white p-1 border border-blue-300"
                     />
                   ) : null;
                 })}

@@ -1,3 +1,4 @@
+///////////////////////////////////////////////////////////////////////////////TaskDetails.jsx
 import { AiOutlinePaperClip } from "react-icons/ai";
 import { useParams, useNavigate } from "react-router-dom";
 import { FiTrash } from "react-icons/fi";
@@ -622,7 +623,6 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
 };
 
 export default TaskDetails;
-
 
 // import { AiOutlinePaperClip } from "react-icons/ai";
 // import { FiTrash } from "react-icons/fi";

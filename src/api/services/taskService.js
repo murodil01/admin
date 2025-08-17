@@ -1,3 +1,4 @@
+//////////////////////////////////////////////////////////////////////taskService.js
 import api from "../base";
 import endpoints from "../endpoint";
 
@@ -15,8 +16,7 @@ export const getProjectUsers = (id) => api.get(endpoints.projects.getByIdUsers(i
 
 
 
-
-export const getTaskFiles  = () => api.get(endpoints.tasks.getTaskFiles);
+export const getTaskFiles = () => api.get(endpoints.tasks.getTaskFiles);
 export const uploadTaskFile = (formData) =>
   api.post(endpoints.tasks.createTaskFile, formData, {
     headers: {
@@ -24,30 +24,29 @@ export const uploadTaskFile = (formData) =>
     },
   });
 
-  export const deleteTaskFile = (id) => api.delete(endpoints.tasks.deleteTaskFile(id));
-  
+export const deleteTaskFile = (id) => api.delete(endpoints.tasks.deleteTaskFile(id));
 
-  // Instructions/Checklist API functions 
+
+// Instructions/Checklist API functions 
 // export const getInst = (taskId) => 
 //   api.get(endpoints.tasks.getTaskInstructions, { params: { task: taskId } });
-export const getTaskInstructions = (taskId) => 
+export const getTaskInstructions = (taskId) =>
   api.get(endpoints.tasks.getTaskInstructions, { params: { task: taskId } });
 
-export const createChecklistItem = (data) => 
+export const createChecklistItem = (data) =>
   api.post(endpoints.tasks.getInstruction, data);
 
-  export const createInstruction = (instructionData) =>api.post(endpoints.tasks.createTaskInstructions, instructionData);//editTask
+export const createInstruction = (instructionData) => api.post(endpoints.tasks.createTaskInstructions, instructionData);//editTask
 
-export const updateInstruction = (id, data) => 
+export const updateInstruction = (id, data) =>
   api.patch(`${endpoints.tasks.getInstruction}${id}/`, data);
 
-  export const updateTaskInstruction = (id, instructionData) => api.put(endpoints.tasks.updateInstruction(id), instructionData);
+export const updateTaskInstruction = (id, instructionData) => api.put(endpoints.tasks.updateInstruction(id), instructionData);
 
-  export const deleteInstruction = (id) => api.delete(endpoints.tasks.deleteTaskInstruction(id));
+export const deleteInstruction = (id) => api.delete(endpoints.tasks.deleteTaskInstruction(id));
 
-export const deleteChecklistItem = (id) => 
+export const deleteChecklistItem = (id) =>
   api.delete(`${endpoints.tasks.getInstruction}${id}/`);
-
 
 export const getCommentTask = async (taskId) => {
   try {
