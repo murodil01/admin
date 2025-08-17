@@ -13,12 +13,16 @@ import {
 } from "antd";
 import Kanban from "./Kanban";
 import memberSearch from "../../assets/icons/memberSearch.svg";
-import { 
-  createTask, 
+import {
+  createTask,
   getProjectTaskById,
   getProjectUsers,
 } from "../../api/services/taskService";
 import dayjs from "dayjs";
+
+import { Permission } from "../../components/Permissions";
+import { useAuth } from "../../hooks/useAuth";
+import { ROLES } from "../../components/constants/roles";
 
 const { TextArea } = Input;
 
@@ -51,7 +55,7 @@ const getTaskTags = async () => {
 const TaskDetails = ({ tagOptionsFromApi = [] }) => {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  
+
   // Initialize with empty array, will be populated from API
   const [tagOptions, setTagOptions] = useState([]);
   const [tags, setTags] = useState([]);
@@ -71,6 +75,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
   const [loadingTags, setLoadingTags] = useState(false);
   const [file, setFile] = useState(null);       // File object
   const [preview, setPreview] = useState(null);
+  const { user, isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (!file) {
@@ -95,7 +100,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
         }
 
         const tagsData = await getTaskTags();
-       // API dan array qaytarsa to'g'ridan-to'g'ri ishlatamiz, aks holda bo'sh array
+        // API dan array qaytarsa to'g'ridan-to'g'ri ishlatamiz, aks holda bo'sh array
         setTagOptions(Array.isArray(tagsData) ? tagsData : []);
       } catch (error) {
         console.error("Error fetching tags:", error);
@@ -123,7 +128,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
       message.error("Please log in to access tasks");
       return;
     }
-   
+
     getProjectTaskById(projectId)
       .then((response) => {
         setCards(mapTasksToCards(response.data.results));
@@ -155,8 +160,8 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
       }
 
       const response = await getProjectUsers(projectId);
-      
-       const userOptions = response.data.map(user => ({
+
+      const userOptions = response.data.map(user => ({
         label: user.name || user.username || `${user.first_name} ${user.last_name}`.trim() || "Unknown User",
         value: user.id || user.user_id,
         avatar: user.avatar || user.profile_picture,
@@ -173,13 +178,13 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
     }
   };
 
-   const getAssigneeName = (assigneeId) => {
+  const getAssigneeName = (assigneeId) => {
     if (!assigneeId) return "Not assigned";
-    
+
     const user = assignees.find(u => u.value === assigneeId);
     return user ? user.label : "Unknown user";
   };
-   
+
   // Helper to map API tasks to card format
   const mapTasksToCards = (tasks) => {
 
@@ -188,17 +193,17 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
       return [];
     }
     return tasks.map((task) => ({
-      id: task.id ?task.id.toString() : Math.random().toString(),
+      id: task.id ? task.id.toString() : Math.random().toString(),
       title: task.name || "Untitled Task",
       time: task.deadline
         ? new Date(task.deadline).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          })
+          month: "short",
+          day: "numeric",
+        })
         : "No due date",
       description: task.description,
       assignee: {
-        name: task.assigned?.length > 0 
+        name: task.assigned?.length > 0
           ? task.assigned.map(id => getAssigneeName(id)).filter(name => name !== "Unknown user").join(", ") || "Unknown"
           : "Not assigned",
         avatar: "bg-blue-500",
@@ -211,7 +216,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
   };
 
   const showModal = () => setIsModalOpen(true);
-  
+
   const handleCancel = () => {
     setIsModalOpen(false);
     // Reset form
@@ -263,7 +268,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
     // Append image if selected
     if (image) {
       formData.append('task_image', image);  // 'task_image' matches your backend field
-    } 
+    }
     // Append other files if any (assuming setFiles is an array of File objects)
     files.forEach(file => formData.append('files', file));
 
@@ -280,15 +285,15 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
 
       // Find the assignee name from the assignees array
       const assigneeName = assignees.find(a => a.value === selectedAssignee)?.label || "Unknown"
-        
+
       const newCard = {
         id: newTask.id,
         title: newTask.name,
         time: newTask.deadline
           ? new Date(newTask.deadline).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            })
+            month: "short",
+            day: "numeric",
+          })
           : "No due date",
         description: newTask.description,
         assignee: {
@@ -300,7 +305,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
         column: newTask.tasks_type,
         files,
       }
-     setCards((prev) => [...prev, newCard]);
+      setCards((prev) => [...prev, newCard]);
       message.success("Task created successfully!");
 
       // Reset form
@@ -325,19 +330,23 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
     });
   };
 
+  if (!isAuthenticated) return <div>Please login</div>;
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
         <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
           Project name
         </h3>
-        <button
-          onClick={showModal}
-          className="capitalize w-full sm:max-w-[172px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
-        >
-          <span className="text-[22px]">+</span>
-          <span>Add Column</span>
-        </button>
+        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+          <button
+            onClick={showModal}
+            className="capitalize w-full sm:max-w-[172px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
+          >
+            <span className="text-[22px]">+</span>
+            <span>Add Column</span>
+          </button>
+        </Permission>
 
         <Modal
           open={isModalOpen}
@@ -358,28 +367,28 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
           <div className="px-3 sm:px-4 py-8">
             <div className=" flex justify-center items-center md:justify-between flex-wrap gap-4 mb-6">
               <div className=" w-[100%] flex md:max-w-[250px] flex-col">
-                <label className="mb-1" htmlFor="">Column title</label> 
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="name..."
-                className=" "
-                style={{
-                  borderRadius: "14px",
-                  height: "54px",
-                  color: "#0A1629",
-                  fontWeight: "regular",
-                  fontSize: "14px",
-                }}
-              />
+                <label className="mb-1" htmlFor="">Column title</label>
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="name..."
+                  className=" "
+                  style={{
+                    borderRadius: "14px",
+                    height: "54px",
+                    color: "#0A1629",
+                    fontWeight: "regular",
+                    fontSize: "14px",
+                  }}
+                />
               </div>
-                    <div className="  w-[100%] md:max-w-[250px] flex flex-col ">
-              <label className=" mb-1" htmlFor="">Type</label>
-                  <Select
-                className="custom-select  flex-1 min-w-[250px]"
-                value={type}
-                onChange={setType}
-                options={[
+              <div className="  w-[100%] md:max-w-[250px] flex flex-col ">
+                <label className=" mb-1" htmlFor="">Type</label>
+                <Select
+                  className="custom-select  flex-1 min-w-[250px]"
+                  value={type}
+                  onChange={setType}
+                  options={[
                     { value: "assigned", label: "Assigned" },
                     { value: "acknowledged", label: "Acknowledged" },
                     { value: "in_progress", label: "In Progress" },
@@ -388,12 +397,12 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                     { value: "return_for_fixes", label: "Return for Fixes" },
                     { value: "dropped", label: "Dropped" },
                     { value: "approved", label: "Approved" },
-                ]}
-              />
-             </div>
-              
+                  ]}
+                />
+              </div>
+
               <Upload
-              className="w-[100%] md:max-w-[250px]"
+                className="w-[100%] md:max-w-[250px]"
                 style={{ width: "100%" }}
                 showUploadList={false}
                 beforeUpload={(file) => {
@@ -407,43 +416,43 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                   return false;
                 }}
               >
-                
+
                 <div className=" w-[100%] flex   flex-col">
                   <label className=" mb-1" htmlFor="">Image</label>
                   <Button
-                  style={{ height: "54px", borderRadius: "14px" }}
-                  className="  flex justify-between border border-gray-300"
-                >
-                  <span>Change image</span>
-                  <AiOutlinePaperClip className="text-lg" />
-                </Button>
+                    style={{ height: "54px", borderRadius: "14px" }}
+                    className="  flex justify-between border border-gray-300"
+                  >
+                    <span>Change image</span>
+                    <AiOutlinePaperClip className="text-lg" />
+                  </Button>
                 </div>
               </Upload>
-                {file && (
-        <div className="mt-3 flex items-center gap-3">
-          <img
-            src={preview}
-            alt={file.name}
-            className="w-16 h-16 object-cover rounded-md border"
-          />
-          <div>
-            <div className="font-medium">{file.name}</div>
-            <div className="text-sm text-gray-500">
-              {(file.size / 1024).toFixed(1)} KB • {file.type}
-            </div>
-            <div className="mt-2">
-              <Button
-                size="small"
-                onClick={() => {
-                  setFile(null);
-                }}
-              >
-                Remove
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+              {file && (
+                <div className="mt-3 flex items-center gap-3">
+                  <img
+                    src={preview}
+                    alt={file.name}
+                    className="w-16 h-16 object-cover rounded-md border"
+                  />
+                  <div>
+                    <div className="font-medium">{file.name}</div>
+                    <div className="text-sm text-gray-500">
+                      {(file.size / 1024).toFixed(1)} KB • {file.type}
+                    </div>
+                    <div className="mt-2">
+                      <Button
+                        size="small"
+                        onClick={() => {
+                          setFile(null);
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="mb-6">
@@ -458,38 +467,38 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
               />
             </div>
 
-         <div className="flex flex-wrap gap-4 mb-6"> 
-             <div className="relative flex-1 flex flex-col flex-wrap md:col-span-2">
-              <label className=" mb-1 font-bold text-[14px] text-[#7D8592]" htmlFor="">Deadline</label>
-              <DatePicker
-                className=" w-full"
-                onChange={(_, dateStr) => setDate(dateStr)}
-                style={{
-                  borderRadius: "8px",
-                  height: "40px",
-                }}
-              />
+            <div className="flex flex-wrap gap-4 mb-6">
+              <div className="relative flex-1 flex flex-col flex-wrap md:col-span-2">
+                <label className=" mb-1 font-bold text-[14px] text-[#7D8592]" htmlFor="">Deadline</label>
+                <DatePicker
+                  className=" w-full"
+                  onChange={(_, dateStr) => setDate(dateStr)}
+                  style={{
+                    borderRadius: "8px",
+                    height: "40px",
+                  }}
+                />
               </div>
               <div className="relative flex-1 flex flex-col flex-wrap md:col-span-2">
-                  <label className=" mb-1 font-bold text-[14px] text-[#7D8592]" htmlFor="">Notification</label>
-              <Select
-              className="w-full"
-                optionFilterProp="label"
-                style={{ borderRadius: "8px",  height: "40px", }}               
-                value={notification}
-                onChange={setNotification}
-                options={[
-                  { value: "On", label: "On" },
-                  { value: "Off", label: "Off" },
-                ]}
-              />
-            
-               </div>
+                <label className=" mb-1 font-bold text-[14px] text-[#7D8592]" htmlFor="">Notification</label>
+                <Select
+                  className="w-full"
+                  optionFilterProp="label"
+                  style={{ borderRadius: "8px", height: "40px", }}
+                  value={notification}
+                  onChange={setNotification}
+                  options={[
+                    { value: "On", label: "On" },
+                    { value: "Off", label: "Off" },
+                  ]}
+                />
+
+              </div>
               <div className="relative flex-1 flex flex-col flex-wrap md:col-span-2">
-                 
+
                 <label className="  mb-1 flex-1 font-bold text-[14px] text-[#7D8592]" htmlFor="">Assignee</label>
                 <Select
-                
+
                   showSearch
                   placeholder={loadingAssignees ? "Loading users..." : "Change assignee"}
                   optionFilterProp="label"
@@ -499,11 +508,11 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                   loading={loadingAssignees}
                   disabled={loadingAssignees}
                   className="w-full "
-                   style={{
-                  borderRadius: "8px",
-                  height: "40px",
-                
-                }}
+                  style={{
+                    borderRadius: "8px",
+                    height: "40px",
+
+                  }}
                   filterOption={(input, option) =>
                     (option?.label ?? "")
                       .toLowerCase()
@@ -519,7 +528,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                   />
                 </span>
               </div>
-            </div> 
+            </div>
 
             <div className="mb-6">
               <label className="block text-sm text-gray-400 mb-2 font-bold">
@@ -527,19 +536,19 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
               </label>
               <div className="grid grid-cols-2 gap-2  w-[300px]">
                 {tagOptions.map((tag) => (
-                   <label
-                      key={tag.id}
-                      className="flex items-center gap-2    text-[12px] cursor-pointer capitalize font-semi-bold text-gray-400"
-                    >
-                      
-                      <input
-                        type="checkbox"
-                        checked={tags.includes(tag.id)}
-                        onChange={() => toggleTag(tag.id)}
-                      />
-                      {tag.name}
-                    </label>
-                    ))}
+                  <label
+                    key={tag.id}
+                    className="flex items-center gap-2    text-[12px] cursor-pointer capitalize font-semi-bold text-gray-400"
+                  >
+
+                    <input
+                      type="checkbox"
+                      checked={tags.includes(tag.id)}
+                      onChange={() => toggleTag(tag.id)}
+                    />
+                    {tag.name}
+                  </label>
+                ))}
               </div>
             </div>
 
@@ -557,12 +566,12 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                   transition: "box-shadow 0.3s ease",
                 }}
                 onMouseEnter={(e) =>
-                  (e.currentTarget.style.boxShadow =
-                    "0 6px 20px rgba(24, 144, 255, 0.8)")
+                (e.currentTarget.style.boxShadow =
+                  "0 6px 20px rgba(24, 144, 255, 0.8)")
                 }
                 onMouseLeave={(e) =>
-                  (e.currentTarget.style.boxShadow =
-                    "0 4px 12px rgba(24, 144, 255, 0.5)")
+                (e.currentTarget.style.boxShadow =
+                  "0 4px 12px rgba(24, 144, 255, 0.5)")
                 }
               >
                 Create
@@ -602,16 +611,16 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
 
       <div className="w-full">
         <div className="w-full pb-4 relative">
-          <Kanban  cards={cards} 
-        setCards={setCards} 
-        assignees={assignees}
-        getAssigneeName={getAssigneeName} />
+          <Kanban cards={cards}
+            setCards={setCards}
+            assignees={assignees}
+            getAssigneeName={getAssigneeName} />
         </div>
       </div>
     </div>
   );
 };
-  
+
 export default TaskDetails;
 
 
