@@ -10,37 +10,62 @@ import {
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { updateGroup } from "../../../api/services/groupService";
-import {
-  getLeads,
-  createLeads,
-  updateLeads,
-  deleteLeads,
-} from "../../../api/services/leadsService";
+import { updateLeads } from "../../../api/services/leadsService";
 
-const DatePickerCell = ({ value, onChange, onSave, onCancel }) => {
-  const [date, setDate] = useState(value ? new Date(value) : null);
+const DatePickerCell = ({
+  value = { start: "", end: "" },
+  onChange,
+  onSave,
+  onCancel,
+}) => {
+  const [startDate, setStartDate] = useState(
+    value.start ? new Date(value.start) : null
+  );
+  const [endDate, setEndDate] = useState(
+    value.end ? new Date(value.end) : null
+  );
 
-  const handleChange = (date) => {
-    setDate(date);
-    onChange(date ? date.toISOString().split("T")[0] : "");
+  const handleStartChange = (date) => {
+    setStartDate(date);
+    onChange({
+      start: date ? date.toISOString().split("T")[0] : "",
+      end: endDate ? endDate.toISOString().split("T")[0] : "",
+    });
+  };
+
+  const handleEndChange = (date) => {
+    setEndDate(date);
+    onChange({
+      start: startDate ? startDate.toISOString().split("T")[0] : "",
+      end: date ? date.toISOString().split("T")[0] : "",
+    });
   };
 
   return (
-    <div className="relative w-full h-full">
+    <div className="flex flex-col gap-1 w-full h-full">
       <ReactDatePicker
-        selected={date}
-        onChange={handleChange}
+        selected={startDate}
+        onChange={handleStartChange}
         dateFormat="yyyy-MM-dd"
         onBlur={onSave}
         onKeyDown={(e) => {
           if (e.key === "Enter") onSave();
           if (e.key === "Escape") onCancel();
         }}
-        className="w-full h-full px-2 py-1 text-center focus:outline-none bg-transparent"
-        placeholderText="Select date"
-        tabIndex={-1}
-        popperClassName="react-datepicker-popper"
-        popperPlacement="bottom-start"
+        className="w-full px-2 py-1 text-center focus:outline-none bg-transparent"
+        placeholderText="Start"
+      />
+      <ReactDatePicker
+        selected={endDate}
+        onChange={handleEndChange}
+        dateFormat="yyyy-MM-dd"
+        onBlur={onSave}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") onSave();
+          if (e.key === "Escape") onCancel();
+        }}
+        className="w-full px-2 py-1 text-center focus:outline-none bg-transparent"
+        placeholderText="End"
       />
     </div>
   );
@@ -110,14 +135,30 @@ const GroupSection = ({
 
   const [columns, setColumns] = useState([
     { key: "name", label: "Leads", isCustom: false },
-    { key: "phoneNumber", label: "Phone Number", isCustom: false },
-    { key: "owner", label: "Owner", isCustom: false },
+    { key: "phone", label: "Phone Number", isCustom: false },
+    // { key: "link", label: "Link", isCustom: false },
+    { key: "person", label: "Owner", isCustom: false },
     { key: "lastInteraction", label: "Last interaction", isCustom: false },
     { key: "status", label: "Status", isCustom: false },
     { key: "notes", label: "Notes", isCustom: false },
+    // { key: "potential_value", label: "Potential value", isCustom: false },
     { key: "timeline", label: "Timeline", isCustom: false },
-    { key: "activeSequences", label: "Active sequences", isCustom: false },
   ]);
+
+  useEffect(() => {
+    if (items) {
+      setLocalItems(
+        items.map((item) => ({
+          ...item,
+          potential_value: item["Potential value"] || item.potential_value || 0,
+          timeline: {
+            start: item.timelineStart || "",
+            end: item.timelineEnd || "",
+          },
+        }))
+      );
+    }
+  }, [items]);
 
   useEffect(() => setLocalItems((items || []).filter(Boolean)), [items]);
 
@@ -139,17 +180,20 @@ const GroupSection = ({
     const { row, field } = editingCell;
     let val = localItems[row]?.[field] ?? "";
 
-    // Agar qiymat bo'sh bo'lsa, "Unnamed" ga o'rnatish
     if (typeof val === "string") val = val.trim();
     if (val === "") val = field === "name" ? "Unnamed" : "";
 
     const newItems = [...localItems];
     newItems[row] = { ...newItems[row], [field]: val };
+
+    // Agar timeline bo‘lsa, API uchun start/end alohida
+    if (field === "timeline") {
+      newItems[row].timelineStart = val.start;
+      newItems[row].timelineEnd = val.end;
+    }
+
     setLocalItems(newItems);
-
-    // Yangilash funksiyasini chaqirish
     updateItem(id, row, newItems[row]);
-
     cancelEditCell();
   };
 
@@ -415,15 +459,27 @@ const GroupSection = ({
                           >
                             <StatusDropdown
                               value={item[col.key] || ""}
-                              onChange={(val) => {
+                              onChange={async (val) => {
+                                // 1️⃣ UI-ni yangilash
                                 setLocalItems((prev) => {
                                   const copy = [...prev];
                                   copy[i] = { ...copy[i], [col.key]: val };
                                   return copy;
                                 });
+
+                                // 2️⃣ API orqali update
+                                try {
+                                  await updateLeads(item.id, { status: val }); // item.id backenddagi lead ID
+                                } catch (err) {
+                                  console.error(
+                                    "Failed to update status:",
+                                    err
+                                  );
+                                  // Xatolik bo‘lsa, foydalanuvchiga ko‘rsatish yoki eski qiymatni qaytarish mumkin
+                                }
                               }}
-                              onSave={() => {}}
-                              onCancel={() => {}}
+                              onSave={saveEditCell}
+                              onCancel={cancelEditCell}
                             />
                           </div>
                         ) : col.key === "timeline" ? (
@@ -432,7 +488,12 @@ const GroupSection = ({
                             onChange={(val) => {
                               setLocalItems((prev) => {
                                 const copy = [...prev];
-                                copy[i] = { ...copy[i], [col.key]: val };
+                                copy[i] = {
+                                  ...copy[i],
+                                  [col.key]: val, // timeline {start, end}
+                                  timelineStart: val.start,
+                                  timelineEnd: val.end,
+                                };
                                 return copy;
                               });
                             }}
@@ -532,3 +593,4 @@ const GroupSection = ({
 };
 
 export default GroupSection;
+

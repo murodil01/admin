@@ -44,9 +44,9 @@ import {
   getTaskTags,
   getProjectUsers,
 
-  getTaskFiles,        
-  uploadTaskFile,     
-  deleteTaskFile, 
+  getTaskFiles,
+  uploadTaskFile,
+  deleteTaskFile,
 
   getCommentTask,///
   createComment,//
@@ -59,14 +59,14 @@ import {
   deleteChecklistItem
 } from "../../api/services/taskService";
 
-const NotionKanban = ({ cards, setCards,assignees ,getAssigneeName}) => {
+const NotionKanban = ({ cards, setCards, assignees, getAssigneeName }) => {
   return (
     <div className="flex gap-5 absolute top-0 right-0 left-0 pb-4 w-full overflow-x-auto hide-scrollbar">
-      <Board   
-        cards={cards} 
-        setCards={setCards} 
+      <Board
+        cards={cards}
+        setCards={setCards}
         assignees={assignees}
-        getAssigneeName={getAssigneeName} 
+        getAssigneeName={getAssigneeName}
       />
       {/* <Board cards={cards} setCards={setCards} /> */}
     </div>
@@ -152,7 +152,7 @@ const Board = ({ cards, setCards }) => {
   };
 
 
-   useEffect(() => {
+  useEffect(() => {
     if (!hasChecked) {
       const cardData = localStorage.getItem("cards");
       try {
@@ -164,7 +164,7 @@ const Board = ({ cards, setCards }) => {
       setHasChecked(true);
     }
   }, [hasChecked, setCards]);
-    useEffect(() => {
+  useEffect(() => {
     if (hasChecked) {
       localStorage.setItem("cards", JSON.stringify(cards));
     }
@@ -285,7 +285,7 @@ const Column = ({
       setCards(copy); // UI ni yangilash
 
       // 2. Backendga yangilash
-           try {
+      try {
         await updateTaskType(cardId, column);
         message.success("Task status updated!");
       } catch (error) {
@@ -302,6 +302,7 @@ const Column = ({
   };
 
   const filteredCards = cards.filter((c) => c.column === column);
+  
 
   return (
     <div
@@ -319,9 +320,8 @@ const Column = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`w-full transition-colors ${
-          active ? "bg-neutral-800/50 border-dashed" : "bg-neutral-800/0"
-        }`}
+        className={`w-full transition-colors ${active ? "bg-neutral-800/50 border-dashed" : "bg-neutral-800/0"
+          }`}
       >
         {filteredCards.map((c) => (
           <Card
@@ -368,7 +368,7 @@ const Card = ({
   const [newChecklistItem, setNewChecklistItem] = useState("");
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
-  
+
   // Helper functions
   const getFileIcon = (fileName) => {
     if (!fileName) return "📄";
@@ -417,11 +417,11 @@ const Card = ({
 
   const getAssigneeName = (assignee) => {
     if (!assignee) return "Not assigned";
-    
+
     if (typeof assignee === 'object') {
       if (assignee.first_name && assignee.last_name) {
         return `${assignee.first_name} ${assignee.last_name}`;
-      } 
+      }
       if (assignee.name) {
         return assignee.name;
       }
@@ -430,32 +430,32 @@ const Card = ({
       }
       return 'Unknown';
     }
-    
-    const user = projectUsers.find(u => 
-      u.id === assignee || 
+
+    const user = projectUsers.find(u =>
+      u.id === assignee ||
       u.user_id === assignee
     );
-    
+
     return user ? `${user.first_name} ${user.last_name}` : 'Unknown';
   };
 
   // getCurrentUser function
   const getCurrentUser = () => {
     console.log("🔍 Checking user storage...");
-    
+
     const possibleKeys = ['user', 'currentUser', 'authUser', 'userData'];
-    
+
     for (const key of possibleKeys) {
       const localData = localStorage.getItem(key);
       const sessionData = sessionStorage.getItem(key);
-      
+
       const userData = localData || sessionData;
-      
+
       if (userData) {
         try {
           const user = JSON.parse(userData);
           console.log(`✅ Found user in ${localData ? 'localStorage' : 'sessionStorage'}[${key}]:`, user);
-          
+
           if (user && user.id) {
             return user;
           }
@@ -464,11 +464,11 @@ const Card = ({
         }
       }
     }
-    
+
     // Check for JWT token
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || 
-                  localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-    
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token') ||
+      localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+
     if (token && token.includes('.')) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
@@ -485,7 +485,7 @@ const Card = ({
         console.error("❌ Failed to decode JWT:", e);
       }
     }
-    
+
     console.warn("⚠️ No user data found anywhere");
     return null;
   };
@@ -498,7 +498,7 @@ const Card = ({
       console.log("🔄 Fetching files for task ID:", id);
       const response = await getTaskFiles(id);
       console.log("📥 Files API Response:", response);
-      
+
       let filesList = [];
       if (Array.isArray(response.data)) {
         filesList = response.data;
@@ -507,7 +507,7 @@ const Card = ({
       } else if (response.data && Array.isArray(response.data.files)) {
         filesList = response.data.files;
       }
-      
+
       console.log("📁 Extracted files:", filesList);
       setFiles(filesList);
     } catch (error) {
@@ -526,7 +526,7 @@ const Card = ({
       console.log("🔄 Fetching comments for task ID:", id);
       const response = await getCommentTask(id);
       console.log("📥 Comments API Response:", response);
-      
+
       let commentsList = [];
       if (Array.isArray(response.data)) {
         commentsList = response.data;
@@ -535,12 +535,12 @@ const Card = ({
       } else if (response.data && Array.isArray(response.data.comments)) {
         commentsList = response.data.comments;
       }
-        
+
       const mappedComments = commentsList.map(comment => ({
         ...comment,
         user_name: getAssigneeName(comment.user) || 'Unknown',
       }));
-      
+
       console.log("📋 Extracted and mapped comments:", mappedComments);
       setComments(mappedComments);
     } catch (error) {
@@ -559,7 +559,7 @@ const Card = ({
       console.log("🔄 Fetching checklist for task ID:", id);
       const response = await getTaskInstructions(id);
       console.log("📥 RAW API Response:", response);
-      
+
       let items = [];
       if (Array.isArray(response.data)) {
         items = response.data;
@@ -571,7 +571,7 @@ const Card = ({
         items = response.data.instructions;
       }
       console.log("📋 Extracted items:", items);
-      
+
       const normalizedItems = items.map(item => {
         console.log("🔄 Processing item:", item);
         return {
@@ -595,7 +595,7 @@ const Card = ({
       message.warning("Please enter a comment");
       return;
     }
-    
+
     const currentUser = getCurrentUser();
     if (!currentUser || !currentUser.id) {
       message.error("Please log in to add a comment");
@@ -606,7 +606,7 @@ const Card = ({
     }
 
     setSubmitLoading(true);
-    
+
     try {
       const payload = {
         task: id,
@@ -621,10 +621,10 @@ const Card = ({
       setNewComment("");
       await fetchComments();
       message.success('Comment added successfully');
-      
+
     } catch (error) {
       console.error('❌ Error adding comment:', error);
-      
+
       if (error.response) {
         console.error('Response data:', error.response.data);
         console.error('Response status:', error.response.status);
@@ -640,7 +640,7 @@ const Card = ({
   // Checklist handlers
   const addChecklistItem = async () => {
     if (!newChecklistItem.trim()) return;
-    
+
     const tempItem = {
       id: `temp-${Date.now()}`,
       name: newChecklistItem.trim(),
@@ -648,44 +648,44 @@ const Card = ({
       completed: false,
       isTemp: true
     };
-    
+
     console.log("➕ Adding new checklist item:", tempItem);
-    
+
     setChecklistItems(prev => {
       const updated = [...prev, tempItem];
       console.log("📝 Updated checklist with temp item:", updated);
       return updated;
     });
-    
+
     const itemName = newChecklistItem.trim();
     setNewChecklistItem("");
-    
+
     try {
       console.log("📤 Creating checklist item:", {
         task: id,
         name: itemName,
         status: false
       });
-      
+
       const response = await createChecklistItem({
         task: id,
         name: itemName,
         status: false
       });
       console.log("📥 Create API Response:", response);
-      
-      setChecklistItems(prev => 
-        prev.map(item => 
-          item.id === tempItem.id 
-            ? { 
-                ...response.data, 
-                completed: response.data.status,
-                isTemp: false 
-              } 
+
+      setChecklistItems(prev =>
+        prev.map(item =>
+          item.id === tempItem.id
+            ? {
+              ...response.data,
+              completed: response.data.status,
+              isTemp: false
+            }
             : item
         )
       );
-     
+
       message.success('Checklist item added');
     } catch (error) {
       console.error('❌ Error adding checklist item:', error);
@@ -698,7 +698,7 @@ const Card = ({
   const handleDeleteChecklistItem = async (itemId) => {
     const originalItems = [...checklistItems];
     setChecklistItems(prev => prev.filter(item => item.id !== itemId));
-    
+
     try {
       await deleteChecklistItem(itemId);
       message.success('Item deleted');
@@ -711,11 +711,11 @@ const Card = ({
 
   const handleUpdateChecklistItem = async (itemId, completed) => {
     const originalItems = [...checklistItems];
-    
-    setChecklistItems(prev => 
-      prev.map(item => 
-        item.id === itemId ? { 
-          ...item, 
+
+    setChecklistItems(prev =>
+      prev.map(item =>
+        item.id === itemId ? {
+          ...item,
           status: completed,
           completed: completed
         } : item
@@ -723,10 +723,10 @@ const Card = ({
     );
 
     try {
-      await updateInstruction(itemId, { 
+      await updateInstruction(itemId, {
         status: completed
       });
-      
+
       message.success('Checklist updated');
     } catch (error) {
       console.error('Error updating checklist item:', error);
@@ -745,7 +745,7 @@ const Card = ({
       const response = await getTaskById(id);
       console.log("📥 Task data:", response.data);
       setTaskData(response.data);
-      
+
       if (response.data.projectId || response.data.project_id || response.data.project) {
         const projectId = response.data.projectId || response.data.project_id || response.data.project;
         try {
@@ -797,6 +797,21 @@ const Card = ({
     }
   };
 
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const showDeleteModal = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    handleDelete();
+    setIsDeleteModalOpen(false);
+  };
+
+  const handleCancelDelete = () => {
+    setIsDeleteModalOpen(false);
+  };
+
   const handleEditCard = async () => {
     setLoading(true);
     try {
@@ -818,12 +833,12 @@ const Card = ({
       prev.map((card) =>
         card.id === updatedCard.id
           ? {
-              ...card,
-              title: updatedCard.name,
-              time: updatedCard.deadline,
-              description: updatedCard.description,
-              column: updatedCard.tasks_type,
-            }
+            ...card,
+            title: updatedCard.name,
+            time: updatedCard.deadline,
+            description: updatedCard.description,
+            column: updatedCard.tasks_type,
+          }
           : card
       )
     );
@@ -893,7 +908,7 @@ const Card = ({
                   label: "Delete",
                   onClick: (e) => {
                     e.domEvent.stopPropagation();
-                    handleDelete();
+                    showDeleteModal();
                   },
                 },
               ],
@@ -908,6 +923,20 @@ const Card = ({
             </button>
           </Dropdown>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        <Modal
+          title={`Are you sure you want to delete "${title}" card?`}
+          open={isDeleteModalOpen}
+          onOk={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+          okText="Yes, delete"
+          cancelText="Cancel"
+          okButtonProps={{ danger: true }}
+          className="delete-modal"
+        >
+          <p>This action cannot be undone.</p>
+        </Modal>
 
         {/* Agar image mavjud bo'lsa */}
         {imageUrl && (
@@ -939,7 +968,7 @@ const Card = ({
           style={{
             top: 30, // px qiymati, modal yuqoriga yaqinlashadi
           }}
-          
+
           footer={[
             <Button
               key="edit"
@@ -972,7 +1001,7 @@ const Card = ({
             </Button>,
           ]}
         >
-           {loading ? (
+          {loading ? (
             <div className="flex justify-center items-center h-[400px]">
               <Spin size="large" />
             </div>
@@ -984,11 +1013,11 @@ const Card = ({
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="w-full sm:w-[140px] h-[140px] bg-gray-200 flex items-center justify-center rounded">
                     <span role="img" aria-label="image" className="text-4xl">
-                  {taskData?.task_image ? (
-                      <img src={taskData.task_image} alt="" onError={(e) => (e.currentTarget.style.display = "none")} />
-                    ) : (
-                      <span>🖼️</span>
-                    )}
+                      {taskData?.task_image ? (
+                        <img src={taskData.task_image} alt="" onError={(e) => (e.currentTarget.style.display = "none")} />
+                      ) : (
+                        <span>🖼️</span>
+                      )}
                     </span>
                   </div>
                   <div className="flex-1 text-sm text-gray-700 leading-6">
@@ -997,216 +1026,215 @@ const Card = ({
                 </div>
 
 
-      {/* Files */}
-      <div>
-        <h4 className="font-semibold text-sm mb-3">Files</h4>
-
-        <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-          <span>📁</span>
-          Files ({files.length})
-        </h4>
-
-        {filesLoading ? (
-          <div className="flex items-center gap-2">
-            <Spin size="small" />
-            <span className="text-sm text-gray-500">Loading files...</span>
-          </div>
-        ) : files.length > 0 ? (
-          <div className="space-y-2">
-            {files.map((file, index) => (
-              <div
-                key={file.id || index}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
-              >
-                <div className="flex items-center gap-3">
-                  {/* Fayl tipi ikonkasi */}
-                  <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                    {getFileIcon(file.file_type || file.file_name)}
-                  </div>
-
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {file.original_name || file.file_name || "Unnamed file"}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {file.file_size ? formatFileSize(file.file_size) : ""} •{" "}
-                      {file.created_at ? formatDate(file.created_at) : "Unknown date"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Download button */}
-                <Button
-                  type="text"
-                  icon={<DownloadOutlined />}
-                  onClick={() => handleFileDownload(file)}
-                  className="text-blue-600 hover:text-blue-800"
-                />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg text-center">
-            📄 No files attached to this task
-          </p>
-        )}
-      </div>
-
-      {/* Checklist */}
-      <div>
-        <div className="flex justify-between items-center mb-3">
-          <h4 className="font-semibold text-sm flex items-center gap-2">
-            <img src={checkList} alt="checklist" className="w-4 h-4" />
-            Check list ({checklistItems.length})
-          </h4>
-          <span className="text-xs text-gray-500">Show</span>
-        </div>
-
-        {checklistItems && checklistItems.length > 0 ? (
-          <div className="space-y-2">
-            {checklistItems.map((item, index) => (
-              <div
-                key={item.id || index}
-                className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded"
-              >
-                <Checkbox
-                  checked={item.completed}
-                  onChange={(e) => handleUpdateChecklistItem(item.id, e.target.checked)}
-                />
-                <span
-                  className={`text-sm flex-1 ${
-                    item.completed ? "line-through text-gray-500" : "text-gray-900"
-                  }`}
-                >
-                  {item.title || item.name || item.description || `Item ${index + 1}`}
-                </span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-gray-500">No checklist items</p>
-        )}
-      </div>
-
-      {/* Comments */}
-      <div>
-        <h4 className="font-semibold text-sm mb-3">Comments</h4>
-        <div className="p-4 bg-blue-50 rounded-xl">
-          {comments.length > 0 ? (
-            comments.map((c) => (
-              <div key={c.id} className="rounded-lg bg-blue-50 mb-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
-                    👤 {c.user_name[0]}
-                  </div>
-                  <span className="text-sm font-medium">{c.user_name || "You"}</span>
-                  <p className="text-xs text-gray-500 ml-2">
-                    {dayjs(c.created_at).format("MMM D, YYYY h:mm A")}
-                  </p>
-                </div>
+                {/* Files */}
                 <div>
-                  <div className="bg-white p-1 rounded-sm">
-                    <p className="text-sm text-gray-700">{c.text || c.message}</p>
+                  <h4 className="font-semibold text-sm mb-3">Files</h4>
+
+                  <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+                    <span>📁</span>
+                    Files ({files.length})
+                  </h4>
+
+                  {filesLoading ? (
+                    <div className="flex items-center gap-2">
+                      <Spin size="small" />
+                      <span className="text-sm text-gray-500">Loading files...</span>
+                    </div>
+                  ) : files.length > 0 ? (
+                    <div className="space-y-2">
+                      {files.map((file, index) => (
+                        <div
+                          key={file.id || index}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
+                        >
+                          <div className="flex items-center gap-3">
+                            {/* Fayl tipi ikonkasi */}
+                            <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
+                              {getFileIcon(file.file_type || file.file_name)}
+                            </div>
+
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {file.original_name || file.file_name || "Unnamed file"}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {file.file_size ? formatFileSize(file.file_size) : ""} •{" "}
+                                {file.created_at ? formatDate(file.created_at) : "Unknown date"}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Download button */}
+                          <Button
+                            type="text"
+                            icon={<DownloadOutlined />}
+                            onClick={() => handleFileDownload(file)}
+                            className="text-blue-600 hover:text-blue-800"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg text-center">
+                      📄 No files attached to this task
+                    </p>
+                  )}
+                </div>
+
+                {/* Checklist */}
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="font-semibold text-sm flex items-center gap-2">
+                      <img src={checkList} alt="checklist" className="w-4 h-4" />
+                      Check list ({checklistItems.length})
+                    </h4>
+                    <span className="text-xs text-gray-500">Show</span>
+                  </div>
+
+                  {checklistItems && checklistItems.length > 0 ? (
+                    <div className="space-y-2">
+                      {checklistItems.map((item, index) => (
+                        <div
+                          key={item.id || index}
+                          className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded"
+                        >
+                          <Checkbox
+                            checked={item.completed}
+                            onChange={(e) => handleUpdateChecklistItem(item.id, e.target.checked)}
+                          />
+                          <span
+                            className={`text-sm flex-1 ${item.completed ? "line-through text-gray-500" : "text-gray-900"
+                              }`}
+                          >
+                            {item.title || item.name || item.description || `Item ${index + 1}`}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">No checklist items</p>
+                  )}
+                </div>
+
+                {/* Comments */}
+                <div>
+                  <h4 className="font-semibold text-sm mb-3">Comments</h4>
+                  <div className="p-4 bg-blue-50 rounded-xl">
+                    {comments.length > 0 ? (
+                      comments.map((c) => (
+                        <div key={c.id} className="rounded-lg bg-blue-50 mb-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
+                              👤 {c.user_name[0]}
+                            </div>
+                            <span className="text-sm font-medium">{c.user_name || "You"}</span>
+                            <p className="text-xs text-gray-500 ml-2">
+                              {dayjs(c.created_at).format("MMM D, YYYY h:mm A")}
+                            </p>
+                          </div>
+                          <div>
+                            <div className="bg-white p-1 rounded-sm">
+                              <p className="text-sm text-gray-700">{c.text || c.message}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500 mb-3">No comments yet</p>
+                    )}
+
+                    {/* Add new comment */}
+                    <div className="mt-3 flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Add a comment"
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleAddComment()} // Enter bosilganda ham yuborish
+                        className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none"
+                      />
+                      <button
+                        onClick={handleAddComment}
+                        disabled={submitLoading}
+                        className="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600 disabled:opacity-50"
+                      >
+                        {submitLoading ? "..." : "➤"}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            ))
-          ) : (
-            <p className="text-sm text-gray-500 mb-3">No comments yet</p>
-          )}
 
-        {/* Add new comment */}
-<div className="mt-3 flex gap-2">
-  <input
-    type="text"
-    placeholder="Add a comment"
-    value={newComment}
-    onChange={(e) => setNewComment(e.target.value)}
-    onKeyPress={(e) => e.key === 'Enter' && handleAddComment()} // Enter bosilganda ham yuborish
-    className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none"
-  />
-  <button
-    onClick={handleAddComment}
-    disabled={submitLoading}
-    className="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600 disabled:opacity-50"
-  >
-    {submitLoading ? "..." : "➤"}
-  </button>
-</div>
-        </div>
-      </div>
-    </div>
+              {/* Right section */}
+              <div className="md:col-span-4 space-y-4 text-sm">
+                <div>
+                  <p className="text-gray-400">Assignee by</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
 
-    {/* Right section */}
-    <div className="md:col-span-4 space-y-4 text-sm">
-      <div>
-        <p className="text-gray-400">Assignee by</p>
-        <div className="flex items-center gap-2 mt-1">
-          <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
-        
-                     <span>
+                    <span>
                       {(() => {
                         // Debug ma'lumotlari
                         console.log("Current taskData:", taskData);
                         console.log("Current selectedAssignee:", selectedAssignee);
                         console.log("Current projectUsers:", projectUsers);
-                        
+
                         // Har xil assignee formatlarini tekshirish
-                        const assignee = selectedAssignee || 
-                                        taskData?.assignee || 
-                                        taskData?.assigned_to || 
-                                        taskData?.assigned?.[0];
-                                        
+                        const assignee = selectedAssignee ||
+                          taskData?.assignee ||
+                          taskData?.assigned_to ||
+                          taskData?.assigned?.[0];
+
                         console.log("Final assignee:", assignee);
-                        
+
                         return getAssigneeName(assignee);
                       })()}
                     </span>
-        </div>
-      </div>
+                  </div>
+                </div>
 
-      <div>
-        <p className="text-gray-400">Date</p>
-        <p className="mt-1">{taskData.deadline ? dayjs(taskData.deadline).format("YYYY-MM-DD") : "N/A"}</p>
-      </div>
+                <div>
+                  <p className="text-gray-400">Date</p>
+                  <p className="mt-1">{taskData.deadline ? dayjs(taskData.deadline).format("YYYY-MM-DD") : "N/A"}</p>
+                </div>
 
-      <div>
-        <p className="text-gray-400">Notification</p>
-        <p className="mt-1">{taskData.is_active ? "On" : "Off"}</p>
-      </div>
+                <div>
+                  <p className="text-gray-400">Notification</p>
+                  <p className="mt-1">{taskData.is_active ? "On" : "Off"}</p>
+                </div>
 
-      <div>
-        <p className="text-gray-400">Status</p>
-        <p className="mt-1">{taskData.tasks_type || "N/A"}</p>
-      </div>
+                <div>
+                  <p className="text-gray-400">Status</p>
+                  <p className="mt-1">{taskData.tasks_type || "N/A"}</p>
+                </div>
 
 
-      <div>
-        <p className="text-gray-400">Progress</p>
-        <p className="mt-1">{taskData.progress}%</p>
-      </div>
+                <div>
+                  <p className="text-gray-400">Progress</p>
+                  <p className="mt-1">{taskData.progress}%</p>
+                </div>
 
-      <div>
-        <p className="text-gray-400">Tags</p>
-        <div className="flex flex-wrap gap-2 mt-1">
-          {taskData.tags && taskData.tags.length > 0 ? (
-            taskData.tags.map((tag, i) => (
-              <span key={i} className="bg-gray-200 px-2 py-1 rounded text-xs">
-                {tag.name}
-              </span>
-            ))
+                <div>
+                  <p className="text-gray-400">Tags</p>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {taskData.tags && taskData.tags.length > 0 ? (
+                      taskData.tags.map((tag, i) => (
+                        <span key={i} className="bg-gray-200 px-2 py-1 rounded text-xs">
+                          {tag.name}
+                        </span>
+                      ))
+                    ) : (
+                      <p>N/A</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           ) : (
-            <p>N/A</p>
-          )}
-        </div>
-      </div>
-    </div>
-  </div>
-) : (
-  <p className="text-center text-gray-500">No task data available</p>
-)
-}
-        
+            <p className="text-center text-gray-500">No task data available</p>
+          )
+          }
+
         </Modal>
 
         <EditCardModal
@@ -1214,10 +1242,10 @@ const Card = ({
           onClose={() => setIsEditModalOpen(false)}
           cardData={selectedCard}
           onUpdate={handleUpdateCard}
-          // assignees={[
-          //   { value: "user1", label: "Botirov Shaxobiddin" },
-          //   { value: "user2", label: "John Doe" },
-          // ]}
+        // assignees={[
+        //   { value: "user1", label: "Botirov Shaxobiddin" },
+        //   { value: "user2", label: "John Doe" },
+        // ]}
         />
 
         {/* Bottom Row */}
@@ -1344,9 +1372,9 @@ const AddCard = ({ column, setCards }) => {
           time: createdTask.deadline || "",
           assignee: createdTask.assigned
             ? {
-                name: createdTask.assigned[0],
-                avatar: "bg-blue-500",
-              }
+              name: createdTask.assigned[0],
+              avatar: "bg-blue-500",
+            }
             : null,
         },
       ]);
@@ -1450,6 +1478,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
         setFiles([]);
       }
   }, [visible, cardData?.id]);
+
 
   // Card ma'lumotlarini form ga yuklash
   React.useEffect(() => {
@@ -1586,67 +1615,85 @@ const addCheckItem = () => {
     done: false,
     isNew: true // yangi elementlar uchun
   };
-  setChecklist(prev => [...prev, newItem]);
-};
 
-const toggleCheckDone = async (index) => {
-  const item = checklist[index];
-  const newStatus = !item.done;
-  
-  // Optimistic update
-  setChecklist(prev => prev.map((check, i) => 
-    i === index ? { ...check, done: newStatus } : check
-  ));
-
-  // Agar mavjud element bo'lsa (isNew: false), API ga yuborish
-  if (!item.isNew && item.id) {
-    try {
-      await updateTaskInstruction(item.id, {
-        name: item.text,
-        status: newStatus,
-        task: cardData.id
-      });
-      message.success("Checklist item updated!");
-    } catch (error) {
-      console.error("Checklist update error:", error);
-      message.error("Failed to update checklist item");
-      // Rollback
-      setChecklist(prev => prev.map((check, i) => 
-        i === index ? { ...check, done: !newStatus } : check
-      ));
+  // Modal ochilganda instructions ham yuklansin
+  React.useEffect(() => {
+    if (visible && cardData?.id) {
+      loadModalData();
+      loadTaskFiles();
+      // loadTaskInstructions(cardData.id); // Yangi qo'shildi
     }
-  }
-};
+  }, [visible, cardData?.id]);
 
-const updateCheckText = (index, newText) => {
-  setChecklist(prev => prev.map((check, i) => 
-    i === index ? { ...check, text: newText } : check
-  ));
-};
+  // Checklist funksiyalari
+  const addCheckItem = () => {
+    const newItem = {
+      id: Date.now().toString(), // Temporary ID for new items
+      text: "",
+      done: false,
+      isNew: true // yangi elementlar uchun
+    };
+    setChecklist(prev => [...prev, newItem]);
+  };
 
-const deleteCheckItem = async (index) => {
-  const item = checklist[index];
-  
-  // Optimistic update
-  setChecklist(prev => prev.filter((_, i) => i !== index));
+  const toggleCheckDone = async (index) => {
+    const item = checklist[index];
+    const newStatus = !item.done;
 
-  // Agar mavjud element bo'lsa, API dan ham o'chirish
-  if (!item.isNew && item.id) {
-    try {
-      await deleteInstruction(item.id);
-      message.success("Checklist item deleted!");
-    } catch (error) {
-      console.error("Checklist delete error:", error);
-      message.error("Failed to delete checklist item");
-      // Rollback - elementni qaytarish
-      setChecklist(prev => {
-        const newList = [...prev];
-        newList.splice(index, 0, item);
-        return newList;
-      });
+    // Optimistic update
+    setChecklist(prev => prev.map((check, i) =>
+      i === index ? { ...check, done: newStatus } : check
+    ));
+
+    // Agar mavjud element bo'lsa (isNew: false), API ga yuborish
+    if (!item.isNew && item.id) {
+      try {
+        await updateTaskInstruction(item.id, {
+          name: item.text,
+          status: newStatus,
+          task: cardData.id
+        });
+        message.success("Checklist item updated!");
+      } catch (error) {
+        console.error("Checklist update error:", error);
+        message.error("Failed to update checklist item");
+        // Rollback
+        setChecklist(prev => prev.map((check, i) =>
+          i === index ? { ...check, done: !newStatus } : check
+        ));
+      }
     }
-  }
-};
+  };
+
+  const updateCheckText = (index, newText) => {
+    setChecklist(prev => prev.map((check, i) =>
+      i === index ? { ...check, text: newText } : check
+    ));
+  };
+
+  const deleteCheckItem = async (index) => {
+    const item = checklist[index];
+
+    // Optimistic update
+    setChecklist(prev => prev.filter((_, i) => i !== index));
+
+    // Agar mavjud element bo'lsa, API dan ham o'chirish
+    if (!item.isNew && item.id) {
+      try {
+        await deleteInstruction(item.id);
+        message.success("Checklist item deleted!");
+      } catch (error) {
+        console.error("Checklist delete error:", error);
+        message.error("Failed to delete checklist item");
+        // Rollback - elementni qaytarish
+        setChecklist(prev => {
+          const newList = [...prev];
+          newList.splice(index, 0, item);
+          return newList;
+        });
+      }
+    }
+  };
 
   const loadModalData = async () => {
     setLoading(true);
@@ -1674,16 +1721,16 @@ const deleteCheckItem = async (index) => {
     }
   };
 
-   // Task files ni yuklash funksiyasi - YANGI
-   const loadTaskFiles = async () => {
+  // Task files ni yuklash funksiyasi - YANGI
+  const loadTaskFiles = async () => {
     try {
       // ✅ axios o'rniga taskService funksiyasini ishlating
       const response = await getTaskFiles();
-      
+
       // Task ID ga mos fayllarni filtrlash
       const taskFiles = response.data.filter(file => file.task === cardData.id);
       setUploadedFiles(taskFiles);
-      
+
       console.log("Yuklangan fayllar:", taskFiles);
     } catch (error) {
       console.error("Fayllarni yuklashda xatolik:", error);
@@ -1692,12 +1739,12 @@ const deleteCheckItem = async (index) => {
     }
   };
 
-   // File upload funksiyasi - yangi qo'shilgan
-   const uploadFile = async (file, taskId) => {
+  // File upload funksiyasi - yangi qo'shilgan
+  const uploadFile = async (file, taskId) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('task', taskId); // Task ID ni qo'shish
-  
+
     try {
       // ✅ axios o'rniga taskService funksiyasini ishlating
       const response = await uploadTaskFile(formData);
@@ -1714,7 +1761,7 @@ const deleteCheckItem = async (index) => {
 
     setFileUploading(true);
     const uploadPromises = files.map(file => uploadFile(file, taskId));
-    
+
     try {
       const uploadResults = await Promise.all(uploadPromises);
       message.success(`${uploadResults.length} ta fayl muvaffaqiyatli yuklandi!`);
@@ -1733,14 +1780,14 @@ const deleteCheckItem = async (index) => {
       message.error("Task ID topilmadi");
       return;
     }
-    
+
     if (!title.trim()) {
       message.error("Task nomi kiritilishi shart");
       return;
     }
-  
+
     setSaveLoading(true);
-  
+
     try {
       const updateData = {
         name: title.trim(),
@@ -1748,37 +1795,37 @@ const deleteCheckItem = async (index) => {
         tasks_type: type,
         deadline: date ? date.format("YYYY-MM-DD") : null,
         project: projectId,
-        
+
         // ✅ TUZATISH: assigned maydonini to'g'ri formatlash
-        assigned: selectedAssignee && selectedAssignee.length > 0 
+        assigned: selectedAssignee && selectedAssignee.length > 0
           ? (Array.isArray(selectedAssignee) ? selectedAssignee : [selectedAssignee])
           : [],
-        
+
         // ✅ TUZATISH: tags_ids maydonini to'g'ri formatlash  
-        tags_ids: Array.isArray(selectedTags) && selectedTags.length > 0 
-          ? selectedTags 
+        tags_ids: Array.isArray(selectedTags) && selectedTags.length > 0
+          ? selectedTags
           : [],
-        
+
         progress: Math.min(100, Math.max(0, progress)),
         is_active: notification === "On",
       };
-  
+
       // ✅ Debug uchun - yuborilayotgan ma'lumotlarni tekshiring
       console.log("🔍 Yuborilayotgan ma'lumotlar:", updateData);
       console.log("📋 selectedAssignee:", selectedAssignee, "Type:", typeof selectedAssignee);
       console.log("🏷️ selectedTags:", selectedTags, "Type:", typeof selectedTags);
-  
+
       await saveChecklist();
       const response = await updateTask(cardData.id, updateData);
-      
+
       // Fayllarni yuklash
       let newUploadedFiles = [];
       if (files.length > 0) {
         newUploadedFiles = await uploadMultipleFiles(cardData.id);
       }
-  
+
       message.success("Task muvaffaqiyatli yangilandi!");
-  
+
       // State ni yangilash
       if (response && response.data) {
         const updatedCardData = {
@@ -1794,19 +1841,19 @@ const deleteCheckItem = async (index) => {
           files: [...uploadedFiles, ...newUploadedFiles]
         });
       }
-      
+
       onClose();
     } catch (error) {
       console.error("❌ Task yangilashda xatolik:", error);
-      
+
       if (error.response) {
         console.error("🔍 Server javobi:", error.response.data);
         console.error("📊 Status:", error.response.status);
-        
+
         // Server validation xatoliklarini batafsil ko'rsatish
         const errorData = error.response.data;
         let errorMessage = "Task yangilashda xatolik";
-        
+
         if (errorData.assigned && Array.isArray(errorData.assigned)) {
           errorMessage = `Assigned field error: ${errorData.assigned.join(', ')}`;
         } else if (errorData.tags_ids && Array.isArray(errorData.tags_ids)) {
@@ -1815,7 +1862,7 @@ const deleteCheckItem = async (index) => {
           const firstError = Object.values(errorData)[0];
           errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
         }
-        
+
         message.error(errorMessage);
       } else if (error.request) {
         message.error("Serverga ulanishda xatolik");
@@ -1826,7 +1873,7 @@ const deleteCheckItem = async (index) => {
       setSaveLoading(false);
     }
   };
-  
+
   // ✅ Assignee state ni ham tekshiring:
   React.useEffect(() => {
     if (visible && cardData) {
@@ -1834,14 +1881,14 @@ const deleteCheckItem = async (index) => {
       setType(cardData.tasks_type || "");
       setDate(cardData.deadline ? dayjs(cardData.deadline) : null);
       setNotification(cardData.is_active ? "On" : "Off");
-      
+
       // ✅ TUZATISH: assigned maydonini to'g'ri formatlash
       if (cardData.assigned && Array.isArray(cardData.assigned) && cardData.assigned.length > 0) {
         setSelectedAssignee(cardData.assigned[0]); // Birinchi elementni olish
       } else {
         setSelectedAssignee(null);
       }
-      
+
       setDescription(cardData.description || "");
       setSelectedTags(cardData.tags ? cardData.tags.map((tag) => tag.id) : []);
       setProgress(cardData.progress || 0);
@@ -1857,8 +1904,8 @@ const deleteCheckItem = async (index) => {
     );
   };
 
-   // File delete funksiyasi - YANGILANGAN
-   const deleteUploadedFile = async (fileId) => {
+  // File delete funksiyasi - YANGILANGAN
+  const deleteUploadedFile = async (fileId) => {
     try {
       // ✅ axios o'rniga taskService funksiyasini ishlating
       await deleteTaskFile(fileId);
@@ -1870,24 +1917,24 @@ const deleteCheckItem = async (index) => {
     }
   };
 
-    // File download funksiyasi - YANGI
-    const downloadFile = (file) => {
-      if (file.file) {
-        // Faylni yangi tabda ochish yoki download qilish
-        window.open(file.file, '_blank');
-      } else {
-        message.error("Fayl topilmadi");
-      }
-    };
+  // File download funksiyasi - YANGI
+  const downloadFile = (file) => {
+    if (file.file) {
+      // Faylni yangi tabda ochish yoki download qilish
+      window.open(file.file, '_blank');
+    } else {
+      message.error("Fayl topilmadi");
+    }
+  };
 
-     // Yangi checklist elementlarini saqlash funksiyasi
+  // Yangi checklist elementlarini saqlash funksiyasi
   const saveChecklist = async () => {
     const newItems = checklist.filter(item => item.isNew && item.text.trim());
-    
+
     if (newItems.length === 0) return;
 
     try {
-      const savePromises = newItems.map(item => 
+      const savePromises = newItems.map(item =>
         createInstruction({
           name: item.text.trim(),
           status: item.done,
@@ -2013,7 +2060,7 @@ const deleteCheckItem = async (index) => {
                         src={memberSearch}
                         alt="avatar"
                         className="w-6 h-6 rounded-full object-cover"
-                      />  
+                      />
                     </span>
                   </div>
                 </div>
@@ -2103,113 +2150,113 @@ const deleteCheckItem = async (index) => {
 
               {/* Files Section */}
               <div className="mt-4">
-                  <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
-                    Files
-                  </label>
-                  
-                  {/* Existing uploaded files */}
-                  {uploadedFiles.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-xs text-gray-500 mb-2">Yuklangan fayllar:</p>
-                      {uploadedFiles.map((file, index) => (
-                        <div key={`uploaded-${file.id}`} className="flex items-center gap-2 mb-2 p-2 border rounded-lg bg-green-50">
-                          <div className="flex-1 w-[60%]">
-                            <p className="text-sm font-medium truncate">
-                              {file.file ? file.file.split('/').pop() : `File ${index + 1}`}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Created: {file.created_at ? new Date(file.created_at).toLocaleDateString() : 'N/A'}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => downloadFile(file)}
-                            className="text-blue-500 hover:text-blue-700 p-1"
-                            title="Download file"
-                          >
-                            <DownloadOutlined />
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (window.confirm('Bu faylni o\'chirmoqchimisiz?')) {
-                                deleteUploadedFile(file.id);
-                              }
-                            }}
-                            className="text-red-500 hover:text-red-700 p-1"
-                            title="Delete file"
-                          >
-                            <FiTrash />
-                          </button>
+                <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
+                  Files
+                </label>
+
+                {/* Existing uploaded files */}
+                {uploadedFiles.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-500 mb-2">Yuklangan fayllar:</p>
+                    {uploadedFiles.map((file, index) => (
+                      <div key={`uploaded-${file.id}`} className="flex items-center gap-2 mb-2 p-2 border rounded-lg bg-green-50">
+                        <div className="flex-1 w-[60%]">
+                          <p className="text-sm font-medium truncate">
+                            {file.file ? file.file.split('/').pop() : `File ${index + 1}`}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Created: {file.created_at ? new Date(file.created_at).toLocaleDateString() : 'N/A'}
+                          </p>
                         </div>
-                      ))}
-                    </div>
-                  )}
-  
-                  {/* New files to be uploaded */}
-                  {files.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-xs text-gray-500 mb-2">Yangi fayllar (saqlaganda yuklanadi):</p>
-                      {files.map((file, index) => (
-                        <div key={`new-${index}`} className="flex items-center gap-2 mb-2 p-2 border rounded-lg bg-orange-50">
-                          <div className="flex-1  w-[60%]">
-                            <p className="text-sm font-medium truncate">{file.name}</p>
-                            <p className="text-xs text-orange-600">Size: {(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                          </div>
-                          <span className="text-orange-500 text-xs px-2 py-1 bg-orange-200 rounded">Yangi</span>
-                          <button
-                            onClick={() =>
-                              setFiles((prev) => prev.filter((_, i) => i !== index))
+                        <button
+                          onClick={() => downloadFile(file)}
+                          className="text-blue-500 hover:text-blue-700 p-1"
+                          title="Download file"
+                        >
+                          <DownloadOutlined />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (window.confirm('Bu faylni o\'chirmoqchimisiz?')) {
+                              deleteUploadedFile(file.id);
                             }
-                            className="text-red-500 hover:text-red-700 p-1"
-                            title="Remove file"
-                          >
-                            <FiTrash />
-                          </button>
+                          }}
+                          className="text-red-500 hover:text-red-700 p-1"
+                          title="Delete file"
+                        >
+                          <FiTrash />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* New files to be uploaded */}
+                {files.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-xs text-gray-500 mb-2">Yangi fayllar (saqlaganda yuklanadi):</p>
+                    {files.map((file, index) => (
+                      <div key={`new-${index}`} className="flex items-center gap-2 mb-2 p-2 border rounded-lg bg-orange-50">
+                        <div className="flex-1  w-[60%]">
+                          <p className="text-sm font-medium truncate">{file.name}</p>
+                          <p className="text-xs text-orange-600">Size: {(file.size / 1024 / 1024).toFixed(2)} MB</p>
                         </div>
-                      ))}
-                    </div>
-                  )}
-  
-                  {/* File upload */}
-                  <Upload
-                    className="w-full"
-                    multiple
-                    showUploadList={false}
-                    beforeUpload={(file) => {
-                      // File size check (10MB limit)
-                      if (file.size > 10 * 1024 * 1024) {
-                        message.error(`${file.name} faylining hajmi 10MB dan katta!`);
-                        return false;
-                      }
-                      
-                      setFiles((prev) => [...prev, file]);
+                        <span className="text-orange-500 text-xs px-2 py-1 bg-orange-200 rounded">Yangi</span>
+                        <button
+                          onClick={() =>
+                            setFiles((prev) => prev.filter((_, i) => i !== index))
+                          }
+                          className="text-red-500 hover:text-red-700 p-1"
+                          title="Remove file"
+                        >
+                          <FiTrash />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* File upload */}
+                <Upload
+                  className="w-full"
+                  multiple
+                  showUploadList={false}
+                  beforeUpload={(file) => {
+                    // File size check (10MB limit)
+                    if (file.size > 10 * 1024 * 1024) {
+                      message.error(`${file.name} faylining hajmi 10MB dan katta!`);
                       return false;
-                    }}
-                    accept="*/*"
+                    }
+
+                    setFiles((prev) => [...prev, file]);
+                    return false;
+                  }}
+                  accept="*/*"
+                >
+                  <button
+                    className="text-blue-600 text-[14px] font-bold hover:text-blue-800 transition-colors"
+                    disabled={fileUploading}
                   >
-                    <button 
-                      className="text-blue-600 text-[14px] font-bold hover:text-blue-800 transition-colors"
-                      disabled={fileUploading}
-                    >
-                      {fileUploading ? "Uploading..." : "+ add file"}
-                    </button>
-                  </Upload>
-  
-                  {/* Files summary */}
-                  {(uploadedFiles.length > 0 || files.length > 0) && (
-                    <div className="mt-3 p-2 bg-gray-50 rounded text-xs text-gray-600">
-                      Jami fayllar: {uploadedFiles.length + files.length} 
-                      {files.length > 0 && ` (${files.length} ta yangi)`}
-                    </div>
-                  )}
-                </div>
+                    {fileUploading ? "Uploading..." : "+ add file"}
+                  </button>
+                </Upload>
+
+                {/* Files summary */}
+                {(uploadedFiles.length > 0 || files.length > 0) && (
+                  <div className="mt-3 p-2 bg-gray-50 rounded text-xs text-gray-600">
+                    Jami fayllar: {uploadedFiles.length + files.length}
+                    {files.length > 0 && ` (${files.length} ta yangi)`}
+                  </div>
+                )}
+              </div>
 
               {/* Instructions */}
-               {/* Instructions/Checklist */}
-               <div>
+              {/* Instructions/Checklist */}
+              <div>
                 <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
                   Check list
                 </label>
-                
+
                 {checklistLoading ? (
                   <div className="text-center py-4">
                     <Spin size="small" />
@@ -2241,7 +2288,7 @@ const deleteCheckItem = async (index) => {
                         />
                       </div>
                     ))}
-                    
+
                     <button
                       onClick={addCheckItem}
                       className="text-blue-600 text-[14px] font-bold hover:text-blue-800 transition-colors"
@@ -2306,12 +2353,12 @@ const deleteCheckItem = async (index) => {
                     transition: "box-shadow 0.3s ease",
                   }}
                   onMouseEnter={(e) =>
-                    (e.currentTarget.style.boxShadow =
-                      "0 6px 20px rgba(24, 144, 255, 0.8)")
+                  (e.currentTarget.style.boxShadow =
+                    "0 6px 20px rgba(24, 144, 255, 0.8)")
                   }
                   onMouseLeave={(e) =>
-                    (e.currentTarget.style.boxShadow =
-                      "0 4px 12px rgba(24, 144, 255, 0.5)")
+                  (e.currentTarget.style.boxShadow =
+                    "0 4px 12px rgba(24, 144, 255, 0.5)")
                   }
                 >
                   {saveLoading ? "Saving..." : "Save"}
@@ -2580,7 +2627,7 @@ export default NotionKanban;
 //                         src={memberSearch}
 //                         alt="avatar"
 //                         className="w-6 h-6 rounded-full object-cover"
-//                       />  
+//                       />
 //                     </span>
 //                   </div>
 //                 </div>

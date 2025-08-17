@@ -12,6 +12,12 @@ import {
   updateGroup,
 } from "../../../api/services/groupService";
 import { getBoards } from "../../../api/services/boardService";
+import {
+  getLeads,
+  createLeads,
+  updateLeads,
+  deleteLeads,
+} from "../../../api/services/leadsService";
 
 const STORAGE_KEY_GROUPS = "my-app-groups";
 const STORAGE_KEY_EXPANDED = "my-app-groups-expanded";
@@ -44,7 +50,7 @@ const MainLead = () => {
     fetchBoards();
   }, []);
 
-  // BoardId bo'yicha guruhlarni yuklash
+  // BoardId bo'yicha guruhlarni va leadlarni yuklash
   useEffect(() => {
     if (!boardId) {
       setLoading(false);
@@ -55,11 +61,28 @@ const MainLead = () => {
       setLoading(true);
       try {
         const res = await getGroups(boardId); // boardId bilan
-        const formatted = res.data.map((group) => ({
-          id: group.id,
-          title: group.name || "Untitled Group",
-          items: [],
-        }));
+        const formatted = await Promise.all(
+          res.data.map(async (group) => {
+            try {
+              const leadsRes = await getLeads(group.id); // groupId bilan
+              return {
+                id: group.id,
+                title: group.name || "Untitled Group",
+                items: leadsRes.data || [],
+              };
+            } catch {
+              const saved = JSON.parse(
+                localStorage.getItem(STORAGE_KEY_GROUPS) || "[]"
+              );
+              const savedGroup = saved.find((g) => g.id === group.id);
+              return {
+                id: group.id,
+                title: group.name || "Untitled Group",
+                items: savedGroup?.items || [],
+              };
+            }
+          })
+        );
 
         setGroups(formatted);
 
@@ -67,8 +90,8 @@ const MainLead = () => {
           toastShownRef.current = true;
         }
       } catch (err) {
-        console.error("getGroups xatosi:", err);
-        toast.error("Guruhlarni yuklashda xato ❌");
+        console.error("getGroups/getLeads xatosi:", err);
+        toast.error("Guruh yoki leadlarni yuklashda xato ❌");
         const saved = localStorage.getItem(STORAGE_KEY_GROUPS);
         if (saved) setGroups(JSON.parse(saved));
       } finally {
@@ -121,7 +144,7 @@ const MainLead = () => {
   // Guruh o'chirish
   const handleDeleteGroup = async (groupId) => {
     try {
-      await deleteGroup(groupId, boardId); // boardId bilan
+      await deleteGroup(groupId, boardId);
       toast.success("Guruh o'chirildi ✅");
     } catch (err) {
       console.error("deleteGroup xatosi:", err.response?.data || err);
@@ -136,67 +159,111 @@ const MainLead = () => {
     setSelectedItems((prev) => prev.filter((s) => s.groupId !== groupId));
   };
 
+  // Lead update
   const updateGroupTitle = async (groupId, newTitle) => {
-    const oldTitle = groups.find((g) => g._id === groupId)?.title;
+    const oldTitle = groups.find((g) => g.id === groupId)?.title;
 
     try {
       await updateGroup(groupId, { name: newTitle }, boardId);
       toast.success("Guruh nomi yangilandi ✅");
 
-      // 🔥 UI ni bevosita newTitle bilan yangilaymiz
       setGroups((prev) =>
-        prev.map((g) => (g._id === groupId ? { ...g, title: newTitle } : g))
+        prev.map((g) => (g.id === groupId ? { ...g, title: newTitle } : g))
       );
     } catch (err) {
       console.error("updateGroup xatosi:", err.response?.data || err);
       toast.error("Guruh nomini yangilashda xato ❌");
 
-      // ❌ Xato bo'lsa, eski title ga qaytarish
       setGroups((prev) =>
-        prev.map((g) => (g._id === groupId ? { ...g, title: oldTitle } : g))
+        prev.map((g) => (g.id === groupId ? { ...g, title: oldTitle } : g))
       );
     }
   };
 
-  const addItemToGroup = (groupId, newItem) => {
-    setGroups((prev) =>
-      prev.map((g) =>
-        g.id === groupId ? { ...g, items: [...g.items, newItem] } : g
-      )
-    );
+  // Lead qo‘shish
+  const addItemToGroup = async (groupId, newItem) => {
+    try {
+      const res = await createLeads({ ...newItem, group: groupId });
+      setGroups((prev) =>
+        prev.map((g) =>
+          g.id === groupId ? { ...g, items: [...g.items, res.data] } : g
+        )
+      );
+      toast.success("Lead qo'shildi ✅");
+    } catch (err) {
+      console.error("createLeads xatosi:", err);
+      toast.error("Lead qo'shishda xato ❌");
+    }
+  };
+  // index.jsx yoki GroupSection ichida
+  const updateItemInGroup = async (groupId, itemIndex, updatedItem) => {
+    const group = groups.find((g) => g.id === groupId);
+    if (!group) {
+      toast.error("Group topilmadi!");
+      return;
+    }
+
+    const oldItem = group.items[itemIndex];
+    if (!oldItem) {
+      toast.error("Lead topilmadi!");
+      return;
+    }
+
+    if (!group.boardId || !oldItem.id) {
+      toast.error("Board ID yoki Lead ID topilmadi!");
+      console.error("group.boardId:", group.boardId, "oldItem.id:", oldItem.id);
+      return;
+    }
+
+    try {
+      // Backend update: boardId va leadId bilan
+      const res = await updateLeads(group.boardId, oldItem.id, updatedItem);
+
+      // UI state update
+      setGroups((prev) =>
+        prev.map((g) =>
+          g.id === groupId
+            ? {
+                ...g,
+                items: g.items.map((item, idx) =>
+                  idx === itemIndex ? res.data : item
+                ),
+              }
+            : g
+        )
+      );
+
+      toast.success("Lead yangilandi ✅");
+    } catch (err) {
+      console.error("updateLeads xatosi:", err);
+      toast.error("Lead yangilashda xato ❌");
+    }
   };
 
-  const updateItemInGroup = (groupId, itemIndex, newItem) => {
-    setGroups((prev) =>
-      prev.map((g) => {
-        if (g.id === groupId) {
-          const newItems = [...g.items];
-          newItems[itemIndex] = newItem;
-          return { ...g, items: newItems };
-        }
-        return g;
-      })
-    );
-  };
+  // Lead o‘chirish
+  const deleteItemFromGroup = async (groupId, itemIndex) => {
+    const group = groups.find((g) => g.id === groupId);
+    const item = group.items[itemIndex];
 
-  // groups o'zgarganda localStorage ga saqlash (agar xohlasang bitta useEffect bilan qilsa ham bo‘ladi)
-  useEffect(() => {
-    localStorage.setItem("groups", JSON.stringify(groups));
-  }, [groups]);
-
-  const deleteItemFromGroup = (groupId, itemIndex) => {
-    setGroups((prev) =>
-      prev.map((g) => {
-        if (g.id === groupId) {
-          const newItems = g.items.filter((_, idx) => idx !== itemIndex);
-          return { ...g, items: newItems };
-        }
-        return g;
-      })
-    );
-    setSelectedItems((prev) =>
-      prev.filter((s) => !(s.groupId === groupId && s.itemIndex === itemIndex))
-    );
+    try {
+      await deleteLeads(item.id);
+      setGroups((prev) =>
+        prev.map((g) =>
+          g.id === groupId
+            ? { ...g, items: g.items.filter((_, idx) => idx !== itemIndex) }
+            : g
+        )
+      );
+      setSelectedItems((prev) =>
+        prev.filter(
+          (s) => !(s.groupId === groupId && s.itemIndex === itemIndex)
+        )
+      );
+      toast.success("Lead o'chirildi ✅");
+    } catch (err) {
+      console.error("deleteLeads xatosi:", err);
+      toast.error("Lead o‘chirilmadi ❌");
+    }
   };
 
   const toggleExpanded = (groupId) => {

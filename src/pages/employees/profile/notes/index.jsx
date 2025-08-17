@@ -294,14 +294,14 @@ const Notes = () => {
                     </div>
 
                     {openDropdownId === msg.id && (
-                      <div className="absolute right-4 top-8 mt-1 w-[180px] bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
+                      <div className="absolute right-4 top-8 mt-1 w-[180px] bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden p-1">
                         <button
                           onClick={() => {
                             startEditing(msg.id, msg.text);
                             setOpenDropdownId(prev => prev === msg.id ? null : msg.id)
                           }}
                           onMouseDown={(e) => e.stopPropagation()} // Bubblingni to'xtatish
-                          className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-blue-50 flex items-center gap-2 cursor-pointer hover:text-blue-500"
+                          className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-blue-50 flex items-center gap-2 cursor-pointer hover:text-blue-500 rounded-lg"
                         >
                           <span>Edit message</span>
                         </button>
@@ -311,7 +311,7 @@ const Notes = () => {
                             setOpenDropdownId(prev => prev === msg.id ? null : msg.id)
                           }}
                           onMouseDown={(e) => e.stopPropagation()} // Bubblingni to'xtatish
-                          className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-blue-50 hover:text-red-500 flex items-center gap-2 cursor-pointer"
+                          className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-blue-50 hover:text-red-500 flex items-center gap-2 cursor-pointer rounded-lg"
                         >
                           <span>Delete</span>
                         </button>
