@@ -95,7 +95,8 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
         }
 
         const tagsData = await getTaskTags();
-        setTagOptions(tagsData);
+       // API dan array qaytarsa to'g'ridan-to'g'ri ishlatamiz, aks holda bo'sh array
+        setTagOptions(Array.isArray(tagsData) ? tagsData : []);
       } catch (error) {
         console.error("Error fetching tags:", error);
         if (error.message.includes("Authentication")) {
@@ -125,7 +126,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
    
     getProjectTaskById(projectId)
       .then((response) => {
-        setCards(mapTasksToCards(response.data));
+        setCards(mapTasksToCards(response.data.results));
       })
       .catch((err) => {
         console.error("Error fetching tasks:", err);
@@ -181,9 +182,14 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
    
   // Helper to map API tasks to card format
   const mapTasksToCards = (tasks) => {
+
+    if (!Array.isArray(tasks)) {
+      console.warn("Tasks is not an array:", typeof tasks, tasks);
+      return [];
+    }
     return tasks.map((task) => ({
-      id: task.id.toString(),
-      title: task.name,
+      id: task.id ?task.id.toString() : Math.random().toString(),
+      title: task.name || "Untitled Task",
       time: task.deadline
         ? new Date(task.deadline).toLocaleDateString("en-US", {
             month: "short",
@@ -244,7 +250,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
     formData.append('description', description);
     formData.append('tasks_type', type);
     formData.append('deadline', date ? dayjs(date).format("YYYY-MM-DD") : '');
-    formData.append('project', projectId || "5c112bdb-be91-4e09-a062-bf244691892b");
+    formData.append('project', projectId);
 
     // Append tags_ids as array (repeat the key for each item)
     tags.forEach(tagId => formData.append('tags_ids', tagId));
