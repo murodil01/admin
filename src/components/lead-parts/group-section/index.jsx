@@ -136,12 +136,12 @@ const GroupSection = ({
   const [columns, setColumns] = useState([
     { key: "name", label: "Leads", isCustom: false },
     { key: "phone", label: "Phone Number", isCustom: false },
-    { key: "link", label: "Link", isCustom: false },
+    // { key: "link", label: "Link", isCustom: false },
     { key: "person", label: "Owner", isCustom: false },
     { key: "lastInteraction", label: "Last interaction", isCustom: false },
     { key: "status", label: "Status", isCustom: false },
     { key: "notes", label: "Notes", isCustom: false },
-    { key: "potential_value", label: "Potential value", isCustom: false },
+    // { key: "potential_value", label: "Potential value", isCustom: false },
     { key: "timeline", label: "Timeline", isCustom: false },
   ]);
 
