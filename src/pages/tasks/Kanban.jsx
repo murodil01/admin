@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { FaFire } from "react-icons/fa";
 import { FiPlus, FiTrash, FiEdit } from "react-icons/fi";
@@ -45,18 +45,25 @@ import {
   createTask,
   getTaskFiles,        
   uploadTaskFile,     
-  deleteTaskFile, 
-  
-  getTaskInstructions,
-  createInstruction,
+  getCommentTask,
+  createComment,
+  // deleteTaskFile, 
+  getInst,
+  // createChecklistItem,
   updateInstruction,
-  deleteInstruction
+  // deleteInstruction
 } from "../../api/services/taskService";
 
-const NotionKanban = ({ cards, setCards }) => {
+const NotionKanban = ({ cards, setCards,assignees ,getAssigneeName}) => {
   return (
     <div className="flex gap-5 absolute top-0 right-0 left-0 pb-4 w-full overflow-x-auto hide-scrollbar">
-      <Board cards={cards} setCards={setCards} />
+      <Board   
+        cards={cards} 
+        setCards={setCards} 
+        assignees={assignees}
+        getAssigneeName={getAssigneeName} 
+      />
+      {/* <Board cards={cards} setCards={setCards} /> */}
     </div>
   );
 };
@@ -115,52 +122,6 @@ const taskColumns = [
 const DEFAULT_CARDS = [
   {
     id: "1",
-    title: "UX sketches",
-    time: "4d",
-    assignee: { name: "John", avatar: "bg-red-500" },
-    column: "assigned",
-  },
-  {
-    id: "2",
-    title: "Mind Map",
-    time: "2d 4h",
-    assignee: { name: "Mike", avatar: "bg-gray-800" },
-    column: "acknowledged",
-  },
-  {
-    id: "3",
-    title: "Research reports",
-    time: "2d",
-    assignee: { name: "Sarah", avatar: "bg-yellow-600" },
-    column: "inProgress",
-  },
-  {
-    id: "4",
-    title: "Research",
-    time: "4d",
-    assignee: { name: "Emma", avatar: "bg-red-500" },
-    column: "completed",
-  },
-  {
-    id: "5",
-    title: "UX Login + Registration",
-    time: "2d",
-    assignee: { name: "John", avatar: "bg-red-500" },
-    column: "inReview",
-  },
-  {
-    id: "6",
-    title: "Research reports (presentation for client)",
-    time: "6h",
-    assignee: { name: "Lisa", avatar: "bg-pink-500" },
-    column: "rework",
-  },
-  {
-    id: "7",
-    title: "UI Login + Registration (+ other screens)",
-    time: "1d 6h",
-    assignee: { name: "John", avatar: "bg-red-500" },
-    column: "dropped",
   },
 ];
 
@@ -177,27 +138,28 @@ const Board = ({ cards, setCards }) => {
   const handleSaveEdit = (updatedCard) => {
     setCards((prev) =>
       prev.map((c) => {
-        // Agar updatedCard.id yo‘q bo‘lsa, eski id ishlatiladi
         const targetId = updatedCard.id ?? c.id;
         return c.id === targetId
-          ? { ...updatedCard, id: targetId } // id doim saqlanadi
+          ? { ...updatedCard, id: targetId }
           : c;
       })
     );
   };
 
-  useEffect(() => {
-    const cardData = localStorage.getItem("cards");
-    try {
-      setCards(cardData ? JSON.parse(cardData) : DEFAULT_CARDS);
-    } catch (error) {
-      console.error("❌ Error parsing localStorage 'cards':", error);
-      setCards(DEFAULT_CARDS);
-    }
-    setHasChecked(true);
-  }, []);
 
-  useEffect(() => {
+   useEffect(() => {
+    if (!hasChecked) {
+      const cardData = localStorage.getItem("cards");
+      try {
+        setCards(cardData ? JSON.parse(cardData) : DEFAULT_CARDS);
+      } catch (error) {
+        console.error("❌ Error parsing localStorage 'cards':", error);
+        setCards(DEFAULT_CARDS);
+      }
+      setHasChecked(true);
+    }
+  }, [hasChecked, setCards]);
+    useEffect(() => {
     if (hasChecked) {
       localStorage.setItem("cards", JSON.stringify(cards));
     }
@@ -318,15 +280,19 @@ const Column = ({
       setCards(copy); // UI ni yangilash
 
       // 2. Backendga yangilash
-      try {
-        await updateTaskType(cardId, column); // API so'rovi
+           try {
+        await updateTaskType(cardId, column);
         message.success("Task status updated!");
       } catch (error) {
-        // Agar xato bo'lsa, eski holatga qaytarish
-        setCards((prev) => [...prev]);
+        // Rollback on error
+        const originalCard = cards.find((c) => c.id === cardId);
+        if (originalCard) {
+          setCards(cards);
+        }
         message.error("Failed to update task status");
         console.error("Update error:", error);
       }
+
     }
   };
 
@@ -334,7 +300,7 @@ const Column = ({
 
   return (
     <div
-      className={`max-w-[270px] min-w-[260px] sm:max-w-[270px]  rounded-xl p-4 ${backgroundColor} shadow-sm flex flex-col my-1`}
+      className={`max-w-[270px] min-w-[260px] sm:max-w-[270px] rounded-xl p-4 ${backgroundColor} shadow-sm flex flex-col my-1`}
     >
       <div className="border-b border-gray-300 pb-2 mb-3 z-10 flex items-center gap-2">
         <span>{icon}</span>
@@ -359,7 +325,7 @@ const Column = ({
             handleDragStart={handleDragStart}
             onEdit={onEdit}
             image={c.image}
-            setCards={setCards} // yangi prop qo'shildi
+            setCards={setCards}
           />
         ))}
         <DropIndicator beforeId="-1" column={column} />
@@ -385,42 +351,505 @@ const Card = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
   const [taskData, setTaskData] = useState(null);
-  const [projectUsers, setProjectUsers] = useState([]); // New state for project users
+  const [projectUsers, setProjectUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const [imageUrl, setImageUrl] = useState(null);
+  const [selectedAssignee, setSelectedAssignee] = useState(null);
+  const [files, setFiles] = useState([]);
+  const [filesLoading, setFilesLoading] = useState(false);
+  const [checklistItems, setChecklistItems] = useState([]);
+  const [checklistLoading, setChecklistLoading] = useState(false);
+  const [newChecklistItem, setNewChecklistItem] = useState("");
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  
+  const getFileIcon = (fileName) => {
+    if (!fileName) return "📄";
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    switch (extension) {
+      case 'pdf': return "📄";
+      case 'doc':
+      case 'docx': return "📝";
+      case 'xls':
+      case 'xlsx': return "📊";
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif': return "🖼️";
+      case 'zip':
+      case 'rar': return "🗜️";
+      default: return "📄";
+    }
+  };
+
+    const formatFileSize = (bytes) => {
+    if (!bytes) return "";
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    if (bytes === 0) return "0 Bytes";
+    const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+  };
+
+    const formatDate = (date) => {
+    if (!date) return "";
+    return dayjs(date).format("MMM D, YYYY");
+  };
+
+     const handleFileDownload = (file) => {
+    if (file.file || file.url) {
+      const link = document.createElement('a');
+      link.href = file.file || file.url;
+      link.download = file.original_name || file.file_name || 'download';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      message.warning('File download not available');
+    }
+  };
+
+   const getAssigneeName = (assignee) => {
+  if (!assignee) return "Not assigned";
+  
+  // If assignee is an object
+  if (typeof assignee === 'object') {
+    if (assignee.first_name && assignee.last_name) {
+      return `${assignee.first_name} ${assignee.last_name}`;
+    } 
+    if (assignee.name) {
+      return assignee.name;
+    }
+    if (assignee.id) {
+      return projectUsers.find(u => u.id === assignee.id)?.name || 'Unknown';
+    }
+    return 'Unknown';
+  }
+  
+  // If assignee is an ID string
+  const user = projectUsers.find(u => 
+    u.id === assignee || 
+    u.user_id === assignee
+  );
+  
+  return user ? `${user.first_name} ${user.last_name}` : 'Unknown';
+};
+  // Comments functions
+ const fetchFiles = useCallback(async () => {
+    if (!id) return;
+    setFilesLoading(true);
+    try {
+      console.log("🔄 Fetching files for task ID:", id);
+      const response = await getTaskFiles(id);
+      console.log("📥 Files API Response:", response);
+      
+      let filesList = [];
+      if (Array.isArray(response.data)) {
+        filesList = response.data;
+      } else if (response.data && Array.isArray(response.data.results)) {
+        filesList = response.data.results;
+      } else if (response.data && Array.isArray(response.data.files)) {
+        filesList = response.data.files;
+      }
+      
+      console.log("📁 Extracted files:", filesList);
+      setFiles(filesList);
+    } catch (error) {
+      console.error('❌ Error fetching files:', error);
+      message.error("Failed to load files");
+      setFiles([]);
+    } finally {
+      setFilesLoading(false);
+    }
+  }, [id]);
+ 
+    const fetchComments = useCallback(async () => {
+  if (!id) return;
+  setCommentsLoading(true);
+  try {
+    console.log("🔄 Fetching comments for task ID:", id);
+    const response = await getCommentTask(id);
+    console.log("📥 Comments API Response:", response);
+    
+    let commentsList = [];
+    if (Array.isArray(response.data)) {
+      commentsList = response.data;
+    } else if (response.data && Array.isArray(response.data.results)) {
+      commentsList = response.data.results;
+    } else if (response.data && Array.isArray(response.data.comments)) {
+      commentsList = response.data.comments;
+    }
+      
+    // Map comments using assignee instead of user
+    const mappedComments = commentsList.map(comment => ({
+      ...comment,
+      user_name: getAssigneeName(comment.assignee) || 'Unknown', // Use assignee
+    }));
+    
+    console.log("📋 Extracted and mapped comments:", mappedComments);
+    setComments(mappedComments);
+  } catch (error) {
+    console.error('❌ Error fetching comments:', error);
+    message.error("Failed to load comments");
+    setComments([]);
+  } finally {
+    setCommentsLoading(false);
+  }
+}, [id, projectUsers])
+
+  
+ 
+// First, let's improve the getCurrentUser function with better debugging
+
+const getCurrentUser = () => {
+  // Check both localStorage and sessionStorage for user data
+  const userData = localStorage.getItem('user') || sessionStorage.getItem('user');
+  
+  if (userData) {
+    try {
+      const user = JSON.parse(userData);
+      console.log("✅ Current user retrieved:", user);
+      return user;
+    } catch (e) {
+      console.error("❌ Error parsing user data:", e);
+    }
+  }
+  
+  console.warn("⚠️ No user data found in storage");
+  return null;
+};
+  
+const handleAddComment = async () => {
+  if (!newComment.trim()) {
+    message.warning("Please enter a comment");
+    return;
+  }
+  
+  const currentUser = getCurrentUser();
+  if (!currentUser || !currentUser.id) {
+    message.error("Please log in to add a comment");
+    return;
+  }
+
+  setSubmitLoading(true);
+  const commentMessage = newComment.trim();
+  const tempComment = {
+    id: `temp-${Date.now()}`,
+    message: commentMessage,
+    assignee: currentUser.id, // Use assignee instead of user
+    user_name: `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim() || "You",
+    created_at: new Date().toISOString(),
+    isTemp: true,
+  };
+      const response = await createComment(payload);
+    setComments(prev => 
+      prev.map(comment => 
+        comment.id === tempComment.id 
+          ? { 
+              ...response.data, 
+              isTemp: false,
+              user_name: tempComment.user_name  // Keep the user name
+            }
+          : comment
+      )
+    );
+  setNewComment("");  // Clear input
+  try {
+    // Payload: include both 'user' and 'assignee' to cover backend ambiguity
+    const payload = {
+      task: id,
+      message: commentMessage,
+      user: currentUser.id,
+      assignee: currentUser.id, // <- qo'shdim: agar backend shu nomni kutsa ishlaydi
+    };
+
+    console.log("📤 Creating comment payload:", payload);
+    const response = await createComment(payload);
+    console.log("📥 createComment response:", response);
+
+    // Try to extract created comment from various possible response shapes
+    let createdComment = null;
+    const d = response?.data;
+
+    if (!d) {
+      // no body — reload full list (safest fallback)
+      await fetchComments();
+      setNewComment("");
+      message.success('Comment added (reloaded).');
+      return;
+    }
+
+    if (Array.isArray(d)) {
+      createdComment = d[0];
+    } else if (d && d.id) {
+      createdComment = d;
+    } else if (d && Array.isArray(d.results) && d.results.length) {
+      createdComment = d.results[0];
+    } else if (d && Array.isArray(d.comments) && d.comments.length) {
+      createdComment = d.comments[0];
+    } else if (d && d.comment) {
+      createdComment = d.comment;
+    } else if (d && d.data && d.data.id) {
+      createdComment = d.data;
+    }
+
+    // Agar server yangi commentni qaytarmagan yoki format noaniq boʻlsa — qayta yuklash
+    if (!createdComment) {
+      console.warn("Couldn't extract created comment from response — reloading comments.");
+      await fetchComments();
+      setNewComment("");
+      message.success('Comment added (reloaded).');
+      return;
+    }
+
+    // Add fallback user_name same way as GET mapping does
+    const commentWithName = {
+      ...createdComment,
+      user_name: createdComment.user_name || getAssigneeName(createdComment.user || createdComment.assignee) || 'Unknown',
+    };
+
+    // Combine with existing comments list (comments state may already be mapped)
+    const combined = Array.isArray(comments) ? [...comments, commentWithName] : [commentWithName];
+
+    const mappedComments = combined.map(comment => ({
+      ...comment,
+      user_name: comment.user_name || getAssigneeName(comment.user || comment.assignee) || 'Unknown',
+    }));
+
+    setComments(mappedComments);
+    setNewComment("");
+    message.success('Comment added successfully');
+  } catch (error) {
+    console.error('Error adding comment:', error);
+    // Agar 4xx/5xx bo'lsa — tarmoq panelidan tekshashni tavsiya qilaman
+    message.error('Failed to add comment');
+  } finally {
+    setSubmitLoading(false);
+  }
+};
+const getCurrentUserFromAPI = async () => {
+  try {
+    console.log("🔄 Fetching current user from API...");
+    const response = await getMe(); // Your API function
+    
+    if (response && response.data) {
+      console.log("✅ User fetched from API:", response.data);
+      
+      // Cache the user data
+      localStorage.setItem('currentUser', JSON.stringify(response.data));
+      
+      return response.data;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('❌ Error fetching user from API:', error);
+    return null;
+  }
+};
+  // Checklist functions
+  const addChecklistItem = async () => {
+    if (!newChecklistItem.trim()) return;
+    
+    const tempItem = {
+      id: `temp-${Date.now()}`,
+      name: newChecklistItem.trim(),
+      status: false,
+      completed: false,
+      isTemp: true
+    };
+    
+    console.log("➕ Adding new checklist item:", tempItem);
+    
+     setChecklistItems(prev => {
+      const updated = [...prev, tempItem];
+      console.log("📝 Updated checklist with temp item:", updated);
+      return updated;
+    });
+    const itemName = newChecklistItem.trim();
+    setNewChecklistItem("");
+  
+    
+     try {
+      console.log("📤 Creating checklist item:", {
+        task: id,
+        name: itemName,
+        status: false
+      });
+      
+      const response = await createChecklistItem({
+        task: id,
+        name: itemName,
+        status: false
+      });
+      console.log("📥 Create API Response:", response);
+      
+      setChecklistItems(prev => 
+        prev.map(item => 
+          item.id === tempItem.id 
+            ? { 
+                ...response.data, 
+                completed: response.data.status,
+                isTemp: false 
+              } 
+            : item
+        )
+      );
+     
+      message.success('Checklist item added');
+    } catch (error) {
+      console.error('❌ Error adding checklist item:', error);
+      message.error('Failed to add checklist item');
+      setChecklistItems(prev => prev.filter(item => item.id !== tempItem.id));
+      setNewChecklistItem(itemName); // Restore text on error
+    }
+  };
+  const handleCommentSubmit = async () => {
+  if (!newComment.trim()) {
+    message.warning("Comment cannot be empty!");
+    return;
+  }
+
+  setSubmitLoading(true);
+  try {
+    // Create comment using API service
+    await createComment(id, newComment);
+    
+    message.success("Comment added successfully!");
+    setNewComment("");
+    fetchComments(); // Refresh comments list
+  } catch (error) {
+    console.error("Error posting comment:", error);
+    message.error("Failed to post comment");
+  } finally {
+    setSubmitLoading(false);
+  }
+};
+  const handleDeleteChecklistItem = async (itemId) => {
+    const originalItems = [...checklistItems];
+    setChecklistItems(prev => prev.filter(item => item.id !== itemId));
+    
+        try {
+      await deleteChecklistItem(itemId);
+      message.success('Item deleted');
+    } catch (error) {
+      console.error('Error deleting checklist item:', error);
+      message.error('Failed to delete item');
+      setChecklistItems(originalItems);
+    }
+  };
+  const handleUpdateChecklistItem = async (itemId, completed) => {
+  const originalItems = [...checklistItems];
+  
+  // Correct optimistic update
+  setChecklistItems(prev => 
+    prev.map(item => 
+      item.id === itemId ? { 
+        ...item, 
+        status: completed,
+        completed: completed  // Ensure both fields are updated
+      } : item
+    )
+  );
+
+  try {
+    // Correct API call with proper endpoint
+    await updateInstruction(itemId, { 
+      status: completed
+    });
+    
+    message.success('Checklist updated');
+  } catch (error) {
+    console.error('Error updating checklist item:', error);
+    message.error('Failed to update checklist');
+    setChecklistItems(originalItems);
+  }
+};
+
+  const fetchChecklist = useCallback(async () => {
+    if (!id) return;
+    setChecklistLoading(true);
+    try {
+      console.log("🔄 Fetching checklist for task ID:", id);
+      const response = await getInst(id);
+      console.log("📥 RAW API Response:", response);
+      
+      let items = [];
+      if (Array.isArray(response.data)) {
+        items = response.data;
+      } else if (response.data && Array.isArray(response.data.results)) {
+        items = response.data.results;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        items = response.data.data;
+      } else if (response.data && Array.isArray(response.data.instructions)) {
+        items = response.data.instructions;
+      }
+      console.log("📋 Extracted items:", items);
+      
+      const normalizedItems = items.map(item => {
+        console.log("🔄 Processing item:", item);
+        return {
+          ...item,
+          completed: item.status !== undefined ? item.status : false
+        };
+      });
+        setChecklistItems(normalizedItems);
+    } catch (error) {
+      console.error('Error fetching checklist:', error);
+      message.error("Failed to load checklist");
+      setChecklistItems([]);
+    } finally {
+      setChecklistLoading(false);
+    }
+  }, [id]);
 
   // "Got it" modal ochilganda card ma'lumotlarini saqlash
-  const openViewModal = async () => {
+   const openViewModal = async () => {
     setIsModalOpen(true);
     setLoading(true);
 
     try {
+      console.log("🔄 Fetching task data for ID:", id);
       const response = await getTaskById(id);
-      console.log("Task ma'lumotlari:", response.data);
-      setTaskData(response.data); // API dan kelgan ma'lumotlar
-      if (response.data.projectId) {
-        const usersResponse = await getProjectUsers(response.data.projectId);
-        console.log("Project users:", usersResponse.data);
-        setProjectUsers(usersResponse.data || []); // Set users array
+      console.log("📥 Task data:", response.data);
+      setTaskData(response.data);
+      
+      // Fetch project users
+      if (response.data.projectId || response.data.project_id || response.data.project) {
+        const projectId = response.data.projectId || response.data.project_id || response.data.project;
+        try {
+          const usersResponse = await getProjectUsers(projectId);
+          console.log("👥 Project users:", usersResponse.data);
+          setProjectUsers(usersResponse.data || []);
+        } catch (error) {
+          console.warn("⚠️ Failed to fetch project users:", error);
+          setProjectUsers([]);
+        }
       } else {
-        console.warn("No project_id found in task data");
+        console.warn("No project ID found in task data");
         setProjectUsers([]);
       }
+
+      // Fetch additional data concurrently
+      await Promise.all([
+        fetchComments(),
+        fetchChecklist(),
+        fetchFiles()
+      ]);
+
     } catch (error) {
-      console.error("Data olishda xatolik:", error);
-      message.error("Ma'lumotlar yuklab bo'lmadi");
+      console.error("❌ Error fetching task data:", error);
+      message.error("Failed to load task data");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleMoveToColumn = async (newColumn) => {
+   const handleMoveToColumn = async (newColumn) => {
     try {
       await updateTaskType(id, newColumn);
       message.success(`Task moved to ${newColumn}`);
-      // Local state ni yangilash
       onEdit({ id, title, time, description, column: newColumn });
     } catch (error) {
       message.error("Failed to move task");
@@ -432,28 +861,27 @@ const Card = ({
     try {
       await deleteTask(id);
       message.success("Task deleted successfully");
-      // Local state dan o'chirish
+      // Remove from local state
       setCards((prev) => prev.filter((card) => card.id !== id));
     } catch (error) {
       message.error("Failed to delete task");
       console.error("Delete error:", error);
     }
   };
-
   // Edit modalni ochish funksiyasi
-  const handleEditCard = async () => {
-    setLoading(true);
-    try {
-      const response = await getTaskById(id);
-      setSelectedCard(response.data);
-      setIsEditModalOpen(true);
-    } catch (error) {
-      console.error("Task olishda xatolik:", error);
-      message.error("Task ma'lumotlarini yuklab bo'lmadi");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // const handleEditCard = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const response = await getTaskById(id);
+  //     setSelectedCard(response.data);
+  //     setIsEditModalOpen(true);
+  //   } catch (error) {
+  //     console.error("Task olishda xatolik:", error);
+  //     message.error("Task ma'lumotlarini yuklab bo'lmadi");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   useEffect(() => {
     if (!image) return;
@@ -465,12 +893,35 @@ const Card = ({
 
     setImageUrl(image);
   }, [image]);
-
-  const handleUpdateCard = (updatedCard) => {
+   
+    
+   
+    const handleEditCard = async () => {
+    setLoading(true);
+    try {
+      const response = await getTaskById(id);
+      setSelectedCard(response.data);
+      setIsEditModalOpen(true);
+    } catch (error) {
+      console.error("Error fetching task:", error);
+      message.error("Failed to load task data");
+    } finally {
+      setLoading(false);
+    }
+  };
+   useEffect(() => {
+    if (!image) return;
+    if (image instanceof File) {
+      const url = URL.createObjectURL(image);
+      setImageUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setImageUrl(image);
+  }, [image]);
+const handleUpdateCard = (updatedCard) => {
     console.log("Updated card: ", updatedCard);
-    // bu yerda serverga yoki local state'ga saqlash kodini yozasan
     setIsEditModalOpen(false);
-    // Cards state ni yangilash
+    // Update cards state
     setCards((prev) =>
       prev.map((card) =>
         card.id === updatedCard.id
@@ -486,16 +937,16 @@ const Card = ({
     );
   };
 
-  const handleAddComment = () => {
-    if (!newComment.trim()) return;
+  // const handleAddComment = () => {
+  //   if (!newComment.trim()) return;
 
-    const updatedComments = [
-      ...comments,
-      { name: "Current User", text: newComment },
-    ];
-    setComments(updatedComments);
-    setNewComment("");
-  };
+  //   const updatedComments = [
+  //     ...comments,
+  //     { name: "Current User", text: newComment },
+  //   ];
+  //   setComments(updatedComments);
+  //   setNewComment("");
+  // };
 
   useEffect(() => {
     if (taskData && taskData.comments) {
@@ -596,6 +1047,7 @@ const Card = ({
           style={{
             top: 30, // px qiymati, modal yuqoriga yaqinlashadi
           }}
+          
           footer={[
             <Button
               key="edit"
@@ -628,7 +1080,7 @@ const Card = ({
             </Button>,
           ]}
         >
-          {loading ? (
+           {loading ? (
             <div className="flex justify-center items-center h-[400px]">
               <Spin size="large" />
             </div>
@@ -640,7 +1092,11 @@ const Card = ({
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="w-full sm:w-[140px] h-[140px] bg-gray-200 flex items-center justify-center rounded">
                     <span role="img" aria-label="image" className="text-4xl">
-                      🖼️
+                  {taskData?.task_image ? (
+                      <img src={taskData.task_image} alt="" onError={(e) => (e.currentTarget.style.display = "none")} />
+                    ) : (
+                      <span>🖼️</span>
+                    )}
                     </span>
                   </div>
                   <div className="flex-1 text-sm text-gray-700 leading-6">
@@ -648,137 +1104,217 @@ const Card = ({
                   </div>
                 </div>
 
-                {/* Files */}
-                <div>
-                  <h4 className="font-semibold text-sm mb-3">Files</h4>
-                  <div className="flex flex-wrap gap-3">
-                    <p className="text-sm text-gray-500">No files attached</p>
+
+      {/* Files */}
+      <div>
+        <h4 className="font-semibold text-sm mb-3">Files</h4>
+
+        <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+          <span>📁</span>
+          Files ({files.length})
+        </h4>
+
+        {filesLoading ? (
+          <div className="flex items-center gap-2">
+            <Spin size="small" />
+            <span className="text-sm text-gray-500">Loading files...</span>
+          </div>
+        ) : files.length > 0 ? (
+          <div className="space-y-2">
+            {files.map((file, index) => (
+              <div
+                key={file.id || index}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
+              >
+                <div className="flex items-center gap-3">
+                  {/* Fayl tipi ikonkasi */}
+                  <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
+                    {getFileIcon(file.file_type || file.file_name)}
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {file.original_name || file.file_name || "Unnamed file"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {file.file_size ? formatFileSize(file.file_size) : ""} •{" "}
+                      {file.created_at ? formatDate(file.created_at) : "Unknown date"}
+                    </p>
                   </div>
                 </div>
 
-                {/* Checklist */}
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-semibold text-sm">Check list</h4>
-                    <span className="text-xs text-gray-500">Show</span>
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    <p className="text-sm text-gray-500">No checklist items</p>
-                  </div>
-                </div>
-
-                {/* Comments */}
-                <div>
-                  <h4 className="font-semibold text-sm mb-3">Comments</h4>
-                  <div className="p-4 bg-blue-50 rounded-xl">
-                    {comments.length > 0 ? (
-                      comments.map((c, i) => (
-                        <div key={i} className="rounded-lg bg-blue-50 mb-3">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
-                              👤
-                            </div>
-                            <span className="text-sm">{c.name || "User"}</span>
-                          </div>
-                          <div>
-                            <div className="bg-white p-1 rounded-sm">
-                              <p className="text-sm text-gray-700">{c.text}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-gray-500 mb-3">
-                        No comments yet
-                      </p>
-                    )}
-
-                    {/* Add new comment */}
-                    <div className="mt-3 flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Add a comment"
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none"
-                      />
-                      <button
-                        onClick={handleAddComment}
-                        className="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600"
-                      >
-                        ➤
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                {/* Download button */}
+                <Button
+                  type="text"
+                  icon={<DownloadOutlined />}
+                  onClick={() => handleFileDownload(file)}
+                  className="text-blue-600 hover:text-blue-800"
+                />
               </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg text-center">
+            📄 No files attached to this task
+          </p>
+        )}
+      </div>
 
-              {/* Right section */}
-              <div className="md:col-span-4 space-y-4 text-sm">
-                <div>
-                  <p className="text-gray-400">Assignee by</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-                      👤
-                    </div>
-                    <span>
-                      {taskData && taskData.assignee
-                        ? `${taskData.assignee.first_name} ${taskData.assignee.last_name}`
-                        : "Not assigned"}
-                    </span>
+      {/* Checklist */}
+      <div>
+        <div className="flex justify-between items-center mb-3">
+          <h4 className="font-semibold text-sm flex items-center gap-2">
+            <img src={checkList} alt="checklist" className="w-4 h-4" />
+            Check list ({checklistItems.length})
+          </h4>
+          <span className="text-xs text-gray-500">Show</span>
+        </div>
+
+        {checklistItems && checklistItems.length > 0 ? (
+          <div className="space-y-2">
+            {checklistItems.map((item, index) => (
+              <div
+                key={item.id || index}
+                className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded"
+              >
+                <Checkbox
+                  checked={item.completed}
+                  onChange={(e) => handleUpdateChecklistItem(item.id, e.target.checked)}
+                />
+                <span
+                  className={`text-sm flex-1 ${
+                    item.completed ? "line-through text-gray-500" : "text-gray-900"
+                  }`}
+                >
+                  {item.title || item.name || item.description || `Item ${index + 1}`}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">No checklist items</p>
+        )}
+      </div>
+
+      {/* Comments */}
+      <div>
+        <h4 className="font-semibold text-sm mb-3">Comments</h4>
+        <div className="p-4 bg-blue-50 rounded-xl">
+          {comments.length > 0 ? (
+            comments.map((c) => (
+              <div key={c.id} className="rounded-lg bg-blue-50 mb-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
+                    👤 {c.user_name[0]}
                   </div>
-                </div>
-                <div>
-                  <p className="text-gray-400">Date</p>
-                  <p className="mt-1">
-                    {taskData.deadline
-                      ? dayjs(taskData.deadline).format("YYYY-MM-DD")
-                      : "N/A"}
+                  <span className="text-sm font-medium">{c.user_name || "You"}</span>
+                  <p className="text-xs text-gray-500 ml-2">
+                    {dayjs(c.created_at).format("MMM D, YYYY h:mm A")}
                   </p>
                 </div>
-
                 <div>
-                  <p className="text-gray-400">Notification</p>
-                  <p className="mt-1">{taskData.is_active ? "On" : "Off"}</p>
-                </div>
-
-                <div>
-                  <p className="text-gray-400">Status</p>
-                  <p className="mt-1">{taskData.tasks_type || "N/A"}</p>
-                </div>
-
-                <div>
-                  <p className="text-gray-400">Type</p>
-                  <p className="mt-1">N/A</p>
-                </div>
-
-                <div>
-                  <p className="text-gray-400">Progress</p>
-                  <p className="mt-1">{taskData.progress}%</p>
-                </div>
-
-                <div>
-                  <p className="text-gray-400">Tags</p>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {taskData.tags && taskData.tags.length > 0 ? (
-                      taskData.tags.map((tag, i) => (
-                        <span
-                          key={i}
-                          className="bg-gray-200 px-2 py-1 rounded text-xs"
-                        >
-                          {tag.name}
-                        </span>
-                      ))
-                    ) : (
-                      <p>N/A</p>
-                    )}
+                  <div className="bg-white p-1 rounded-sm">
+                    <p className="text-sm text-gray-700">{c.text || c.message}</p>
                   </div>
                 </div>
               </div>
-            </div>
+            ))
           ) : (
-            <p className="text-center text-gray-500">No task data available</p>
+            <p className="text-sm text-gray-500 mb-3">No comments yet</p>
           )}
+
+        {/* Add new comment */}
+<div className="mt-3 flex gap-2">
+  <input
+    type="text"
+    placeholder="Add a comment"
+    value={newComment}
+    onChange={(e) => setNewComment(e.target.value)}
+    onKeyPress={(e) => e.key === 'Enter' && handleAddComment()} // Enter bosilganda ham yuborish
+    className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none"
+  />
+  <button
+    onClick={handleAddComment}
+    disabled={submitLoading}
+    className="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600 disabled:opacity-50"
+  >
+    {submitLoading ? "..." : "➤"}
+  </button>
+</div>
+        </div>
+      </div>
+    </div>
+
+    {/* Right section */}
+    <div className="md:col-span-4 space-y-4 text-sm">
+      <div>
+        <p className="text-gray-400">Assignee by</p>
+        <div className="flex items-center gap-2 mt-1">
+          <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
+        
+                     <span>
+                      {(() => {
+                        // Debug ma'lumotlari
+                        console.log("Current taskData:", taskData);
+                        console.log("Current selectedAssignee:", selectedAssignee);
+                        console.log("Current projectUsers:", projectUsers);
+                        
+                        // Har xil assignee formatlarini tekshirish
+                        const assignee = selectedAssignee || 
+                                        taskData?.assignee || 
+                                        taskData?.assigned_to || 
+                                        taskData?.assigned?.[0];
+                                        
+                        console.log("Final assignee:", assignee);
+                        
+                        return getAssigneeName(assignee);
+                      })()}
+                    </span>
+        </div>
+      </div>
+
+      <div>
+        <p className="text-gray-400">Date</p>
+        <p className="mt-1">{taskData.deadline ? dayjs(taskData.deadline).format("YYYY-MM-DD") : "N/A"}</p>
+      </div>
+
+      <div>
+        <p className="text-gray-400">Notification</p>
+        <p className="mt-1">{taskData.is_active ? "On" : "Off"}</p>
+      </div>
+
+      <div>
+        <p className="text-gray-400">Status</p>
+        <p className="mt-1">{taskData.tasks_type || "N/A"}</p>
+      </div>
+
+
+      <div>
+        <p className="text-gray-400">Progress</p>
+        <p className="mt-1">{taskData.progress}%</p>
+      </div>
+
+      <div>
+        <p className="text-gray-400">Tags</p>
+        <div className="flex flex-wrap gap-2 mt-1">
+          {taskData.tags && taskData.tags.length > 0 ? (
+            taskData.tags.map((tag, i) => (
+              <span key={i} className="bg-gray-200 px-2 py-1 rounded text-xs">
+                {tag.name}
+              </span>
+            ))
+          ) : (
+            <p>N/A</p>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+) : (
+  <p className="text-center text-gray-500">No task data available</p>
+)
+}
+        
         </Modal>
 
         <EditCardModal
@@ -1039,7 +1575,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
   
   setChecklistLoading(true);
   try {
-    const response = await getTaskInstructions(taskId);
+    const response = await getInst(taskId);
     console.log("Instructions ma'lumotlari:", response);
     
     // ✅ TUZATISH: response.data ni ishlatish kerak

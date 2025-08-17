@@ -36,7 +36,7 @@ const Projects = () => {
 
   // justify-content klassini aniqlash
   const justifyClass =
-    collapsed && !isSmallScreen ? "justify-start" : "justify-start";
+    collapsed && !isSmallScreen ? "justify-between" : "justify-center";
 
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
