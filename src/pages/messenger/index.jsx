@@ -116,7 +116,7 @@ const Messenger = () => {
             <img
               src={logoM}
               alt="M company"
-              className="w-[50%] h-auto rounded-lg object-cover mx-auto"
+              className="w-full h-auto rounded-lg object-cover "
             />
           </div>
           <div className="flex flex-col gap-3 sm:gap-4 items-center text-center px-2 sm:px-4">
