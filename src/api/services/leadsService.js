@@ -20,10 +20,14 @@ export const createLeads = (data) => {
   return api.post(endpoints.leads.create, data);
 };
 
-// Lead yangilash
-export const updateLeads = (id, data) => {
-  return api.put(endpoints.leads.update(id), data);
+// Lead yangilash (boardId va leadId bilan)
+export const updateLeads = (boardId, leadId, data) => {
+  if (!boardId || !leadId) {
+    return Promise.reject(new Error("Board ID yoki Lead ID mavjud emas"));
+  }
+  return api.patch(endpoints.leads.update(boardId, leadId), data);
 };
+
 
 // Lead o‘chirish
 export const deleteLeads = (id) => {
