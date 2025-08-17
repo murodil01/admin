@@ -410,40 +410,31 @@ const Card = ({
     }
   };
 
-   const getAssigneeName = (assigneeId) => {
-    console.log("Getting assignee name for ID:", assigneeId);
-    console.log("Available project users:", projectUsers);
-    
-    if (!assigneeId) return "Not assigned";
-    
-    if (typeof assigneeId === 'object' && assigneeId !== null) {
-      if (assigneeId.first_name && assigneeId.last_name) {
-        return `${assigneeId.first_name} ${assigneeId.last_name}`;
-      } else if (assigneeId.name) {
-        return assigneeId.name;
-      } else if (assigneeId.id) {
-        assigneeId = assigneeId.id;
-      }
+   const getAssigneeName = (assignee) => {
+  if (!assignee) return "Not assigned";
+  
+  // If assignee is an object
+  if (typeof assignee === 'object') {
+    if (assignee.first_name && assignee.last_name) {
+      return `${assignee.first_name} ${assignee.last_name}`;
+    } 
+    if (assignee.name) {
+      return assignee.name;
     }
-    
-      const user = projectUsers.find(u => {
-      return String(u.id) === String(assigneeId) || 
-             u.user_id === assigneeId || 
-             u.user === assigneeId;
-    });
-    console.log("Found user:", user);
-    
-     if (user) {
-      return `${user.first_name || ''} ${user.last_name || ''}`.trim() || 
-             user.full_name || 
-             user.username || 
-             user.name || 
-             'Unknown user';
+    if (assignee.id) {
+      return projectUsers.find(u => u.id === assignee.id)?.name || 'Unknown';
     }
-    
-    return "Unknown user";
-  };
-
+    return 'Unknown';
+  }
+  
+  // If assignee is an ID string
+  const user = projectUsers.find(u => 
+    u.id === assignee || 
+    u.user_id === assignee
+  );
+  
+  return user ? `${user.first_name} ${user.last_name}` : 'Unknown';
+};
   // Comments functions
  const fetchFiles = useCallback(async () => {
     if (!id) return;
@@ -490,9 +481,10 @@ const Card = ({
       commentsList = response.data.comments;
     }
       
-     const mappedComments = commentsList.map(comment => ({
+    // Map comments using assignee instead of user
+    const mappedComments = commentsList.map(comment => ({
       ...comment,
-      user_name: getAssigneeName(comment.user) || 'Unknown',
+      user_name: getAssigneeName(comment.assignee) || 'Unknown', // Use assignee
     }));
     
     console.log("📋 Extracted and mapped comments:", mappedComments);
@@ -533,7 +525,7 @@ const handleAddComment = async () => {
     message.warning("Please enter a comment");
     return;
   }
-
+  
   const currentUser = getCurrentUser();
   if (!currentUser || !currentUser.id) {
     message.error("Please log in to add a comment");
@@ -545,57 +537,93 @@ const handleAddComment = async () => {
   const tempComment = {
     id: `temp-${Date.now()}`,
     message: commentMessage,
-    user: currentUser.id,
+    assignee: currentUser.id, // Use assignee instead of user
     user_name: `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim() || "You",
     created_at: new Date().toISOString(),
     isTemp: true,
   };
-
-  // Optimistic update
-  setComments(prev => [...prev, tempComment]);
-  setNewComment("");  // Clear input
-
-   try {
-    
-    const payload = {
-      task: id,
-      message: commentMessage,
-      user: currentUser.id
-    };
-     const response = await createComment(payload);
-     setComments(prev => 
+      const response = await createComment(payload);
+    setComments(prev => 
       prev.map(comment => 
         comment.id === tempComment.id 
           ? { 
               ...response.data, 
               isTemp: false,
-              user_name: response.data.user_name || "You"
+              user_name: tempComment.user_name  // Keep the user name
             }
           : comment
       )
-    ); 
-    message.success('Comment added successfully');
-    console.log("📥 Create comment response:", response);
+    );
+  setNewComment("");  // Clear input
+  try {
+    // Payload: include both 'user' and 'assignee' to cover backend ambiguity
+    const payload = {
+      task: id,
+      message: commentMessage,
+      user: currentUser.id,
+      assignee: currentUser.id, // <- qo'shdim: agar backend shu nomni kutsa ishlaydi
+    };
 
-    if (response && response.data) {
-      // Fetch updated list (includes new comment with real data)
+    console.log("📤 Creating comment payload:", payload);
+    const response = await createComment(payload);
+    console.log("📥 createComment response:", response);
+
+    // Try to extract created comment from various possible response shapes
+    let createdComment = null;
+    const d = response?.data;
+
+    if (!d) {
+      // no body — reload full list (safest fallback)
       await fetchComments();
-      message.success('Comment added successfully');
-    } else {
-      throw new Error('Invalid response from server');
+      setNewComment("");
+      message.success('Comment added (reloaded).');
+      return;
     }
+
+    if (Array.isArray(d)) {
+      createdComment = d[0];
+    } else if (d && d.id) {
+      createdComment = d;
+    } else if (d && Array.isArray(d.results) && d.results.length) {
+      createdComment = d.results[0];
+    } else if (d && Array.isArray(d.comments) && d.comments.length) {
+      createdComment = d.comments[0];
+    } else if (d && d.comment) {
+      createdComment = d.comment;
+    } else if (d && d.data && d.data.id) {
+      createdComment = d.data;
+    }
+
+    // Agar server yangi commentni qaytarmagan yoki format noaniq boʻlsa — qayta yuklash
+    if (!createdComment) {
+      console.warn("Couldn't extract created comment from response — reloading comments.");
+      await fetchComments();
+      setNewComment("");
+      message.success('Comment added (reloaded).');
+      return;
+    }
+
+    // Add fallback user_name same way as GET mapping does
+    const commentWithName = {
+      ...createdComment,
+      user_name: createdComment.user_name || getAssigneeName(createdComment.user || createdComment.assignee) || 'Unknown',
+    };
+
+    // Combine with existing comments list (comments state may already be mapped)
+    const combined = Array.isArray(comments) ? [...comments, commentWithName] : [commentWithName];
+
+    const mappedComments = combined.map(comment => ({
+      ...comment,
+      user_name: comment.user_name || getAssigneeName(comment.user || comment.assignee) || 'Unknown',
+    }));
+
+    setComments(mappedComments);
+    setNewComment("");
+    message.success('Comment added successfully');
   } catch (error) {
-    console.error('❌ Error adding comment:', error);
-    if (error.response) {
-      console.error('Error response:', error.response.data);
-      message.error(`Failed to add comment: ${error.response.data.detail || error.response.statusText}`);
-    } else {
-      message.error('Failed to add comment');
-    }
-    // Rollback optimistic update
-    setComments(prev => prev.filter(comment => comment.id !== tempComment.id));
-    // Restore input on error
-    setNewComment(commentMessage);
+    console.error('Error adding comment:', error);
+    // Agar 4xx/5xx bo'lsa — tarmoq panelidan tekshashni tavsiya qilaman
+    message.error('Failed to add comment');
   } finally {
     setSubmitLoading(false);
   }
@@ -677,7 +705,27 @@ const getCurrentUserFromAPI = async () => {
       setNewChecklistItem(itemName); // Restore text on error
     }
   };
+  const handleCommentSubmit = async () => {
+  if (!newComment.trim()) {
+    message.warning("Comment cannot be empty!");
+    return;
+  }
 
+  setSubmitLoading(true);
+  try {
+    // Create comment using API service
+    await createComment(id, newComment);
+    
+    message.success("Comment added successfully!");
+    setNewComment("");
+    fetchComments(); // Refresh comments list
+  } catch (error) {
+    console.error("Error posting comment:", error);
+    message.error("Failed to post comment");
+  } finally {
+    setSubmitLoading(false);
+  }
+};
   const handleDeleteChecklistItem = async (itemId) => {
     const originalItems = [...checklistItems];
     setChecklistItems(prev => prev.filter(item => item.id !== itemId));
@@ -1157,9 +1205,9 @@ const handleUpdateCard = (updatedCard) => {
               <div key={c.id} className="rounded-lg bg-blue-50 mb-3">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
-                    👤
+                    👤 {c.user_name[0]}
                   </div>
-                  <span className="text-sm font-medium">{c.author || c.user_name || "You"}</span>
+                  <span className="text-sm font-medium">{c.user_name || "You"}</span>
                   <p className="text-xs text-gray-500 ml-2">
                     {dayjs(c.created_at).format("MMM D, YYYY h:mm A")}
                   </p>
