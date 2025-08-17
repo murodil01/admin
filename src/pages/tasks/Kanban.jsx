@@ -1471,7 +1471,14 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       loadTaskFiles();
       loadTaskInstructions(cardData.id); // Yangi qo'shildi
     }
-  }, [visible, projectId, cardData?.id]);
+      // ✅ MUHIM: Modal yopilganda state ni tozalash
+      if (!visible) {
+        setChecklist([]);
+        setUploadedFiles([]);
+        setFiles([]);
+      }
+  }, [visible, cardData?.id]);
+
 
   // Card ma'lumotlarini form ga yuklash
   React.useEffect(() => {
@@ -1480,7 +1487,15 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       setType(cardData.tasks_type || "");
       setDate(cardData.deadline ? dayjs(cardData.deadline) : null);
       setNotification(cardData.is_active ? "On" : "Off");
-      setSelectedAssignee(cardData.assigned || []);
+      // setSelectedAssignee(cardData.assigned || []);
+
+            // Assigned maydonini to'g'ri formatlash
+            if (cardData.assigned && Array.isArray(cardData.assigned) && cardData.assigned.length > 0) {
+              setSelectedAssignee(cardData.assigned[0]);
+            } else {
+              setSelectedAssignee(null);
+            }
+      
       setDescription(cardData.description || "");
       setSelectedTags(cardData.tags ? cardData.tags.map((tag) => tag.id) : []);
       setProgress(cardData.progress || 0);
@@ -1489,34 +1504,116 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
     }
   }, [cardData, visible]);
 
-  // Checklist ma'lumotlarini yuklash
-  const loadTaskInstructions = async (taskId) => {
-    if (!taskId) return;
+ // Checklist ma'lumotlarini yuklash
+ const loadTaskInstructions = async (taskId) => {
+  if (!taskId) return;
+  
+  setChecklistLoading(true);
+  try {
+    const response = await getTaskInstructions(taskId);
+     // faqat shu taskga tegishli instructions qolsin
+     const instructionsData = (response.data || []).filter(
+      instruction => instruction.task === taskId
+    );
+    console.log("Instructions ma'lumotlari:", response);
+    
+    
+    // API dan kelgan ma'lumotlarni checklist formatiga o'zgartirish
+    const formattedChecklist = instructionsData.map(instruction => ({
+      id: instruction.id,
+      text: instruction.name,
+      done: instruction.status,
+      isNew: false // mavjud elementlar uchun
+    }));
+    
+    setChecklist(formattedChecklist);
+  } catch (error) {
+    console.error("Instructions yuklashda xatolik:", error);
+    message.error("Checklist ma'lumotlarini yuklashda xatolik");
+    setChecklist([]);
+  } finally {
+    setChecklistLoading(false);
+  }
+};
 
-    setChecklistLoading(true);
-    try {
-      const response = await getTaskInstructions(taskId);
-      console.log("Instructions ma'lumotlari:", response);
+// ✅ YECHIM: Instructions ni yuklash funksiyasi - task ID ni aniq tekshirish
+// const loadTaskInstructions = async (taskId) => {
+//   // Task ID ni aniq tekshirish
+//   if (!taskId) {
+//     console.warn("❌ Task ID yo'q, instructions yuklanmaydi");
+//     setChecklist([]);
+//     return;
+//   }
+  
+//   console.log("🔍 Loading instructions for task ID:", taskId);
+//   setChecklistLoading(true);
+  
+//   try {
+//     // API chaqiruv
+//     const response = await getTaskInstructions(taskId);
+//     console.log("📋 Instructions API javobi:", response);
+//     console.log("📋 Instructions ma'lumotlari:", response.data);
+    
+//     // Response strukturasini tekshirish
+//     let instructionsData = response.data || response || [];
+    
+//     // Agar array bo'lmasa, bo'sh array ishlatamiz
+//     if (!Array.isArray(instructionsData)) {
+//       console.warn("⚠️ Instructions data array emas:", typeof instructionsData, instructionsData);
+//       instructionsData = [];
+//     }
+    
+//     // ✅ QOSHIMCHA FILTERLASH: Agar API barcha instructionsni qaytarsa, 
+//     // frontend da ham task ID bo'yicha filterlash
+//     const filteredInstructions = instructionsData.filter(instruction => {
+//       // instruction.task taskId ga teng bo'lishi kerak
+//       return instruction.task === taskId || instruction.task === parseInt(taskId);
+//     });
+    
+//     console.log("🎯 Filtered instructions for task", taskId, ":", filteredInstructions);
+    
+//     // API dan kelgan ma'lumotlarni checklist formatiga o'zgartirish
+//     const formattedChecklist = filteredInstructions.map(instruction => ({
+//       id: instruction.id,
+//       text: instruction.name || instruction.text || "",
+//       done: instruction.status || false,
+//       isNew: false, // mavjud elementlar uchun
+//       taskId: instruction.task // debug uchun
+//     }));
+    
+//     console.log("✅ Formatted checklist:", formattedChecklist);
+//     setChecklist(formattedChecklist);
+    
+//   } catch (error) {
+//     console.error("❌ Instructions yuklashda xatolik:", error);
+    
+//     if (error.response) {
+//       console.error("🔍 Server javobi:", error.response.status, error.response.data);
+//     }
+    
+//     message.error("Checklist ma'lumotlarini yuklashda xatolik");
+//     setChecklist([]);
+//   } finally {
+//     setChecklistLoading(false);
+//   }
+// };
 
-      // ✅ TUZATISH: response.data ni ishlatish kerak
-      const instructionsData = response.data || [];
+// Modal ochilganda instructions ham yuklansin
+React.useEffect(() => {
+  if (visible && cardData?.id) {
+    loadModalData();
+    loadTaskFiles();
+    loadTaskInstructions(cardData.id); // Yangi qo'shildi
+  }
+}, [visible, cardData?.id]);
 
-      // API dan kelgan ma'lumotlarni checklist formatiga o'zgartirish
-      const formattedChecklist = instructionsData.map(instruction => ({
-        id: instruction.id,
-        text: instruction.name,
-        done: instruction.status,
-        isNew: false // mavjud elementlar uchun
-      }));
-
-      setChecklist(formattedChecklist);
-    } catch (error) {
-      console.error("Instructions yuklashda xatolik:", error);
-      message.error("Checklist ma'lumotlarini yuklashda xatolik");
-      setChecklist([]);
-    } finally {
-      setChecklistLoading(false);
-    }
+// Checklist funksiyalari
+const addCheckItem = () => {
+  const newItem = {
+    id: Date.now().toString(), // Temporary ID for new items
+    text: "",
+    done: false,
+    isNew: true // yangi elementlar uchun
   };
 
   // Modal ochilganda instructions ham yuklansin
@@ -1984,7 +2081,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
               </div>
 
               {/* Progress */}
-              <div>
+              {/* <div>
                 <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
                   Progress (%)
                 </label>
@@ -1997,7 +2094,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                   onChange={(e) => setProgress(Number(e.target.value))}
                   placeholder="Enter progress percentage"
                 />
-              </div>
+              </div> */}
 
               {/* Tags */}
               <div>
