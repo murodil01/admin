@@ -187,10 +187,10 @@ const CategoryCard = () => {
   const formatDate = (dateString) =>
     dateString
       ? new Date(dateString).toLocaleDateString('en-GB', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-        })
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      })
       : 'N/A';
 
   const getCreatorName = (created_by) => {
@@ -284,9 +284,18 @@ const CategoryCard = () => {
                   {item.file_size_mb != null && (
                     <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg px-2 py-1 shadow-sm">
                       <p className="text-xs font-semibold text-blue-800 whitespace-nowrap">
-                        {item.file_size_mb > 1000
-                          ? `${(item.file_size_mb / 1000).toFixed(1)} GB`
-                          : `${item.file_size_mb} MB`}
+                        {(() => {
+                          const sizeInMb = item.file_size_mb;
+                          if (sizeInMb > 1) {
+                            return sizeInMb > 1000
+                              ? `${(sizeInMb / 1000).toFixed(1)} GB`
+                              : `${sizeInMb.toFixed(1)} MB`;
+                          } else if (sizeInMb > 0.001) {
+                            return `${(sizeInMb * 1000).toFixed(1)} KB`;
+                          } else {
+                            return `${(sizeInMb * 1000 * 1000).toFixed(0)} B`;
+                          }
+                        })()}
                       </p>
                     </div>
                   )}
