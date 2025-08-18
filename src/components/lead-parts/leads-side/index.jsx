@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Dropdown, Input, Modal, Button, Spin, message } from "antd";
 import { Plus } from "lucide-react";
@@ -123,6 +124,7 @@ const LeadSide = () => {
   ];
 
   return (
+    <div className=" w-[300px] p-1 ">
     <div className="min-h-[640px] bg-[#F7F7F7] border border-gray-200 rounded-[16px] p-4 max-w-[320px] flex flex-col gap-4">
       {/* Header */}
       <div className="flex justify-between items-center">
@@ -198,7 +200,6 @@ const LeadSide = () => {
           style={{ borderRadius: "8px", fontSize: "16px" }}
         />
       </Modal>
-
       {/* Edit Board Modal */}
       <Modal
         title="Edit Board"
@@ -226,6 +227,7 @@ const LeadSide = () => {
           style={{ borderRadius: "8px", fontSize: "16px" }}
         />
       </Modal>
+    </div>
     </div>
   );
 };
