@@ -8,37 +8,55 @@ const endpoints = {
 	},
 
   users: {
-    getAll: "/users",
-    getById: (id) => `/users/${id}/`,
-    update: (id) => `/users/${id}/`,
-    delete: (id) => `/users/${id}/`,
+    getAll: "users/",
+    getById: (id) => `users/${id}/`,
+    update: (id) => `users/${id}/`,
+    delete: (id) => `users/${id}/`,
   },
-	tasks: {
-		getAll: 'project/tasks/',
-		create: 'project/tasks/',
-		getTags: 'project/tags/',
-		getById: id => `project/tasks/${id}/`,
-		update: id => `project/tasks/${id}/`,
-		delete: id => `project/tasks/${id}/`,
-		createTaskFile: 'project/files/',
-		getTaskFiles: 'project/files/', // yangi qo'shildi
-		deleteTaskFile: id => `project/files/${id}/`, // yangi qo'shildi
-    getComments: "project/comments/",
-		getTaskInstructions: 'project/instructions/', // yangi qo'shildi
-		getTaskInstructionsById: id => `project/instructions/${id}/`,
-		createTaskInstructions: 'project/instructions/',
-		updateInstruction: id => `project/instructions/${id}/`,
-		deleteTaskInstruction: id => `project/instructions/${id}/`, // yangi qo'shildi
-	},
+	// tasks: {
+	// 	getAll: 'project/tasks/',
+	// 	create: 'project/tasks/',
+	// 	getTags: 'project/tags/',
+	// 	getById: id => `project/tasks/${id}/`,
+	// 	update: id => `project/tasks/${id}/`,
+	// 	delete: id => `project/tasks/${id}/`,
+	// 	createTaskFile: 'project/files/',
+	// 	getTaskFiles: 'project/files/', // yangi qo'shildi
+	// 	deleteTaskFile: id => `project/files/${id}/`, // yangi qo'shildi
+  //   getComments: "project/comments/",
+	// 	getTaskInstructions: 'project/instructions/', // yangi qo'shildi
+	// 	getTaskInstructionsById: id => `project/instructions/${id}/`,
+	// 	createTaskInstructions: 'project/instructions/',
+	// 	updateInstruction: id => `project/instructions/${id}/`,
+	// 	deleteTaskInstruction: id => `project/instructions/${id}/`, // yangi qo'shildi
+	// },
 
+  tasks: {
+    getAll: 'project/tasks/',
+    create: 'project/tasks/',
+    getTags: 'project/tags/',
+    getById: id => `project/tasks/${id}/`,
+    update: id => `project/tasks/${id}/`,
+    delete: id => `project/tasks/${id}/`,
+    createTaskFile: 'project/files/',
+    getTaskFiles: 'project/files/',
+    deleteTaskFile: id => `project/files/${id}/`,
+    getComments: "project/comments/",
+    
+    // Instructions endpoint larini to'g'irlang
+    getTaskInstructions: 'project/instructions/',
+    createTaskInstructions: 'project/instructions/',
+    updateInstruction: id => `project/instructions/${id}/`,
+    deleteTaskInstruction: id => `project/instructions/${id}/`,
+  },
     projects: {
         getAll: "project/projects/",
         create: "project/projects/",
         getById: (id) => `project/projects/${id}/`,
         getByIdTasks: (id) => `project/projects/${id}/tasks/`,
         getByIdUsers: (id) => `project/projects/${id}/users/`,
-        update: (id) => `project/projects/${id}`,
-        delete: (id) => `project/projects/${id}`,
+        update: (id) => `project/projects/${id}/`,
+        delete: (id) => `project/projects/${id}/`,
     },
 
   departments: {
