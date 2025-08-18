@@ -644,7 +644,7 @@ const Projects = () => {
 
       case "info":
         return (
-          <div className="flex flex-col gap-5 text-sm text-gray-700 my-5">
+          <div className="flex flex-col gap-5 text-sm text-gray-700">
             <h1 className="text-[#0A1629] text-[22px] font-bold mb-3">
               Task Details
             </h1>
@@ -766,8 +766,8 @@ const Projects = () => {
     switch (modalType) {
       case "edit":
         return "Edit Task";
-      case "info":
-        return "Task Details";
+      // case "info":
+      //   return "Task Details";
       case "delete":
         return "Delete Task";
       default:
@@ -831,14 +831,14 @@ const Projects = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
         <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
-          Task
+          Project
         </h3>
         <button
           onClick={handleAddOpen}
           className="capitalize w-full sm:max-w-[172px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
         >
           <span className="text-[22px]">+</span>
-          <span>Add Task</span>
+          <span>Add Project</span>
         </button>
       </div>
 
