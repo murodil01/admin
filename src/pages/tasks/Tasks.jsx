@@ -81,13 +81,20 @@ const Projects = () => {
   };
 
   // Department modal ichidagi userlarni filter qilish
+  // YANGI KOD (yuqoridagi o'rniga qo'ying):
   useEffect(() => {
     if (selectedDepartments.length > 0 && allUsers.length > 0) {
       if (selectedDepartments.includes("none")) {
         setDeptModalFilteredUsers([]);
         return;
       }
-
+  
+      // ✅ "All" tanlanganda hamma userlar
+      if (selectedDepartments.includes("all")) {
+        setDeptModalFilteredUsers(allUsers);
+        return;
+      }
+  
       const filtered = allUsers.filter(
         (user) =>
           user.department?.id &&
@@ -99,14 +106,20 @@ const Projects = () => {
     }
   }, [selectedDepartments, allUsers]);
 
-  // Add modal uchun alohida filter (eski kod)
+
   useEffect(() => {
     if (selectedDepartments.length > 0 && allUsers.length > 0) {
       if (selectedDepartments.includes("none")) {
         setFilteredUsers([]);
         return;
       }
-
+  
+      // ✅ Agar "all" tanlangan bo'lsa - hamma userlarni ko'rsatish
+      if (selectedDepartments.includes("all")) {
+        setFilteredUsers(allUsers);
+        return;
+      }
+  
       const filtered = allUsers.filter(
         (user) =>
           user.department?.id &&
@@ -324,9 +337,19 @@ const Projects = () => {
         formData.append("deadline", deadline);
       }
 
-      selectedDepartments.forEach((id) =>
-        formData.append("department_ids", id)
-      );
+      if (selectedDepartments.includes("all")) {
+        // Hamma departmentlarning ID'larini olish
+        allDepartments.forEach((dept) => {
+          formData.append("department_ids", dept.id);
+        });
+      } else if (!selectedDepartments.includes("none")) {
+        // Faqat tanlangan departmentlarni yuborish
+        selectedDepartments.forEach((id) => {
+          if (id !== "none" && id !== "all") {
+            formData.append("department_ids", id);
+          }
+        });
+      }
 
       selectedUsers.forEach((id) => formData.append("assigned", id));
 
@@ -364,9 +387,17 @@ const Projects = () => {
         formData.append("deadline", deadline);
       }
 
-      selectedDepartments.forEach((id) =>
-        formData.append("department_ids", id)
-      );
+      if (selectedDepartments.includes("all")) {
+        allDepartments.forEach((dept) => {
+          formData.append("department_ids", dept.id);
+        });
+      } else if (!selectedDepartments.includes("none")) {
+        selectedDepartments.forEach((id) => {
+          if (id !== "none" && id !== "all") {
+            formData.append("department_ids", id);
+          }
+        });
+      }
 
       const allSelectedUserIds = [...new Set([...selectedUsers])];
       allSelectedUserIds.forEach((id) => formData.append("assigned", id));
@@ -971,7 +1002,7 @@ const Projects = () => {
                 type="text"
                 value={taskName}
                 onChange={(e) => setTaskName(e.target.value)}
-                placeholder="M Tech"
+                // placeholder="M Tech"
                 className="mt-1 w-full h-[50px] border border-gray-300 rounded-[14px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -1113,7 +1144,6 @@ const Projects = () => {
         open={isDeptModalOpen}
         onCancel={() => setIsDeptModalOpen(false)}
         onOk={() => setIsDeptModalOpen(false)}
-        title="Select Departments and Users"
         okText="Done"
         className="custom-modal"
         width={800}
