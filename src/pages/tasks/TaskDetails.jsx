@@ -232,94 +232,130 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
     setImage(null);
   };
 
-  const handleSave = async () => {
-    // Validation
-    if (!title.trim()) {
-      message.error("Please enter a column title");
-      return;
+ const handleSave = async () => {
+  // Validation
+  if (!title.trim()) {
+    message.error("Please enter a column title");
+    return;
+  }
+  if (!type) {
+    message.error("Please select a type");
+    return;
+  }
+
+  // Retrieve token
+  const token = localStorage.getItem("token");
+  if (!token) {
+    message.error("Please log in to create a task");
+    return;
+  }
+
+  // Prepare FormData for API
+  const formData = new FormData();
+  formData.append('name', title);
+  formData.append('description', description || ''); // Bo'sh bo'lsa ham string yuborish
+  formData.append('tasks_type', type);
+  formData.append('project', projectId);
+
+  // ✅ FIX 1: Deadline format - faqat sana tanlangan bo'lsa yuborish
+  if (date) {
+    // Agar date string bo'lsa
+    if (typeof date === 'string') {
+      formData.append('deadline', date);
+    } else {
+      // Agar dayjs object bo'lsa
+      formData.append('deadline', dayjs(date).format("YYYY-MM-DD"));
     }
-    if (!type) {
-      message.error("Please select a type");
-      return;
+  }
+  // deadline bo'sh bo'lsa hech narsa yubormaslik
+
+  // ✅ FIX 2: tags_ids - faqat tanlangan bo'lsa yuborish
+  if (tags && tags.length > 0) {
+    tags.forEach(tagId => {
+      formData.append('tags_ids', tagId);
+    });
+  }
+
+  // ✅ FIX 3: assigned - to'g'ri format
+  if (selectedAssignee) {
+    // Backend list kutayapti, lekin JSON.stringify ishlatmasdan
+    // har bir element uchun alohida append qilish
+    formData.append('assigned', selectedAssignee);
+  }
+
+  // ✅ FIX 4: task_image - faqat file tanlangan bo'lsa yuborish
+  if (file && file instanceof File) {
+    formData.append('task_image', file);
+  }
+
+  // Append other files if any
+  files.forEach((fileItem) => {
+    if (fileItem instanceof File) {
+      formData.append('files', fileItem);
     }
+  });
 
-    // Retrieve token
-    const token = localStorage.getItem("token");
-    if (!token) {
-      message.error("Please log in to create a task");
-      return;
+  // Debug: FormData ni tekshirish
+  console.log('FormData contents:');
+  for (let [key, value] of formData.entries()) {
+    console.log(`${key}:`, value);
+  }
+
+  try {
+    // Call createTask API
+    const response = await createTask(formData);
+    const newTask = response.data;
+
+    // Map the new task to card format
+    const completedChecks = checklist.filter(
+      (item) => item.text && item.text.trim() !== ""
+    ).length;
+    const totalChecks = checklist.length;
+
+    // Find the assignee name from the assignees array
+    const assigneeName = assignees.find(a => a.value === selectedAssignee)?.label || "Unknown";
+
+    const newCard = {
+      id: newTask.id,
+      title: newTask.name,
+      time: newTask.deadline
+        ? new Date(newTask.deadline).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        })
+        : "No due date",
+      description: newTask.description,
+      assignee: {
+        name: assigneeName,
+        avatar: "bg-blue-500",
+      },
+      tags: newTask.tags || newTask.tags_ids || tags,
+      checklistProgress: `${completedChecks}/${totalChecks || 0}`,
+      column: newTask.tasks_type,
+      files,
+    };
+
+    setCards((prev) => [...prev, newCard]);
+    message.success("Task created successfully!");
+
+    // Reset form
+    handleCancel();
+  } catch (error) {
+    console.error("Error creating task:", error);
+    
+    // ✅ Batafsil error log qilish
+    if (error.response) {
+      console.error("Response data:", error.response.data);
+      console.error("Response status:", error.response.status);
     }
-
-    // Prepare FormData for API
-    const formData = new FormData();
-    formData.append('name', title);
-    formData.append('description', description);
-    formData.append('tasks_type', type);
-    formData.append('deadline', date ? dayjs(date).format("YYYY-MM-DD") : '');
-    formData.append('project', projectId);
-
-    // Append tags_ids as array (repeat the key for each item)
-    tags.forEach(tagId => formData.append('tags_ids', tagId));
-
-    // Append assigned as array
-    if (selectedAssignee) {
-      formData.append('assigned', selectedAssignee);
+    
+    if (error.response?.status === 401) {
+      message.error("Session expired. Please log in again.");
+    } else {
+      message.error(error.response?.data?.message || "Failed to create task");
     }
-
-    // Append image if selected
-    if (image) {
-      formData.append('task_image', image);  // 'task_image' matches your backend field
-    }
-    // Append other files if any (assuming setFiles is an array of File objects)
-    files.forEach(file => formData.append('files', file));
-
-    try {
-      // Call createTask API (ensure it handles FormData)
-      const response = await createTask(formData);
-      const newTask = response.data;
-
-      // Map the new task to card format
-      const completedChecks = checklist.filter(
-        (item) => item.text.trim() !== ""
-      ).length;
-      const totalChecks = checklist.length;
-
-      // Find the assignee name from the assignees array
-      const assigneeName = assignees.find(a => a.value === selectedAssignee)?.label || "Unknown"
-
-      const newCard = {
-        id: newTask.id,
-        title: newTask.name,
-        time: newTask.deadline
-          ? new Date(newTask.deadline).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          })
-          : "No due date",
-        description: newTask.description,
-        assignee: {
-          name: assigneeName,
-          avatar: "bg-blue-500",
-        },
-        tags: newTask.tags || newTask.tags_ids || tags,
-        checklistProgress: `${completedChecks}/${totalChecks || 0}`,
-        column: newTask.tasks_type,
-        files,
-      }
-      setCards((prev) => [...prev, newCard]);
-      message.success("Task created successfully!");
-
-      // Reset form
-      handleCancel();
-    } catch (error) {
-      console.error("Error creating task:", error);
-      if (error.response?.status === 401) {
-        message.error("Session expired. Please log in again.");
-      } else {
-        message.error(error.response?.data?.message || "Failed to create task");
-      }
-    }
-  };
+  }
+};
 
   const toggleTag = (tagId) => {
     console.log("Toggling tag ID:", tagId, "Current tags:", tags);

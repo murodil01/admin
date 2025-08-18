@@ -177,10 +177,11 @@ const Board = ({ cards, setCards }) => {
             key={col.id}
             onClick={() => setActiveColumn(col.id)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap
-        ${activeColumn === col.id
-                ? "bg-blue-500 text-white shadow-md"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+        ${
+          activeColumn === col.id
+            ? "bg-blue-500 text-white shadow-md"
+            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+        }`}
           >
             <div className="flex items-center gap-2">
               <span className="text-lg">{col.icon}</span>
@@ -197,7 +198,9 @@ const Board = ({ cards, setCards }) => {
           icon={taskColumns.find((c) => c.id === activeColumn)?.icon}
           title={taskColumns.find((c) => c.id === activeColumn)?.title}
           column={activeColumn}
-          backgroundColor={taskColumns.find((c) => c.id === activeColumn)?.color}
+          backgroundColor={
+            taskColumns.find((c) => c.id === activeColumn)?.color
+          }
           cards={cards.filter((c) => c.column === activeColumn)}
           setCards={setCards}
           onEdit={handleEdit}
@@ -303,44 +306,34 @@ const Column = ({
     const before = element?.dataset.before || "-1";
 
     if (before !== cardId) {
-      let copy = [...cards];
-      let cardToTransfer = copy.find((c) => c.id === cardId);
-      if (!cardToTransfer) return;
-
+      // 1. Darhol UI ni yangilash (Optimistic Update)
       setCards((prev) =>
         prev.map((c) =>
           c.id === cardId
-            ? { ...c, column } // card ning column ni hozirgi column ga o‘tkazamiz
+            ? { ...c, column } // card ning column ni yangi column ga o'tkazish
             : c
         )
       );
 
-      // 1. Optimistic UI update (darhol ko'rinishni yangilash)
-      cardToTransfer = { ...cardToTransfer, column };
-      copy = copy.filter((c) => c.id !== cardId);
-
-      if (before === "-1") {
-        copy.push(cardToTransfer);
-      } else {
-        const insertAt = copy.findIndex((c) => c.id === before);
-        if (insertAt === -1) return;
-        copy.splice(insertAt, 0, cardToTransfer);
-      }
-
-      setCards(copy); // UI ni yangilash
-
-      // 2. Backendga yangilash
+      // 2. Backendga yuborish
       try {
+        console.log(`Moving card ${cardId} to column ${column}`);
         await updateTaskType(cardId, column);
-        message.success("Task status updated!");
+        message.success(`Task moved to ${column}!`);
       } catch (error) {
-        // Rollback on error
-        const originalCard = cards.find((c) => c.id === cardId);
-        if (originalCard) {
-          setCards(cards);
-        }
-        message.error("Failed to update task status");
         console.error("Update error:", error);
+        message.error("Failed to update task status");
+
+        // 3. Xatolik bo'lsa, eski holatga qaytarish (Rollback)
+        setCards((prev) => {
+          const originalCard = cards.find((c) => c.id === cardId);
+          if (originalCard) {
+            return prev.map((c) =>
+              c.id === cardId ? { ...c, column: originalCard.column } : c
+            );
+          }
+          return prev;
+        });
       }
     }
   };
@@ -365,8 +358,9 @@ const Column = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`w-full transition-colors hidden md:block ${active ? "bg-neutral-800/50 border-dashed" : "bg-neutral-800/0"
-          }`}
+        className={`w-full transition-colors hidden md:block ${
+          active ? "bg-neutral-800/50 border-dashed" : "bg-neutral-800/0"
+        }`}
       >
         {filteredCards.map((c) => (
           <Card
@@ -386,8 +380,10 @@ const Column = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`w-full transition-colors md:hidden space-y-3 ${active ? "bg-neutral-800/50 border-dashed" : "bg-neutral-800/0"
-          }`}>
+        className={`w-full transition-colors md:hidden space-y-3 ${
+          active ? "bg-neutral-800/50 border-dashed" : "bg-neutral-800/0"
+        }`}
+      >
         {filteredCards.map((c) => (
           <Card
             key={c.id}
@@ -945,12 +941,12 @@ const Card = ({
       prev.map((card) =>
         card.id === updatedCard.id
           ? {
-            ...card,
-            title: updatedCard.name,
-            time: updatedCard.deadline,
-            description: updatedCard.description,
-            column: updatedCard.tasks_type,
-          }
+              ...card,
+              title: updatedCard.name,
+              time: updatedCard.deadline,
+              description: updatedCard.description,
+              column: updatedCard.tasks_type,
+            }
           : card
       )
     );
@@ -991,7 +987,10 @@ const Card = ({
         layout
         layoutId={id}
         draggable="true"
-        onDragStart={(e) => handleDragStart(e, { title, id, column })}
+        onDragStart={(e) => {
+          console.log("Drag started for card:", { title, id, column });
+          handleDragStart(e, { title, id, column }); // Ma'lumotlar to'g'ri uzatilganligini tekshiring
+        }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         className="cursor-grab rounded-lg bg-white p-3 shadow-sm active:cursor-grabbing border border-gray-100 hover:shadow-md transition relative"
@@ -1183,11 +1182,18 @@ const Card = ({
 
                             <div>
                               <p className="text-sm font-medium text-gray-900">
-                                {file.original_name || file.file_name || "Unnamed file"}
+                                {file.original_name ||
+                                  file.file_name ||
+                                  "Unnamed file"}
                               </p>
                               <p className="text-xs text-gray-500">
-                                {file.file_size ? formatFileSize(file.file_size) : ""} •{" "}
-                                {file.created_at ? formatDate(file.created_at) : "Unknown date"}
+                                {file.file_size
+                                  ? formatFileSize(file.file_size)
+                                  : ""}{" "}
+                                •{" "}
+                                {file.created_at
+                                  ? formatDate(file.created_at)
+                                  : "Unknown date"}
                               </p>
                             </div>
                           </div>
@@ -1213,7 +1219,11 @@ const Card = ({
                 <div>
                   <div className="flex justify-between items-center mb-3">
                     <h4 className="font-semibold text-sm flex items-center gap-2">
-                      <img src={checkList} alt="checklist" className="w-4 h-4" />
+                      <img
+                        src={checkList}
+                        alt="checklist"
+                        className="w-4 h-4"
+                      />
                       Check list ({checklistItems.length})
                     </h4>
                     <span className="text-xs text-gray-500">Show</span>
@@ -1228,13 +1238,24 @@ const Card = ({
                         >
                           <Checkbox
                             checked={item.completed}
-                            onChange={(e) => handleUpdateChecklistItem(item.id, e.target.checked)}
+                            onChange={(e) =>
+                              handleUpdateChecklistItem(
+                                item.id,
+                                e.target.checked
+                              )
+                            }
                           />
                           <span
-                            className={`text-sm flex-1 ${item.completed ? "line-through text-gray-500" : "text-gray-900"
-                              }`}
+                            className={`text-sm flex-1 ${
+                              item.completed
+                                ? "line-through text-gray-500"
+                                : "text-gray-900"
+                            }`}
                           >
-                            {item.title || item.name || item.description || `Item ${index + 1}`}
+                            {item.title ||
+                              item.name ||
+                              item.description ||
+                              `Item ${index + 1}`}
                           </span>
                         </div>
                       ))}
@@ -1255,20 +1276,26 @@ const Card = ({
                             <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
                               👤 {c.user_name[0]}
                             </div>
-                            <span className="text-sm font-medium">{c.user_name || "You"}</span>
+                            <span className="text-sm font-medium">
+                              {c.user_name || "You"}
+                            </span>
                             <p className="text-xs text-gray-500 ml-2">
                               {dayjs(c.created_at).format("MMM D, YYYY h:mm A")}
                             </p>
                           </div>
                           <div>
                             <div className="bg-white p-1 rounded-sm">
-                              <p className="text-sm text-gray-700">{c.text || c.message}</p>
+                              <p className="text-sm text-gray-700">
+                                {c.text || c.message}
+                              </p>
                             </div>
                           </div>
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-gray-500 mb-3">No comments yet</p>
+                      <p className="text-sm text-gray-500 mb-3">
+                        No comments yet
+                      </p>
                     )}
 
                     {/* Add new comment */}
@@ -1278,7 +1305,9 @@ const Card = ({
                         placeholder="Add a comment"
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleAddComment()} // Enter bosilganda ham yuborish
+                        onKeyPress={(e) =>
+                          e.key === "Enter" && handleAddComment()
+                        } // Enter bosilganda ham yuborish
                         className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none"
                       />
                       <button
@@ -1298,7 +1327,9 @@ const Card = ({
                 <div>
                   <p className="text-gray-400">Assignee by</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">👤</div>
+                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                      👤
+                    </div>
 
                     <span>
                       {(() => {
@@ -1311,7 +1342,8 @@ const Card = ({
                         console.log("Current projectUsers:", projectUsers);
 
                         // Har xil assignee formatlarini tekshirish
-                        const assignee = selectedAssignee ||
+                        const assignee =
+                          selectedAssignee ||
                           taskData?.assignee ||
                           taskData?.assigned_to ||
                           taskData?.assigned?.[0];
@@ -1326,7 +1358,11 @@ const Card = ({
 
                 <div>
                   <p className="text-gray-400">Date</p>
-                  <p className="mt-1">{taskData.deadline ? dayjs(taskData.deadline).format("YYYY-MM-DD") : "N/A"}</p>
+                  <p className="mt-1">
+                    {taskData.deadline
+                      ? dayjs(taskData.deadline).format("YYYY-MM-DD")
+                      : "N/A"}
+                  </p>
                 </div>
 
                 <div>
@@ -1349,7 +1385,10 @@ const Card = ({
                   <div className="flex flex-wrap gap-2 mt-1">
                     {taskData.tags && taskData.tags.length > 0 ? (
                       taskData.tags.map((tag, i) => (
-                        <span key={i} className="bg-gray-200 px-2 py-1 rounded text-xs">
+                        <span
+                          key={i}
+                          className="bg-gray-200 px-2 py-1 rounded text-xs"
+                        >
                           {tag.name}
                         </span>
                       ))
@@ -1362,18 +1401,17 @@ const Card = ({
             </div>
           ) : (
             <p className="text-center text-gray-500">No task data available</p>
-          )
-          }
+          )}
         </Modal>
         <EditCardModal
           visible={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
           cardData={selectedCard}
           onUpdate={handleUpdateCard}
-        // assignees={[
-        //   { value: "user1", label: "Botirov Shaxobiddin" },
-        //   { value: "user2", label: "John Doe" },
-        // ]}
+          // assignees={[
+          //   { value: "user1", label: "Botirov Shaxobiddin" },
+          //   { value: "user2", label: "John Doe" },
+          // ]}
         />
 
         {/* Bottom Row */}
@@ -1503,9 +1541,9 @@ const AddCard = ({ column, setCards }) => {
           time: createdTask.deadline || "",
           assignee: createdTask.assigned
             ? {
-              name: createdTask.assigned[0],
-              avatar: "bg-blue-500",
-            }
+                name: createdTask.assigned[0],
+                avatar: "bg-blue-500",
+              }
             : null,
         },
       ]);
@@ -1585,6 +1623,11 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
   const [progress, setProgress] = React.useState(0);
   const [totalCount, setTotalCount] = React.useState(0);
 
+  // ✅ Image uchun yangi state'lar qo'shish
+  const [currentImage, setCurrentImage] = React.useState(null);
+  const [newImage, setNewImage] = React.useState(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = React.useState(null);
+
   // Files state - yetishmayotgan qism
   const [files, setFiles] = React.useState([]);
   const [uploadedFiles, setUploadedFiles] = React.useState([]);
@@ -1596,6 +1639,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
 
   // Checklist uchun yangi state'lar
   const [checklist, setChecklist] = React.useState([]);
+  const [checklistItems, setChecklistItems] = React.useState([]);
   const [checklistLoading, setChecklistLoading] = React.useState(false);
   // Modal ochilganda API dan ma'lumotlarni yuklash
   React.useEffect(() => {
@@ -1622,7 +1666,11 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       // setSelectedAssignee(cardData.assigned || []);
 
       // Assigned maydonini to'g'ri formatlash
-      if (cardData.assigned && Array.isArray(cardData.assigned) && cardData.assigned.length > 0) {
+      if (
+        cardData.assigned &&
+        Array.isArray(cardData.assigned) &&
+        cardData.assigned.length > 0
+      ) {
         setSelectedAssignee(cardData.assigned[0]);
       } else {
         setSelectedAssignee(null);
@@ -1632,8 +1680,17 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       setSelectedTags(cardData.tags ? cardData.tags.map((tag) => tag.id) : []);
       setProgress(cardData.progress || 0);
       setTotalCount(cardData.totalCount || 0);
+      // ✅ Image ma'lumotlarini yuklash
+      if (cardData.task_image) {
+        setCurrentImage(cardData.task_image);
+        setImagePreviewUrl(cardData.task_image);
+      } else {
+        setCurrentImage(null);
+        setImagePreviewUrl(null);
+      }
 
-      // New files list ni tozalash
+      // Reset new image
+      setNewImage(null);
       setFiles([]);
     }
   }, [cardData, visible]);
@@ -1653,15 +1710,18 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
 
       // Calculate progress and total count
       const totalCount = instructionsData.length;
-      const completedCount = instructionsData.filter(item => item.status).length;
-      const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+      const completedCount = instructionsData.filter(
+        (item) => item.status
+      ).length;
+      const progress =
+        totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
       // API dan kelgan ma'lumotlarni checklist formatiga o'zgartirish
-      const formattedChecklist = instructionsData.map(instruction => ({
+      const formattedChecklist = instructionsData.map((instruction) => ({
         id: instruction.id,
         text: instruction.name,
         done: instruction.status,
-        isNew: false // mavjud elementlar uchun
+        isNew: false, // mavjud elementlar uchun
       }));
 
       // Update state
@@ -1679,6 +1739,51 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
     }
   };
 
+  // ✅ Modal yopilganda barcha state'larni tozalash
+  React.useEffect(() => {
+    if (!visible) {
+      setChecklist([]);
+      setUploadedFiles([]);
+      setFiles([]);
+      setCurrentImage(null);
+      setNewImage(null);
+      setImagePreviewUrl(null);
+    }
+  }, [visible]);
+  // ✅ Image upload handler
+  const handleImageUpload = (file) => {
+    // File type validation
+    if (!file.type.startsWith("image/")) {
+      message.error("Faqat rasm fayllari yuklash mumkin!");
+      return false;
+    }
+
+    // File size validation (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      message.error("Rasm hajmi 5MB dan kichik bo'lishi kerak!");
+      return false;
+    }
+
+    setNewImage(file);
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreviewUrl(previewUrl);
+
+    return false; // Prevent automatic upload
+  };
+
+  // ✅ Image remove handler
+  const handleImageRemove = () => {
+    setNewImage(null);
+    setImagePreviewUrl(currentImage); // Revert to original image
+  };
+
+  // ✅ Current image remove handler
+  const handleCurrentImageRemove = () => {
+    setCurrentImage(null);
+    setImagePreviewUrl(null);
+    setNewImage(null);
+  };
+
   // Modal ochilganda instructions ham yuklansin
   React.useEffect(() => {
     if (visible && cardData?.id) {
@@ -1694,9 +1799,9 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       id: Date.now().toString(), // Temporary ID for new items
       text: "",
       done: false,
-      isNew: true // yangi elementlar uchun
+      isNew: true, // yangi elementlar uchun
     };
-    setChecklist(prev => [...prev, newItem]);
+    setChecklist((prev) => [...prev, newItem]);
   };
 
   const toggleCheckDone = async (index) => {
@@ -1704,9 +1809,11 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
     const newStatus = !item.done;
 
     // Optimistic update
-    setChecklist(prev => prev.map((check, i) =>
-      i === index ? { ...check, done: newStatus } : check
-    ));
+    setChecklist((prev) =>
+      prev.map((check, i) =>
+        i === index ? { ...check, done: newStatus } : check
+      )
+    );
 
     // Agar mavjud element bo'lsa (isNew: false), API ga yuborish
     if (!item.isNew && item.id) {
@@ -1714,31 +1821,35 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
         await updateTaskInstruction(item.id, {
           name: item.text,
           status: newStatus,
-          task: cardData.id
+          task: cardData.id,
         });
         message.success("Checklist item updated!");
       } catch (error) {
         console.error("Checklist update error:", error);
         message.error("Failed to update checklist item");
         // Rollback
-        setChecklist(prev => prev.map((check, i) =>
-          i === index ? { ...check, done: !newStatus } : check
-        ));
+        setChecklist((prev) =>
+          prev.map((check, i) =>
+            i === index ? { ...check, done: !newStatus } : check
+          )
+        );
       }
     }
   };
 
   const updateCheckText = (index, newText) => {
-    setChecklist(prev => prev.map((check, i) =>
-      i === index ? { ...check, text: newText } : check
-    ));
+    setChecklist((prev) =>
+      prev.map((check, i) =>
+        i === index ? { ...check, text: newText } : check
+      )
+    );
   };
 
   const deleteCheckItem = async (index) => {
     const item = checklist[index];
 
     // Optimistic update
-    setChecklist(prev => prev.filter((_, i) => i !== index));
+    setChecklist((prev) => prev.filter((_, i) => i !== index));
 
     // Agar mavjud element bo'lsa, API dan ham o'chirish
     if (!item.isNew && item.id) {
@@ -1749,7 +1860,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
         console.error("Checklist delete error:", error);
         message.error("Failed to delete checklist item");
         // Rollback - elementni qaytarish
-        setChecklist(prev => {
+        setChecklist((prev) => {
           const newList = [...prev];
           newList.splice(index, 0, item);
           return newList;
@@ -1807,8 +1918,8 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
   // File upload funksiyasi - yangi qo'shilgan
   const uploadFile = async (file, taskId) => {
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('task', taskId); // Task ID ni qo'shish
+    formData.append("file", file);
+    formData.append("task", taskId); // Task ID ni qo'shish
 
     try {
       // ✅ axios o'rniga taskService funksiyasini ishlating
@@ -1825,7 +1936,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
     if (files.length === 0) return [];
 
     setFileUploading(true);
-    const uploadPromises = files.map(file => uploadFile(file, taskId));
+    const uploadPromises = files.map((file) => uploadFile(file, taskId));
 
     try {
       const uploadResults = await Promise.all(uploadPromises);
@@ -1856,44 +1967,48 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
     setSaveLoading(true);
 
     try {
-      const updateData = {
-        name: title.trim(),
-        description: description.trim() || null,
-        tasks_type: type,
-        deadline: date ? date.format("YYYY-MM-DD") : null,
-        project: projectId,
+      const formData = new FormData();
+      formData.append("name", title.trim());
+      formData.append("description", description.trim() || "");
+      formData.append("tasks_type", type);
+      formData.append("deadline", date ? date.format("YYYY-MM-DD") : "");
+      formData.append("project", projectId);
+      formData.append("progress", Math.min(100, Math.max(0, progress)));
+      formData.append("is_active", notification === "On");
 
-        // ✅ TUZATISH: assigned maydonini to'g'ri formatlash
-        assigned: selectedAssignee && selectedAssignee.length > 0
-          ? (Array.isArray(selectedAssignee) ? selectedAssignee : [selectedAssignee])
-          : [],
+      // Assigned field
+      if (selectedAssignee && selectedAssignee.length > 0) {
+        const assignedArray = Array.isArray(selectedAssignee)
+          ? selectedAssignee
+          : [selectedAssignee];
+        assignedArray.forEach((assignee, index) => {
+          formData.append(`assigned[${index}]`, assignee);
+        });
+      }
 
-        // ✅ TUZATISH: tags_ids maydonini to'g'ri formatlash  
-        tags_ids: Array.isArray(selectedTags) && selectedTags.length > 0
-          ? selectedTags
-          : [],
+      // Tags field
+      if (Array.isArray(selectedTags) && selectedTags.length > 0) {
+        selectedTags.forEach((tag, index) => {
+          formData.append(`tags_ids[${index}]`, tag);
+        });
+      }
 
-        progress: Math.min(100, Math.max(0, progress)),
-        is_active: notification === "On",
-      };
+      // ✅ Image field - yangi rasm yuklangan bo'lsa
+      if (newImage) {
+        formData.append("task_image", newImage);
+      } else if (currentImage === null && cardData.task_image) {
+        // Agar current image o'chirilgan bo'lsa, bo'sh string yuboramiz
+        formData.append("task_image", "");
+      }
 
-      // ✅ Debug uchun - yuborilayotgan ma'lumotlarni tekshiring
-      console.log("🔍 Yuborilayotgan ma'lumotlar:", updateData);
-      console.log(
-        "📋 selectedAssignee:",
-        selectedAssignee,
-        "Type:",
-        typeof selectedAssignee
-      );
-      console.log(
-        "🏷️ selectedTags:",
-        selectedTags,
-        "Type:",
-        typeof selectedTags
-      );
+      // Debug: FormData contents
+      console.log("🔍 FormData contents:");
+      for (let pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
+      }
 
       await saveChecklist();
-      const response = await updateTask(cardData.id, updateData);
+      const response = await updateTask(cardData.id, formData);
 
       // Fayllarni yuklash
       let newUploadedFiles = [];
@@ -1913,9 +2028,13 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       } else {
         onUpdate({
           ...cardData,
-          ...updateData,
-          id: cardData.id,
+          name: title.trim(),
+          description: description.trim(),
+          tasks_type: type,
+          deadline: date ? date.format("YYYY-MM-DD") : null,
+          task_image: newImage ? imagePreviewUrl : currentImage,
           files: [...uploadedFiles, ...newUploadedFiles],
+          id: cardData.id,
         });
       }
 
@@ -2086,7 +2205,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
               </div>
 
               {/* Time, Notification, Assignee */}
-              <div className="flex justify-between items-center gap-[20px] ">
+              <div className="flex justify-between items-center gap-[20px] max-sm:flex-wrap">
                 <div>
                   <label className="block text-[14px] font-bold text-[#7D8592] mt-4 mb-2">
                     Due time
@@ -2203,18 +2322,54 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
 
             {/* RIGHT SIDE */}
             <div className="xl:col-span-2 space-y-6">
-              {/* Image Upload */}
+              {/* ✅ Image Upload Section - Updated */}
               <div>
                 <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
-                  Image
+                  Task Image
                 </label>
+
+                {/* Image Preview */}
+                {imagePreviewUrl && (
+                  <div className="mb-4 relative">
+                    <div className="w-full h-48 border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+                      <img
+                        src={imagePreviewUrl}
+                        alt="Task preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.error("Image load error:", e);
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    </div>
+                    <div className="absolute top-2 right-2 flex gap-2">
+                      {/* Remove current image button */}
+                      <button
+                        onClick={handleCurrentImageRemove}
+                        className="bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                        type="button"
+                        title="Remove image"
+                      >
+                        <FiTrash className="w-4 h-4" />
+                      </button>
+                    </div>
+                    {newImage && (
+                      <div className="mt-2">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">
+                          Yangi rasm (saqlaganda yuklanadi)
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Upload Button */}
                 <Upload
                   style={{ width: "100%" }}
-                  showUploadList={true}
-                  beforeUpload={(file) => {
-                    // Handle file upload here
-                    return false;
-                  }}
+                  showUploadList={false}
+                  beforeUpload={handleImageUpload}
+                  accept="image/*"
+                  listType="picture"
                 >
                   <Button
                     className="custom-upload-btn"
@@ -2224,10 +2379,20 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                       borderRadius: "14px",
                       fontWeight: "500",
                     }}
+                    type={imagePreviewUrl ? "default" : "dashed"}
                   >
-                    Upload image
+                    {imagePreviewUrl ? "Change image" : "Upload image"}
                   </Button>
                 </Upload>
+
+                {/* Current image info */}
+                {currentImage && !newImage && (
+                  <div className="mt-2">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                      Mavjud rasm
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Files Section */}
@@ -2239,15 +2404,25 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                 {/* Existing uploaded files */}
                 {uploadedFiles.length > 0 && (
                   <div className="mb-4">
-                    <p className="text-xs text-gray-500 mb-2">Yuklangan fayllar:</p>
+                    <p className="text-xs text-gray-500 mb-2">
+                      Yuklangan fayllar:
+                    </p>
                     {uploadedFiles.map((file, index) => (
-                      <div key={`uploaded-${file.id}`} className="flex items-center gap-2 mb-2 p-2 border rounded-lg bg-green-50">
+                      <div
+                        key={`uploaded-${file.id}`}
+                        className="flex items-center gap-2 mb-2 p-2 border rounded-lg bg-green-50"
+                      >
                         <div className="flex-1 w-[60%]">
                           <p className="text-sm font-medium truncate">
-                            {file.file ? file.file.split('/').pop() : `File ${index + 1}`}
+                            {file.file
+                              ? file.file.split("/").pop()
+                              : `File ${index + 1}`}
                           </p>
                           <p className="text-xs text-gray-500">
-                            Created: {file.created_at ? new Date(file.created_at).toLocaleDateString() : 'N/A'}
+                            Created:{" "}
+                            {file.created_at
+                              ? new Date(file.created_at).toLocaleDateString()
+                              : "N/A"}
                           </p>
                         </div>
                         <button
@@ -2259,7 +2434,9 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                         </button>
                         <button
                           onClick={() => {
-                            if (window.confirm('Bu faylni o\'chirmoqchimisiz?')) {
+                            if (
+                              window.confirm("Bu faylni o'chirmoqchimisiz?")
+                            ) {
                               deleteUploadedFile(file.id);
                             }
                           }}
@@ -2276,17 +2453,30 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                 {/* New files to be uploaded */}
                 {files.length > 0 && (
                   <div className="mb-4">
-                    <p className="text-xs text-gray-500 mb-2">Yangi fayllar (saqlaganda yuklanadi):</p>
+                    <p className="text-xs text-gray-500 mb-2">
+                      Yangi fayllar (saqlaganda yuklanadi):
+                    </p>
                     {files.map((file, index) => (
-                      <div key={`new-${index}`} className="flex items-center gap-2 mb-2 p-2 border rounded-lg bg-orange-50">
+                      <div
+                        key={`new-${index}`}
+                        className="flex items-center gap-2 mb-2 p-2 border rounded-lg bg-orange-50"
+                      >
                         <div className="flex-1  w-[60%]">
-                          <p className="text-sm font-medium truncate">{file.name}</p>
-                          <p className="text-xs text-orange-600">Size: {(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                          <p className="text-sm font-medium truncate">
+                            {file.name}
+                          </p>
+                          <p className="text-xs text-orange-600">
+                            Size: {(file.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
                         </div>
-                        <span className="text-orange-500 text-xs px-2 py-1 bg-orange-200 rounded">Yangi</span>
+                        <span className="text-orange-500 text-xs px-2 py-1 bg-orange-200 rounded">
+                          Yangi
+                        </span>
                         <button
                           onClick={() =>
-                            setFiles((prev) => prev.filter((_, i) => i !== index))
+                            setFiles((prev) =>
+                              prev.filter((_, i) => i !== index)
+                            )
                           }
                           className="text-red-500 hover:text-red-700 p-1"
                           title="Remove file"
@@ -2306,7 +2496,9 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                   beforeUpload={(file) => {
                     // File size check (10MB limit)
                     if (file.size > 10 * 1024 * 1024) {
-                      message.error(`${file.name} faylining hajmi 10MB dan katta!`);
+                      message.error(
+                        `${file.name} faylining hajmi 10MB dan katta!`
+                      );
                       return false;
                     }
 
@@ -2446,12 +2638,12 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                     transition: "box-shadow 0.3s ease",
                   }}
                   onMouseEnter={(e) =>
-                  (e.currentTarget.style.boxShadow =
-                    "0 6px 20px rgba(24, 144, 255, 0.8)")
+                    (e.currentTarget.style.boxShadow =
+                      "0 6px 20px rgba(24, 144, 255, 0.8)")
                   }
                   onMouseLeave={(e) =>
-                  (e.currentTarget.style.boxShadow =
-                    "0 4px 12px rgba(24, 144, 255, 0.5)")
+                    (e.currentTarget.style.boxShadow =
+                      "0 4px 12px rgba(24, 144, 255, 0.5)")
                   }
                 >
                   {saveLoading ? "Saving..." : "Save"}

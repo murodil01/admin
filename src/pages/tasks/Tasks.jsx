@@ -1,4 +1,3 @@
-////////////////////////////////////////////////////////////////////////Task.jsx
 import { useState, useEffect, useRef } from "react";
 import { message } from "antd";
 import { MoreVertical, Paperclip } from "lucide-react";
@@ -8,7 +7,13 @@ import info from "../../assets/icons/info.svg";
 import trash from "../../assets/icons/trash.svg";
 import { useNavigate } from "react-router-dom";
 import DepartmentsSelector from "../../components/calendar/DepartmentsSelector";
-import { getProjects, createProject } from "../../api/services/projectService";
+import {
+  getProjects,
+  createProject,
+  updateProject,
+  deleteProject,
+} from "../../api/services/projectService";
+import { getUsers } from "../../api/services/userService";
 import { useSidebar } from "../../context";
 
 const Projects = () => {
@@ -23,19 +28,18 @@ const Projects = () => {
   const navigate = useNavigate();
   const { collapsed } = useSidebar();
   const [isSmallScreen, setIsSmallScreen] = useState(false);
+  const [deadline, setDeadline] = useState("");
 
   useEffect(() => {
     const handleResize = () => {
-      setIsSmallScreen(window.innerWidth < 768); // 768px = md breakpoint
+      setIsSmallScreen(window.innerWidth < 768);
     };
 
-    handleResize(); // component mount bo‘lganida chaqiramiz
-
+    handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // justify-content klassini aniqlash
   const justifyClass =
     collapsed && !isSmallScreen ? "justify-start" : "justify-start";
 
@@ -43,15 +47,19 @@ const Projects = () => {
   const [loading, setLoading] = useState(true);
 
   const [name, setName] = useState("");
-  // const [departmentIds, setDepartmentIds] = useState([]);
   const [description, setDescription] = useState("");
-
   const [selectedImage, setSelectedImage] = useState(null);
-  const [isDeptModalOpen, setIsDeptModalOpen] = useState(false); // department tanlash uchun modal
+  const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
+  const [selectedDepartments, setSelectedDepartments] = useState([]);
+  const [allDepartments, setAllDepartments] = useState([]);
 
-  const [selectedDepartments, setSelectedDepartments] = useState([]); // faqat ID lar
-  const [allDepartments, setAllDepartments] = useState([]); // API dan kelgan to'liq obyektlar
-  const [assigned, setAssigned] = useState([]);
+  // Users uchun state'lar
+  const [allUsers, setAllUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]);
+
+  // Department modal ichidagi userlarni ko'rsatish uchun
+  const [deptModalFilteredUsers, setDeptModalFilteredUsers] = useState([]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -63,10 +71,80 @@ const Projects = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const loadUsers = async () => {
+    try {
+      const response = await getUsers();
+      setAllUsers(response.data || response.results || response);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+
+  // Department modal ichidagi userlarni filter qilish
+  useEffect(() => {
+    if (selectedDepartments.length > 0 && allUsers.length > 0) {
+      if (selectedDepartments.includes("none")) {
+        setDeptModalFilteredUsers([]);
+        return;
+      }
+
+      const filtered = allUsers.filter(
+        (user) =>
+          user.department?.id &&
+          selectedDepartments.includes(user.department.id)
+      );
+      setDeptModalFilteredUsers(filtered);
+    } else {
+      setDeptModalFilteredUsers([]);
+    }
+  }, [selectedDepartments, allUsers]);
+
+  // Add modal uchun alohida filter (eski kod)
+  useEffect(() => {
+    if (selectedDepartments.length > 0 && allUsers.length > 0) {
+      if (selectedDepartments.includes("none")) {
+        setFilteredUsers([]);
+        return;
+      }
+
+      const filtered = allUsers.filter(
+        (user) =>
+          user.department?.id &&
+          selectedDepartments.includes(user.department.id)
+      );
+      setFilteredUsers(filtered);
+    } else {
+      setFilteredUsers([]);
+    }
+  }, [selectedDepartments, allUsers]);
+
+  // ✅ Edit modal'da assigned userlarni ko'rsatish uchun useEffect qo'shing
+  useEffect(() => {
+    // Edit modal ochilganda, mavjud assigned userlarni filteredUsers ga qo'shish
+    if (modalType === "edit" && selectedTask?.assigned && allUsers.length > 0) {
+      const currentAssignedUsers = selectedTask.assigned
+        .map((user) =>
+          typeof user === "object" ? user : allUsers.find((u) => u.id === user)
+        )
+        .filter(Boolean);
+
+      // Agar assigned userlar boshqa departmentdan bo'lsa, ularni ham ko'rsatish
+      const currentFilteredUsers = [...filteredUsers];
+      currentAssignedUsers.forEach((user) => {
+        if (!currentFilteredUsers.find((u) => u.id === user.id)) {
+          currentFilteredUsers.push(user);
+        }
+      });
+
+      // Bu yerda filteredUsers ni yangilamaslik kerak, chunki u department bo'yicha filtrlanadi
+      // Lekin assigned userlarni alohida track qilish kerak
+    }
+  }, [modalType, selectedTask, allUsers, filteredUsers]);
+
   const loadProjects = async () => {
     try {
       const data = await getProjects();
-      setProjects(data.results); // faqat results array
+      setProjects(data.results);
     } catch (error) {
       console.error("Error fetching projects:", error);
     } finally {
@@ -76,6 +154,7 @@ const Projects = () => {
 
   useEffect(() => {
     loadProjects();
+    loadUsers();
   }, []);
 
   if (loading)
@@ -86,28 +165,144 @@ const Projects = () => {
     );
 
   const handleAddOpen = () => setIsAddModalOpen(true);
-  const handleAddClose = () => setIsAddModalOpen(false);
 
+  const handleAddClose = () => {
+    setIsAddModalOpen(false);
+    // Form ni tozalash
+    setTaskName("");
+    setDescription("");
+    setDeadline(""); // ✅ Bo'sh qilish
+    setSelectedDepartments([]);
+    setSelectedUsers([]);
+    setImageFile(null);
+    setSelectedImage(null);
+  };
+
+  // ✅ handleActionOpen funksiyasini yangilang
   const handleActionOpen = (task, type) => {
     setSelectedTask(task);
     setModalType(type);
     setIsActionModalOpen(true);
     setOpenDropdownId(null);
-
+  
     if (type === "edit") {
       setTaskName(task.name);
       setDescription(task.description || "");
       setSelectedImage(task.image || null);
+      
+      // ✅ Deadline mavjud bo'lsa, uni set qilish
+      if (task.deadline) {
+        const deadlineDate = new Date(task.deadline);
+        const formattedDeadline = deadlineDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+        setDeadline(formattedDeadline);
+      } else {
+        setDeadline(""); // Agar deadline yo'q bo'lsa bo'sh qoldirish
+      }
+      
+      const deptIds = task.departments?.map(dept => dept.id) || [];
+      setSelectedDepartments(deptIds);
+      
+      const assignedUserIds = task.assigned?.map(user => user.id || user) || [];
+      setSelectedUsers(assignedUserIds);
     }
   };
 
-  // Rasm tanlash
+  const handleActionClose = () => {
+    setIsActionModalOpen(false);
+    setSelectedTask(null);
+    setModalType(null);
+    // Edit mode dan chiqayotganda formni tozalash
+    setTaskName("");
+    setDescription("");
+    setDeadline(""); // ✅ Bo'sh qilish
+    setSelectedDepartments([]);
+    setSelectedUsers([]);
+    setImageFile(null);
+    setSelectedImage(null);
+  };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setSelectedImage(URL.createObjectURL(file)); // preview
-      setImageFile(file); // API ga yuborish
+      setSelectedImage(URL.createObjectURL(file));
+      setImageFile(file);
     }
+  };
+
+  const toggleUserSelection = (userId) => {
+    setSelectedUsers((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  // ✅ Edit modal'da tanlangan userlarni ko'rsatish uchun component qo'shing
+  const renderAssignedUsers = () => {
+    if (modalType !== "edit" || !selectedTask?.assigned) return null;
+
+    return (
+      <div className="mb-4">
+        <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
+          Currently Assigned Users
+        </label>
+        <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-[14px] min-h-[50px]">
+          {selectedTask.assigned.length > 0 ? (
+            selectedTask.assigned.map((user, index) => {
+              const userObj =
+                typeof user === "object"
+                  ? user
+                  : allUsers.find((u) => u.id === user);
+              if (!userObj) return null;
+
+              return (
+                <div
+                  key={index}
+                  className="flex items-center gap-2 bg-white px-3 py-1 rounded-full border"
+                >
+                  {userObj.profile_picture ? (
+                    <img
+                      src={userObj.profile_picture}
+                      alt={`${userObj.first_name} ${userObj.last_name}`}
+                      className="w-6 h-6 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-medium">
+                        {userObj.first_name?.[0] || "U"}
+                      </span>
+                    </div>
+                  )}
+                  <span className="text-sm">
+                    {userObj.first_name} {userObj.last_name}
+                  </span>
+                  <button
+                    onClick={() => {
+                      const newAssigned = selectedTask.assigned.filter(
+                        (_, i) => i !== index
+                      );
+                      setSelectedTask({
+                        ...selectedTask,
+                        assigned: newAssigned,
+                      });
+                      // selectedUsers dan ham olib tashlash
+                      setSelectedUsers((prev) =>
+                        prev.filter((id) => id !== userObj.id)
+                      );
+                    }}
+                    className="text-red-500 hover:text-red-700 ml-1"
+                  >
+                    ×
+                  </button>
+                </div>
+              );
+            })
+          ) : (
+            <span className="text-gray-400 text-sm">No users assigned</span>
+          )}
+        </div>
+      </div>
+    );
   };
 
   const handleAddTask = async () => {
@@ -124,29 +319,25 @@ const Projects = () => {
       formData.append("name", taskName);
       formData.append("description", description);
 
+      // ✅ Deadline qo'shish
+      if (deadline) {
+        formData.append("deadline", deadline);
+      }
+
       selectedDepartments.forEach((id) =>
         formData.append("department_ids", id)
       );
-      assigned.forEach((id) => formData.append("assigned", id));
+
+      selectedUsers.forEach((id) => formData.append("assigned", id));
 
       if (imageFile) {
         formData.append("image", imageFile);
       }
 
-      console.log("📤 Yuborilayotgan FormData:");
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
-
       await createProject(formData);
       message.success("✅ Task created successfully");
 
-      // Formni tozalash
-      setTaskName("");
-      setDescription("");
-      setSelectedDepartments([]);
-      setAssigned([]);
-      setImageFile(null);
+      await loadProjects();
       handleAddClose();
     } catch (error) {
       console.error("❌ Task yaratishda xatolik:", error);
@@ -154,54 +345,58 @@ const Projects = () => {
     }
   };
 
-  // const handleAddTask = async () => {
-  //   try {
-  //     const newTask = {
-  //       name: taskName,
-  //       description,
-  //       image: selectedImage,
-  //       progress: 0,
-  //     };
-  //     await createTask(newTask);
-  //     await loadTasks();
-  //     resetForm();
-  //     handleAddClose();
-  //   } catch (error) {
-  //     console.error("Error adding task:", error);
-  //   }
-  // };
-
   const handleEditTask = async () => {
+    if (!taskName.trim()) {
+      return message.error("Task name kiritilishi kerak!");
+    }
+
+    if (selectedDepartments.length === 0) {
+      return message.error("Kamida bitta department tanlang!");
+    }
+
     try {
-      await updateTask(selectedTask.id, {
-        name: taskName,
-        description,
-        image: selectedImage,
-      });
-      await loadTasks();
-      setIsActionModalOpen(false);
-      setSelectedTask(null);
+      const formData = new FormData();
+      formData.append("name", taskName);
+      formData.append("description", description);
+
+      // ✅ Deadline qo'shish
+      if (deadline) {
+        formData.append("deadline", deadline);
+      }
+
+      selectedDepartments.forEach((id) =>
+        formData.append("department_ids", id)
+      );
+
+      const allSelectedUserIds = [...new Set([...selectedUsers])];
+      allSelectedUserIds.forEach((id) => formData.append("assigned", id));
+
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
+
+      await updateProject(selectedTask.id, formData);
+      message.success("✅ Task updated successfully");
+
+      await loadProjects();
+      handleActionClose();
     } catch (error) {
-      console.error("Error editing task:", error);
+      console.error("❌ Task yangilashda xatolik:", error);
+      message.error("Failed to update task");
     }
   };
 
   const handleDeleteTask = async () => {
     try {
-      await deleteTask(selectedTask.id);
-      await loadTasks();
-      setIsActionModalOpen(false);
-      setSelectedTask(null);
-    } catch (error) {
-      console.error("Error deleting task:", error);
-    }
-  };
+      await deleteProject(selectedTask.id);
+      message.success("✅ Task deleted successfully");
 
-  const resetForm = () => {
-    setTaskName("");
-    setDescription("");
-    setSelectedImage(null);
-    setImageFile(null);
+      await loadProjects();
+      handleActionClose();
+    } catch (error) {
+      console.error("❌ Task o'chirishda xatolik:", error);
+      message.error("Failed to delete task");
+    }
   };
 
   const dropdownItems = (task) => [
@@ -241,24 +436,24 @@ const Projects = () => {
   ];
 
   const formatDate2 = (dateStr) => {
-    if (!dateStr) return 'N/A';
+    if (!dateStr) return "N/A";
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
+    return date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
     });
   };
+
   const formatDate = (dateStr) => {
-    if (!dateStr) return 'N/A';
+    if (!dateStr) return "N/A";
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
+
   const renderModalContent = () => {
     if (!selectedTask) return null;
 
@@ -277,7 +472,8 @@ const Projects = () => {
                 </label>
                 <input
                   type="text"
-                  defaultValue={selectedTask.name}
+                  value={taskName}
+                  onChange={(e) => setTaskName(e.target.value)}
                   placeholder="Edit task name"
                   className="mt-1 w-full h-[54px] border border-gray-300 rounded-[14px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -294,17 +490,16 @@ const Projects = () => {
                   accept="image/*"
                   onChange={handleImageChange}
                   className="hidden"
-                  id="imageInput"
+                  id="editImageInput"
                 />
 
                 <label
-                  htmlFor="imageInput"
+                  htmlFor="editImageInput"
                   className="mt-1 w-full h-[54px] block cursor-pointer border border-dashed border-gray-400 rounded-[14px] px-3 py-[15px] text-blue-600 hover:border-blue-500 transition"
                 >
                   Change image
                 </label>
 
-                {/* Tanlangan rasmni ko‘rsatish */}
                 {selectedImage && (
                   <img
                     src={selectedImage}
@@ -319,39 +514,95 @@ const Projects = () => {
                 <label className="block text-[14px] font-bold text-[#7D8592]">
                   Department
                 </label>
+                <div className="mt-1 flex items-center border border-gray-300 rounded-[14px] px-2 py-2 space-x-2">
+                  {selectedDepartments.map((id) => {
+                    const dept = allDepartments.find((d) => d.id === id);
+                    return dept ? (
+                      <img
+                        key={id}
+                        src={dept.avatar}
+                        alt={dept.name}
+                        className="w-8 h-8 rounded-full bg-white p-1 border border-blue-300"
+                      />
+                    ) : null;
+                  })}
 
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                  id="imageInput"
-                />
-
-                <label
-                  htmlFor="imageInput"
-                  className="mt-1 w-full h-[54px] block rounded-[14px] cursor-pointer border border-dashed border-gray-400 px-3 py-[15px] text-blue-600 hover:border-blue-500 transition"
-                >
-                  Select Departments
-                </label>
-
-                {/* Tanlangan rasmni ko‘rsatish */}
-                {selectedImage && (
-                  <img
-                    src={selectedImage}
-                    alt="Selected"
-                    className="mt-2 w-20 h-20 object-cover rounded"
-                  />
-                )}
+                  <button
+                    type="button"
+                    onClick={() => setIsDeptModalOpen(true)}
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-500 text-white"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
 
+              {/* ✅ Currently Assigned Users */}
+              {renderAssignedUsers()}
+
+              {/* Users ro'yxati - faqat departmentlar tanlanganida ko'rsatiladi */}
+              {selectedDepartments.length > 0 && filteredUsers.length > 0 && (
+                <div>
+                  <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
+                    Add More Users from Departments
+                  </label>
+                  <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-[14px] p-3">
+                    {filteredUsers.map((user) => (
+                      <label
+                        key={user.id}
+                        className="flex items-center gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedUsers.includes(user.id)}
+                          onChange={() => toggleUserSelection(user.id)}
+                          className="w-4 h-4 accent-blue-600"
+                        />
+                        <div className="flex items-center gap-2">
+                          {user.profile_picture ? (
+                            <img
+                              src={user.profile_picture}
+                              alt={`${user.first_name} ${user.last_name}`}
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                              <span className="text-xs font-medium">
+                                {user.first_name?.[0] || "U"}
+                              </span>
+                            </div>
+                          )}
+                          <span className="text-sm font-medium">
+                            {user.first_name} {user.last_name}
+                          </span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Deadline */}
+              <div>
+                <label className="block text-[14px] font-bold text-[#7D8592]">
+                  Deadline
+                </label>
+                <input
+                  type="date"
+                  value={deadline}
+                  onChange={(e) => setDeadline(e.target.value)}
+                  className="mt-1 w-full h-[50px] border border-gray-300 rounded-[14px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  min={new Date().toISOString().split("T")[0]} // Bugungi kundan oldingi sanalarni taqiqlash
+                />
+              </div>
               {/* Description */}
               <div>
                 <label className="block text-[14px] font-bold text-[#7D8592]">
                   Description
                 </label>
                 <textarea
-                  defaultValue={selectedTask.description}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                   rows={4}
                   className="mt-1 w-full border border-gray-300 rounded-[14px] px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                 ></textarea>
@@ -361,11 +612,11 @@ const Projects = () => {
         );
 
       case "info":
-
         return (
-          // det          
-          <div className="  flex flex-col gap-5 text-sm text-gray-700 my-5">
-            <h1 className=" text-[#0A1629] text-[22px] font-bold mb-3">Task Details</h1>
+          <div className="flex flex-col gap-5 text-sm text-gray-700 my-5">
+            <h1 className="text-[#0A1629] text-[22px] font-bold mb-3">
+              Task Details
+            </h1>
             <div className="grid grid-cols-3 w-full">
               <p className="text-gray-400 font-medium">Task name</p>
               <p className="text-gray-900 font-medium col-span-2">
@@ -379,57 +630,102 @@ const Projects = () => {
                 {formatDate(selectedTask.created_at)}
               </p>
             </div>
+
             <div className="grid grid-cols-3 w-full">
               <p className="text-gray-400 font-medium">Task's deadline</p>
               <p className="text-gray-900 font-medium col-span-2">
-                {formatDate(selectedTask.updated_at)}
-              </p>
+          {selectedTask.deadline 
+            ? formatDate(selectedTask.deadline) 
+            : 'No deadline set'}
+        </p>
             </div>
 
-
-            <div className="  grid grid-cols-3 w-full">
+            <div className="grid grid-cols-3 w-full">
               <p className="text-gray-400 font-medium">Department</p>
-              <div className="w-14 h-8 ">
+              <div className="w-14 h-8">
                 <div className="flex gap-2 col-span-2">
-                  {selectedTask.departments?.map(dept => (
-                    <div key={dept.id} className=" flex flex-col items-center">
+                  {selectedTask.departments?.map((dept) => (
+                    <div key={dept.id} className="flex flex-col items-center">
                       {dept.photo ? (
                         <img
                           src={dept.photo}
                           alt={`Department ${dept.id}`}
-                          className="w-14 h-8 rounded-md "
+                          className="w-10 h-10 border border-blue-300 rounded-full object-cover hover:opacity-80 transition cursor-pointer"
                         />
                       ) : (
-                        <div className=" bg-gray-200 rounded-full flex items-center justify-center">
+                        <div className="bg-gray-200 rounded-full flex items-center justify-center">
                           <span className="text-xs">D</span>
                         </div>
                       )}
-
                     </div>
-                  )) || '-'}
+                  )) || "-"}
                 </div>
               </div>
             </div>
 
-
+            <div className="grid grid-cols-3 w-full">
+              <p className="text-gray-400 font-medium">Assigned Users</p>
+              <div className="col-span-2">
+                {selectedTask.assigned?.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedTask.assigned.map((user, index) => {
+                      const userObj =
+                        typeof user === "object"
+                          ? user
+                          : allUsers.find((u) => u.id === user);
+                      return userObj ? (
+                        <div
+                          key={index}
+                          className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded"
+                        >
+                          {userObj.profile_picture ? (
+                            <img
+                              src={userObj.profile_picture}
+                              alt={userObj.first_name}
+                              className="w-5 h-5 rounded-full"
+                            />
+                          ) : (
+                            <div className="w-5 h-5 bg-gray-300 rounded-full flex items-center justify-center">
+                              <span className="text-xs">
+                                {userObj.first_name?.[0]}
+                              </span>
+                            </div>
+                          )}
+                          <span className="text-sm">
+                            {userObj.first_name} {userObj.last_name}
+                          </span>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                ) : (
+                  <span className="text-gray-500">No users assigned</span>
+                )}
+              </div>
+            </div>
 
             <div className="grid grid-cols-3 w-full">
               <p className="text-gray-400 font-medium">Description</p>
               <p className="text-gray-700 leading-relaxed col-span-2">
-                {selectedTask.description || 'No description provided.'}
+                {selectedTask.description || "No description provided."}
               </p>
             </div>
           </div>
-
         );
+
       case "delete":
         return (
           <div className="py-5">
-            <p className="text-sm">
+            <p className="text-sm text-center text-gray-600">
+              Are you sure you want to delete "
+              <strong>{selectedTask.name}</strong>"?
+            </p>
+            <p className="text-sm text-center text-red-500 mt-2">
               This action is permanent and cannot be undone.
             </p>
           </div>
         );
+
       default:
         return null;
     }
@@ -442,9 +738,60 @@ const Projects = () => {
       case "info":
         return "Task Details";
       case "delete":
-        return "Are you sure you want to delete this task?";
+        return "Delete Task";
       default:
         return "";
+    }
+  };
+
+  const getModalFooter = () => {
+    switch (modalType) {
+      case "edit":
+        return [
+          <button
+            key="cancel"
+            onClick={handleActionClose}
+            className="mr-2 px-4 py-2 border border-gray-300 rounded-[15px] text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </button>,
+          <button
+            key="save"
+            onClick={handleEditTask}
+            className="bg-[#0061fe] hover:bg-[#3b77d7] text-white rounded-[15px] px-[20px] py-[12px] text-base font-bold transition"
+          >
+            Save Changes
+          </button>,
+        ];
+      case "delete":
+        return [
+          <button
+            key="cancel"
+            onClick={handleActionClose}
+            className="mr-2 px-4 py-2 border border-gray-300 rounded-[15px] text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </button>,
+          <button
+            key="delete"
+            onClick={handleDeleteTask}
+            className="bg-red-500 hover:bg-red-600 text-white rounded-[15px] px-[20px] py-[12px] text-base font-bold transition"
+          >
+            Delete
+          </button>,
+        ];
+      case "info":
+        return [
+          <button
+            key="close"
+            onClick={handleActionClose}
+            className="bg-gray-500 hover:bg-gray-600 text-white rounded-[15px] px-[20px] py-[12px] text-base font-bold transition"
+          >
+            Close
+          </button>,
+        ];
+      default:
+        return [];
     }
   };
 
@@ -469,15 +816,13 @@ const Projects = () => {
         {projects.map((project) => (
           <div
             key={project.id}
-            className="max-w-[290px] w-full  border-2 border-[#EFEFEF]  rounded-[14px] p-3 bg-white  relative group flex flex-col gap-3 cursor-pointer"
+            className="max-w-[290px] w-full border-2 border-[#EFEFEF] rounded-[14px] p-3 bg-white relative group flex flex-col gap-3 cursor-pointer"
           >
-
             {project.image ? (
               <button
                 onClick={() => navigate(`/tasks/${project.id}`)}
                 className="cursor-pointer"
               >
-
                 <img
                   onClick={() => navigate(`/tasks/${project.id}`)}
                   src={project.image}
@@ -498,7 +843,6 @@ const Projects = () => {
               onClick={() => navigate(`/tasks/${project.id}`)}
               className="flex items-center gap-1 mb-2 cursor-pointer"
             >
-
               <span className="text-xs font-bold text-gray-600 whitespace-nowrap">
                 {project?.progress}%
               </span>
@@ -507,23 +851,19 @@ const Projects = () => {
                   className="h-full bg-blue-500 rounded"
                   style={{ width: `${project?.progress}%` }}
                 ></div>
-
               </div>
-
             </button>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
-
                 <div className="flex items-center relative w-12 h-5">
                   {project?.departments?.length > 0 ? (
                     <div className="flex items-center">
-                      {/* Faqat birinchi 3 tasini ko'rsatish */}
                       {project.departments.slice(0, 3).map((dept, index) => (
                         <div
                           key={dept.id}
                           className="relative"
-                          style={{ marginLeft: index > 0 ? '-8px' : '0' }}
+                          style={{ marginLeft: index > 0 ? "-8px" : "0" }}
                         >
                           {dept.photo ? (
                             <img
@@ -539,11 +879,10 @@ const Projects = () => {
                         </div>
                       ))}
 
-                      {/* Agar 3 tadan ko'p bo'lsa, qolganlarini ko'rsatish */}
                       {project.departments.length > 3 && (
                         <div
                           className="w-[24px] h-[24px] bg-gray-500 rounded-full flex items-center justify-center border-2 border-white shadow-sm text-white text-xs font-medium"
-                          style={{ marginLeft: '-8px' }}
+                          style={{ marginLeft: "-8px" }}
                         >
                           +{project.departments.length - 3}
                         </div>
@@ -555,7 +894,7 @@ const Projects = () => {
                 </div>
                 <button
                   onClick={() => navigate(`/tasks/${project.id}`)}
-                  className="font-bold text-lg cursor-pointer troncate max-w-[180px] "
+                  className="font-bold text-lg cursor-pointer troncate max-w-[180px]"
                   style={{
                     whiteSpace: "nowrap",
                     overflow: "hidden",
@@ -564,7 +903,6 @@ const Projects = () => {
                 >
                   {project.name}
                 </button>
-
               </div>
 
               <Dropdown
@@ -579,16 +917,13 @@ const Projects = () => {
               </Dropdown>
             </div>
 
-
             <div className="flex mt-1 justify-between text-sm">
               <div>
-
                 <span className="text-gray-900 font-medium">
                   {formatDate2(project?.created_at)}
                 </span>
               </div>
               <div>
-
                 <span className="text-gray-900 font-medium">
                   {formatDate2(project?.deadline)}
                 </span>
@@ -647,7 +982,6 @@ const Projects = () => {
                 Image
               </label>
 
-              {/* Fayl tanlash inputi yashirilgan */}
               <input
                 type="file"
                 accept="image/*"
@@ -656,7 +990,6 @@ const Projects = () => {
                 id="imageInput"
               />
 
-              {/* Tanlash maydoni */}
               <label
                 htmlFor="imageInput"
                 className="mt-1 h-[50px] flex items-center justify-between w-full border border-gray-300 rounded-[14px] px-3 py-2 cursor-pointer hover:border-blue-500 transition"
@@ -667,7 +1000,6 @@ const Projects = () => {
                 <Paperclip />
               </label>
 
-              {/* Tanlangan rasm preview */}
               {selectedImage && (
                 <img
                   src={selectedImage}
@@ -685,7 +1017,6 @@ const Projects = () => {
               <div className="mt-1 flex items-center border border-gray-300 rounded-[14px] px-2 py-2 space-x-2">
                 {selectedDepartments.map((id) => {
                   const dept = allDepartments.find((d) => d.id === id);
-                  // const dept = rawDepartments.find((d) => d.id === id);
                   return dept ? (
                     <img
                       key={id}
@@ -706,6 +1037,61 @@ const Projects = () => {
               </div>
             </div>
 
+            {/* Users ro'yxati - faqat departmentlar tanlanganida ko'rsatiladi */}
+            {selectedDepartments.length > 0 && filteredUsers.length > 0 && (
+              <div>
+                <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
+                  Select Users from Departments
+                </label>
+                <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-[14px] p-3">
+                  {filteredUsers.map((user) => (
+                    <label
+                      key={user.id}
+                      className="flex items-center gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedUsers.includes(user.id)}
+                        onChange={() => toggleUserSelection(user.id)}
+                        className="w-4 h-4 accent-blue-600"
+                      />
+                      <div className="flex items-center gap-2">
+                        {user.profile_picture ? (
+                          <img
+                            src={user.profile_picture}
+                            alt={`${user.first_name} ${user.last_name}`}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                            <span className="text-xs font-medium">
+                              {user.first_name?.[0] || "U"}
+                            </span>
+                          </div>
+                        )}
+                        <span className="text-sm font-medium">
+                          {user.first_name} {user.last_name}
+                        </span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Deadline */}
+            <div>
+              <label className="block text-[14px] font-bold text-[#7D8592]">
+                Deadline
+              </label>
+              <input
+                type="date"
+                value={deadline}
+                onChange={(e) => setDeadline(e.target.value)}
+                className="mt-1 w-full h-[50px] border border-gray-300 rounded-[14px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
             {/* Description */}
             <div>
               <label className="block text-[14px] font-bold text-[#7D8592]">
@@ -722,41 +1108,105 @@ const Projects = () => {
         </div>
       </Modal>
 
-      {/* Department tanlash modal */}
+      {/* Department tanlash modal - YANGILANGAN */}
       <Modal
         open={isDeptModalOpen}
         onCancel={() => setIsDeptModalOpen(false)}
         onOk={() => setIsDeptModalOpen(false)}
-        title="Select Departments"
+        title="Select Departments and Users"
         okText="Done"
         className="custom-modal"
+        width={800}
       >
-        <DepartmentsSelector
-          selectedIds={selectedDepartments}
-          onChange={(ids) => setSelectedDepartments(ids)}
-          onDataLoaded={(data) => setAllDepartments(data)} //  API dan kelgan to'liq data
-        // onChange={(ids) => {
-        //   console.log("Tanlangan department IDlar:", ids);
-        // }}
-        // onDataLoaded={(departments) => {
-        //   console.log("Modalga kelgan departments:", departments);
-        // }}
-        />
+        <div className="space-y-6">
+          {/* Department selector */}
+          <div>
+            <h4 className="text-lg font-semibold mb-3">Select Departments</h4>
+            <DepartmentsSelector
+              selectedIds={selectedDepartments}
+              onChange={(ids) => setSelectedDepartments(ids)}
+              onDataLoaded={(data) => setAllDepartments(data)}
+            />
+          </div>
+
+          {/* Users ro'yxati - Department modal ichida */}
+          {selectedDepartments.length > 0 &&
+            deptModalFilteredUsers.length > 0 && (
+              <div>
+                <h4 className="text-lg font-semibold mb-3">
+                  Select Users from Selected Departments
+                </h4>
+                <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-[14px] p-4">
+                  <div className="grid grid-cols-1 gap-3">
+                    {deptModalFilteredUsers.map((user) => (
+                      <label
+                        key={user.id}
+                        className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 rounded-lg border border-gray-100"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedUsers.includes(user.id)}
+                          onChange={() => toggleUserSelection(user.id)}
+                          className="w-5 h-5 accent-blue-600"
+                        />
+                        <div className="flex items-center gap-3">
+                          {user.profile_picture ? (
+                            <img
+                              src={user.profile_picture}
+                              alt={`${user.first_name} ${user.last_name}`}
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                              <span className="text-sm font-medium">
+                                {user.first_name?.[0] || "U"}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-gray-900">
+                              {user.first_name} {user.last_name}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {user.department?.name || "No Department"}
+                            </span>
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tanlangan userlar soni */}
+                <div className="mt-3 text-sm text-gray-600">
+                  Selected: {selectedUsers.length} user
+                  {selectedUsers.length !== 1 ? "s" : ""}
+                </div>
+              </div>
+            )}
+
+          {/* Agar department tanlangan bo'lsa lekin userlar yo'q bo'lsa */}
+          {selectedDepartments.length > 0 &&
+            deptModalFilteredUsers.length === 0 &&
+            !selectedDepartments.includes("none") && (
+              <div className="text-center py-8 text-gray-500">
+                <p>No users found in selected departments</p>
+              </div>
+            )}
+        </div>
       </Modal>
 
       {/* Action Modal (Edit / Info / Delete) */}
-
-      <div className="">
-        <Modal
-          className=" "
-          open={isActionModalOpen}
-          onCancel={() => setIsActionModalOpen(false)}
-          width={814}
-          onOk={modalType === 'edit' ? handleEditProject : modalType === 'delete' ? handleDeleteProject : null}
-        >
-          {renderModalContent()}
-        </Modal>
-      </div>
+      <Modal
+        open={isActionModalOpen}
+        onCancel={handleActionClose}
+        width={modalType === "edit" ? 550 : 814}
+        title={getModalTitle()}
+        footer={getModalFooter()}
+        className="custom-modal"
+      >
+        {renderModalContent()}
+      </Modal>
     </div>
   );
 };
