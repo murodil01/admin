@@ -555,7 +555,7 @@ const GroupSection = ({
                     +
                   </th>
                 </tr>
-              </thead>
+              </thead> 
               <tbody>
                 {localItems.map((item) => (
                   <tr
