@@ -3,8 +3,11 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { IoIosLogOut } from "react-icons/io";
 import { FaUserCircle, FaUserCog } from "react-icons/fa";
+import { useContext } from "react";
+import AuthContext from "../../context/AuthContext";
 
 const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
+  const { user } = useContext(AuthContext)
   const [isUserOpen, setIsUserOpen] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
@@ -105,7 +108,7 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
           onClick={() => setIsUserOpen((prev) => !prev)}
         >
           <img
-            src="https://yt3.ggpht.com/ytc/AKedOLRgGwAm7liLUTGkwbStuX3nh3RhehQ9s6ZjhwQVGQ=s900-c-k-c0x00ffffff-no-rj"
+            src={user?.profile_picture}
             alt="avatar"
             className="w-11 h-11 rounded-full object-cover"
           />
@@ -115,20 +118,19 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
         <div className="hidden sm:block">
           <button
             onClick={() => setIsUserOpen((prev) => !prev)}
-            className="flex justify-between w-44 items-center gap-2 h-11 px-9 bg-white rounded-[14px] shadow  transition"
+            className="flex justify-between w-44 items-center gap-2 h-11 px-3 bg-white rounded-[14px] shadow  transition"
           >
             <img
-              src="https://www.svgrepo.com/show/356715/businessman.svg"
+              src={user?.profile_picture}
               alt="Image"
-              className="w-5 h-5 rounded-full object-cover"
+              className="w-8 h-8 rounded-full object-cover"
             />
-            <span className="font-medium text-base text-gray-700 truncate w-12">
-              Admin
+            <span className="font-medium text-base text-gray-700 truncate w-20">
+              {user?.first_name}
             </span>
             <svg
-              className={`w-4 h-4 transition-transform duration-200 ${
-                isUserOpen ? "rotate-180" : ""
-              }`}
+              className={`w-4 h-4 transition-transform duration-200 ${isUserOpen ? "rotate-180" : ""
+                }`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -145,7 +147,7 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
 
         {/* 🔽 Dropdown (common for mobile and desktop) */}
         {isUserOpen && (
-          <div className="absolute top-[70px] right-0 w-44 bg-white rounded-[14px] shadow-lg py-2 z-50 space-y-1 text-sm text-gray-700">
+          <div className="absolute top-[60px] md:top-12 right-0 w-56 sm:w-48 md:w-44 bg-white rounded-[14px] shadow-lg py-2 z-50 space-y-1 text-sm text-gray-700">
             {/* Profile */}
             <div
               onClick={() => navigateAndClose("/main-profile")}
