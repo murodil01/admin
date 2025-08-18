@@ -16,7 +16,7 @@ import { RiPieChart2Fill } from "react-icons/ri";
 import { HiTrophy } from "react-icons/hi2";
 import side_blue3 from "../../assets/side_blue3.png";
 import LeadSide from "../lead-parts/leads-side"; // LeadSide komponentini import qilish
-
+import { useSidebar } from "../../context/index";
 const menuItems = [
   { label: "Dashboard", icon: <BsFillGridFill size={20} />, path: "/" },
   { label: "Calendar", icon: <Calendar size={20} />, path: "/calendar" },
@@ -31,8 +31,9 @@ const menuItems = [
   { label: "Archive", icon: <IoFileTrayFull size={20} />, path: "/archive" },
 ];
 
-const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
+const SideBar = ({ isMobileOpen, setIsMobileOpen }) => {
   const navigate = useNavigate();
+  const { collapsed } = useSidebar();
   const location = useLocation();
   const [showLeadsModal, setShowLeadsModal] = useState(false);
 
@@ -236,22 +237,20 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
 
       {/* Leads Modal */}
       {showLeadsModal && (
-        <div className=" w-full fixed inset-0 z-[60] flex items-center md:ml-63">
-           <div
+        <div className="w-full fixed inset-0 z-[60] flex items-center">
+          {/* Backdrop */}
+          <div
             className={`absolute inset-0 backdrop-blur-[3px] transition-all duration-300 ${
               showLeadsModal ? "bg-opacity-50" : "bg-opacity-0"
             }`}
             onClick={() => setShowLeadsModal(false)}
-          
-          ></div>
+          />
 
-          {/* Modal Content */}
+          {/* Modal Content: md ekranlarda sidebar kengligiga mos ml beradi */}
           <div
-            className={`relative z-10 transform transition-all duration-300 ${
-              showLeadsModal
-                ? "scale-100 opacity-100 translate-y-0"
-                : "scale-95 opacity-0 translate-y-4"
-            }`}
+            className={`relative z-10 transform transition-all duration-300 
+              ${showLeadsModal ? "scale-100 opacity-100 translate-y-0" : "scale-95 opacity-0 translate-y-4"}
+              ${collapsed ? "md:ml-16" : "md:ml-64"}`}
           >
             {/* Close Button */}
             <button

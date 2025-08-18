@@ -224,6 +224,12 @@ const GroupSection = ({
   deleteGroup,
   selected,
   onToggleSelect,
+  // onMoveItem,
+  // isDraggingOver,
+  // onDragStart,
+  // onDragOver,
+  // onDrop,
+  // onDragEnd,
 }) => {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState(title);
@@ -558,7 +564,6 @@ const GroupSection = ({
                   </th>
                 </tr>
               </thead>
-
               <tbody>
                 {localItems.map((item) => (
                   <tr
@@ -580,22 +585,21 @@ const GroupSection = ({
                             e.target.checked
                           )
                         }
-                      />
-                    </td>
-
-                    {columns.map((col) => (
+                      />                      
+                    </td>                  
+                    {columns.map((col) => (                     
                       <td
                         key={`${item.id}-${col.key}`}
                         className="border border-gray-300 p-0 text-center"
                         style={{ width: "160px", minWidth: "160px" }}
-                      >
+                      >                       
                         {col.key === "status" ? (
                           <div
                             className={`w-full h-full flex items-center justify-center ${getStatusClass(
                               item[col.key]
                             )}`}
                             style={{ minHeight: "36px" }}
-                          >
+                          >                            
                             <StatusDropdown
                               boardId={item.boardId}
                               itemId={item.id}
