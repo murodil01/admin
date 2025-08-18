@@ -1559,6 +1559,8 @@ const AddCard = ({ column, setCards }) => {
     }
   };
 
+// bu yerda permission yozilishi kerak (boshlanish)
+
   return adding ? (
     <motion.form layout onSubmit={handleSubmit}>
       <textarea
@@ -1604,6 +1606,9 @@ const AddCard = ({ column, setCards }) => {
       <span>Add a card</span>
     </motion.button>
   );
+
+  // tugashi.
+
 };
 
 const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {

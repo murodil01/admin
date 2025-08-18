@@ -16,6 +16,13 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
           isSelected: selectedIds.includes(d.id),
         }));
 
+         // "All" opsiyasini qo'shish
+         fetched.unshift({
+          id: "all",
+          name: "All",
+          avatar: null,
+          isSelected: selectedIds.includes("all"),
+        });
         // "None" opsiyasini qo‘shish
         fetched.push({
           id: "none",
@@ -28,7 +35,7 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
 
         // 📌 API'dan kelgan datani yuqoriga berish
         if (onDataLoaded) {
-          onDataLoaded(fetched.filter((d) => d.id !== "none"));
+          onDataLoaded(fetched.filter((d) => d.id !== "none" && d.id !== "all"));
         }
       })
       .catch((err) => {
@@ -40,7 +47,19 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
   const toggleDepartment = (id) => {
     let updated;
 
-    if (id === "none") {
+    if (id === "all") {
+      const isCurrentlySelected = departments.find(d => d.id === "all")?.isSelected;
+      updated = departments.map((d) => {
+        if (d.id === "all") {
+          return { ...d, isSelected: !isCurrentlySelected };
+        } else if (d.id === "none") {
+          return { ...d, isSelected: false };
+        } else {
+          // Agar "all" tanlanayotgan bo'lsa, barcha departmentlarni tanlash
+          return { ...d, isSelected: !isCurrentlySelected };
+        }
+      });
+    } else if (id === "none") {
       updated = departments.map((d) =>
         d.id === "none"
           ? { ...d, isSelected: !d.isSelected }
@@ -48,6 +67,7 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
       );
     } else {
       updated = departments.map((d) => {
+        if (d.id === "all") return { ...d, isSelected: false };
         if (d.id === "none") return { ...d, isSelected: false };
         if (d.id === id) return { ...d, isSelected: !d.isSelected };
         return d;
@@ -60,9 +80,20 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
   };
 
   const renderAvatar = (dept) => {
+    const isSelected = dept.isSelected;
+    const baseClasses = "w-12 h-12 rounded-full border border-blue-300 flex items-center justify-center font-medium transition-colors duration-200";
+    
+    if (dept.id === "all") {
+      return (
+        <div className={`${baseClasses} ${isSelected ? 'bg-blue-100 text-blue-700' : 'text-gray-600'}`}>
+         <img src="/src/assets/M.png" alt="Department all" className=""/>
+        </div>
+      );
+    }
+
     if (dept.id === "none") {
       return (
-        <div className="w-6 h-6 rounded-full flex items-center justify-center font-medium text-gray-600">
+        <div className={`${baseClasses} ${isSelected ? 'bg-blue-100 text-blue-700' : 'text-gray-600'}`}>
           None
         </div>
       );
@@ -70,18 +101,28 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
 
     if (!dept.avatar) {
       return (
-        <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-semibold">
+        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${
+          isSelected 
+            ? 'bg-blue-100 text-blue-700 border-2 border-blue-300' 
+            : 'bg-blue-500 text-white'
+        }`}>
           {dept.name?.charAt(0) || "?"}
         </div>
       );
     }
 
     return (
-      <img
-        src={dept.avatar}
-        alt={`${dept.name} avatar`}
-        className="w-12 h-12 rounded-full object-cover"
-      />
+      <div className={`w-12 h-12 rounded-full transition-colors duration-200 ${
+        isSelected ? 'bg-blue-100 p-1' : ''
+      }`}>
+        <img
+          src={dept.avatar}
+          alt={`${dept.name} avatar`}
+          className={`w-full h-full rounded-full object-cover ${
+            isSelected ? 'border-2 border-blue-300' : 'border border-gray-300'
+          }`}
+        />
+      </div>
     );
   };
 
@@ -89,29 +130,34 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
     return <p className="text-gray-500 font-bold">Loading departments...</p>;
   }
 
-  const mainDepartments = departments.filter((d) => d.id !== "none");
+  const mainDepartments = departments.filter((d) => d.id !== "none" && d.id !== "all");
+  const allDepartment = departments.find((d) => d.id === "all");
   const noneDepartment = departments.find((d) => d.id === "none");
 
   return (
     <div className="bg-white">
-      <div className="flex flex-wrap gap-6 items-start">
-        <div className="grid grid-cols-5 max-md:grid-cols-4 gap-6 items-start">
-          {mainDepartments.map((dept) => (
-            <label
-              key={dept.id}
-              className="flex items-center gap-3 cursor-pointer select-none"
-            >
-              <input
-                type="checkbox"
-                checked={dept.isSelected}
-                onChange={() => toggleDepartment(dept.id)}
-                className="w-6 h-6 accent-blue-600"
-              />
-              {renderAvatar(dept)}
-            </label>
-          ))}
-        </div>
+      <div className="flex flex-wrap gap-6 flex-col items-start justify-between">
+      
 
+      
+
+        <div className="flex gap-6">
+  {/* All option */}
+        {allDepartment && (
+          <label
+            key={allDepartment.id}
+            className="flex items-center gap-3 cursor-pointer select-none"
+          >
+            <input
+              type="checkbox"
+              checked={allDepartment.isSelected}
+              onChange={() => toggleDepartment(allDepartment.id)}
+              className="w-6 h-6 accent-blue-600 hidden"
+            />
+            {renderAvatar(allDepartment)}
+          </label>
+        )}
+        {/* None option */}
         {noneDepartment && (
           <label
             key={noneDepartment.id}
@@ -121,11 +167,29 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
               type="checkbox"
               checked={noneDepartment.isSelected}
               onChange={() => toggleDepartment(noneDepartment.id)}
-              className="w-4 h-4 accent-blue-600"
+              className="w-6 h-6 accent-blue-600 hidden"
             />
             {renderAvatar(noneDepartment)}
           </label>
         )}
+        </div>
+          {/* Main departments */}
+        <div className="flex flex-wrap gap-6 items-start">
+          {mainDepartments.map((dept) => (
+            <label
+              key={dept.id}
+              className="flex items-center gap-3 cursor-pointer select-none"
+            >
+              <input
+                type="checkbox"
+                checked={dept.isSelected}
+                onChange={() => toggleDepartment(dept.id)}
+                className="w-6 h-6 accent-blue-600 hidden"
+              />
+              {renderAvatar(dept)}
+            </label>
+          ))}
+        </div>
       </div>
     </div>
   );
