@@ -57,7 +57,7 @@ const AddMessageModal = ({ onClose }) => {
               type="text"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="M tech"
+              placeholder=""
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -264,13 +264,20 @@ const Messenger = () => {
                 </>
               ) : (
                 <>
-                  Founder of M Company, Falco, and multiple other ventures. 🔰
-                  Experience: 5+ years in Sales & Marketing. 🔰 Achievements:
-                  Built and scaled multiple call centers and high-performing
-                  teams. Mission My mission is to build Uzbekistan’s most
-                  powerful Automation Company, uniting Sales, Marketing, and
-                  Technology into one system that transforms the way businesses
-                  grow{" "}
+                  Founder of M Company, Falco, and multiple other ventures.{" "}
+                  <br />
+                  <br />
+                  🔰 Experience: 5+ years in Sales & Marketing. <br />
+                  🔰 Achievements: Built and scaled multiple call centers and
+                  high-performing teams. <br />
+                  🔰Trained and led high-performing teams
+                  <br />
+                  <br />
+                  Mission
+                  <br />
+                  <br /> My mission is to build Uzbekistan’s most powerful
+                  Automation Company, uniting Sales, Marketing, and Technology
+                  into one system that transforms the way businesses grow.{" "}
                   <span
                     onClick={() => setShowMore(true)}
                     className="text-blue-600 text-[20px] cursor-pointer"
