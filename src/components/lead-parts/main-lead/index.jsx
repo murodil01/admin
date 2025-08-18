@@ -920,8 +920,9 @@ const MainLead = () => {
             <GroupSection
               key={group.id}
               id={group.id}
-              title={group.title}
+              title={group.name}
               items={group.items}
+              
               expanded={!!expandedGroups[group.id]}
               onToggleExpanded={() => toggleExpanded(group.id)}
               updateTitle={updateGroupTitle}

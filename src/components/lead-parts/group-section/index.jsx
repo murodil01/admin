@@ -10,7 +10,7 @@ import {
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { updateGroup } from "../../../api/services/groupService";
-import { getLeads, updateLeads } from "../../../api/services/leadsService";
+import { getLeads, updateStatus,getLeadsById,updateLeads } from "../../../api/services/leadsService";
 import StatusDropdown from "./status-board";
 import { Select, Avatar } from "antd";
 
@@ -22,6 +22,8 @@ const SingleDatePickerCell = ({ value = "", onChange, onSave, onCancel }) => {
     onChange(date ? date.toISOString().split("T")[0] : null);
   };
 
+
+ 
   return (
     <div className="flex flex-col gap-1 w-full h-full">
       <ReactDatePicker
@@ -135,6 +137,7 @@ const LinkDropdown = ({ value, onChange, onSave, onCancel }) => {
 const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
   const [personOptions, setPersonOptions] = useState([]);
 
+  
   useEffect(() => {
     const fetchPersons = async () => {
       try {
@@ -146,20 +149,12 @@ const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
             name: lead.person_detail.fullname || "Unnamed Person",
             img: (() => {
               const picture = lead.person_detail.profile_picture;
-
               if (!picture) return null;
-
-              // Get the URL string
               const url = typeof picture === "string" ? picture : picture?.url;
-
               if (!url) return null;
-
-              // If it's already a full URL, return as is
               if (url.startsWith("http://") || url.startsWith("https://")) {
                 return url;
               }
-
-              // Prepend base URL for relative paths
               return `https://prototype-production-2b67.up.railway.app${url}`;
             })(),
           }));
@@ -171,21 +166,19 @@ const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
     fetchPersons();
   }, []);
 
-  const handleChange = async (selectedId) => {
-    const selectedPerson =
-      personOptions.find((p) => p.id === selectedId) || null;
-
-    onChange(selectedPerson); // localItems ga to‘liq obyekt
-
+ const handleChange = async (selectedId) => {
+    const selectedPerson = personOptions.find((p) => p.id === selectedId) || null;
+    onChange(selectedPerson);
+    
     if (groupId && leadId) {
       try {
+        // Fixed: Use correct function with proper parameters
         await updateLeads(groupId, leadId, { person_detail: selectedPerson });
       } catch (err) {
         console.error("Failed to update person_detail:", err);
       }
     }
-
-    onSave(); // editingni yakunlash
+    onSave();
   };
 
   return (
@@ -227,8 +220,8 @@ const GroupSection = ({
   deleteGroup,
   selected,
   onToggleSelect,
+  boardId,
   // onMoveItem,
-  // isDraggingOver,
   // onDragStart,
   // onDragOver,
   // onDrop,
@@ -288,52 +281,57 @@ const GroupSection = ({
   const startEditCell = (row, field) => setEditingCell({ row, field });
   const cancelEditCell = () => setEditingCell(null);
 
-  const saveEditCell = async () => {
-    if (!editingCell) return;
-    const { row, field } = editingCell;
-    let val = localItems[row]?.[field] ?? "";
+ const saveEditCell = async () => {
+  if (!editingCell) return;
+  const { row, field } = editingCell;
+  let val = localItems[row]?.[field] ?? "";
 
-    if (typeof val === "string") val = val.trim();
-    if (val === "") val = field === "name" ? "Unnamed" : null;
+  if (typeof val === "string") val = val.trim();
+  if (val === "") val = field === "name" ? "Unnamed" : null;
 
-    if (field === "potential_value") {
-      val = val === "" || val === null ? null : parseInt(val, 10) || null;
-    }
+  if (field === "potential_value") {
+    val = val === "" || val === null ? null : parseInt(val, 10) || null;
+  }
 
-    const newItems = [...localItems];
-    newItems[row] = { ...newItems[row], [field]: val };
+  const newItems = [...localItems];
+  newItems[row] = { ...newItems[row], [field]: val };
 
-    if (field === "timeline") {
-      const timelineValue = val || { start: null, end: null };
-      newItems[row].timelineStart = timelineValue.start;
-      newItems[row].timelineEnd = timelineValue.end;
-    }
+  if (field === "timeline") {
+    const timelineValue = val || { start: null, end: null };
+    newItems[row].timelineStart = timelineValue.start;
+    newItems[row].timelineEnd = timelineValue.end;
+  }
 
-    if (field === "person_detail") {
-      val = val || null; // val to‘liq person_detail object yoki null
-    }
+  if (field === "person_detail") {
+    val = val || null;
+  }
 
     setLocalItems(newItems);
     updateItem(id, row, newItems[row]);
 
     // Save to backend
-    try {
-      if (field !== "timeline") {
-        if (!newItems[row].group || !newItems[row].id) {
-          console.error("Missing group or lead ID:", newItems[row]);
-          return;
-        }
-        await updateLeads(newItems[row].group, newItems[row].id, {
-          [field]: val,
-        });
+     try {
+    if (field !== "timeline") {
+      if (!newItems[row].group || !newItems[row].id) {
+        console.error("Missing group or lead ID:", newItems[row]);
+        return;
       }
-    } catch (err) {
-      console.error(`Failed to update ${field}:`, err);
+      
+      // Use the correct function based on the field being updated
+      if (field === "status") {
+        // For status updates, use updateStatus with the lead ID
+        await updateStatus(newItems[row].id, { [field]: val });
+      } else {
+        // For other fields, use updateLeads
+        await updateLeads(newItems[row].group, newItems[row].id, { [field]: val });
+      }
     }
+  } catch (err) {
+    console.error(`Failed to update ${field}:`, err);
+  }
 
-    cancelEditCell();
-  };
-
+  cancelEditCell();
+};
   const saveNewItem = () => {
     if (newItemName.trim()) {
       const newItem = {
@@ -577,41 +575,48 @@ const GroupSection = ({
                             e.target.checked
                           )
                         }
-                      />                      
-                    </td>                  
-                    {columns.map((col) => (                     
+                      />
+                    </td>
+                    {columns.map((col) => (
                       <td
                         key={`${item.id}-${col.key}`}
                         className="border border-gray-300 p-0 text-center"
                         style={{ width: "160px", minWidth: "160px" }}
-                      >                       
-                        {col.key === "status" ? (
-                          <div
-                            className="w-full h-full flex items-center justify-center"
-                            style={{ minHeight: "36px" }}
-                          >                            
-                            <StatusDropdown
-                              boardId={item.boardId}
-                              itemId={item.id}
-                              value={item[col.key] || ""}
-                              onChange={(val) => {
-                                setLocalItems((prev) => {
-                                  const copy = [...prev];
-                                  const index = prev.findIndex(
-                                    (it) => it.id === item.id
-                                  );
-                                  copy[index] = {
-                                    ...copy[index],
-                                    [col.key]: val || null, // val = status.id
-                                  };
-                                  return copy;
-                                });
-                              }}
-                              onSave={saveEditCell}
-                              onCancel={cancelEditCell}
-                            />
-                          </div>
-                        ) : col.key === "timeline" ? (
+                      >
+                     {col.key === "status" ? (
+                      editingCell?.row === localItems.indexOf(item) && 
+                      editingCell?.field === col.key ? (
+                        // Edit mode
+                        <StatusDropdown
+                          groupId={id}
+                          itemId={item.id}
+                          boardId={boardId}  // Make sure this is passed
+                          value={item.status}
+                          onChange={(val) => {
+                            setLocalItems(prev => {
+                              const copy = [...prev];
+                              const index = prev.findIndex(it => it.id === item.id);
+                              copy[index] = {
+                                ...copy[index],
+                                [col.key]: val,
+                              };
+                              return copy;
+                            });
+                          }}
+                          onSave={saveEditCell}
+                          onCancel={cancelEditCell}
+                        />
+                      ) : (
+                        // Display mode - show status name
+                        <div
+                          className="w-full h-full flex items-center justify-center cursor-pointer"
+                          style={{ minHeight: "36px" }}
+                          onClick={() => startEditCell(localItems.indexOf(item), col.key)}
+                        >
+                          {item.status?.name || "No Status"}
+                        </div>
+                      )
+                    ) : col.key === "timeline" ? (
                           <DateRangePickerCell
                             value={item.timeline || { start: null, end: null }}
                             onChange={(val) => {
@@ -642,7 +647,7 @@ const GroupSection = ({
                                 return;
                               }
                               try {
-                                await updateLeads(item.group, item.id, {
+                                await updateStatus(item.group, item.id, {
                                   timelineStart: val.start || null,
                                   timelineEnd: val.end || null,
                                 });
@@ -681,7 +686,7 @@ const GroupSection = ({
                                 return;
                               }
                               try {
-                                await updateLeads(item.group, item.id, {
+                                await updateStatus(item.group, item.id, {
                                   last_interaction: val,
                                 });
                               } catch (err) {
@@ -725,7 +730,7 @@ const GroupSection = ({
                                 return;
                               }
                               try {
-                                await updateLeads(item.group, item.id, {
+                                await updateStatus(item.group, item.id, {
                                   potential_value: localItems.find(
                                     (it) => it.id === item.id
                                   )[col.key],
@@ -770,7 +775,7 @@ const GroupSection = ({
                                 return;
                               }
                               try {
-                                await updateLeads(item.group, item.id, {
+                                await updateStatus(item.group, item.id, {
                                   link: val || null,
                                 });
                               } catch (err) {
@@ -827,7 +832,7 @@ const GroupSection = ({
                                 return;
                               }
                               try {
-                                await updateLeads(item.group, item.id, {
+                                await updateStatus(item.group, item.id, {
                                   [col.key]: localItems.find(
                                     (it) => it.id === item.id
                                   )[col.key],
