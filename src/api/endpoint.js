@@ -93,11 +93,12 @@ const endpoints = {
   },
 
   status: {
-    getAll: (boardId) => `board/${boardId}/statuses/`,
-    create: (boardId) => `board/${boardId}/statuses/`,
-    getById: (boardId, statusId) => `board/${boardId}/statuses/${statusId}/`,
-    update: (boardId, statusId) => `board/${boardId}/statuses/${statusId}/`,
-    delete: (boardId, statusId) => `board/${boardId}/statuses/${statusId}/`,
+    getAll: (boardId) => `board/status/${boardId}`,
+    create: (boardId) => `board/status/${boardId}`,
+    getById: (boardId, statusId) =>
+      `board/status/${statusId}/?board=${boardId}`,
+    update: (boardId, statusId) => `board/status/${statusId}/?board=${boardId}`,
+    delete: (boardId, statusId) => `board/status/${statusId}/?board=${boardId}`,
   },
 
   employees: {
