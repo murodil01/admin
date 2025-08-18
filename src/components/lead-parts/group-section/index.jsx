@@ -174,7 +174,9 @@ const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
   const handleChange = async (selectedId) => {
     const selectedPerson =
       personOptions.find((p) => p.id === selectedId) || null;
-    onChange(selectedPerson);
+
+    onChange(selectedPerson); // localItems ga to‘liq obyekt
+
     if (groupId && leadId) {
       try {
         await updateLeads(groupId, leadId, { person_detail: selectedPerson });
@@ -182,7 +184,8 @@ const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
         console.error("Failed to update person_detail:", err);
       }
     }
-    onSave();
+
+    onSave(); // editingni yakunlash
   };
 
   return (
@@ -306,6 +309,10 @@ const GroupSection = ({
       newItems[row].timelineEnd = timelineValue.end;
     }
 
+    if (field === "person_detail") {
+      val = val || null; // val to‘liq person_detail object yoki null
+    }
+
     setLocalItems(newItems);
     updateItem(id, row, newItems[row]);
 
@@ -398,21 +405,6 @@ const GroupSection = ({
           return newItem;
         })
       );
-    }
-  };
-
-  const getStatusClass = (status) => {
-    switch (status) {
-      case "Working on it":
-        return "bg-[#FDAB3D] text-white font-medium";
-      case "Done":
-        return "bg-[#71DC98] text-white font-medium";
-      case "Stuck":
-        return "bg-[#DF2F4A] text-white font-medium";
-      case "Not Started":
-        return "bg-[#E7E7E7] text-[#A29F9F] font-medium";
-      default:
-        return "bg-white text-gray-800 font-medium";
     }
   };
 
@@ -595,9 +587,7 @@ const GroupSection = ({
                       >                       
                         {col.key === "status" ? (
                           <div
-                            className={`w-full h-full flex items-center justify-center ${getStatusClass(
-                              item[col.key]
-                            )}`}
+                            className="w-full h-full flex items-center justify-center"
                             style={{ minHeight: "36px" }}
                           >                            
                             <StatusDropdown
@@ -612,7 +602,7 @@ const GroupSection = ({
                                   );
                                   copy[index] = {
                                     ...copy[index],
-                                    [col.key]: val || null,
+                                    [col.key]: val || null, // val = status.id
                                   };
                                   return copy;
                                 });

@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
-import { getStatuses, updateStatus } from "../../../../api/services/statusService";
+import {
+  getStatuses,
+  updateStatus,
+} from "../../../../api/services/statusService";
 
 const StatusDropdown = ({
   boardId,
@@ -18,10 +21,10 @@ const StatusDropdown = ({
 
     const fetchStatuses = async () => {
       try {
-        const res = await getStatuses(boardId);
-        console.log("API statuses:", res); // backend javobini tekshirish
-        const options = (res.results || res).map((status) => ({
-          value: status.name, // yoki id ishlatilsa: status.id
+        const res = await getStatuses(boardId); // API dan array qaytadi
+        console.log("API statuses:", res); // array ekanligini tekshirish
+        const options = res.map((status) => ({
+          value: status.id, // id ishlatiladi
           label: status.name,
         }));
         setStatusOptions([{ value: "", label: "Select Status" }, ...options]);
@@ -38,7 +41,7 @@ const StatusDropdown = ({
     const val = e.target.value;
     onChange(val); // localItems update
     try {
-      await updateStatus(boardId, itemId, { name: val });
+      await updateStatus(boardId, itemId, { statusId: val });
     } catch (err) {
       console.error("Failed to update status:", err);
     }
