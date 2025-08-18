@@ -10,11 +10,11 @@ const CategoryDetailsPage = () => {
   const [category, setCategory] = useState(null);
   const [items, setItems] = useState([]);
   const [showModal, setShowModal] = useState(null);
-  const [showDropdown, setShowDropdown] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(null); // Stores unique identifier for open dropdown
   const [modalData, setModalData] = useState({ name: '', title: '', file: null, item: null });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const dropdownRefs = useRef({});
+  const dropdownRefs = useRef({}); // Stores refs for dropdown elements
   const navigate = useNavigate();
 
   // Ma'lumotlarni yuklash funksiyasi
@@ -126,12 +126,19 @@ const CategoryDetailsPage = () => {
   // Dropdown tashqariga bosilganda yopish
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (showDropdown && dropdownRefs.current[showDropdown]?.current && !dropdownRefs.current[showDropdown].current.contains(event.target)) {
-        setShowDropdown(null);
+      if (showDropdown) {
+        const dropdownRef = dropdownRefs.current[showDropdown];
+        if (dropdownRef && !dropdownRef.contains(event.target)) {
+          setShowDropdown(null);
+        }
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchend', handleClickOutside); // Added touchend for mobile
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchend', handleClickOutside);
+    };
   }, [showDropdown]);
 
   // Escape tugmasi bilan modalni yopish
@@ -227,33 +234,37 @@ const CategoryDetailsPage = () => {
     setError(null);
   };
 
-  const toggleDropdown = (itemId) => setShowDropdown(showDropdown === itemId ? null : itemId);
+  // Toggle dropdown with unique key
+  const toggleDropdown = (itemType, itemId) => {
+    const uniqueKey = `${itemType}-${itemId}`; // Create unique key to avoid conflicts
+    setShowDropdown(showDropdown === uniqueKey ? null : uniqueKey);
+  };
 
   return (
     <main className="max-w-7xl mx-auto py-4 sm:py-6">
-      <div className="flex flex-row items-center justify-between mb-4 gap-3 w-full">
-        <h1 className="text-lg font-bold text-gray-900">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4 w-full">
+        <h1 className="text-lg sm:text-xl font-bold text-gray-900">
           M Library
         </h1>
 
-        <div className="flex flex-row items-center gap-3">
+        <div className="flex flex-row items-center gap-2 sm:gap-3 w-full sm:w-auto">
           <button
             onClick={() => openModal('addFolder')}
-            className="p-2 text-gray-800 hover:text-gray-600 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-all"
+            className="p-2 sm:p-2 text-gray-800 hover:text-gray-600 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-all"
             disabled={loading}
+            aria-label="Add folder"
           >
-            <MdCreateNewFolder className="w-12 h-12" />
+            <MdCreateNewFolder className="w-8 h-8 sm:w-6 sm:h-6" />
           </button>
 
           <button
             onClick={() => openModal('addFile')}
-            className="flex items-center px-11 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all min-w-[150px]"
+            className="flex items-center justify-center sm:justify-start px-4 py-2 sm:px-4 sm:py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all flex-1 sm:flex-none sm:min-w-[150px]"
             disabled={loading}
           >
-            <Plus className="w-5 h-5 mr-2" />
-            <span>Add File</span>
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+            <span className="text-xs sm:text-sm">Add File</span>
           </button>
-
         </div>
       </div>
       {/* Yuklanish va xato xabarlari */}
@@ -320,123 +331,125 @@ const CategoryDetailsPage = () => {
       )}
 
       {/* Elementlar ro'yxati */}
-      <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-3">
-        {items.length === 0 && !loading && (
-          <p className="text-gray-500 text-center py-3 text-sm sm:text-base">Hech qanday element yo'q.</p>
-        )}
-        {items.map((item) => (
-          <div
-            key={`${item.type}-${item.id}`}
-            className="p-2 sm:p-4 bg-white rounded-lg shadow-sm border border-gray-100 active:shadow-md sm:hover:shadow-md transition-all cursor-pointer"
-            onClick={() => {
-              if (item.type === 'folder') {
-                navigate(`/library/folders/${item.id}`);
-              }
-            }}
-          >
-            <div className="flex items-center gap-3 sm:gap-4 flex-wrap sm:flex-nowrap">
-              <div className="p-2 sm:p-3 bg-blue-50 rounded-lg">
-                {item.type === 'folder' ? (
-                  <FaFolder className="text-blue-600 w-4 h-4 sm:w-5 sm:h-5" />
-                ) : (
-                  <FaFile className="text-blue-600 w-4 h-4 sm:w-5 sm:h-5" />
-                )}
-              </div>
+    <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-3">
+  {items.length === 0 && !loading && (
+    <p className="text-gray-500 text-center py-2 text-xs sm:text-sm md:text-base">
+      Hech qanday element yo'q.
+    </p>
+  )}
+  {items.map((item) => {
+    const uniqueKey = `${item.type}-${item.id}`;
+    return (
+      <div
+        key={uniqueKey}
+        className="p-2 xs:p-3 sm:p-4 bg-white rounded-lg shadow-sm border border-gray-100 active:shadow-md sm:hover:shadow-md transition-all cursor-pointer"
+        onClick={() => {
+          if (item.type === 'folder') {
+            navigate(`/library/folders/${item.id}`);
+          }
+        }}
+      >
+        <div className="flex items-center gap-2 xs:gap-3 sm:gap-4 flex-wrap">
+          <div className="p-1.5 xs:p-2 sm:p-3 bg-blue-50 rounded-lg flex-shrink-0">
+            {item.type === 'folder' ? (
+              <FaFolder className="text-blue-600 w-3.5 h-3.5 xs:w-4 sm:w-5 xs:h-4 sm:h-5" />
+            ) : (
+              <FaFile className="text-blue-600 w-3.5 h-3.5 xs:w-4 sm:w-5 xs:h-4 sm:h-5" />
+            )}
+          </div>
 
-              <div className="min-w-0 flex-1">
-                <h3 className="font-bold text-gray-900 text-sm sm:text-base truncate">
-                  {item.name || item.title || 'Nomsiz'}
-                </h3>
-                <p className="text-xs text-gray-600">
-                  {item.created_by?.first_name || ''} {item.created_by?.last_name || ''} tomonidan
+          <div className="min-w-0 flex-1">
+            <h3 className="font-bold text-gray-900 text-xs xs:text-sm sm:text-base truncate">
+              {item.name || item.title || 'Nomsiz'}
+            </h3>
+            <p className="text-[10px] xs:text-xs sm:text-sm text-gray-600 truncate">
+              {item.created_by?.first_name || ''} {item.created_by?.last_name || ''} tomonidan
+            </p>
+          </div>
+
+          <div className="flex items-center gap-1 xs:gap-2 sm:gap-3 flex-wrap">
+            {(item.type === 'file' && item.file_size_mb != null) ||
+            (item.type === 'folder' && item.total_files_size_mb != null) ? (
+              <div className="bg-blue-50 rounded px-1 xs:px-1.5 sm:px-2 py-0.5 xs:py-1 sm:py-1.5">
+                <p className="text-[9px] xs:text-[10px] sm:text-xs font-semibold text-blue-900">
+                  {item.type === 'file'
+                    ? item.file_size_mb > 1000
+                      ? `${(item.file_size_mb / 1000).toFixed(1)} GB`
+                      : `${item.file_size_mb} MB`
+                    : item.total_files_size_mb > 1000
+                    ? `${(item.total_files_size_mb / 1000).toFixed(1)} GB`
+                    : `${item.total_files_size_mb} MB`}
                 </p>
               </div>
-
-              <div className="flex items-center gap-1 sm:gap-3 flex-wrap">
-                {(item.type === 'file' && item.file_size_mb != null) ||
-                  (item.type === 'folder' && item.total_files_size_mb != null) ? (
-                  <div className="bg-blue-50 rounded px-1.5 sm:px-2 py-1 sm:py-1.5">
-                    <p className="text-[10px] sm:text-xs font-semibold text-blue-900">
-                      {item.type === 'file'
-                        ? item.file_size_mb > 1000
-                          ? `${(item.file_size_mb / 1000).toFixed(1)} GB`
-                          : `${item.file_size_mb} MB`
-                        : item.total_files_size_mb > 1000
-                          ? `${(item.total_files_size_mb / 1000).toFixed(1)} GB`
-                          : `${item.total_files_size_mb} MB`}
-                    </p>
-                  </div>
-                ) : null}
-                {item.type === 'folder' && item.files_count != null && (
-                  <div className="bg-green-50 rounded px-1.5 sm:px-2 py-1 sm:py-1.5">
-                    <p className="text-[10px] sm:text-xs font-semibold text-green-900">
-                      {item.files_count} Fayl
-                    </p>
-                  </div>
-                )}
-                <div className="bg-purple-50 rounded px-1.5 sm:px-2 py-1 sm:py-1.5">
-                  <p className="text-[10px] sm:text-xs font-semibold text-purple-900">
-                    {formatDate(item.created_at)}
-                  </p>
-                </div>
+            ) : null}
+            {item.type === 'folder' && item.files_count != null && (
+              <div className="bg-green-50 rounded px-1 xs:px-1.5 sm:px-2 py-0.5 xs:py-1 sm:py-1.5">
+                <p className="text-[9px] xs:text-[10px] sm:text-xs font-semibold text-green-900">
+                  {item.files_count} Fayl
+                </p>
               </div>
+            )}
+            <div className="bg-purple-50 rounded px-1 xs:px-1.5 sm:px-2 py-0.5 xs:py-1 sm:py-1.5">
+              <p className="text-[9px] xs:text-[10px] sm:text-xs font-semibold text-purple-900">
+                {formatDate(item.created_at)}
+              </p>
+            </div>
+          </div>
 
-              <div
-                className="relative"
-                ref={(ref) => (dropdownRefs.current[item.id] = { current: ref })}
-              >
-                <MdMoreVert
-                  className="w-6 h-6 text-gray-500 cursor-pointer active:bg-gray-100 active:scale-95 rounded-full p-1 transition-all"
+          <div className="relative flex-shrink-0" ref={(el) => (dropdownRefs.current[uniqueKey] = el)}>
+            <MdMoreVert
+              className="w-5 h-5 xs:w-6 xs:h-6 text-gray-500 cursor-pointer active:bg-gray-100 active:scale-95 rounded-full p-1 transition-all"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleDropdown(item.type, item.id);
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleDropdown(item.type, item.id);
+              }}
+            />
+            {showDropdown === uniqueKey && (
+              <div className="absolute right-0 top-6 xs:top-7 bg-white shadow-md rounded-lg p-1 flex flex-col space-y-1 z-[1000] w-20 xs:w-24 border border-gray-200">
+                <button
+                  className="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-[10px] xs:text-xs font-medium text-left"
                   onClick={(e) => {
                     e.preventDefault();
-                    e.stopPropagation(); // Navigatsiyani to‘xtatadi
-                    toggleDropdown(item.id);
+                    e.stopPropagation();
+                    openModal('edit', item);
                   }}
                   onTouchEnd={(e) => {
                     e.preventDefault();
-                    e.stopPropagation(); // Navigatsiyani to‘xtatadi
-                    toggleDropdown(item.id);
+                    e.stopPropagation();
+                    openModal('edit', item);
                   }}
-                />
-                {showDropdown === item.id && (
-                  <div className="absolute right-0 top-7 bg-white shadow-md rounded-lg p-1 flex flex-col space-y-1 z-[1000] w-24 border border-gray-200">
-                    <button
-                      className="text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-xs font-medium text-left"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openModal('edit', item);
-                      }}
-                      onTouchEnd={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openModal('edit', item);
-                      }}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-xs font-medium text-left"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openModal('delete', item);
-                      }}
-                      onTouchEnd={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openModal('delete', item);
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
+                >
+                  Edit
+                </button>
+                <button
+                  className="text-red-600 hover:bg-red-50 px-2 py-1 rounded text-[10px] xs:text-xs font-medium text-left"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openModal('delete', item);
+                  }}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openModal('delete', item);
+                  }}
+                >
+                  Delete
+                </button>
               </div>
-            </div>
+            )}
           </div>
-        ))}
+        </div>
       </div>
+    );
+  })}
+</div>
 
       {/* Papka qo'shish modali */}
       {showModal === 'addFolder' && (
