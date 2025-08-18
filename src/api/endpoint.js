@@ -1,11 +1,10 @@
 const endpoints = {
-
-	auth: {
-		login: '/auth/login',
-		register: '/auth/register',
-		me: '/auth/me',
-		logout: '/auth/logout', // Added logout endpoint
-	},
+  auth: {
+    login: "/auth/login",
+    register: "/auth/register",
+    me: "/auth/me",
+    logout: "/auth/logout", // Added logout endpoint
+  },
 
   users: {
     getAll: "users/",
@@ -13,6 +12,7 @@ const endpoints = {
     update: (id) => `users/${id}/`,
     delete: (id) => `users/${id}/`,
   },
+
 	// tasks: {
 	// 	getAll: 'project/tasks/',
 	// 	create: 'project/tasks/',
@@ -59,6 +59,7 @@ const endpoints = {
         delete: (id) => `project/projects/${id}/`,
     },
 
+
   departments: {
     getAll: "department/departments/",
     getById: (id) => `department/departments/${id}/`,
@@ -91,39 +92,48 @@ const endpoints = {
     delete: (groupId, leadId) => `board/leads/${leadId}/?group=${groupId}`,
   },
 
-	employees: {
-		getAll: 'employees/',
-		getById: (id) => `users/${id}/`,
-		create: 'users/',
-		update: (id) => `users/${id}/`,
-		updateStatus: id=> `users/${id}/`,
-		delete: (id) => `users/${id}/`,
-	},
+  status: {
+    getAll: (boardId) => `board/${boardId}/statuses/`,
+    create: (boardId) => `board/${boardId}/statuses/`,
+    getById: (boardId, statusId) => `board/${boardId}/statuses/${statusId}/`,
+    update: (boardId, statusId) => `board/${boardId}/statuses/${statusId}/`,
+    delete: (boardId, statusId) => `board/${boardId}/statuses/${statusId}/`,
+  },
+
+  employees: {
+    getAll: "employees/",
+    getById: (id) => `users/${id}/`,
+    create: "users/",
+    update: (id) => `users/${id}/`,
+    updateStatus: (id) => `users/${id}/`,
+    delete: (id) => `users/${id}/`,
+  },
 
   activities: {
     getAll: "user-activities/",
     getById: "user-activities/{id}/",
     create: "users/",
   },
-	controlData: {
-		getByUserId: (userId) => `control-data/?user_id=${userId}/`,
-		createForUser: (userId) => `control-data/?user_id=${userId}/`, // Faqat o'sha user uchun yaratish
-		update: (userId) => `control-data/?user_id=${userId}/`,
-	},
 
-	userProjects: {
-		getAll: 'user-projects/',
-		getById: (id) => `user-projects/${id}/`,
-	},
+  controlData: {
+    getByUserId: (userId) => `control-data/?user_id=${userId}/`,
+    createForUser: (userId) => `control-data/?user_id=${userId}/`, // Faqat o'sha user uchun yaratish
+    update: (userId) => `control-data/?user_id=${userId}/`,
+  },
 
-	notes: {
-		getAll: 'notes/',
-		getById: (id) => `notes/${id}/`,
-		create: 'notes/',
-		update: (id) => `notes/${id}/`,
-		updateStatus: id=> `/notes/${id}/`,
-		delete: (id) => `notes/${id}/`,
-	}
-}
+  userProjects: {
+    getAll: "user-projects/",
+    getById: (id) => `user-projects/${id}/`,
+  },
+
+  notes: {
+    getAll: "notes/",
+    getById: (id) => `notes/${id}/`,
+    create: "notes/",
+    update: (id) => `notes/${id}/`,
+    updateStatus: (id) => `/notes/${id}/`,
+    delete: (id) => `notes/${id}/`,
+  },
+};
 
 export default endpoints;

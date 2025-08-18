@@ -11,33 +11,73 @@
 // import "react-datepicker/dist/react-datepicker.css";
 // import { updateGroup } from "../../../api/services/groupService";
 // import { updateLeads } from "../../../api/services/leadsService";
+// import {
+//   getStatuses,
+//   // getStatusById,
+//   // createStatus,
+//   updateStatus,
+//   // deleteStatus,
+// } from "../../../api/services/statusService";
 
-// const DatePickerCell = ({
-//   value = { start: "", end: "" },
+// const SingleDatePickerCell = ({ value = "", onChange, onSave, onCancel }) => {
+//   const [date, setDate] = useState(value ? new Date(value) : null);
+
+//   const handleChange = (date) => {
+//     setDate(date);
+//     // Send null instead of empty string when no date is selected
+//     onChange(date ? date.toISOString().split("T")[0] : null);
+//   };
+
+//   return (
+//     <div className="flex flex-col gap-1 w-full h-full">
+//       <ReactDatePicker
+//         selected={date}
+//         onChange={handleChange}
+//         dateFormat="yyyy-MM-dd"
+//         onBlur={() => onSave(date ? date.toISOString().split("T")[0] : null)}
+//         onKeyDown={(e) => {
+//           if (e.key === "Enter") onSave();
+//           if (e.key === "Escape") onCancel();
+//         }}
+//         className="w-full px-2 py-1 text-center focus:outline-none bg-transparent"
+//         placeholderText="Select Date"
+//         isClearable
+//       />
+//     </div>
+//   );
+// };
+
+// const DateRangePickerCell = ({
+//   value = { start: null, end: null },
 //   onChange,
 //   onSave,
 //   onCancel,
 // }) => {
+//   // Null/undefined qiymatlarni xavfsiz ishlash
+//   const safeValue = value || { start: null, end: null };
+
 //   const [startDate, setStartDate] = useState(
-//     value.start ? new Date(value.start) : null
+//     safeValue.start ? new Date(safeValue.start) : null
 //   );
 //   const [endDate, setEndDate] = useState(
-//     value.end ? new Date(value.end) : null
+//     safeValue.end ? new Date(safeValue.end) : null
 //   );
 
-//   const handleStartChange = (date) => {
-//     setStartDate(date);
+//   const handleChange = (dates) => {
+//     const [start, end] = dates;
+//     setStartDate(start);
+//     setEndDate(end);
+
 //     onChange({
-//       start: date ? date.toISOString().split("T")[0] : "",
-//       end: endDate ? endDate.toISOString().split("T")[0] : "",
+//       start: start ? start.toISOString().split("T")[0] : null,
+//       end: end ? end.toISOString().split("T")[0] : null,
 //     });
 //   };
 
-//   const handleEndChange = (date) => {
-//     setEndDate(date);
-//     onChange({
-//       start: startDate ? startDate.toISOString().split("T")[0] : "",
-//       end: date ? date.toISOString().split("T")[0] : "",
+//   const handleSave = () => {
+//     onSave({
+//       start: startDate ? startDate.toISOString().split("T")[0] : null,
+//       end: endDate ? endDate.toISOString().split("T")[0] : null,
 //     });
 //   };
 
@@ -45,43 +85,67 @@
 //     <div className="flex flex-col gap-1 w-full h-full">
 //       <ReactDatePicker
 //         selected={startDate}
-//         onChange={handleStartChange}
+//         onChange={handleChange}
+//         startDate={startDate}
+//         endDate={endDate}
+//         selectsRange
 //         dateFormat="yyyy-MM-dd"
-//         onBlur={onSave}
+//         onBlur={handleSave} // Focusdan chiqganda save qiladi
 //         onKeyDown={(e) => {
-//           if (e.key === "Enter") onSave();
-//           if (e.key === "Escape") onCancel();
+//           if (e.key === "Enter") handleSave(); // Enter bosilganda save qiladi
+//           if (e.key === "Escape") onCancel(); // Escape bosilganda cancel qiladi
 //         }}
 //         className="w-full px-2 py-1 text-center focus:outline-none bg-transparent"
-//         placeholderText="Start"
-//       />
-//       <ReactDatePicker
-//         selected={endDate}
-//         onChange={handleEndChange}
-//         dateFormat="yyyy-MM-dd"
-//         onBlur={onSave}
-//         onKeyDown={(e) => {
-//           if (e.key === "Enter") onSave();
-//           if (e.key === "Escape") onCancel();
-//         }}
-//         className="w-full px-2 py-1 text-center focus:outline-none bg-transparent"
-//         placeholderText="End"
+//         placeholderText="Timeline"
+//         isClearable
 //       />
 //     </div>
 //   );
 // };
 
-// const StatusDropdown = ({ value, onChange, onSave, onCancel }) => {
-//   const statusOptions = [
-//     { value: "", label: "Select Status" },
-//     { value: "Done", label: "Done" },
-//     { value: "Stuck", label: "Stuck" },
-//     { value: "Working on it", label: "Working on it" },
-//     { value: "Not Started", label: "Not Started" },
-//   ];
+// const StatusDropdown = ({
+//   boardId, // statuslar boardId orqali olinadi
+//   value,
+//   onChange,
+//   onSave,
+//   onCancel,
+//   itemId, // lead yoki status id update uchun
+// }) => {
+//   const [statusOptions, setStatusOptions] = useState([
+//     { value: "", label: "Loading..." },
+//   ]);
 
-//   const handleChange = (e) => {
-//     onChange(e.target.value);
+//   // API dan statuslarni olish
+//   useEffect(() => {
+//     if (!boardId) return;
+//     const fetchStatuses = async () => {
+//       try {
+//         const res = await getStatuses(boardId);
+//         // Agar API { results: [...] } formatida bo'lsa
+//         const options = res.results.map((status) => ({
+//           value: status.name, // agar backend id bilan ishlasa => status.id
+//           label: status.name,
+//         }));
+//         setStatusOptions([{ value: "", label: "Select Status" }, ...options]);
+//       } catch (err) {
+//         console.error("Failed to fetch statuses:", err);
+//         setStatusOptions([{ value: "", label: "Error loading statuses" }]);
+//       }
+//     };
+//     fetchStatuses();
+//   }, [boardId]);
+
+//   const handleChange = async (e) => {
+//     const val = e.target.value;
+//     onChange(val);
+
+//     // Backendga update jo'natish
+//     try {
+//       await updateStatus(boardId, itemId, { name: val });
+//     } catch (err) {
+//       console.error("Failed to update status:", err);
+//     }
+
 //     onSave();
 //   };
 
@@ -100,7 +164,45 @@
 //         <option
 //           key={option.value}
 //           value={option.value}
-//           className="bg-white text-black" // Tanlash oynasida oq fon + qora matn
+//           className="bg-white text-black"
+//         >
+//           {option.label}
+//         </option>
+//       ))}
+//     </select>
+//   );
+// };
+
+// const LinkDropdown = ({ value, onChange, onSave, onCancel }) => {
+//   const linkOptions = [
+//     { value: "", label: "Select Link Type" },
+//     { value: "ad", label: "Ad" },
+//     { value: "outreach", label: "Outreach" },
+//     { value: "referral", label: "Referral" },
+//     { value: "event", label: "Event" },
+//   ];
+
+//   const handleChange = (e) => {
+//     onChange(e.target.value);
+//     onSave();
+//   };
+
+//   return (
+//     <select
+//       value={value || ""}
+//       onChange={handleChange}
+//       onBlur={onSave}
+//       onKeyDown={(e) => {
+//         if (e.key === "Enter") onSave();
+//         if (e.key === "Escape") onCancel();
+//       }}
+//       className="w-full h-full text-center focus:outline-none border-none appearance-none bg-transparent"
+//     >
+//       {linkOptions.map((option) => (
+//         <option
+//           key={option.value}
+//           value={option.value}
+//           className="bg-white text-black"
 //         >
 //           {option.label}
 //         </option>
@@ -136,7 +238,7 @@
 //   const [columns, setColumns] = useState([
 //     { key: "name", label: "Leads", isCustom: false },
 //     { key: "phone", label: "Phone Number", isCustom: false },
-//     { key: "link", label: "Link", isCustom: false },
+//     { key: "link", label: "Source", isCustom: false },
 //     { key: "person", label: "Owner", isCustom: false },
 //     { key: "last_interaction", label: "Last interaction", isCustom: false },
 //     { key: "status", label: "Status", isCustom: false },
@@ -150,10 +252,10 @@
 //       setLocalItems(
 //         items.map((item) => ({
 //           ...item,
-//           potential_value: item["Potential value"] || item.potential_value || 0,
-//           timeline: {
-//             start: item.timelineStart || "",
-//             end: item.timelineEnd || "",
+//           potential_value: item.potential_value || null, // Changed from 0 to null
+//           timeline: item.timeline || {
+//             start: item.timelineStart || null, // Changed from "" to null
+//             end: item.timelineEnd || null, // Changed from "" to null
 //           },
 //         }))
 //       );
@@ -181,15 +283,20 @@
 //     let val = localItems[row]?.[field] ?? "";
 
 //     if (typeof val === "string") val = val.trim();
-//     if (val === "") val = field === "name" ? "Unnamed" : "";
+//     if (val === "") val = field === "name" ? "Unnamed" : null;
+
+//     if (field === "potential_value") {
+//       val = val === "" || val === null ? null : parseInt(val, 10) || null;
+//     }
 
 //     const newItems = [...localItems];
 //     newItems[row] = { ...newItems[row], [field]: val };
 
-//     // Agar timeline bo‘lsa, API uchun start/end alohida
 //     if (field === "timeline") {
-//       newItems[row].timelineStart = val.start;
-//       newItems[row].timelineEnd = val.end;
+//       // Ensure val has the correct structure
+//       const timelineValue = val || { start: null, end: null };
+//       newItems[row].timelineStart = timelineValue.start;
+//       newItems[row].timelineEnd = timelineValue.end;
 //     }
 
 //     setLocalItems(newItems);
@@ -201,7 +308,14 @@
 //     if (newItemName.trim()) {
 //       const newItem = { name: newItemName.trim() };
 //       columns.forEach((col) => {
-//         if (!newItem[col.key]) newItem[col.key] = "";
+//         if (!newItem[col.key]) {
+//           // Set appropriate default values
+//           if (col.key === "potential_value") {
+//             newItem[col.key] = null; // Changed from 0 to null
+//           } else {
+//             newItem[col.key] = null; // Changed from "" to null
+//           }
+//         }
 //       });
 //       setLocalItems((prev) => [...prev.filter(Boolean), newItem]);
 //       addItem(id, newItem);
@@ -222,7 +336,7 @@
 //     setLocalItems((prev) =>
 //       prev.map((item) => ({
 //         ...item,
-//         [newKey]: "",
+//         [newKey]: null, // Changed from "" to null
 //       }))
 //     );
 //   };
@@ -280,7 +394,7 @@
 //   };
 
 //   return (
-//     <div className="mb-3 rounded-[8px] relative">
+//     <div className="mb-3 rounded-[8px] ">
 //       {/* Header */}
 //       <div className="flex items-center justify-between w-full p-4 cursor-pointer rounded-t-[8px] select-none bg-gray-200">
 //         <div className="flex items-center flex-1" onClick={onToggleExpanded}>
@@ -301,19 +415,16 @@
 //                   setTitleValue(newTitle);
 
 //                   try {
-//                     // API orqali yangilash
 //                     await updateGroup(id, { name: newTitle });
 //                   } catch (error) {
 //                     console.error("Failed to update group title:", error);
-//                     // Xatolik bo'lsa eski title’ni qaytarish
 //                     setTitleValue(title);
 //                   }
 
-//                   // Parent component updateTitle funksiyasini chaqirish
 //                   if (updateTitle) updateTitle(id, newTitle);
 //                 }}
 //                 onKeyDown={async (e) => {
-//                   if (e.key === "Enter") e.target.blur(); // onBlur orqali API chaqiriladi
+//                   if (e.key === "Enter") e.target.blur();
 //                   if (e.key === "Escape") {
 //                     setEditingTitle(false);
 //                     setTitleValue(title);
@@ -458,44 +569,142 @@
 //                             style={{ minHeight: "36px" }}
 //                           >
 //                             <StatusDropdown
+//                               boardId={item.boardId} // har bir item boardId bilan keladi
+//                               itemId={item.id} // lead yoki status id
 //                               value={item[col.key] || ""}
-//                               onChange={async (val) => {
-//                                 // 1️⃣ UI-ni yangilash
+//                               onChange={(val) => {
 //                                 setLocalItems((prev) => {
 //                                   const copy = [...prev];
-//                                   copy[i] = { ...copy[i], [col.key]: val };
+//                                   copy[i] = {
+//                                     ...copy[i],
+//                                     [col.key]: val || null,
+//                                   };
 //                                   return copy;
 //                                 });
-
-//                                 // 2️⃣ API orqali update
-//                                 try {
-//                                   await updateLeads(item.id, { status: val }); // item.id backenddagi lead ID
-//                                 } catch (err) {
-//                                   console.error(
-//                                     "Failed to update status:",
-//                                     err
-//                                   );
-//                                   // Xatolik bo‘lsa, foydalanuvchiga ko‘rsatish yoki eski qiymatni qaytarish mumkin
-//                                 }
 //                               }}
 //                               onSave={saveEditCell}
 //                               onCancel={cancelEditCell}
 //                             />
 //                           </div>
 //                         ) : col.key === "timeline" ? (
-//                           <DatePickerCell
-//                             value={item[col.key]}
+//                           <DateRangePickerCell
+//                             value={item.timeline || { start: null, end: null }}
 //                             onChange={(val) => {
+//                               const timelineValue = val || {
+//                                 start: null,
+//                                 end: null,
+//                               };
 //                               setLocalItems((prev) => {
 //                                 const copy = [...prev];
 //                                 copy[i] = {
 //                                   ...copy[i],
-//                                   [col.key]: val, // timeline {start, end}
-//                                   timelineStart: val.start,
-//                                   timelineEnd: val.end,
+//                                   timeline: timelineValue,
+//                                   timelineStart: timelineValue.start,
+//                                   timelineEnd: timelineValue.end,
 //                                 };
 //                                 return copy;
 //                               });
+//                             }}
+//                             onSave={async (val) => {
+//                               const group = item.group;
+//                               if (!group || !item.id)
+//                                 return console.error(
+//                                   "Group ID yoki Lead ID mavjud emas"
+//                                 );
+
+//                               await updateLeads(group, item.id, {
+//                                 timelineStart: val.start || null,
+//                                 timelineEnd: val.end || null,
+//                               });
+//                               saveEditCell();
+//                             }}
+//                             onCancel={cancelEditCell}
+//                           />
+//                         ) : col.key === "last_interaction" ? (
+//                           <SingleDatePickerCell
+//                             value={item[col.key] || ""}
+//                             onChange={(val) => {
+//                               setLocalItems((prev) => {
+//                                 const copy = [...prev];
+//                                 copy[i] = { ...copy[i], [col.key]: val };
+//                                 return copy;
+//                               });
+//                             }}
+//                             onSave={async (val) => {
+//                               try {
+//                                 const group = item.group; // LinkDropdown bilan bir xil
+//                                 if (!group || !item.id)
+//                                   return console.error(
+//                                     "Group ID yoki Lead ID mavjud emas"
+//                                   );
+
+//                                 await updateLeads(group, item.id, {
+//                                   last_interaction: val,
+//                                 });
+//                               } catch (err) {
+//                                 console.error(
+//                                   "Failed to update last_interaction:",
+//                                   err
+//                                 );
+//                               }
+//                               saveEditCell();
+//                             }}
+//                             onCancel={cancelEditCell}
+//                           />
+//                         ) : col.key === "potential_value" ? (
+//                           <input
+//                             type="number"
+//                             value={item[col.key] || ""}
+//                             onChange={(e) => {
+//                               const value = e.target.value;
+//                               // Allow empty string for clearing, otherwise parse as integer
+//                               const newVal =
+//                                 value === ""
+//                                   ? null
+//                                   : parseInt(value, 10) || null;
+//                               setLocalItems((prev) => {
+//                                 const copy = [...prev];
+//                                 copy[i] = { ...copy[i], [col.key]: newVal };
+//                                 return copy;
+//                               });
+//                             }}
+//                             onBlur={async () => {
+//                               try {
+//                                 await updateLeads(item.id, {
+//                                   potential_value: localItems[i][col.key],
+//                                 });
+//                               } catch (err) {
+//                                 console.error(
+//                                   "Failed to update potential_value:",
+//                                   err
+//                                 );
+//                               }
+//                               saveEditCell();
+//                             }}
+//                             onFocus={() => startEditCell(i, col.key)}
+//                             className="w-full text-center focus:outline-none bg-transparent"
+//                             placeholder="Enter value"
+//                           />
+//                         ) : col.key === "link" ? (
+//                           <LinkDropdown
+//                             value={item[col.key] || ""}
+//                             onChange={async (val) => {
+//                               setLocalItems((prev) => {
+//                                 const copy = [...prev];
+//                                 copy[i] = {
+//                                   ...copy[i],
+//                                   [col.key]: val || null,
+//                                 };
+//                                 return copy;
+//                               });
+
+//                               try {
+//                                 await updateLeads(item.group, item.id, {
+//                                   link: val || null,
+//                                 });
+//                               } catch (err) {
+//                                 console.error("Failed to update link:", err);
+//                               }
 //                             }}
 //                             onSave={saveEditCell}
 //                             onCancel={cancelEditCell}
@@ -504,7 +713,7 @@
 //                           <input
 //                             value={item[col.key] || ""}
 //                             onChange={(e) => {
-//                               const newVal = e.target.value;
+//                               const newVal = e.target.value || null;
 //                               setLocalItems((prev) => {
 //                                 const copy = [...prev];
 //                                 copy[i] = { ...copy[i], [col.key]: newVal };
@@ -607,18 +816,21 @@ import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { updateGroup } from "../../../api/services/groupService";
 import { updateLeads } from "../../../api/services/leadsService";
+import {
+  getStatuses,
+  // getStatusById,
+  // createStatus,
+  updateStatus,
+  // deleteStatus,
+} from "../../../api/services/statusService";
 
-const SingleDatePickerCell = ({
-  value = "",
-  onChange,
-  onSave,
-  onCancel,
-}) => {
+const SingleDatePickerCell = ({ value = "", onChange, onSave, onCancel }) => {
   const [date, setDate] = useState(value ? new Date(value) : null);
 
   const handleChange = (date) => {
     setDate(date);
-    onChange(date ? date.toISOString().split("T")[0] : "");
+    // Send null instead of empty string when no date is selected
+    onChange(date ? date.toISOString().split("T")[0] : null);
   };
 
   return (
@@ -627,38 +839,50 @@ const SingleDatePickerCell = ({
         selected={date}
         onChange={handleChange}
         dateFormat="yyyy-MM-dd"
-        onBlur={onSave}
+        onBlur={() => onSave(date ? date.toISOString().split("T")[0] : null)}
         onKeyDown={(e) => {
           if (e.key === "Enter") onSave();
           if (e.key === "Escape") onCancel();
         }}
         className="w-full px-2 py-1 text-center focus:outline-none bg-transparent"
         placeholderText="Select Date"
+        isClearable
       />
     </div>
   );
 };
 
 const DateRangePickerCell = ({
-  value = { start: "", end: "" },
+  value = { start: null, end: null },
   onChange,
   onSave,
   onCancel,
 }) => {
+  // Null/undefined qiymatlarni xavfsiz ishlash
+  const safeValue = value || { start: null, end: null };
+
   const [startDate, setStartDate] = useState(
-    value.start ? new Date(value.start) : null
+    safeValue.start ? new Date(safeValue.start) : null
   );
   const [endDate, setEndDate] = useState(
-    value.end ? new Date(value.end) : null
+    safeValue.end ? new Date(safeValue.end) : null
   );
 
   const handleChange = (dates) => {
     const [start, end] = dates;
     setStartDate(start);
     setEndDate(end);
+
     onChange({
-      start: start ? start.toISOString().split("T")[0] : "",
-      end: end ? end.toISOString().split("T")[0] : "",
+      start: start ? start.toISOString().split("T")[0] : null,
+      end: end ? end.toISOString().split("T")[0] : null,
+    });
+  };
+
+  const handleSave = () => {
+    onSave({
+      start: startDate ? startDate.toISOString().split("T")[0] : null,
+      end: endDate ? endDate.toISOString().split("T")[0] : null,
     });
   };
 
@@ -671,29 +895,62 @@ const DateRangePickerCell = ({
         endDate={endDate}
         selectsRange
         dateFormat="yyyy-MM-dd"
-        onBlur={onSave}
+        onBlur={handleSave} // Focusdan chiqganda save qiladi
         onKeyDown={(e) => {
-          if (e.key === "Enter") onSave();
-          if (e.key === "Escape") onCancel();
+          if (e.key === "Enter") handleSave(); // Enter bosilganda save qiladi
+          if (e.key === "Escape") onCancel(); // Escape bosilganda cancel qiladi
         }}
         className="w-full px-2 py-1 text-center focus:outline-none bg-transparent"
-        placeholderText="Start - End"
+        placeholderText="Timeline"
+        isClearable
       />
     </div>
   );
 };
 
-const StatusDropdown = ({ value, onChange, onSave, onCancel }) => {
-  const statusOptions = [
-    { value: "", label: "Select Status" },
-    { value: "Done", label: "Done" },
-    { value: "Stuck", label: "Stuck" },
-    { value: "Working on it", label: "Working on it" },
-    { value: "Not Started", label: "Not Started" },
-  ];
+const StatusDropdown = ({
+  boardId, // statuslar boardId orqali olinadi
+  value,
+  onChange,
+  onSave,
+  onCancel,
+  itemId, // lead yoki status id update uchun
+}) => {
+  const [statusOptions, setStatusOptions] = useState([
+    { value: "", label: "Loading..." },
+  ]);
 
-  const handleChange = (e) => {
-    onChange(e.target.value);
+  // API dan statuslarni olish
+  useEffect(() => {
+    if (!boardId) return;
+    const fetchStatuses = async () => {
+      try {
+        const res = await getStatuses(boardId);
+        // Agar API { results: [...] } formatida bo'lsa
+        const options = res.results.map((status) => ({
+          value: status.name, // agar backend id bilan ishlasa => status.id
+          label: status.name,
+        }));
+        setStatusOptions([{ value: "", label: "Select Status" }, ...options]);
+      } catch (err) {
+        console.error("Failed to fetch statuses:", err);
+        setStatusOptions([{ value: "", label: "Error loading statuses" }]);
+      }
+    };
+    fetchStatuses();
+  }, [boardId]);
+
+  const handleChange = async (e) => {
+    const val = e.target.value;
+    onChange(val);
+
+    // Backendga update jo'natish
+    try {
+      await updateStatus(boardId, itemId, { name: val });
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    }
+
     onSave();
   };
 
@@ -724,10 +981,10 @@ const StatusDropdown = ({ value, onChange, onSave, onCancel }) => {
 const LinkDropdown = ({ value, onChange, onSave, onCancel }) => {
   const linkOptions = [
     { value: "", label: "Select Link Type" },
-    { value: "Ad", label: "Ad" },
-    { value: "Outreach", label: "Outreach" },
-    { value: "Referral", label: "Referral" },
-    { value: "Event", label: "Event" },
+    { value: "ad", label: "Ad" },
+    { value: "outreach", label: "Outreach" },
+    { value: "referral", label: "Referral" },
+    { value: "event", label: "Event" },
   ];
 
   const handleChange = (e) => {
@@ -786,14 +1043,13 @@ const GroupSection = ({
   const [columns, setColumns] = useState([
     { key: "name", label: "Leads", isCustom: false },
     { key: "phone", label: "Phone Number", isCustom: false },
-    { key: "link", label: "Link", isCustom: false },
+    { key: "link", label: "Source", isCustom: false },
     { key: "person", label: "Owner", isCustom: false },
-    { key: "person_detail", label: "Person details", isCustom: false },
-    { key: "lastinteraction", label: "Last interaction", isCustom: false },
+    { key: "last_interaction", label: "Last interaction", isCustom: false },
     { key: "status", label: "Status", isCustom: false },
     { key: "notes", label: "Notes", isCustom: false },
     { key: "potential_value", label: "Potential value", isCustom: false },
-    { key: "timeline", label: "Timeline", isCustom: false },
+    { key: "timeline_start",  label: "Timeline", isCustom: false },
   ]);
 
   useEffect(() => {
@@ -801,10 +1057,10 @@ const GroupSection = ({
       setLocalItems(
         items.map((item) => ({
           ...item,
-          potential_value: item.potential_value || 0,
-          timeline: {
-            start: item.timelineStart || "",
-            end: item.timelineEnd || "",
+          potential_value: item.potential_value || null, // Changed from 0 to null
+          timeline: item.timeline || {
+            start: item.timelineStart || null, // Changed from "" to null
+            end: item.timelineEnd || null, // Changed from "" to null
           },
         }))
       );
@@ -832,18 +1088,20 @@ const GroupSection = ({
     let val = localItems[row]?.[field] ?? "";
 
     if (typeof val === "string") val = val.trim();
-    if (val === "") val = field === "name" ? "Unnamed" : "";
+    if (val === "") val = field === "name" ? "Unnamed" : null;
 
     if (field === "potential_value") {
-      val = parseInt(val, 10) || 0; // Ensure integer
+      val = val === "" || val === null ? null : parseInt(val, 10) || null;
     }
 
     const newItems = [...localItems];
     newItems[row] = { ...newItems[row], [field]: val };
 
     if (field === "timeline") {
-      newItems[row].timelineStart = val.start;
-      newItems[row].timelineEnd = val.end;
+      // Ensure val has the correct structure
+      const timelineValue = val || { start: null, end: null };
+      newItems[row].timelineStart = timelineValue.start;
+      newItems[row].timelineEnd = timelineValue.end;
     }
 
     setLocalItems(newItems);
@@ -855,7 +1113,14 @@ const GroupSection = ({
     if (newItemName.trim()) {
       const newItem = { name: newItemName.trim() };
       columns.forEach((col) => {
-        if (!newItem[col.key]) newItem[col.key] = col.key === "potential_value" ? 0 : "";
+        if (!newItem[col.key]) {
+          // Set appropriate default values
+          if (col.key === "potential_value") {
+            newItem[col.key] = null; // Changed from 0 to null
+          } else {
+            newItem[col.key] = null; // Changed from "" to null
+          }
+        }
       });
       setLocalItems((prev) => [...prev.filter(Boolean), newItem]);
       addItem(id, newItem);
@@ -876,7 +1141,7 @@ const GroupSection = ({
     setLocalItems((prev) =>
       prev.map((item) => ({
         ...item,
-        [newKey]: "",
+        [newKey]: null, // Changed from "" to null
       }))
     );
   };
@@ -934,7 +1199,7 @@ const GroupSection = ({
   };
 
   return (
-    <div className="mb-3 rounded-[8px] relative">
+    <div className="mb-3 rounded-[8px] ">
       {/* Header */}
       <div className="flex items-center justify-between w-full p-4 cursor-pointer rounded-t-[8px] select-none bg-gray-200">
         <div className="flex items-center flex-1" onClick={onToggleExpanded}>
@@ -1109,22 +1374,18 @@ const GroupSection = ({
                             style={{ minHeight: "36px" }}
                           >
                             <StatusDropdown
+                              boardId={item.boardId} // har bir item boardId bilan keladi
+                              itemId={item.id} // lead yoki status id
                               value={item[col.key] || ""}
-                              onChange={async (val) => {
+                              onChange={(val) => {
                                 setLocalItems((prev) => {
                                   const copy = [...prev];
-                                  copy[i] = { ...copy[i], [col.key]: val };
+                                  copy[i] = {
+                                    ...copy[i],
+                                    [col.key]: val || null,
+                                  };
                                   return copy;
                                 });
-
-                                try {
-                                  await updateLeads(item.id, { status: val });
-                                } catch (err) {
-                                  console.error(
-                                    "Failed to update status:",
-                                    err
-                                  );
-                                }
                               }}
                               onSave={saveEditCell}
                               onCancel={cancelEditCell}
@@ -1132,28 +1393,34 @@ const GroupSection = ({
                           </div>
                         ) : col.key === "timeline" ? (
                           <DateRangePickerCell
-                            value={item[col.key]}
+                            value={item.timeline || { start: null, end: null }}
                             onChange={(val) => {
+                              const timelineValue = val || {
+                                start: null,
+                                end: null,
+                              };
                               setLocalItems((prev) => {
                                 const copy = [...prev];
                                 copy[i] = {
                                   ...copy[i],
-                                  [col.key]: val,
-                                  timelineStart: val.start,
-                                  timelineEnd: val.end,
+                                  timeline: timelineValue,
+                                  timelineStart: timelineValue.start,
+                                  timelineEnd: timelineValue.end,
                                 };
                                 return copy;
                               });
                             }}
-                            onSave={async () => {
-                              try {
-                                await updateLeads(item.id, {
-                                  timelineStart: localItems[i].timeline.start,
-                                  timelineEnd: localItems[i].timeline.end,
-                                });
-                              } catch (err) {
-                                console.error("Failed to update timeline:", err);
-                              }
+                            onSave={async (val) => {
+                              const group = item.group;
+                              if (!group || !item.id)
+                                return console.error(
+                                  "Group ID yoki Lead ID mavjud emas"
+                                );
+
+                              await updateLeads(group, item.id, {
+                                timelineStart: val.start || null,
+                                timelineEnd: val.end || null,
+                              });
                               saveEditCell();
                             }}
                             onCancel={cancelEditCell}
@@ -1168,11 +1435,22 @@ const GroupSection = ({
                                 return copy;
                               });
                             }}
-                            onSave={async () => {
+                            onSave={async (val) => {
                               try {
-                                await updateLeads(item.id, { last_interaction: localItems[i][col.key] });
+                                const group = item.group; // LinkDropdown bilan bir xil
+                                if (!group || !item.id)
+                                  return console.error(
+                                    "Group ID yoki Lead ID mavjud emas"
+                                  );
+
+                                await updateLeads(group, item.id, {
+                                  last_interaction: val,
+                                });
                               } catch (err) {
-                                console.error("Failed to update last_interaction:", err);
+                                console.error(
+                                  "Failed to update last_interaction:",
+                                  err
+                                );
                               }
                               saveEditCell();
                             }}
@@ -1181,9 +1459,14 @@ const GroupSection = ({
                         ) : col.key === "potential_value" ? (
                           <input
                             type="number"
-                            value={item[col.key] || 0}
+                            value={item[col.key] || ""}
                             onChange={(e) => {
-                              const newVal = parseInt(e.target.value, 10) || 0;
+                              const value = e.target.value;
+                              // Allow empty string for clearing, otherwise parse as integer
+                              const newVal =
+                                value === ""
+                                  ? null
+                                  : parseInt(value, 10) || null;
                               setLocalItems((prev) => {
                                 const copy = [...prev];
                                 copy[i] = { ...copy[i], [col.key]: newVal };
@@ -1192,15 +1475,20 @@ const GroupSection = ({
                             }}
                             onBlur={async () => {
                               try {
-                                await updateLeads(item.id, { potential_value: localItems[i][col.key] });
+                                await updateLeads(item.id, {
+                                  potential_value: localItems[i][col.key],
+                                });
                               } catch (err) {
-                                console.error("Failed to update potential_value:", err);
+                                console.error(
+                                  "Failed to update potential_value:",
+                                  err
+                                );
                               }
                               saveEditCell();
                             }}
                             onFocus={() => startEditCell(i, col.key)}
                             className="w-full text-center focus:outline-none bg-transparent"
-                            placeholder={col.label}
+                            placeholder="Enter value"
                           />
                         ) : col.key === "link" ? (
                           <LinkDropdown
@@ -1208,12 +1496,17 @@ const GroupSection = ({
                             onChange={async (val) => {
                               setLocalItems((prev) => {
                                 const copy = [...prev];
-                                copy[i] = { ...copy[i], [col.key]: val };
+                                copy[i] = {
+                                  ...copy[i],
+                                  [col.key]: val || null,
+                                };
                                 return copy;
                               });
 
                               try {
-                                await updateLeads(item.id, { link: val });
+                                await updateLeads(item.group, item.id, {
+                                  link: val || null,
+                                });
                               } catch (err) {
                                 console.error("Failed to update link:", err);
                               }
@@ -1225,7 +1518,7 @@ const GroupSection = ({
                           <input
                             value={item[col.key] || ""}
                             onChange={(e) => {
-                              const newVal = e.target.value;
+                              const newVal = e.target.value || null;
                               setLocalItems((prev) => {
                                 const copy = [...prev];
                                 copy[i] = { ...copy[i], [col.key]: newVal };
