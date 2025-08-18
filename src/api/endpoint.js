@@ -74,12 +74,12 @@ const endpoints = {
   },
 
   status: {
-    getAll: (boardId) => `board/status/${boardId}`,
-    create: (boardId) => `board/status/${boardId}`,
+    getAll: (boardId) => `board/leads/status/${boardId}`,
+    create: (boardId) => `board/leads/status/${boardId}`,
     getById: (boardId, statusId) =>
-      `board/status/${statusId}/?board=${boardId}`,
-    update: (boardId, statusId) => `board/status/${statusId}/?board=${boardId}`,
-    delete: (boardId, statusId) => `board/status/${statusId}/?board=${boardId}`,
+      `board/leads/status/${statusId}/?board=${boardId}`,
+    update: (boardId, statusId) => `board/leads/status/${statusId}/?board=${boardId}`,
+    delete: (boardId, statusId) => `board/leads/status/${statusId}/?board=${boardId}`,
   },
 
   employees: {
@@ -89,7 +89,7 @@ const endpoints = {
     update: (id) => `users/${id}/`,
     updateStatus: (id) => `users/${id}/`,
     delete: (id) => `users/${id}/`,
-  },
+  },  
 
   activities: {
     getAll: "user-activities/",
