@@ -39,8 +39,8 @@
     "react-resize-detector": "^12.1.0",
     "react-router-dom": "^7.7.0",
     "react-toastify": "^11.0.5",
-
     "recharts": "^3.1.0",
+    "spinner": "^0.3.4",
     "tailwind-scrollbar-hide": "^4.0.0",
     "tailwindcss": "^4.1.11",
     "toast": "^0.5.4",

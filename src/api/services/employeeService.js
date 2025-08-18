@@ -40,6 +40,8 @@ export const createEmployees = async (formData) => {
 };
 
 export const updateEmployees = async (id, data) => {
+    console.log("Yuborilayotgan ma'lumot:", data); // Ma'lumotlarni ko'rish
+    console.log("Endpoint:", endpoints.employees.update(id)); // Endpointni ko'rish
     const res = await api.put(endpoints.employees.update(id), data);
     return res.data;
 };

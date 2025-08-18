@@ -100,7 +100,7 @@ const Activity = () => {
                     {user.active_tasks}
                   </p>
                   <h3 className="text-[#91929E] text-[12px] font-[400]">
-                    In Review
+                    Review
                   </h3>
                 </div>
                 <div className="rounded-2xl p-3 border-[#E3EDFA] border-2 w-[80px] h-[80px]">
