@@ -159,9 +159,9 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                 <h2 className="text-xl sm:text-2xl font-semibold text-[#1F2937] mb-6">
                     Add Employee
                 </h2>
-                <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-[50px]">
+                <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-8">
                     {/* Left Side - Form Fields */}
-                    <div className="flex-1 space-y-[19px] max-w-[464px] w-full">
+                    <div className="flex-1 space-y-4">
                         <div className="flex gap-4">
                             <div className="w-1/2">
                                 <label className="block text-sm font-medium text-gray-700">
@@ -345,10 +345,10 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                     </div>
 
                     {/* Right Side - Avatar and Additional Fields */}
-                    <div className="flex-1 space-y-5 max-w-[320px] w-full">
+                    <div className="flex flex-col space-y-4 max-w-[320px] w-full">
                         {/* Avatar Upload */}
                         <div className="flex flex-col items-center justify-center border border-gray-300 rounded-[24px] p-6 h-[300px]">
-                            <div className="w-[180px] h-[180px] bg-[#DBDBDB] rounded-full overflow-hidden flex justify-center items-center">
+                            <div className="w-[180px] h-[200px] bg-[#DBDBDB] rounded-full overflow-hidden flex justify-center items-center">
                                 {avatar ? (
                                     <img
                                         src={avatar}
@@ -429,13 +429,13 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
 
                         {/* Submit Button */}
                         <div className="pt-6 flex justify-end col-span-2 w-full">
-                            <Button
+                            <button
                                 type="primary"
                                 htmlType="submit"
                                 className="bg-[#0061FE] hover:bg-[#111827] text-white px-[40px] py-[13px] rounded-[14px] shadow-md shadow-blue-300"
                             >
                                 Save Employee
-                            </Button>
+                            </button>
                         </div>
                     </div>
                 </form>

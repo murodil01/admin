@@ -98,6 +98,9 @@ importers:
       recharts:
         specifier: ^3.1.0
         version: 3.1.2(@types/react@19.1.9)(react-dom@19.1.1(react@19.1.1))(react-is@18.3.1)(react@19.1.1)(redux@5.0.1)
+      spinner:
+        specifier: ^0.3.4
+        version: 0.3.4
       tailwind-scrollbar-hide:
         specifier: ^4.0.0
         version: 4.0.0(tailwindcss@4.1.11)
@@ -1091,6 +1094,12 @@ packages:
     resolution: {integrity: sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw==}
     engines: {node: '>=8'}
 
+  async@0.1.15:
+    resolution: {integrity: sha512-AGVE6WcRsWX4QudgrVhdDUKAgCv67EwmzP3yEny/AI7/WqM+J8CStwMbGqeXC9p8ih4qota04EaMim/WvA8OCw==}
+
+  async@0.1.22:
+    resolution: {integrity: sha512-2tEzliJmf5fHNafNwQLJXUasGzQCVctvsNkXmnlELHwypU0p08/rHohYvkqKIjyXpx+0rkrYv6QbhJ+UF4QkBg==}
+
   asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
 
@@ -1193,6 +1202,10 @@ packages:
 
   csstype@3.1.3:
     resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
+
+  ctxobj@0.2.1:
+    resolution: {integrity: sha512-yIL7DlQ6D3zV1ZKSyaDgCo3X1mpVv0sTHr7obMyaqB66OPGBAhlx4ZaSCcIU4FgdjMOnXYPPhNhuON6RLzR3kw==}
+    engines: {node: '>=0.6.6'}
 
   d3-array@3.2.4:
     resolution: {integrity: sha512-tdQAmyA18i4J7wprpYq8ClcxZy3SC31QMeByyCFyRt7BVHdREQZ5lpzoe5mFEYZUWe+oq8HBvk9JjpibyEV4Jg==}
@@ -1482,6 +1495,10 @@ packages:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
+
+  fsmjs@0.2.1:
+    resolution: {integrity: sha512-oEEmd6psgMuw3gpue2rlf39IT0Nc9wmK1WMyqVFJG+pYwQ78fGU4Jwk4+wgQ1W/YWC5ReW8qTHMxZyTc2iFDvg==}
+    engines: {node: '>=0.6.6'}
 
   function-bind@1.1.2:
     resolution: {integrity: sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==}
@@ -1851,6 +1868,10 @@ packages:
   node-releases@2.0.19:
     resolution: {integrity: sha512-xxOWJsBKtzAq7DY0J+DTzuz58K8e7sJbdgwkbMWQe8UYB6ekmsQ45q0M/tJDsGaZmbC+l7n57UV8Hl5tHxO9uw==}
 
+  node-uuid@1.3.3:
+    resolution: {integrity: sha512-xKQtL5imfvX6PvUmgJyU/XaNT/l8tKvs+sJ6KLOmIzk/H8+sm7uE80QlPmmu3l1uirvRL3kZqtJPWoQBWT9gQw==}
+    deprecated: Use uuid module instead
+
   object-assign@4.1.1:
     resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
     engines: {node: '>=0.10.0'}
@@ -1923,6 +1944,10 @@ packages:
   pify@4.0.1:
     resolution: {integrity: sha512-uB80kBFb/tfd68bVleG9T5GGsGPjJrLAUpR5PZIrhBnIaRTQRjqdJSsIKkOP6OAIFbj7GOrcudc5pNjZ+geV2g==}
     engines: {node: '>=6'}
+
+  portscanner@0.1.3:
+    resolution: {integrity: sha512-q2HhsfT8S5TwFYcE4iOBgdcXxtZ23cheSMe8A+OCN4/TXKmk7cqx4Mu4qNpmhdEGBRau0BD46dwi7N7Ok238uA==}
+    engines: {node: '>=0.4', npm: '>=1.0.0'}
 
   postcss@8.5.6:
     resolution: {integrity: sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg==}
@@ -2391,6 +2416,10 @@ packages:
 
   spawndamnit@3.0.1:
     resolution: {integrity: sha512-MmnduQUuHCoFckZoWnXsTg7JaiLBJrKFj9UI2MbRPGaJeVpsLcVBu6P/IGZovziM/YBsellCmsprgNA+w0CzVg==}
+
+  spinner@0.3.4:
+    resolution: {integrity: sha512-Zows0JkJsy5nZvysoKIghnELRvijuyaEo4jV39tDBsADwntEFyHjSm6y0XXst22XXraa5K7HpzitQezicSJuBQ==}
+    engines: {node: '>=0.6.6'}
 
   sprintf-js@1.0.3:
     resolution: {integrity: sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==}
@@ -3577,6 +3606,10 @@ snapshots:
 
   array-union@2.1.0: {}
 
+  async@0.1.15: {}
+
+  async@0.1.22: {}
+
   asynckit@0.4.0: {}
 
   axios@1.11.0:
@@ -3668,6 +3701,8 @@ snapshots:
       which: 2.0.2
 
   csstype@3.1.3: {}
+
+  ctxobj@0.2.1: {}
 
   d3-array@3.2.4:
     dependencies:
@@ -3970,6 +4005,8 @@ snapshots:
   fsevents@2.3.3:
     optional: true
 
+  fsmjs@0.2.1: {}
+
   function-bind@1.1.2: {}
 
   gensync@1.0.0-beta.2: {}
@@ -4262,6 +4299,8 @@ snapshots:
 
   node-releases@2.0.19: {}
 
+  node-uuid@1.3.3: {}
+
   object-assign@4.1.1: {}
 
   optionator@0.9.4:
@@ -4320,6 +4359,10 @@ snapshots:
   picomatch@4.0.3: {}
 
   pify@4.0.1: {}
+
+  portscanner@0.1.3:
+    dependencies:
+      async: 0.1.15
 
   postcss@8.5.6:
     dependencies:
@@ -4900,6 +4943,14 @@ snapshots:
     dependencies:
       cross-spawn: 7.0.6
       signal-exit: 4.1.0
+
+  spinner@0.3.4:
+    dependencies:
+      async: 0.1.22
+      ctxobj: 0.2.1
+      fsmjs: 0.2.1
+      node-uuid: 1.3.3
+      portscanner: 0.1.3
 
   sprintf-js@1.0.3: {}
 
