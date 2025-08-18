@@ -1,58 +1,529 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { FaFile, FaEye, FaDownload } from 'react-icons/fa';
 import { MdMoreVert } from 'react-icons/md';
-import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import { Plus } from 'lucide-react';
+import api from '../../api/base';
 
 const CategoryCard = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [files, setFiles] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(null);
+  const [showModal, setShowModal] = useState(null);
+  const [modalData, setModalData] = useState({ title: '', file: null, item: null });
+  const dropdownRefs = useRef({});
+
+  // Folder ichidagi fayllarni olish
+  const fetchFolderFiles = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await api.get(`/library/folders/${id}/items/`);
+      setFiles(res.data.libraries || []);
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setError("Folder ichidagi fayllarni olishda xatolik yuz berdi.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchFiles = async () => {
-      try {
-        const res = await axios.get(`https://prototype-production-2b67.up.railway.app/library/folders/${id}/`);
-        setFiles(res?.data?.files || []); 
-      } catch (error) {
-        console.error("Fayllarni yuklashda xatolik:", error);
-      } finally {
-        setLoading(false);
+    fetchFolderFiles();
+  }, [id]);
+
+  // Click outside handler for dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showDropdown && dropdownRefs.current[showDropdown]?.current) {
+        if (!dropdownRefs.current[showDropdown].current.contains(event.target)) {
+          setShowDropdown(null);
+        }
       }
     };
 
-    fetchFiles();
-  }, [id]);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showDropdown]);
+
+  const toggleDropdown = (itemId) =>
+    setShowDropdown(showDropdown === itemId ? null : itemId);
+
+  const openModal = (type, item = null) => {
+    setShowModal(type);
+    setShowDropdown(null);
+    setModalData({
+      title: item?.title || '',
+      file: null,
+      item,
+    });
+    setError(null);
+  };
+
+  const closeModal = () => {
+    setShowModal(null);
+    setModalData({ title: '', file: null, item: null });
+    setError(null);
+  };
+
+  // Fayl qo'shish
+  const handleAddFile = async (e) => {
+    e.preventDefault();
+    if (!modalData.file) return setError("Fayl tanlanmadi.");
+    if (!modalData.title.trim()) return setError("Sarlavha bo'sh bo'lishi mumkin emas.");
+    
+    try {
+      setLoading(true);
+      const formData = new FormData();
+      formData.append('title', modalData.title.trim());
+      formData.append('file', modalData.file);
+      formData.append('folder_id', parseInt(id));
+      
+      const response = await api.post('/library/libraries/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      
+      console.log("Add response:", response.data);
+      closeModal();
+      fetchFolderFiles();
+    } catch (err) {
+      console.error("Add file error:", err.response?.data || err.message);
+      setError("Fayl qo'shishda xatolik yuz berdi.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Faylni tahrirlash - har xil usullarni sinash
+  const handleEdit = async (e) => {
+    e.preventDefault();
+    if (!modalData.item) return setError("Tahrirlanadigan fayl topilmadi.");
+    if (!modalData.title.trim()) return setError("Sarlavha bo'sh bo'lishi mumkin emas.");
+
+    try {
+      setLoading(true);
+      
+      console.log("Edit urinishi:", {
+        itemId: modalData.item.id,
+        newTitle: modalData.title.trim(),
+        oldTitle: modalData.item.title,
+      });
+
+      // 1-usul: PATCH faqat title bilan
+      try {
+        const response = await api.patch(`/library/libraries/${modalData.item.id}/`, {
+          title: modalData.title.trim(),
+        });
+        console.log("PATCH muvaffaqiyatli:", response.data);
+        closeModal();
+        fetchFolderFiles();
+        return;
+      } catch (patchErr) {
+        console.log("PATCH ishlamadi, PUT ni sinab ko'ramiz:", patchErr.response?.data);
+      }
+
+      // 2-usul: PUT bilan folder_id ham qo'shib
+      try {
+        const response = await api.put(`/library/libraries/${modalData.item.id}/`, {
+          title: modalData.title.trim(),
+          folder_id: parseInt(id),
+        });
+        console.log("PUT muvaffaqiyatli:", response.data);
+        closeModal();
+        fetchFolderFiles();
+        return;
+      } catch (putErr) {
+        console.log("PUT ham ishlamadi:", putErr.response?.data);
+      }
+
+      // 3-usul: FormData bilan
+      try {
+        const formData = new FormData();
+        formData.append('title', modalData.title.trim());
+        
+        const response = await api.patch(`/library/libraries/${modalData.item.id}/`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        console.log("FormData PATCH muvaffaqiyatli:", response.data);
+        closeModal();
+        fetchFolderFiles();
+        return;
+      } catch (formErr) {
+        console.log("FormData PATCH ham ishlamadi:", formErr.response?.data);
+      }
+
+      // Hech qaysi usul ishlamadi
+      setError("Hech qaysi tahrirlash usuli ishlamadi. Server bilan aloqa qiling.");
+
+    } catch (err) {
+      console.error("Umumiy edit xatolik:", {
+        status: err.response?.status,
+        data: err.response?.data,
+        message: err.message,
+      });
+      
+      let errorMessage = "Faylni tahrirlashda xatolik";
+      if (err.response?.data) {
+        if (typeof err.response.data === 'object') {
+          errorMessage += `: ${JSON.stringify(err.response.data)}`;
+        } else {
+          errorMessage += `: ${err.response.data}`;
+        }
+      }
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Faylni o'chirish
+  const handleDelete = async () => {
+    if (!modalData.item) return setError("O'chiriladigan fayl topilmadi.");
+    try {
+      setLoading(true);
+      await api.delete(`/library/libraries/${modalData.item.id}/`);
+      closeModal();
+      fetchFolderFiles();
+    } catch (err) {
+      console.error("Delete error:", err.response?.data || err.message);
+      setError("Faylni o'chirishda xatolik yuz berdi.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Faylni ko'rish
+  const handleViewFile = (item) => {
+    if (item.file) {
+      window.open(item.file, '_blank');
+    }
+  };
+
+  // Faylni yuklab olish
+  const handleDownloadFile = async (item) => {
+    try {
+      const response = await fetch(item.file);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = item.title || 'file';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error("Download error:", err);
+      setError("Faylni yuklab olishda xatolik yuz berdi.");
+    }
+  };
+
+  const formatDate = (dateString) =>
+    dateString
+      ? new Date(dateString).toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        })
+      : 'N/A';
+
+  const getCreatorName = (created_by) => {
+    if (!created_by) return 'Noma\'lum';
+    const firstName = created_by.first_name || '';
+    const lastName = created_by.last_name || '';
+    return `${firstName} ${lastName}`.trim() || 'Noma\'lum';
+  };
 
   return (
-    <section className="p-4 bg-white rounded-lg shadow">
-      <div className='flex justify-between items-center mb-4'>
-        <h5 className='text-lg font-semibold text-gray-700'>
-          Files in Folder {id}
-        </h5>
-        <button className='bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors'>
-          Add file
+    <main className="max-w-7xl mx-auto py-4 sm:py-6">
+      <div className="flex flex-row items-center justify-between mb-4 gap-3 w-full">
+        <h1 className="text-lg font-bold text-gray-900">Files</h1>
+        <button
+          onClick={() => openModal('add')}
+          className="flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-all"
+        >
+          <Plus className="w-5 h-5 mr-2" /> Add File
         </button>
       </div>
 
-      {loading ? (
-        <p className="text-gray-500">Loading files...</p>
-      ) : files.length === 0 ? (
-        <p className="text-gray-500">No files found.</p>
-      ) : (
-        <div className="space-y-3">
-          {files.map((file) => (
-            <div key={file.id} className="flex justify-between items-center border-b pb-2">
-              <div>
-                <p className="font-medium text-gray-800">{file.name}</p>
-                <p className="text-sm text-gray-500">Created by: {file.created_by}</p>
-              </div>
-              <MdMoreVert className="text-gray-500 cursor-pointer hover:text-gray-700 transition-colors" />
-            </div>
-          ))}
-        </div>
+      {loading && (
+        <div className="text-center py-3 sm:py-4 text-gray-500">Yuklanmoqda...</div>
       )}
-    </section>
+      {error && (
+        <p className="text-red-500 bg-red-50 p-2 sm:p-3 rounded-lg text-center text-sm sm:text-base">
+          {error}
+        </p>
+      )}
+
+      <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-3">
+        {files.length === 0 && !loading && (
+          <p className="text-gray-500 text-center py-3 text-sm sm:text-base">
+            Folderda fayl yo'q.
+          </p>
+        )}
+
+        {files.map((item) => (
+          <div
+            key={item.id}
+            className="p-3 sm:p-4 bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all"
+          >
+            <div className="grid grid-cols-12 gap-3 items-center">
+              {/* File Icon and Name */}
+              <div className="col-span-12 sm:col-span-4 flex items-center gap-3">
+                <div className="p-2 sm:p-3 bg-blue-50 rounded-lg flex-shrink-0">
+                  <FaFile className="text-blue-600 w-4 h-4 sm:w-5 sm:h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold text-gray-900 text-sm sm:text-base truncate">
+                    {item.title || 'Nomsiz'}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-1">
+                    <button
+                      onClick={() => handleViewFile(item)}
+                      className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs"
+                      title="Faylni ko'rish"
+                    >
+                      <FaEye className="w-3 h-3" />
+                      Ko'rish
+                    </button>
+                    <button
+                      onClick={() => handleDownloadFile(item)}
+                      className="flex items-center gap-1 text-green-600 hover:text-green-800 text-xs"
+                      title="Faylni yuklab olish"
+                    >
+                      <FaDownload className="w-3 h-3" />
+                      Yuklab olish
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Creator */}
+              <div className="col-span-12 sm:col-span-3">
+                <p className="text-sm text-gray-600 font-medium">
+                  {getCreatorName(item.created_by)}
+                </p>
+                <p className="text-xs text-gray-400">Yaratgan</p>
+              </div>
+
+              {/* File Size and Date */}
+              <div className="col-span-10 sm:col-span-4 flex items-center gap-2 flex-wrap">
+                {item.file_size_mb != null && (
+                  <div className="bg-blue-50 rounded px-2 py-1">
+                    <p className="text-xs font-semibold text-blue-900">
+                      {item.file_size_mb > 1000
+                        ? `${(item.file_size_mb / 1000).toFixed(1)} GB`
+                        : `${item.file_size_mb} MB`}
+                    </p>
+                  </div>
+                )}
+                <div className="bg-purple-50 rounded px-2 py-1">
+                  <p className="text-xs font-semibold text-purple-900">
+                    {formatDate(item.created_at)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="col-span-2 sm:col-span-1 flex justify-end">
+                <div
+                  className="relative"
+                  ref={(ref) => (dropdownRefs.current[item.id] = { current: ref })}
+                >
+                  <MdMoreVert
+                    className="w-6 h-6 text-gray-500 cursor-pointer hover:bg-gray-100 rounded-full p-1 transition-all"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleDropdown(item.id);
+                    }}
+                  />
+                  {showDropdown === item.id && (
+                    <div className="absolute right-0 top-7 bg-white shadow-lg rounded-lg py-1 flex flex-col z-[1000] w-28 border border-gray-200">
+                      <button
+                        className="text-blue-600 hover:bg-blue-50 px-3 py-2 text-sm font-medium text-left transition-colors"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          openModal('edit', item);
+                        }}
+                      >
+                        Tahrirlash
+                      </button>
+                      <button
+                        className="text-red-600 hover:bg-red-50 px-3 py-2 text-sm font-medium text-left transition-colors"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          openModal('delete', item);
+                        }}
+                      >
+                        O'chirish
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Add Modal */}
+      {showModal === 'add' && (
+        <Modal title="Fayl Yuklash" onClose={closeModal}>
+          <form onSubmit={handleAddFile} className="p-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Fayl Sarlavhasi
+            </label>
+            <input
+              type="text"
+              value={modalData.title}
+              onChange={(e) =>
+                setModalData({ ...modalData, title: e.target.value })
+              }
+              placeholder="Fayl sarlavhasini kiriting..."
+              className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none mb-3"
+              autoFocus
+              required
+            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Fayl Tanlang
+            </label>
+            <input
+              type="file"
+              onChange={(e) =>
+                setModalData({ ...modalData, file: e.target.files[0] })
+              }
+              className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none mb-3"
+              required
+            />
+            {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+              >
+                Bekor qilish
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
+                disabled={loading}
+              >
+                {loading ? 'Saqlanmoqda...' : 'Saqlash'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Edit Modal */}
+      {showModal === 'edit' && modalData.item && (
+        <Modal title="Faylni Tahrirlash" onClose={closeModal}>
+          <form onSubmit={handleEdit} className="p-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Fayl Sarlavhasi
+            </label>
+            <input
+              type="text"
+              value={modalData.title}
+              onChange={(e) =>
+                setModalData({ ...modalData, title: e.target.value })
+              }
+              className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none mb-3"
+              autoFocus
+              required
+            />
+            <div className="bg-gray-50 p-3 rounded-lg mb-3">
+              <p className="text-sm text-gray-600">
+                <strong>Joriy fayl:</strong> {modalData.item.title}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Faqat sarlavhani o'zgartirishingiz mumkin. Fayl almashtirish uchun yangi fayl qo'shing.
+              </p>
+            </div>
+            {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+              >
+                Bekor qilish
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
+                disabled={loading}
+              >
+                {loading ? 'Saqlanmoqda...' : 'Saqlash'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Delete Modal */}
+      {showModal === 'delete' && modalData.item && (
+        <Modal title="Faylni O'chirish" onClose={closeModal}>
+          <div className="p-4">
+            <p className="text-sm text-gray-600 mb-4">
+              "{modalData.item.title}" faylini o'chirishni xohlaysizmi? Bu amalni
+              bekor qilib bo'lmaydi.
+            </p>
+            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+              >
+                Bekor qilish
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="px-4 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition"
+                disabled={loading}
+              >
+                {loading ? "O'chirilmoqda..." : "O'chirish"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </main>
   );
 };
 
+// Modal component
+const Modal = ({ title, children, onClose }) => (
+  <div
+    className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4"
+    onClick={(e) => e.target === e.currentTarget && onClose()}
+  >
+    <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto max-h-[90vh] overflow-y-auto">
+      <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-white z-10">
+        <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+        <button
+          onClick={onClose}
+          className="text-gray-400 hover:text-gray-600 rounded-full p-1 transition-colors text-xl"
+        >
+          ✕
+        </button>
+      </div>
+      {children}
+    </div>
+  </div>
+);
+
 export default CategoryCard;
+
+
