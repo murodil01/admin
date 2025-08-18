@@ -15,6 +15,25 @@ const CategoryCard = () => {
   const [showModal, setShowModal] = useState(null);
   const [modalData, setModalData] = useState({ title: '', file: null, item: null });
   const dropdownRefs = useRef({});
+  const [folder, setFolder] = useState(null);
+
+  // Folder ma'lumotlarini olish
+  const fetchFolderDetails = async () => {
+    try {
+      setLoading(true);
+      const res = await api.get(`/library/folders/${id}/`);
+      setFolder(res.data); // API dan kelgan folder ma'lumotini saqlaymiz
+    } catch (err) {
+      setError("Folder ma'lumotini olishda xatolik yuz berdi.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFolderDetails();
+  }, [id]);
+
 
   // Folder ichidagi fayllarni olish
   const fetchFolderFiles = async () => {
@@ -74,18 +93,18 @@ const CategoryCard = () => {
     e.preventDefault();
     if (!modalData.file) return setError("Fayl tanlanmadi.");
     if (!modalData.title.trim()) return setError("Sarlavha bo'sh bo'lishi mumkin emas.");
-    
+
     try {
       setLoading(true);
       const formData = new FormData();
       formData.append('title', modalData.title.trim());
       formData.append('file', modalData.file);
       formData.append('folder_id', parseInt(id));
-      
+
       const response = await api.post('/library/libraries/', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      
+
       console.log("Add response:", response.data);
       closeModal();
       fetchFolderFiles();
@@ -105,7 +124,7 @@ const CategoryCard = () => {
 
     try {
       setLoading(true);
-      
+
       console.log("Edit urinishi:", {
         itemId: modalData.item.id,
         newTitle: modalData.title.trim(),
@@ -143,7 +162,7 @@ const CategoryCard = () => {
       try {
         const formData = new FormData();
         formData.append('title', modalData.title.trim());
-        
+
         const response = await api.patch(`/library/libraries/${modalData.item.id}/`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
@@ -166,7 +185,7 @@ const CategoryCard = () => {
         data: err.response?.data,
         message: err.message,
       });
-      
+
       let errorMessage = "Faylni tahrirlashda xatolik";
       if (err.response?.data) {
         if (typeof err.response.data === 'object') {
@@ -226,10 +245,10 @@ const CategoryCard = () => {
   const formatDate = (dateString) =>
     dateString
       ? new Date(dateString).toLocaleDateString('en-GB', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-        })
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      })
       : 'N/A';
 
   const getCreatorName = (created_by) => {
@@ -241,13 +260,16 @@ const CategoryCard = () => {
 
   return (
     <main className="max-w-7xl mx-auto py-4 sm:py-6">
-      <div className="flex flex-row items-center justify-between mb-4 gap-3 w-full">
-        <h1 className="text-lg font-bold text-gray-900">Files</h1>
+      <div className="flex flex-row items-center justify-between mb-4 gap-1 sm:gap- w-full">
+        <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate">
+          {folder?.name || "Folder nomi"}
+        </h1>
         <button
           onClick={() => openModal('add')}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-all"
+          className="flex items-center px-11 sm:px-11 py-2 sm:py-3 bg-blue-600 text-white text-xs sm:text-sm font-semibold rounded-lg hover:bg-blue-700 transition-all whitespace-nowrap"
         >
-          <Plus className="w-5 h-5 mr-2" /> Add File
+          <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+          Add File
         </button>
       </div>
 
@@ -270,22 +292,22 @@ const CategoryCard = () => {
         {files.map((item) => (
           <div
             key={item.id}
-            className="p-3 sm:p-4 bg-white rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all"
+            className="p-4 bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg hover:border-blue-200 transition-all duration-200"
           >
-            <div className="grid grid-cols-12 gap-3 items-center">
-              {/* File Icon and Name */}
+            <div className="grid grid-cols-12 gap-6 items-center">
+              {/* File Icon and Name - Col 1 */}
               <div className="col-span-12 sm:col-span-4 flex items-center gap-3">
-                <div className="p-2 sm:p-3 bg-blue-50 rounded-lg flex-shrink-0">
-                  <FaFile className="text-blue-600 w-4 h-4 sm:w-5 sm:h-5" />
+                <div className="p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl flex-shrink-0 shadow-sm">
+                  <FaFile className="text-blue-600 w-8 h-8" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-bold text-gray-900 text-sm sm:text-base truncate">
+                  <h3 className="font-semibold text-gray-900 text-base truncate mb-2">
                     {item.title || 'Nomsiz'}
                   </h3>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-3">
                     <button
                       onClick={() => handleViewFile(item)}
-                      className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-xs"
+                      className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2 py-1 rounded-md text-xs font-medium transition-all"
                       title="Faylni ko'rish"
                     >
                       <FaEye className="w-3 h-3" />
@@ -293,7 +315,7 @@ const CategoryCard = () => {
                     </button>
                     <button
                       onClick={() => handleDownloadFile(item)}
-                      className="flex items-center gap-1 text-green-600 hover:text-green-800 text-xs"
+                      className="flex items-center gap-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 px-2 py-1 rounded-md text-xs font-medium transition-all"
                       title="Faylni yuklab olish"
                     >
                       <FaDownload className="w-3 h-3" />
@@ -303,70 +325,83 @@ const CategoryCard = () => {
                 </div>
               </div>
 
-              {/* Creator */}
-              <div className="col-span-12 sm:col-span-3">
-                <p className="text-sm text-gray-600 font-medium">
-                  {getCreatorName(item.created_by)}
-                </p>
-                <p className="text-xs text-gray-400">Yaratgan</p>
+              {/* Creator - Col 2 */}
+              <div className="col-span-12 sm:col-span-3 flex  sm:flex-row sm:items-center gap-1 sm:gap-2">
+                <span className="text-xs text-gray-400 font-medium">Created by:</span>
+                <p className="text-sm text-gray-700 font-semibold truncate">{getCreatorName(item.created_by)}</p>
               </div>
-
-              {/* File Size and Date */}
-              <div className="col-span-10 sm:col-span-4 flex items-center gap-2 flex-wrap">
-                {item.file_size_mb != null && (
-                  <div className="bg-blue-50 rounded px-2 py-1">
-                    <p className="text-xs font-semibold text-blue-900">
-                      {item.file_size_mb > 1000
-                        ? `${(item.file_size_mb / 1000).toFixed(1)} GB`
-                        : `${item.file_size_mb} MB`}
-                    </p>
+              {/* File Size and Date - Col 3 */}
+              <div className="col-span-10 sm:col-span-4">
+                <div className="flex flex-col justify-center h-full">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {item.file_size_mb != null && (
+                      <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg px-2.5 py-1.5 shadow-sm border border-blue-200">
+                        <p className="text-xs font-bold text-blue-800">
+                          {item.file_size_mb > 1000
+                            ? `${(item.file_size_mb / 1000).toFixed(1)} GB`
+                            : `${item.file_size_mb} MB`}
+                        </p>
+                      </div>
+                    )}
+                    <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg px-2.5 py-1.5 shadow-sm border border-purple-200">
+                      <p className="text-xs font-bold text-purple-800">
+                        {formatDate(item.created_at)}
+                      </p>
+                    </div>
                   </div>
-                )}
-                <div className="bg-purple-50 rounded px-2 py-1">
-                  <p className="text-xs font-semibold text-purple-900">
-                    {formatDate(item.created_at)}
-                  </p>
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="col-span-2 sm:col-span-1 flex justify-end">
-                <div
-                  className="relative"
-                  ref={(ref) => (dropdownRefs.current[item.id] = { current: ref })}
-                >
-                  <MdMoreVert
-                    className="w-6 h-6 text-gray-500 cursor-pointer hover:bg-gray-100 rounded-full p-1 transition-all"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toggleDropdown(item.id);
-                    }}
-                  />
-                  {showDropdown === item.id && (
-                    <div className="absolute right-0 top-7 bg-white shadow-lg rounded-lg py-1 flex flex-col z-[1000] w-28 border border-gray-200">
-                      <button
-                        className="text-blue-600 hover:bg-blue-50 px-3 py-2 text-sm font-medium text-left transition-colors"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          openModal('edit', item);
-                        }}
-                      >
-                        Tahrirlash
-                      </button>
-                      <button
-                        className="text-red-600 hover:bg-red-50 px-3 py-2 text-sm font-medium text-left transition-colors"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          openModal('delete', item);
-                        }}
-                      >
-                        O'chirish
-                      </button>
-                    </div>
-                  )}
+              {/* Actions - Col 4 */}
+              <div className="col-span-2 sm:col-span-1">
+                <div className="flex justify-end">
+                  <div
+                    className="relative"
+                    ref={(ref) => (dropdownRefs.current[item.id] = { current: ref })}
+                  >
+                    <button
+                      className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleDropdown(item.id);
+                      }}
+                      title="Harakatlar"
+                    >
+                      <MdMoreVert className="w-5 h-5" />
+                    </button>
+                    {showDropdown === item.id && (
+                      <div className="absolute right-0 top-9 bg-white shadow-xl rounded-xl py-2 flex flex-col z-[1000] w-32 border border-gray-200 overflow-hidden">
+                        <button
+                          className="text-blue-600 hover:bg-blue-50 hover:text-blue-700 px-4 py-2.5 text-sm font-medium text-left transition-all duration-200 flex items-center gap-2"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openModal('edit', item);
+                          }}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          Edit
+                        </button>
+                        <div className="h-px bg-gray-100 mx-2"></div>
+                        <button
+                          className="text-red-600 hover:bg-red-50 hover:text-red-700 px-4 py-2.5 text-sm font-medium text-left transition-all duration-200 flex items-center gap-2"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openModal('delete', item);
+                          }}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -525,5 +560,3 @@ const Modal = ({ title, children, onClose }) => (
 );
 
 export default CategoryCard;
-
-
