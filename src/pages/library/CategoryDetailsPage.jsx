@@ -210,10 +210,10 @@ const CategoryDetailsPage = () => {
   const formatDate = (dateString) =>
     dateString
       ? new Date(dateString).toLocaleDateString('en-GB', {
-          day: '2-digit',
-          month: 'short',
-          year: 'numeric',
-        })
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      })
       : 'N/A';
 
   const getCreatorName = (created_by) => {
@@ -284,26 +284,29 @@ const CategoryDetailsPage = () => {
         <h1 className="text-base sm:text-lg md:text-xl font-bold text-gray-900">
           {category?.name || 'M Library'}
         </h1>
-        <div className="flex flex-row items-center w-full sm:w-auto gap-2">
+
+        <div className="flex flex-row items-center w-full sm:w-auto">
+          {/* Add Folder Button */}
           <button
             onClick={() => openModal('addFolder')}
-            className="p-2 sm:p-3 text-gray-800 hover:text-gray-600 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-all"
+            className="p-3 sm:p-4 text-gray-800 hover:text-gray-600 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-all"
             disabled={loading}
             aria-label="Add folder"
           >
-            <MdCreateNewFolder className="w-8 h-8 sm:w-10 sm:h-10" />
+            <MdCreateNewFolder className="w-10 h-10 sm:w-14 sm:h-14" />
           </button>
+
+          {/* Add File Button */}
           <button
             onClick={() => openModal('addFile')}
-            className="flex items-center justify-center sm:justify-start px-4 py-2 sm:px-6 sm:py-3 bg-blue-600 text-white text-xs sm:text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all w-full sm:w-auto"
+            className="flex items-center justify-center px-6 py-3 sm:px-8 sm:py-3.5 bg-blue-600 text-white text-sm sm:text-base font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all w-[70%] sm:w-[170px]"
             disabled={loading}
           >
-            <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+            <Plus className="w-5 h-5 mr-2" />
             <span>Add File</span>
           </button>
         </div>
       </div>
-
       {loading && <div className="text-center py-3 sm:py-4 text-gray-500">Loading...</div>}
       {error && !showModal && (
         <p className="text-red-500 bg-red-50 p-2 sm:p-3 rounded-lg text-center text-sm sm:text-base">{error}</p>
@@ -438,33 +441,33 @@ const CategoryDetailsPage = () => {
                 </div>
 
                 {/* File Size, Date, and File Count */}
-               <div className="col-span-6 sm:col-span-3 lg:col-span-3">
-                <div className="flex items-center gap-2 flex-wrap justify-end sm:justify-start">
-                  {item.file_size_mb != null && (
-                    <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg px-2 py-1 shadow-sm">
-                      <p className="text-xs font-semibold text-blue-800 whitespace-nowrap">
-                        {(() => {
-                          const sizeInMb = item.file_size_mb;
-                          if (sizeInMb > 1) {
-                            return sizeInMb > 1000
-                              ? `${(sizeInMb / 1000).toFixed(1)} GB`
-                              : `${sizeInMb.toFixed(1)} MB`;
-                          } else if (sizeInMb > 0.001) {
-                            return `${(sizeInMb * 1000).toFixed(1)} KB`;
-                          } else {
-                            return `${(sizeInMb * 1000 * 1000).toFixed(0)} B`;
-                          }
-                        })()}
+                <div className="col-span-6 sm:col-span-3 lg:col-span-3">
+                  <div className="flex items-center gap-2 flex-wrap justify-end sm:justify-start">
+                    {item.file_size_mb != null && (
+                      <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg px-2 py-1 shadow-sm">
+                        <p className="text-xs font-semibold text-blue-800 whitespace-nowrap">
+                          {(() => {
+                            const sizeInMb = item.file_size_mb;
+                            if (sizeInMb > 1) {
+                              return sizeInMb > 1000
+                                ? `${(sizeInMb / 1000).toFixed(1)} GB`
+                                : `${sizeInMb.toFixed(1)} MB`;
+                            } else if (sizeInMb > 0.001) {
+                              return `${(sizeInMb * 1000).toFixed(1)} KB`;
+                            } else {
+                              return `${(sizeInMb * 1000 * 1000).toFixed(0)} B`;
+                            }
+                          })()}
+                        </p>
+                      </div>
+                    )}
+                    <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg px-2 py-1 shadow-sm">
+                      <p className="text-xs font-semibold text-purple-800 whitespace-nowrap">
+                        {formatDate(item.created_at)}
                       </p>
                     </div>
-                  )}
-                  <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg px-2 py-1 shadow-sm">
-                    <p className="text-xs font-semibold text-purple-800 whitespace-nowrap">
-                      {formatDate(item.created_at)}
-                    </p>
                   </div>
                 </div>
-              </div>
 
                 {/* Actions Dropdown */}
                 <div className="col-span-12 sm:col-span-12 lg:col-span-2 flex justify-end">
