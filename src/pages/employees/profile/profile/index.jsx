@@ -82,10 +82,10 @@ const Profiles = () => {
         response = await updateControlData(formData.id, formData);
         message.success("Ma'lumotlar yangilandi");
 
-        // 2. Rasmni alohida yuklash
+        // Agar rasm yangilangan bo'lsa
         if (formData.passport_picture instanceof File) {
           await uploadControlDataFile(response.id, formData.passport_picture);
-          message.success("Passport rasmi saqlandi");
+          message.success("Passport rasmi yangilandi");
 
           // Fayl ro'yxatini yangilash
           setFileList([{
@@ -96,25 +96,25 @@ const Profiles = () => {
           }]);
         }
       } else {
-        // Yangi yozuvni FAQAT shu user uchun yaratish
-        const createResponse = await createControlDataForUser(employeeId, formData);
-        response = createResponse;
+        // Yangi yozuv yaratish
+        response = await createControlDataForUser(employeeId, formData);
 
-        if (formData.passport_picture instanceof File) {
-          await uploadControlDataFile(createResponse.id, formData.passport_picture);
-        }
+        // Yangi yaratilgan yozuv ID sini saqlash
         setFormData(prev => ({ ...prev, id: response.id }));
+
+        // Agar rasm mavjud bo'lsa
+        if (formData.passport_picture instanceof File) {
+          await uploadControlDataFile(response.id, formData.passport_picture);
+          message.success("Passport rasmi saqlandi");
+        }
+
         message.success("Yangi yozuv yaratildi");
+        setIsNewRecord(false);
       }
 
       setIsEditing(false);
-      setIsNewRecord(false);
-
     } catch (error) {
-      console.error('Saqlashda xato:', {
-        employeeId,
-        error: error.response?.data || error
-      });
+      console.error('Saqlashda xato:', error);
       message.error(error.response?.data?.message || "Saqlash muvaffaqiyatsiz tugadi");
     } finally {
       setLoading(false);
@@ -125,10 +125,20 @@ const Profiles = () => {
     const fetchData = async () => {
       const initEmptyForm = () => {
         setFormData({
-          employee: employeeId,
           user_id: employeeId,
-          pinfl: "", // Boshlang'ich qiymat
-          passport_picture: null
+          accept_reason: '',
+          expertise_level: '',
+          strengths: '',
+          weaknesses: '',
+          biography: '',
+          trial_period: '',
+          work_hours: '',
+          contact_type: '',
+          assigned_devices: '',
+          access_level: '',
+          serial_number: '',
+          pinfl: '',
+          passport_picture: null,
         });
         setIsNewRecord(true);
         setFileList([]);
@@ -138,23 +148,28 @@ const Profiles = () => {
         setLoading(true);
         const response = await getControlDataByUserId(employeeId);
 
-        if (Array.isArray(response) && response.length > 0) {
-
-          // To'g'ri foydalanuvchi ma'lumotlarini qidirish
-          const employeeData = response.find(item => {
-            if (!item.user_info || typeof item.user_info !== 'object') {
-              console.warn('Invalid user_info structure:', item);
-              return false;
-            }
-            return item.user_info.id === employeeId;
-          });
+        if (response && response.length > 0) {
+          const employeeData = response.find(item =>
+            item?.user_info?.id === employeeId || item?.user_id === employeeId
+          );
 
           if (employeeData) {
             setFormData({
-              ...employeeData,
               id: employeeData.id,
-              employee: employeeData.user_info.id,
-              pinfl: employeeData.printl ? String(employeeData.printl) : "" // API dagi printl -> UI dagi pinfl
+              user_id: employeeData.user_info.id,
+              accept_reason: employeeData.accept_reason,
+              expertise_level: employeeData.expertise_level,
+              strengths: employeeData.strengths,
+              weaknesses: employeeData.weaknesses,
+              biography: employeeData.biography,
+              trial_period: employeeData.trial_period,
+              work_hours: employeeData.work_hours,
+              contact_type: employeeData.contact_type,
+              assigned_devices: employeeData.assigned_devices,
+              access_level: employeeData.access_level,
+              serial_number: employeeData.serial_number,
+              pinfl: employeeData.pinfl ? String(employeeData.pinfl) : null,
+              passport_picture: employeeData.passport_picture || null,
             });
             setIsNewRecord(false);
 
@@ -163,12 +178,8 @@ const Profiles = () => {
                 uid: '-1',
                 name: 'passport.jpg',
                 status: 'done',
-                url: employeeData.passport_picture, // URL string keladi
+                url: employeeData.passport_picture,
               }]);
-              setFormData(prev => ({
-                ...prev,
-                passport_picture: employeeData.passport_picture // URL ni saqlab qo'yamiz
-              }));
             }
           } else {
             initEmptyForm();

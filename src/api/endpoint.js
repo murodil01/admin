@@ -24,8 +24,6 @@ const endpoints = {
     getTaskFiles: 'project/files/',
     deleteTaskFile: id => `project/files/${id}/`,
     getComments: "project/comments/",
-
-
     getTaskFilesByTask: (taskId) => `project/task-files/${taskId}`, 
     getTaskInstructionsByTask: (taskId) => `project/task-instructions/${taskId}`, 
     getTaskCommentsByTask: (taskId) => `project/task-comments/${taskId}`, 
@@ -114,7 +112,7 @@ const endpoints = {
   controlData: {
     getByUserId: (userId) => `control-data/?user_id=${userId}/`,
     createForUser: (userId) => `control-data/?user_id=${userId}/`, // Faqat o'sha user uchun yaratish
-    update: (userId) => `control-data/?user_id=${userId}/`,
+    update: (userId, id) => `control-data/?user_id=${userId}/${id}/`,
   },
 
   userProjects: {
