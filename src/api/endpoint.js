@@ -8,9 +8,11 @@ const endpoints = {
 
   users: {
     getAll: "users/",
+    me: "users/get_user/",
     getById: (id) => `users/${id}/`,
     update: (id) => `users/${id}/`,
     delete: (id) => `users/${id}/`,
+    updateProfile: (id) => `users/${id}/update_profile/`,
   },
 
   tasks: {
@@ -24,10 +26,9 @@ const endpoints = {
     getTaskFiles: 'project/files/',
     deleteTaskFile: id => `project/files/${id}/`,
     getComments: "project/comments/",
-    getTaskFilesByTask: (taskId) => `project/task-files/${taskId}`, 
-    getTaskInstructionsByTask: (taskId) => `project/task-instructions/${taskId}`, 
-    getTaskCommentsByTask: (taskId) => `project/task-comments/${taskId}`, 
-    
+    getTaskFilesByTask: (taskId) => `project/task-files/${taskId}`,
+    getTaskInstructionsByTask: (taskId) => `project/task-instructions/${taskId}`,
+    getTaskCommentsByTask: (taskId) => `project/task-comments/${taskId}`,
     // Instructions endpoint larini to'g'irlang
     getTaskInstructions: 'project/instructions/',
     createTaskInstructions: 'project/instructions/',
@@ -78,7 +79,7 @@ const endpoints = {
     delete: (groupId, leadId) => `board/leads/${leadId}/?group=${groupId}`,
   },
 
-  status:{ 
+  status:{
 
     getAllstatus: (boardId) => `board/status/${boardId}`,
     create: (boardId) => `board/status/${boardId}`,
@@ -86,9 +87,9 @@ const endpoints = {
       `board/leads/status/${statusId}/?board=${boardId}`,
 
     getAll: (boardId) => `board/status/${boardId}`,
-    create: (boardId) => `board/status/${boardId}`,
-    getById: (boardId, statusId) =>
-      `board/status/${statusId}/?board=${boardId}`,
+    // create: (boardId) => `board/status/${boardId}`,
+    // getById: (boardId, statusId) =>
+    //   `board/status/${statusId}/?board=${boardId}`,
 
     update: (boardId, statusId) => `board/status/${statusId}/?board=${boardId}`,
     delete: (boardId, statusId) => `board/status/${statusId}/?board=${boardId}`,
@@ -101,7 +102,7 @@ const endpoints = {
     update: (id) => `users/${id}/`,
     updateStatus: (id) => `users/${id}/`,
     delete: (id) => `users/${id}/`,
-  },  
+  },
 
   activities: {
     getAll: "user-activities/",
