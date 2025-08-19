@@ -30,7 +30,7 @@ const Login = () => {
       toast.success("Successful login!");
       navigate("/");
     } catch {
-      toast.error("Login or Password error", {
+      toast.error("Login or Password is not correct!", {
         duration: 7000, // 20 soniya
         position: "top-center",
       });
