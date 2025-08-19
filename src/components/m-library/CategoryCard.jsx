@@ -215,7 +215,7 @@ const CategoryCard = () => {
         <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate">
           {folder?.name || 'Folder name'}
         </h1>
-        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
           <button
             onClick={() => openModal('add')}
             className="flex items-center px-11 sm:px-11 py-2 sm:py-3 bg-blue-600 text-white text-xs sm:text-sm font-semibold rounded-lg hover:bg-blue-700 transition-all whitespace-nowrap"
@@ -225,7 +225,7 @@ const CategoryCard = () => {
           </button>
         </Permission>
       </div>
-      
+
       {loading && <div className="text-center py-3 sm:py-4 text-gray-500">Loading...</div>}
       {error && (
         <p className="text-red-500 bg-red-50 p-2 sm:p-3 rounded-lg text-center text-sm sm:text-base">
@@ -318,48 +318,52 @@ const CategoryCard = () => {
                 </div>
               </div>
 
-              {/* Actions Dropdown */}
-              <div className="col-span-12 sm:col-span-12 lg:col-span-2 flex justify-end">
-                <div className="relative" ref={(ref) => (dropdownRefs.current[item.id] = { current: ref })}>
-                  <button
-                    className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toggleDropdown(item.id);
-                    }}
-                  >
-                    <MdMoreVert className="w-5 h-5" />
-                  </button>
 
-                  {showDropdown === item.id && (
-                    <div className="absolute right-0 top-9 bg-white shadow-lg rounded-lg py-1 flex flex-col z-50 w-36 border border-gray-200">
-                      <button
-                        className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          openModal('edit', item);
-                        }}
-                      >
-                        <FiEdit2 className="w-4 h-4" />
-                        Edit
-                      </button>
-                      <button
-                        className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 flex items-center gap-2"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          openModal('delete', item);
-                        }}
-                      >
-                        <FiTrash2 className="w-4 h-4" />
-                        Delete
-                      </button>
-                    </div>
-                  )}
+              {/* Actions Dropdown */}
+              <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+                <div className="col-span-12 sm:col-span-12 lg:col-span-2 flex justify-end">
+                  <div className="relative" ref={(ref) => (dropdownRefs.current[item.id] = { current: ref })}>
+                    <button
+                      className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleDropdown(item.id);
+                      }}
+                    >
+                      <MdMoreVert className="w-5 h-5" />
+                    </button>
+
+                    {showDropdown === item.id && (
+                      <div className="absolute right-0 top-9 bg-white shadow-lg rounded-lg py-1 flex flex-col z-50 w-36 border border-gray-200">
+                        <button
+                          className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openModal('edit', item);
+                          }}
+                        >
+                          <FiEdit2 className="w-4 h-4" />
+                          Edit
+                        </button>
+                        <button
+                          className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 flex items-center gap-2"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openModal('delete', item);
+                          }}
+                        >
+                          <FiTrash2 className="w-4 h-4" />
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </Permission>
+
             </div>
           </div>
         ))}
