@@ -36,18 +36,16 @@ export const updateMyProfile = async (data) => {
 
         let res;
         const allowedFields = [
-            "username",
-            "email",
             "first_name",
             "last_name",
+            "email",
             "phone_number",
             "birth_date",
-            "gender",
-            "profile_picture",
-            "password",
-            "password1",
             "address",
             "tg_username",
+            "password",
+            "password1",
+            "profile_picture",
         ];
 
         if (data.profile_picture instanceof File) {
