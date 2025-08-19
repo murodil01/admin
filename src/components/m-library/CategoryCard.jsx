@@ -5,6 +5,9 @@ import { MdMoreVert } from 'react-icons/md';
 import { FiEdit2, FiTrash2 } from 'react-icons/fi'; // Added missing imports
 import { Plus } from 'lucide-react';
 import api from '../../api/base';
+import { Permission } from "../../components/Permissions";
+import { useAuth } from "../../hooks/useAuth";
+import { ROLES } from "../../components/constants/roles";
 
 const CategoryCard = () => {
   const { id } = useParams();
@@ -17,6 +20,12 @@ const CategoryCard = () => {
   const [modalData, setModalData] = useState({ title: '', file: null, item: null });
   const dropdownRefs = useRef({});
   const [folder, setFolder] = useState(null);
+
+  const { user, loading: authLoading } = useAuth();
+  const [dataLoading, setDataLoading] = useState(true);
+  // Yuklash holatini birlashtirish
+  const isLoading = authLoading || dataLoading;
+
 
   // Fetch folder details
   const fetchFolderDetails = async () => {
@@ -206,13 +215,15 @@ const CategoryCard = () => {
         <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate">
           {folder?.name || 'Folder name'}
         </h1>
-        <button
-          onClick={() => openModal('add')}
-          className="flex items-center px-11 sm:px-11 py-2 sm:py-3 bg-blue-600 text-white text-xs sm:text-sm font-semibold rounded-lg hover:bg-blue-700 transition-all whitespace-nowrap"
-        >
-          <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
-          Add File
-        </button>
+        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+          <button
+            onClick={() => openModal('add')}
+            className="flex items-center px-11 sm:px-11 py-2 sm:py-3 bg-blue-600 text-white text-xs sm:text-sm font-semibold rounded-lg hover:bg-blue-700 transition-all whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+            Add File
+          </button>
+        </Permission>
       </div>
 
       {loading && <div className="text-center py-3 sm:py-4 text-gray-500">Loading...</div>}
@@ -307,48 +318,52 @@ const CategoryCard = () => {
                 </div>
               </div>
 
-              {/* Actions Dropdown */}
-              <div className="col-span-12 sm:col-span-12 lg:col-span-2 flex justify-end">
-                <div className="relative" ref={(ref) => (dropdownRefs.current[item.id] = { current: ref })}>
-                  <button
-                    className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toggleDropdown(item.id);
-                    }}
-                  >
-                    <MdMoreVert className="w-5 h-5" />
-                  </button>
 
-                  {showDropdown === item.id && (
-                    <div className="absolute right-0 top-9 bg-white shadow-lg rounded-lg py-1 flex flex-col z-50 w-36 border border-gray-200">
-                      <button
-                        className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          openModal('edit', item);
-                        }}
-                      >
-                        <FiEdit2 className="w-4 h-4" />
-                        Edit
-                      </button>
-                      <button
-                        className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 flex items-center gap-2"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          openModal('delete', item);
-                        }}
-                      >
-                        <FiTrash2 className="w-4 h-4" />
-                        Delete
-                      </button>
-                    </div>
-                  )}
+              {/* Actions Dropdown */}
+              <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+                <div className="col-span-12 sm:col-span-12 lg:col-span-2 flex justify-end">
+                  <div className="relative" ref={(ref) => (dropdownRefs.current[item.id] = { current: ref })}>
+                    <button
+                      className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleDropdown(item.id);
+                      }}
+                    >
+                      <MdMoreVert className="w-5 h-5" />
+                    </button>
+
+                    {showDropdown === item.id && (
+                      <div className="absolute right-0 top-9 bg-white shadow-lg rounded-lg py-1 flex flex-col z-50 w-36 border border-gray-200">
+                        <button
+                          className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openModal('edit', item);
+                          }}
+                        >
+                          <FiEdit2 className="w-4 h-4" />
+                          Edit
+                        </button>
+                        <button
+                          className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 flex items-center gap-2"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            openModal('delete', item);
+                          }}
+                        >
+                          <FiTrash2 className="w-4 h-4" />
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </Permission>
+
             </div>
           </div>
         ))}
@@ -371,7 +386,15 @@ const CategoryCard = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">Select File</label>
             <input
               type="file"
-              onChange={(e) => setModalData({ ...modalData, file: e.target.files[0] })}
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file && file.size > 50 * 1024 * 1024) {
+                  setError("Fayl hajmi 50MB dan kichik bo'lishi kerak!");
+                  return;
+                }
+             
+                setModalData({ ...modalData, file });
+              }}
               className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none mb-3"
               required
             />
