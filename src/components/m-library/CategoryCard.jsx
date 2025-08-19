@@ -392,28 +392,7 @@ const CategoryCard = () => {
                   setError("Fayl hajmi 50MB dan kichik bo'lishi kerak!");
                   return;
                 }
-                if (
-                  file &&
-                  ![
-                    "image/jpeg",
-                    "image/png",
-                    "application/pdf",
-                    "video/mp4",
-                    "application/msword",
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    "application/vnd.ms-excel",
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    "application/vnd.ms-powerpoint",
-                    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                    "application/zip",
-                    "application/x-zip-compressed",
-                  ].includes(file.type)
-                ) {
-                  setError(
-                    "Faqat JPEG, PNG, PDF, MP4, Word (.doc, .docx), Excel (.xls, .xlsx), PowerPoint (.ppt, .pptx) yoki ZIP fayllari qabul qilinadi!"
-                  );
-                  return;
-                }
+             
                 setModalData({ ...modalData, file });
               }}
               className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none mb-3"
