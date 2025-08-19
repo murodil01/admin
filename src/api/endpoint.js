@@ -13,24 +13,6 @@ const endpoints = {
     delete: (id) => `users/${id}/`,
   },
 
-	// tasks: {
-	// 	getAll: 'project/tasks/',
-	// 	create: 'project/tasks/',
-	// 	getTags: 'project/tags/',
-	// 	getById: id => `project/tasks/${id}/`,
-	// 	update: id => `project/tasks/${id}/`,
-	// 	delete: id => `project/tasks/${id}/`,
-	// 	createTaskFile: 'project/files/',
-	// 	getTaskFiles: 'project/files/', // yangi qo'shildi
-	// 	deleteTaskFile: id => `project/files/${id}/`, // yangi qo'shildi
-  //   getComments: "project/comments/",
-	// 	getTaskInstructions: 'project/instructions/', // yangi qo'shildi
-	// 	getTaskInstructionsById: id => `project/instructions/${id}/`,
-	// 	createTaskInstructions: 'project/instructions/',
-	// 	updateInstruction: id => `project/instructions/${id}/`,
-	// 	deleteTaskInstruction: id => `project/instructions/${id}/`, // yangi qo'shildi
-	// },
-
   tasks: {
     getAll: 'project/tasks/',
     create: 'project/tasks/',
@@ -42,6 +24,11 @@ const endpoints = {
     getTaskFiles: 'project/files/',
     deleteTaskFile: id => `project/files/${id}/`,
     getComments: "project/comments/",
+
+
+    getTaskFilesByTask: (taskId) => `project/task-files/${taskId}`, 
+    getTaskInstructionsByTask: (taskId) => `project/task-instructions/${taskId}`, 
+    getTaskCommentsByTask: (taskId) => `project/task-comments/${taskId}`, 
     
     // Instructions endpoint larini to'g'irlang
     getTaskInstructions: 'project/instructions/',
@@ -49,6 +36,7 @@ const endpoints = {
     updateInstruction: id => `project/instructions/${id}/`,
     deleteTaskInstruction: id => `project/instructions/${id}/`,
   },
+
     projects: {
         getAll: "project/projects/",
         create: "project/projects/",
