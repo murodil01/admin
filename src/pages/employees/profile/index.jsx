@@ -72,7 +72,7 @@ const Profile = () => {
         const data = await getEmployeeById(id);
         setEmployee(data);
         console.log(data);
-        
+
         setBirthday(data.birthday || "");
       } catch (err) {
         // console.error("Error fetching employee:", err);
@@ -353,7 +353,7 @@ const Profile = () => {
                   {employee.first_name} {employee.last_name}
                 </h3>
                 <p className="text-xs sm:text-[14px] md:text-[16px] font-medium text-[#1F2937] flex items-center gap-1 md:gap-2">
-                  {employee.role}
+                  {employee.profession}
                   {employee.level !== "none" && (
                     <span className="text-[8px] md:text-[10px] border border-[#7D8592] px-1 py-0.5 md:px-[2px] md:py-[2px] rounded-[3px] md:rounded-[4px]">
                       {employee.level}

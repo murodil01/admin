@@ -42,7 +42,7 @@ const endpoints = {
     getTaskFiles: 'project/files/',
     deleteTaskFile: id => `project/files/${id}/`,
     getComments: "project/comments/",
-    
+
     // Instructions endpoint larini to'g'irlang
     getTaskInstructions: 'project/instructions/',
     createTaskInstructions: 'project/instructions/',
@@ -118,7 +118,7 @@ const endpoints = {
   controlData: {
     getByUserId: (userId) => `control-data/?user_id=${userId}/`,
     createForUser: (userId) => `control-data/?user_id=${userId}/`, // Faqat o'sha user uchun yaratish
-    update: (userId) => `control-data/?user_id=${userId}/`,
+    update: (userId, id) => `control-data/?user_id=${userId}/${id}/`,
   },
 
   userProjects: {
