@@ -875,7 +875,7 @@ const MainLead = () => {
   }
 
   return (
-    <div className="bg-gray-50 py-8 px-4 sm:px-6 lg:px-8 rounded-b-[8px] relative overflow-x-auto">
+    <div className="bg-gray-50 py-2 px-4 sm:px-6 lg:px-8 rounded-b-[8px]  w-[1320px]  overflow-x">
       {showBoardSelector && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-md w-full">
@@ -904,7 +904,7 @@ const MainLead = () => {
         </div>
       )}
 
-      <div className="flex flex-col gap-6 overflow-x-auto max-w-full">
+      <div className="flex flex-col gap-6 overflow-x w-full">
         {groups.length === 0 ? (
           <div className="py-6 text-center">
             <p className="text-gray-500 text-lg mb-4">📭 Hali guruhlar yo'q</p>

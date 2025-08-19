@@ -45,7 +45,7 @@ const AppLayout = () => {
             onToggleMobile={() => setIsMobileOpen(true)}
           />
           <main
-            className="flex-1 overflow-y-scroll  w-full bg-gray-100 p-4"
+            className=" overflow-auto  w-full bg-gray-100 "
             style={{ paddingRight }}
           >
             <Outlet />
