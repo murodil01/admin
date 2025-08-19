@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
         try {
             setAuthState(prev => ({ ...prev, loading: true }));
             setLoading(true);
-            const { data } = await api.get('/me', {
+            const { data } = await api.get('me', {
                 withCredentials: true,
                 validateStatus: (status) => status < 500
             });

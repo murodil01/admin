@@ -81,13 +81,20 @@ const Projects = () => {
   };
 
   // Department modal ichidagi userlarni filter qilish
+  // YANGI KOD (yuqoridagi o'rniga qo'ying):
   useEffect(() => {
     if (selectedDepartments.length > 0 && allUsers.length > 0) {
       if (selectedDepartments.includes("none")) {
         setDeptModalFilteredUsers([]);
         return;
       }
-
+  
+      // ✅ "All" tanlanganda hamma userlar
+      if (selectedDepartments.includes("all")) {
+        setDeptModalFilteredUsers(allUsers);
+        return;
+      }
+  
       const filtered = allUsers.filter(
         (user) =>
           user.department?.id &&
@@ -99,14 +106,20 @@ const Projects = () => {
     }
   }, [selectedDepartments, allUsers]);
 
-  // Add modal uchun alohida filter (eski kod)
+
   useEffect(() => {
     if (selectedDepartments.length > 0 && allUsers.length > 0) {
       if (selectedDepartments.includes("none")) {
         setFilteredUsers([]);
         return;
       }
-
+  
+      // ✅ Agar "all" tanlangan bo'lsa - hamma userlarni ko'rsatish
+      if (selectedDepartments.includes("all")) {
+        setFilteredUsers(allUsers);
+        return;
+      }
+  
       const filtered = allUsers.filter(
         (user) =>
           user.department?.id &&
@@ -324,9 +337,19 @@ const Projects = () => {
         formData.append("deadline", deadline);
       }
 
-      selectedDepartments.forEach((id) =>
-        formData.append("department_ids", id)
-      );
+      if (selectedDepartments.includes("all")) {
+        // Hamma departmentlarning ID'larini olish
+        allDepartments.forEach((dept) => {
+          formData.append("department_ids", dept.id);
+        });
+      } else if (!selectedDepartments.includes("none")) {
+        // Faqat tanlangan departmentlarni yuborish
+        selectedDepartments.forEach((id) => {
+          if (id !== "none" && id !== "all") {
+            formData.append("department_ids", id);
+          }
+        });
+      }
 
       selectedUsers.forEach((id) => formData.append("assigned", id));
 
@@ -364,9 +387,17 @@ const Projects = () => {
         formData.append("deadline", deadline);
       }
 
-      selectedDepartments.forEach((id) =>
-        formData.append("department_ids", id)
-      );
+      if (selectedDepartments.includes("all")) {
+        allDepartments.forEach((dept) => {
+          formData.append("department_ids", dept.id);
+        });
+      } else if (!selectedDepartments.includes("none")) {
+        selectedDepartments.forEach((id) => {
+          if (id !== "none" && id !== "all") {
+            formData.append("department_ids", id);
+          }
+        });
+      }
 
       const allSelectedUserIds = [...new Set([...selectedUsers])];
       allSelectedUserIds.forEach((id) => formData.append("assigned", id));
@@ -613,7 +644,7 @@ const Projects = () => {
 
       case "info":
         return (
-          <div className="flex flex-col gap-5 text-sm text-gray-700 my-5">
+          <div className="flex flex-col gap-5 text-sm text-gray-700">
             <h1 className="text-[#0A1629] text-[22px] font-bold mb-3">
               Task Details
             </h1>
@@ -735,8 +766,8 @@ const Projects = () => {
     switch (modalType) {
       case "edit":
         return "Edit Task";
-      case "info":
-        return "Task Details";
+      // case "info":
+      //   return "Task Details";
       case "delete":
         return "Delete Task";
       default:
@@ -800,14 +831,14 @@ const Projects = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
         <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
-          Task
+          Project
         </h3>
         <button
           onClick={handleAddOpen}
           className="capitalize w-full sm:max-w-[172px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
         >
           <span className="text-[22px]">+</span>
-          <span>Add Task</span>
+          <span>Add Project</span>
         </button>
       </div>
 
@@ -971,7 +1002,7 @@ const Projects = () => {
                 type="text"
                 value={taskName}
                 onChange={(e) => setTaskName(e.target.value)}
-                placeholder="M Tech"
+                // placeholder="M Tech"
                 className="mt-1 w-full h-[50px] border border-gray-300 rounded-[14px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -1113,7 +1144,6 @@ const Projects = () => {
         open={isDeptModalOpen}
         onCancel={() => setIsDeptModalOpen(false)}
         onOk={() => setIsDeptModalOpen(false)}
-        title="Select Departments and Users"
         okText="Done"
         className="custom-modal"
         width={800}

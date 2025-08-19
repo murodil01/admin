@@ -13,24 +13,6 @@ const endpoints = {
     delete: (id) => `users/${id}/`,
   },
 
-	// tasks: {
-	// 	getAll: 'project/tasks/',
-	// 	create: 'project/tasks/',
-	// 	getTags: 'project/tags/',
-	// 	getById: id => `project/tasks/${id}/`,
-	// 	update: id => `project/tasks/${id}/`,
-	// 	delete: id => `project/tasks/${id}/`,
-	// 	createTaskFile: 'project/files/',
-	// 	getTaskFiles: 'project/files/', // yangi qo'shildi
-	// 	deleteTaskFile: id => `project/files/${id}/`, // yangi qo'shildi
-  //   getComments: "project/comments/",
-	// 	getTaskInstructions: 'project/instructions/', // yangi qo'shildi
-	// 	getTaskInstructionsById: id => `project/instructions/${id}/`,
-	// 	createTaskInstructions: 'project/instructions/',
-	// 	updateInstruction: id => `project/instructions/${id}/`,
-	// 	deleteTaskInstruction: id => `project/instructions/${id}/`, // yangi qo'shildi
-	// },
-
   tasks: {
     getAll: 'project/tasks/',
     create: 'project/tasks/',
@@ -42,13 +24,17 @@ const endpoints = {
     getTaskFiles: 'project/files/',
     deleteTaskFile: id => `project/files/${id}/`,
     getComments: "project/comments/",
-
+    getTaskFilesByTask: (taskId) => `project/task-files/${taskId}`, 
+    getTaskInstructionsByTask: (taskId) => `project/task-instructions/${taskId}`, 
+    getTaskCommentsByTask: (taskId) => `project/task-comments/${taskId}`, 
+    
     // Instructions endpoint larini to'g'irlang
     getTaskInstructions: 'project/instructions/',
     createTaskInstructions: 'project/instructions/',
     updateInstruction: id => `project/instructions/${id}/`,
     deleteTaskInstruction: id => `project/instructions/${id}/`,
   },
+
     projects: {
         getAll: "project/projects/",
         create: "project/projects/",
@@ -71,9 +57,9 @@ const endpoints = {
   boards: {
     getAll: "board/list/",
     create: "board/list/",
-    getById: (id) => `board/board/${id}/`,
-    update: (id) => `board/board/${id}/`,
-    delete: (id) => `board/board/${id}/`,
+    getById: (id) => `board/list/${id}/`,    // board detail/list uchun
+    update: (id) => `board/list/${id}/`,
+    delete: (id) => `board/list/${id}/`,
   },
 
   group: {
@@ -92,12 +78,20 @@ const endpoints = {
     delete: (groupId, leadId) => `board/leads/${leadId}/?group=${groupId}`,
   },
 
-  status: {
-    getAll: (boardId) => `board/${boardId}/statuses/`,
-    create: (boardId) => `board/${boardId}/statuses/`,
-    getById: (boardId, statusId) => `board/${boardId}/statuses/${statusId}/`,
-    update: (boardId, statusId) => `board/${boardId}/statuses/${statusId}/`,
-    delete: (boardId, statusId) => `board/${boardId}/statuses/${statusId}/`,
+  status:{ 
+
+    getAllstatus: (boardId) => `board/status/${boardId}`,
+    create: (boardId) => `board/status/${boardId}`,
+    getById: (boardId, statusId) =>
+      `board/leads/status/${statusId}/?board=${boardId}`,
+
+    getAll: (boardId) => `board/status/${boardId}`,
+    create: (boardId) => `board/status/${boardId}`,
+    getById: (boardId, statusId) =>
+      `board/status/${statusId}/?board=${boardId}`,
+
+    update: (boardId, statusId) => `board/status/${statusId}/?board=${boardId}`,
+    delete: (boardId, statusId) => `board/status/${statusId}/?board=${boardId}`,
   },
 
   employees: {
@@ -107,7 +101,7 @@ const endpoints = {
     update: (id) => `users/${id}/`,
     updateStatus: (id) => `users/${id}/`,
     delete: (id) => `users/${id}/`,
-  },
+  },  
 
   activities: {
     getAll: "user-activities/",

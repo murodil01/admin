@@ -3,18 +3,25 @@ import { MoreVertical, Plus } from "lucide-react";
 import CreateCategoryModal from "../../components/m-library/CreateCategoryModal";
 import api from "../../api/base";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify"; 
+import { toast } from "react-toastify";
+import { Permission } from "../../components/Permissions";
+import { useAuth } from "../../hooks/useAuth";
+import { ROLES } from "../../components/constants/roles";
 
 const LibraryPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [menuId, setMenuId] = useState(null);
   const [loadingDelete, setLoadingDelete] = useState(false);
-  const [loadingEdit, setLoadingEdit] = useState(false); 
+  const [loadingEdit, setLoadingEdit] = useState(false);
   const [editCategory, setEditCategory] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const navigate = useNavigate();
+
+  const { user, loading: authLoading } = useAuth();
+  const [dataLoading, setDataLoading] = useState(true);
+  const isLoading = authLoading || dataLoading;
 
   const handleCardClick = (id) => {
     navigate(`/category/${id}`);
@@ -114,17 +121,20 @@ const LibraryPage = () => {
       <header className="max-w-7xl mx-auto mt-5 md:mt-2">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-6 space-y-3 sm:space-y-0">
           <h1 className="text-xl sm:text-[34px] font-semibold text-black">M Library</h1>
-          <button
-            onClick={() => {
-              setEditCategory(null);
-              setIsModalOpen(true);
-            }}
-            className="inline-flex items-center justify-center px-3 py-2 sm:px-6 sm:py-3 bg-[#0061fe] text-white text-sm sm:text-base font-bold rounded-[14px] hover:bg-blue-700 transition-colors whitespace-nowrap"
-            aria-label="Add new category"
-          >
-            <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1" />
-            Add Category
-          </button>
+          <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+            <button
+              onClick={() => {
+                setEditCategory(null);
+                setIsModalOpen(true);
+              }}
+              className="inline-flex items-center justify-center px-3 py-2 sm:px-6 sm:py-3 bg-[#0061fe] text-white text-sm sm:text-base font-bold rounded-[14px] hover:bg-blue-700 transition-colors whitespace-nowrap"
+              aria-label="Add new category"
+            >
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1" />
+              Add Category
+            </button>
+          </Permission>
+
         </div>
 
         <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -152,7 +162,7 @@ const LibraryPage = () => {
                     <div className="absolute top-8 right-0 bg-white border border-gray-200 shadow-lg rounded-lg z-50 w-36 overflow-hidden">
                       <button
                         onClick={(e) => {
-                          e.stopPropagation(); 
+                          e.stopPropagation();
                           setEditCategory(category);
                           setIsModalOpen(true);
                           setMenuId(null);
@@ -165,7 +175,7 @@ const LibraryPage = () => {
 
                       <button
                         onClick={(e) => {
-                          e.stopPropagation(); 
+                          e.stopPropagation();
                           setDeleteId(category.id);
                           setConfirmOpen(true);
                         }}
@@ -220,7 +230,7 @@ const LibraryPage = () => {
             : handleCreateCategory(data.name, data.file);
         }}
         initialData={editCategory}
-        loading={loadingEdit} 
+        loading={loadingEdit}
       />
 
       {confirmOpen && (

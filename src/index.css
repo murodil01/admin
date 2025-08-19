@@ -118,9 +118,11 @@ body {
 
   margin: 0;
 }
+
 .custom-modal{
   padding:10px;
 }
+
 @media (max-width: 768px) {
   .custom-modal .ant-modal-content {
     padding: 30px 5px;
@@ -333,7 +335,25 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .dropdown-item:hover {
     background: #f9fafb;
 }
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Ant Design dropdownning borderini olib tashlash */
+.custom-selectt .ant-select-selector {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Dropdown item hover effektini o‘chirish */
+.custom-selectt .ant-select-item {
+  border: none !important;
+}
+
+/* Agar hoverda ham border paydo bo‘lsa */
+.custom-selectt .ant-select-item-option-content {
+  border: none !important;
+}
+

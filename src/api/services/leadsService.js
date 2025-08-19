@@ -20,13 +20,45 @@ export const createLeads = (data) => {
   return api.post(endpoints.leads.create, data);
 };
 
-// Lead yangilash (group va leadId bilan)
-export const updateLeads = (groupId, leadId, data) => {
-  if (!groupId || !leadId)
-    return Promise.reject(new Error("Group ID yoki Lead ID mavjud emas"));
-  
-  // Tuzatilgan qism: endpointga groupId va leadId to'g'ri uzatilishi
-  return api.patch(endpoints.leads.update(groupId, leadId), data);
+export const updateStatus = async (statusId, data) => {
+  try {
+    // normalize status (agar object bo‘lsa id olib qolamiz)
+    if (data.status && typeof data.status === "object") {
+      data.status = data.status.id ?? data.status;
+    }
+    const url = endpoints.board?.updateStatus
+      ? endpoints.board.updateStatus(statusId)
+      : `board/status/${statusId}/`; 
+
+    console.log("🔄 Updating status:", url, data);
+
+    const res = await api.patch(url, data); // PATCH – faqat o‘zgarayotgan fieldlar
+    return res.data;
+  } catch (err) {
+    console.error(
+      "❌ Error updating status:",
+      err?.response?.status,
+      err?.response?.data || err.message
+    );
+    throw err;
+  }
+};
+export const updateLeads = async (groupId, leadId, data) => {
+  try {
+    // normalize status
+    if (data.status && typeof data.status === "object") data.status = data.status.id ?? data.status;
+
+    const url = endpoints.leads.update
+      ? endpoints.leads.update(groupId, leadId)
+      : `leads/${groupId}/${leadId}/`; // fallback
+
+    console.log("Updating lead:", url, data);
+    const res = await api.patch(url, data); // PATCH is safer than PUT for partial updates
+    return res.data;
+  } catch (err) {
+    console.error("Error updating lead:", err?.response?.status, err?.response?.data || err.message);
+    throw err;
+  }
 };
 
 // Lead o‘chirish
