@@ -12,7 +12,7 @@ const CreateCategoryModal = ({ isOpen, onClose, onSave, initialData }) => {
     if (initialData) {
       setCategoryName(initialData.name || '');
       setImagePreview(initialData.image || null);
-      setSelectedImage(null); 
+      setSelectedImage(null);
     } else {
       setCategoryName('');
       setSelectedImage(null);
@@ -129,7 +129,7 @@ CreateCategoryModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSave: PropTypes.func.isRequired,
-  initialData: PropTypes.object, 
+  initialData: PropTypes.object,
 };
 
 export default CreateCategoryModal;
