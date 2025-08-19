@@ -96,11 +96,11 @@ const endpoints = {
 
     getAllstatus: (boardId) => `board/status/${boardId}`,
     create: (boardId) => `board/status/${boardId}`,
-    getById: (boardId, statusId) =>
-      `board/leads/status/${statusId}/?board=${boardId}`,
+    // getById: (boardId, statusId) =>
+    //   `board/leads/status/${statusId}/?board=${boardId}`,
 
     getAll: (boardId) => `board/status/${boardId}`,
-    create: (boardId) => `board/status/${boardId}`,
+    // create: (boardId) => `board/status/${boardId}`,
     getById: (boardId, statusId) =>
       `board/status/${statusId}/?board=${boardId}`,
 
