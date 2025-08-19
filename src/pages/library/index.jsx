@@ -150,14 +150,17 @@ const LibraryPage = () => {
               <div className="flex items-center justify-between mb-4" data-card-menu>
                 <h2 className="text-lg font-semibold truncate">{category.name}</h2>
                 <div className="relative">
-                  <MoreVertical
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleMenu(category.id);
-                    }}
-                    className="cursor-pointer text-gray-500 hover:text-gray-700"
-                    aria-label={`More options for ${category.name}`}
-                  />
+                  <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+                    <MoreVertical
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleMenu(category.id);
+                      }}
+                      className="cursor-pointer text-gray-500 hover:text-gray-700"
+                      aria-label={`More options for ${category.name}`}
+                    />
+                  </Permission>
+
                   {menuId === category.id && (
                     <div className="absolute top-8 right-0 bg-white border border-gray-200 shadow-lg rounded-lg z-50 w-36 overflow-hidden">
                       <button

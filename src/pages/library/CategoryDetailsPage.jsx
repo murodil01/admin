@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { MdCreateNewFolder, MdMoreVert } from 'react-icons/md';
 import { FaFolder, FaFile, FaHdd, FaDownload, FaEye } from 'react-icons/fa';
-import { FiEdit2, FiTrash2 } from 'react-icons/fi'; 
+import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 import api from '../../api/base';
 
 import { Permission } from "../../components/Permissions";
@@ -23,9 +23,9 @@ const CategoryDetailsPage = () => {
   const navigate = useNavigate();
 
   const { user, loading: authLoading } = useAuth();
-    const [dataLoading, setDataLoading] = useState(true);
-    // Yuklash holatini birlashtirish
-    const isLoading = authLoading || dataLoading;
+  const [dataLoading, setDataLoading] = useState(true);
+  // Yuklash holatini birlashtirish
+  const isLoading = authLoading || dataLoading;
 
   // File handling functions
   const handleViewFile = async (file) => {
@@ -294,7 +294,7 @@ const CategoryDetailsPage = () => {
         <h1 className="text-base sm:text-lg md:text-xl font-bold text-gray-900">
           {category?.name || 'M Library'}
         </h1>
-        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
           <div className="flex flex-row items-center w-full sm:w-auto">
             {/* Add Folder Button */}
             <button
@@ -482,46 +482,49 @@ const CategoryDetailsPage = () => {
                 </div>
 
                 {/* Actions Dropdown */}
-                <div className="col-span-12 sm:col-span-12 lg:col-span-2 flex justify-end">
-                  <div className="relative" ref={(el) => (dropdownRefs.current[uniqueKey] = el)}>
-                    <button
-                      className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggleDropdown(item.type, item.id);
-                      }}
-                    >
-                      <MdMoreVert className="w-5 h-5" />
-                    </button>
-                    {showDropdown === uniqueKey && (
-                      <div className="absolute right-0 top-9 bg-white shadow-lg rounded-lg py-1 flex flex-col z-50 w-36 border border-gray-200">
-                        <button
-                          className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            openModal('edit', item);
-                          }}
-                        >
-                          <FiEdit2 className="w-4 h-4" />
-                          Edit
-                        </button>
-                        <button
-                          className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 flex items-center gap-2"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            openModal('delete', item);
-                          }}
-                        >
-                          <FiTrash2 className="w-4 h-4" />
-                          Delete
-                        </button>
-                      </div>
-                    )}
+                <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+                  <div className="col-span-12 sm:col-span-12 lg:col-span-2 flex justify-end">
+                    <div className="relative" ref={(el) => (dropdownRefs.current[uniqueKey] = el)}>
+                      <button
+                        className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          toggleDropdown(item.type, item.id);
+                        }}
+                      >
+                        <MdMoreVert className="w-5 h-5" />
+                      </button>
+                      {showDropdown === uniqueKey && (
+                        <div className="absolute right-0 top-9 bg-white shadow-lg rounded-lg py-1 flex flex-col z-50 w-36 border border-gray-200">
+                          <button
+                            className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-2"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              openModal('edit', item);
+                            }}
+                          >
+                            <FiEdit2 className="w-4 h-4" />
+                            Edit
+                          </button>
+                          <button
+                            className="px-3 py-2 text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 flex items-center gap-2"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              openModal('delete', item);
+                            }}
+                          >
+                            <FiTrash2 className="w-4 h-4" />
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                </Permission>
+
               </div>
             </div>
           );
