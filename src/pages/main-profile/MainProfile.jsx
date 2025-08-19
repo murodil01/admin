@@ -25,11 +25,9 @@ import {
 import dayjs from "dayjs";
 
 import { getMyProfile, updateMyProfile } from "../../api/services/profileService";
-import { getDepartments } from "../../api/services/departmentService";
 
 const MainProfile = () => {
   const [user, setUser] = useState(null);
-  const [departments, setDepartments] = useState([]);
   const [birthday, setBirthday] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -57,19 +55,6 @@ const MainProfile = () => {
       }
     };
     fetchUser();
-  }, []);
-
-  useEffect(() => {
-    const fetchDepartments = async () => {
-      try {
-        const res = await getDepartments();
-        const depts = res.results || res.data || res;
-        setDepartments(depts);
-      } catch {
-        message.error("Couldn't fetch department");
-      }
-    };
-    fetchDepartments();
   }, []);
 
   const handleInputChange = (field, value) => {
