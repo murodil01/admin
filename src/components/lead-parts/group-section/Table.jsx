@@ -250,17 +250,15 @@ const Table = () => {
   };
 
   return (
-    <div className="w-[95%] h-auto">
+    <div className="w-[1000px] h-auto">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Leads Management Board</h1>
-            <p className="text-gray-600">Track and manage your leads from API</p>
+            {/* <p className="text-gray-600">Track and manage your leads from API</p> */}
             {loading && <p className="text-blue-600 text-sm">🔄 Loading data from API...</p>}
-            {apiLeads.length > 0 && (
-              <p className="text-green-600 text-sm">✅ Connected to API - {apiLeads.length} leads loaded</p>
-            )}
+      
           </div>
           <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-all transform hover:scale-105 shadow-lg">
             <Plus className="w-5 h-5" />
@@ -308,16 +306,17 @@ const Table = () => {
           <div className="min-w-[1200px]">
             <table className="w-full table-fixed">
               <colgroup>
-                <col className="w-10" />
+                <col className="w-10" /> 
                 <col className="w-12" />
-                <col className="w-64" />
-                <col className="w-48" />
-                <col className="w-40" />
-                <col className="w-32" />
+                <col className="w-50" />
+                <col className="w-50" />
+                <col className="w-35" />
+                <col className="w-45" />
                 <col className="w-40" />
                 <col className="w-44" />
-                <col className="w-32" />
-                <col className="w-12" />
+                <col className="w-40" />
+                <col className='w-20' />
+                <col className="w-15" />
               </colgroup>
               <thead>
                 <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
@@ -335,7 +334,7 @@ const Table = () => {
                     onClick={() => handleSort('task')}
                   >
                     <div className="flex items-center gap-2">
-                      Lead Name
+                      Leads
                       <ChevronDown className={`w-4 h-4 transition-transform ${sortConfig.key === 'task' && sortConfig.direction === 'desc' ? 'rotate-180' : ''}`} />
                     </div>
                   </th>
@@ -345,32 +344,35 @@ const Table = () => {
                   >
                     <div className="flex items-center gap-2">
                       <User className="w-4 h-4" />
-                      Person
+                      Phone Number
                     </div>
                   </th>
                   <th className="text-left p-4 font-semibold text-gray-700">
                     <div className="flex items-center gap-2">
                       <Circle className="w-4 h-4" />
-                      Status
+                      Source
                     </div>
                   </th>
                   <th className="text-left p-4 font-semibold text-gray-700">
                     <div className="flex items-center gap-2">
                       <Tag className="w-4 h-4" />
-                      Value
+                      Owner
                     </div>
                   </th>
                   <th className="text-left p-4 font-semibold text-gray-700">
                     <div className="flex items-center gap-2">
                       <Phone className="w-4 h-4" />
-                      Phone
+                      Status
                     </div>
                   </th>
                   <th className="text-left p-4 font-semibold text-gray-700">
                     Potential Value
                   </th>
                   <th className="text-left p-4 font-semibold text-gray-700">
-                    Source
+                    Potential value
+                  </th>
+                  <th>
+                    Notes
                   </th>
                   <th className="p-4"></th>
                 </tr>
@@ -402,6 +404,7 @@ const Table = () => {
                       >
                         <GripVertical className="w-4 h-4 text-gray-400 hover:text-gray-600" />
                       </td>
+                      
                       <td className="p-4 sticky left-10 bg-white z-10">
                         <input
                           type="checkbox"
@@ -410,14 +413,26 @@ const Table = () => {
                           onChange={() => toggleRowSelection(task.id)}
                         />
                       </td>
+                      
                       <td className="p-4 sticky left-[88px] bg-white z-10 border-r border-gray-100">
                         <div className="font-medium text-gray-900 hover:text-blue-600 cursor-pointer transition-colors truncate pr-2">
                           {task.task}
-                          <span className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">API</span>
+                          {/* <span className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">API</span> */}
                         </div>
-                        {task.notes && (
-                          <div className="text-xs text-gray-500 mt-1 truncate">{task.notes}</div>
-                        )}
+
+                      </td>
+                        <td className="p-4">
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Phone className="w-4 h-4" />
+                          <a href={`tel:${task.phone}`} className="hover:text-blue-600 transition-colors">
+                            {task.phone || 'No phone'}
+                          </a>
+                        </div>
+                      </td>
+                       <td className="p-4">
+                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm">
+                          {task.team}
+                        </span>
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
@@ -474,14 +489,7 @@ const Table = () => {
                           ${task.progress || 0}
                         </span>
                       </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Phone className="w-4 h-4" />
-                          <a href={`tel:${task.phone}`} className="hover:text-blue-600 transition-colors">
-                            {task.phone || 'No phone'}
-                          </a>
-                        </div>
-                      </td>
+                    
                       <td className="p-4">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-gray-700">
@@ -495,11 +503,14 @@ const Table = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="p-4">
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm">
-                          {task.team}
-                        </span>
+                      <td>
+                        <div className='ml-5' >
+                           {task.notes && (
+                          <div className="text-xs text-gray-500 mt-1 truncate">{task.notes}</div>
+                        )}
+                        </div>
                       </td>
+                     
                       <td className="p-4">
                         <button className="text-gray-400 hover:text-gray-600 transition-colors">
                           <MoreHorizontal className="w-5 h-5" />
