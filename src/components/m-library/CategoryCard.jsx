@@ -5,6 +5,9 @@ import { MdMoreVert } from 'react-icons/md';
 import { FiEdit2, FiTrash2 } from 'react-icons/fi'; // Added missing imports
 import { Plus } from 'lucide-react';
 import api from '../../api/base';
+import { Permission } from "../../components/Permissions";
+import { useAuth } from "../../hooks/useAuth";
+import { ROLES } from "../../components/constants/roles";
 
 const CategoryCard = () => {
   const { id } = useParams();
@@ -17,6 +20,12 @@ const CategoryCard = () => {
   const [modalData, setModalData] = useState({ title: '', file: null, item: null });
   const dropdownRefs = useRef({});
   const [folder, setFolder] = useState(null);
+
+  const { user, loading: authLoading } = useAuth();
+  const [dataLoading, setDataLoading] = useState(true);
+  // Yuklash holatini birlashtirish
+  const isLoading = authLoading || dataLoading;
+
 
   // Fetch folder details
   const fetchFolderDetails = async () => {
@@ -206,15 +215,17 @@ const CategoryCard = () => {
         <h1 className="text-base sm:text-lg font-bold text-gray-900 truncate">
           {folder?.name || 'Folder name'}
         </h1>
-        <button
-          onClick={() => openModal('add')}
-          className="flex items-center px-11 sm:px-11 py-2 sm:py-3 bg-blue-600 text-white text-xs sm:text-sm font-semibold rounded-lg hover:bg-blue-700 transition-all whitespace-nowrap"
-        >
-          <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
-          Add File
-        </button>
+        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+          <button
+            onClick={() => openModal('add')}
+            className="flex items-center px-11 sm:px-11 py-2 sm:py-3 bg-blue-600 text-white text-xs sm:text-sm font-semibold rounded-lg hover:bg-blue-700 transition-all whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+            Add File
+          </button>
+        </Permission>
       </div>
-
+      
       {loading && <div className="text-center py-3 sm:py-4 text-gray-500">Loading...</div>}
       {error && (
         <p className="text-red-500 bg-red-50 p-2 sm:p-3 rounded-lg text-center text-sm sm:text-base">
@@ -371,7 +382,36 @@ const CategoryCard = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">Select File</label>
             <input
               type="file"
-              onChange={(e) => setModalData({ ...modalData, file: e.target.files[0] })}
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file && file.size > 50 * 1024 * 1024) {
+                  setError("Fayl hajmi 50MB dan kichik bo'lishi kerak!");
+                  return;
+                }
+                if (
+                  file &&
+                  ![
+                    "image/jpeg",
+                    "image/png",
+                    "application/pdf",
+                    "video/mp4",
+                    "application/msword",
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    "application/vnd.ms-excel",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "application/vnd.ms-powerpoint",
+                    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                    "application/zip",
+                    "application/x-zip-compressed",
+                  ].includes(file.type)
+                ) {
+                  setError(
+                    "Faqat JPEG, PNG, PDF, MP4, Word (.doc, .docx), Excel (.xls, .xlsx), PowerPoint (.ppt, .pptx) yoki ZIP fayllari qabul qilinadi!"
+                  );
+                  return;
+                }
+                setModalData({ ...modalData, file });
+              }}
               className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none mb-3"
               required
             />
