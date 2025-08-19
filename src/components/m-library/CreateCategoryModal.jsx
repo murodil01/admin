@@ -12,7 +12,7 @@ const CreateCategoryModal = ({ isOpen, onClose, onSave, initialData }) => {
     if (initialData) {
       setCategoryName(initialData.name || '');
       setImagePreview(initialData.image || null);
-      setSelectedImage(null); 
+      setSelectedImage(null);
     } else {
       setCategoryName('');
       setSelectedImage(null);
@@ -112,6 +112,13 @@ const CreateCategoryModal = ({ isOpen, onClose, onSave, initialData }) => {
               </div>
             )}
           </div>
+          <div>
+            {/* <select name="" id="">
+              <option value="Public">Public</option>
+              <option value="Private">Private</option>
+              <option value="Choosen">Chosen</option>
+            </select> */}
+          </div>
           <button
             type="submit"
             disabled={!categoryName.trim() || !imagePreview}
@@ -129,7 +136,7 @@ CreateCategoryModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSave: PropTypes.func.isRequired,
-  initialData: PropTypes.object, 
+  initialData: PropTypes.object,
 };
 
 export default CreateCategoryModal;

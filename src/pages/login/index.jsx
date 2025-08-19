@@ -27,12 +27,13 @@ const Login = () => {
         body: { email, password },
       });
       localStorage.setItem("token", res.data.access);
-      toast.success("Login muvaffaqiyatli!");
+      toast.success("Successful login!");
       navigate("/");
-    } catch (err) {
-      toast.error(
-        "Login xatoligi: " + (err.response?.data?.message || err.message)
-      );
+    } catch {
+      toast.error("Login or Password is not correct!", {
+        duration: 7000, // 20 soniya
+        position: "top-center",
+      });
     } finally {
       setLoading(false);
     }
