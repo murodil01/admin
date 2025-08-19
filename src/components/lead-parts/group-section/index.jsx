@@ -489,9 +489,448 @@ const GroupSection = ({
 
       {/* Table */}
       {expanded && (
+<<<<<<< HEAD
         <>
         <TableBox />
         </>
+=======
+        <div className="bg-white">
+          <div className="px-4 pb-4 pt-2 overflow-x-auto relative h-50">
+            <table className="table-fixed shrink-0 absolute min-w-[1100px] border-collapse font-normal border border-gray-300 text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th
+                    className="border border-gray-300 p-2"
+                    style={{ width: "48px", minWidth: "48px" }}
+                  ></th>
+                  {columns.map((col) => (
+                    <th
+                      key={col.key}
+                      className="border border-gray-300 p-2 text-center relative group"
+                      style={{ width: "160px", minWidth: "160px" }}
+                    >
+                      <div className="flex items-center justify-center gap-2">
+                        {editingColumnIndex === columns.indexOf(col) ? (
+                          <input
+                            autoFocus
+                            value={columnTitleValue}
+                            onChange={(e) =>
+                              setColumnTitleValue(e.target.value)
+                            }
+                            onBlur={saveColumnTitle}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") saveColumnTitle();
+                              if (e.key === "Escape") cancelEditColumnTitle();
+                            }}
+                            className="w-full text-center focus:outline-none bg-transparent border-b border-gray-400"
+                          />
+                        ) : (
+                          <span
+                            onDoubleClick={() =>
+                              startEditColumnTitle(
+                                columns.indexOf(col),
+                                col.label
+                              )
+                            }
+                            className="cursor-pointer"
+                          >
+                            {col.label}
+                          </span>
+                        )}
+                        {col.isCustom && (
+                          <button
+                            onClick={() => deleteColumn(columns.indexOf(col))}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 rounded"
+                            title="Delete column"
+                          >
+                            <X size={12} className="text-red-500" />
+                          </button>
+                        )}
+                      </div>
+                    </th>
+                  ))}
+                  <th
+                    className="border border-gray-300 p-2 text-center cursor-pointer hover:bg-gray-200"
+                    style={{ width: "48px", minWidth: "48px" }}
+                    onClick={addColumn}
+                    title="Add column"
+                  >
+                    +
+                  </th>
+                </tr>
+              </thead> 
+              <tbody>
+                {localItems.map((item) => (
+                  <tr
+                    key={item.id}
+                    className={
+                      localItems.indexOf(item) % 2 === 0 ? "bg-gray-50" : ""
+                    }
+                  >
+                    <td
+                      className="border border-gray-300 text-center p-2"
+                      style={{ width: "48px", minWidth: "48px" }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected.includes(localItems.indexOf(item))}
+                        onChange={(e) =>
+                          onToggleSelect(
+                            localItems.indexOf(item),
+                            e.target.checked
+                          )
+                        }
+                      />
+                    </td>
+                    {columns.map((col) => (
+                      <td
+                        key={`${item.id}-${col.key}`}
+                        className="border border-gray-300 p-0 text-center"
+                        style={{ width: "160px", minWidth: "160px" }}
+                      >
+                     {col.key === "status" ? (
+                      editingCell?.row === localItems.indexOf(item) && 
+                      editingCell?.field === col.key ? (
+                        // Edit mode
+                        <StatusDropdown
+                          groupId={id}
+                          itemId={item.id}
+                          boardId={boardId}  // Make sure this is passed
+                          value={item.status}
+                          onChange={(val) => {
+                            setLocalItems(prev => {
+                              const copy = [...prev];
+                              const index = prev.findIndex(it => it.id === item.id);
+                              copy[index] = {
+                                ...copy[index],
+                                [col.key]: val,
+                              };
+                              return copy;
+                            });
+                          }}
+                          onSave={saveEditCell}
+                          onCancel={cancelEditCell}
+                        />
+                      ) : (
+                        // Display mode - show status name
+                        <div
+                          className="w-full h-full flex items-center justify-center cursor-pointer"
+                          style={{ minHeight: "36px" }}
+                          onClick={() => startEditCell(localItems.indexOf(item), col.key)}
+                        >
+                          {item.status?.name || "No Status"}
+                        </div>
+                      )
+                    ) : col.key === "timeline" ? (
+                          <DateRangePickerCell
+                            value={item.timeline || { start: null, end: null }}
+                            onChange={(val) => {
+                              const timelineValue = val || {
+                                start: null,
+                                end: null,
+                              };
+                              setLocalItems((prev) => {
+                                const copy = [...prev];
+                                const index = prev.findIndex(
+                                  (it) => it.id === item.id
+                                );
+                                copy[index] = {
+                                  ...copy[index],
+                                  timeline: timelineValue,
+                                  timelineStart: timelineValue.start,
+                                  timelineEnd: timelineValue.end,
+                                };
+                                return copy;
+                              });
+                            }}
+                            onSave={async (val) => {
+                              if (!item.group || !item.id) {
+                                console.error(
+                                  "Missing group or lead ID:",
+                                  item
+                                );
+                                return;
+                              }
+                              try {
+                                await updateStatus(item.group, item.id, {
+                                  timelineStart: val.start || null,
+                                  timelineEnd: val.end || null,
+                                });
+                              } catch (err) {
+                                console.error(
+                                  "Failed to update timeline:",
+                                  err
+                                );
+                              }
+                              saveEditCell();
+                            }}
+                            onCancel={cancelEditCell}
+                          />
+                        ) : col.key === "last_interaction" ? (
+                          <SingleDatePickerCell
+                            value={item[col.key] || ""}
+                            onChange={(val) => {
+                              setLocalItems((prev) => {
+                                const copy = [...prev];
+                                const index = prev.findIndex(
+                                  (it) => it.id === item.id
+                                );
+                                copy[index] = {
+                                  ...copy[index],
+                                  [col.key]: val,
+                                };
+                                return copy;
+                              });
+                            }}
+                            onSave={async (val) => {
+                              if (!item.group || !item.id) {
+                                console.error(
+                                  "Missing group or lead ID:",
+                                  item
+                                );
+                                return;
+                              }
+                              try {
+                                await updateStatus(item.group, item.id, {
+                                  last_interaction: val,
+                                });
+                              } catch (err) {
+                                console.error(
+                                  "Failed to update last_interaction:",
+                                  err
+                                );
+                              }
+                              saveEditCell();
+                            }}
+                            onCancel={cancelEditCell}
+                          />
+                        ) : col.key === "potential_value" ? (
+                          <input
+                            type="number"
+                            value={item[col.key] || ""}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              const newVal =
+                                value === ""
+                                  ? null
+                                  : parseInt(value, 10) || null;
+                              setLocalItems((prev) => {
+                                const copy = [...prev];
+                                const index = prev.findIndex(
+                                  (it) => it.id === item.id
+                                );
+                                copy[index] = {
+                                  ...copy[index],
+                                  [col.key]: newVal,
+                                };
+                                return copy;
+                              });
+                            }}
+                            onBlur={async () => {
+                              if (!item.group || !item.id) {
+                                console.error(
+                                  "Missing group or lead ID:",
+                                  item
+                                );
+                                return;
+                              }
+                              try {
+                                await updateStatus(item.group, item.id, {
+                                  potential_value: localItems.find(
+                                    (it) => it.id === item.id
+                                  )[col.key],
+                                });
+                              } catch (err) {
+                                console.error(
+                                  "Failed to update potential_value:",
+                                  err
+                                );
+                              }
+                              saveEditCell();
+                            }}
+                            onFocus={() =>
+                              startEditCell(
+                                localItems.findIndex((it) => it.id === item.id),
+                                col.key
+                              )
+                            }
+                            className="w-full text-center focus:outline-none bg-transparent"
+                            placeholder="Enter value"
+                          />
+                        ) : col.key === "link" ? (
+                          <LinkDropdown
+                            value={item[col.key] || ""}
+                            onChange={async (val) => {
+                              setLocalItems((prev) => {
+                                const copy = [...prev];
+                                const index = prev.findIndex(
+                                  (it) => it.id === item.id
+                                );
+                                copy[index] = {
+                                  ...copy[index],
+                                  [col.key]: val || null,
+                                };
+                                return copy;
+                              });
+                              if (!item.group || !item.id) {
+                                console.error(
+                                  "Missing group or lead ID:",
+                                  item
+                                );
+                                return;
+                              }
+                              try {
+                                await updateStatus(item.group, item.id, {
+                                  link: val || null,
+                                });
+                              } catch (err) {
+                                console.error("Failed to update link:", err);
+                              }
+                            }}
+                            onSave={saveEditCell}
+                            onCancel={cancelEditCell}
+                          />
+                        ) : col.key === "person_detail" ? (
+                          <PersonDropdown
+                            value={item[col.key] || ""} // bo‘sh bo‘lsa ""
+                            groupId={item.group} // groupId yuboriladi
+                            leadId={item.id} // leadId yuboriladi
+                            onChange={(val) => {
+                              setLocalItems((prev) => {
+                                const copy = [...prev];
+                                const index = prev.findIndex(
+                                  (it) => it.id === item.id
+                                );
+                                copy[index] = {
+                                  ...copy[index],
+                                  [col.key]: val || null, // bo‘sh bo‘lsa null
+                                };
+                                return copy;
+                              });
+                            }}
+                            onSave={saveEditCell} // Save funksiyasi
+                            onCancel={cancelEditCell} // Cancel funksiyasi
+                          />
+                        ) : (
+                          <input
+                            value={item[col.key] || ""}
+                            onChange={(e) => {
+                              const newVal = e.target.value || null;
+                              setLocalItems((prev) => {
+                                const copy = [...prev];
+                                const index = prev.findIndex(
+                                  (it) => it.id === item.id
+                                );
+                                copy[index] = {
+                                  ...copy[index],
+                                  [col.key]: newVal,
+                                };
+                                return copy;
+                              });
+                            }}
+                            onBlur={async () => {
+                              if (!item.group || !item.id) {
+                                console.error(
+                                  "Missing group or lead ID:",
+                                  item
+                                );
+                                return;
+                              }
+                              try {
+                                await updateStatus(item.group, item.id, {
+                                  [col.key]: localItems.find(
+                                    (it) => it.id === item.id
+                                  )[col.key],
+                                });
+                              } catch (err) {
+                                console.error(
+                                  `Failed to update ${col.key}:`,
+                                  err
+                                );
+                              }
+                              saveEditCell();
+                            }}
+                            onFocus={() =>
+                              startEditCell(
+                                localItems.findIndex((it) => it.id === item.id),
+                                col.key
+                              )
+                            }
+                            className="w-full text-center focus:outline-none bg-transparent"
+                            placeholder={col.label}
+                          />
+                        )}
+                      </td>
+                    ))}
+
+                    <td
+                      className="border border-gray-300 p-2"
+                      style={{ width: "48px", minWidth: "48px" }}
+                    ></td>
+                  </tr>
+                ))}
+
+                {addingItem ? (
+                  <tr key="new-item">
+                    <td
+                      className="border border-gray-300 text-center p-2"
+                      style={{ width: "48px", minWidth: "48px" }}
+                    >
+                      <input type="checkbox" disabled />
+                    </td>
+                    <td
+                      className="border border-gray-300 p-2 text-center"
+                      style={{ width: "160px", minWidth: "160px" }}
+                    >
+                      <input
+                        autoFocus
+                        value={newItemName}
+                        onChange={(e) => setNewItemName(e.target.value)}
+                        onBlur={() =>
+                          newItemName.trim()
+                            ? saveNewItem()
+                            : setAddingItem(false)
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") saveNewItem();
+                          if (e.key === "Escape") setAddingItem(false);
+                        }}
+                        placeholder="Enter item name..."
+                        className="w-full px-2 py-1 rounded-[8px] focus:outline-none text-center bg-transparent"
+                      />
+                    </td>
+                    {Array(columns.length - 1)
+                      .fill(null)
+                      .map((_, idx) => (
+                        <td
+                          key={`new-item-placeholder-${idx}`}
+                          className="border border-gray-300 p-2 text-center text-gray-400"
+                          style={{ width: "160px", minWidth: "160px" }}
+                        >
+                          -
+                        </td>
+                      ))}
+                    <td
+                      className="border border-gray-300 p-2"
+                      style={{ width: "48px", minWidth: "48px" }}
+                    ></td>
+                  </tr>
+                ) : (
+                  <tr key="add-item">
+                    <td
+                      colSpan={columns.length + 2}
+                      className="border border-gray-300 p-2 text-center cursor-pointer text-black hover:bg-gray-100"
+                      onClick={() => setAddingItem(true)}
+                    >
+                      + Add item
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+>>>>>>> ff2f0380fcf7dd2397f5bbbd239d8c51dd4158bf
       )}
     </div>
   );
