@@ -77,8 +77,11 @@ const Activity = () => {
               <p className="font-[400] text-[14px] text-[#0A1629]">
                 {user.profession}
               </p>
-              <span className="font-semibold text-[12px] text-[#7D8592] px-2 py-[2px] rounded-lg bg-white">
-                {user.level}
+              <span
+                className={`font-semibold text-[12px] text-[#7D8592] px-2 py-[2px] rounded-lg 
+    ${user.level === "none" ? "bg-[#E3EDFA]" : "bg-white"}`}
+              >
+                {user.level === "none" ? "\u00A0" : user.level}
               </span>
             </div>
 

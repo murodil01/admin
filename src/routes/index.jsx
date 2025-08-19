@@ -18,7 +18,7 @@ import Reports from "../pages/reports";
 import Library from "../pages/library";
 import CategoryDetailsPage from "../pages/library/CategoryDetailsPage";
 import Settings from "../pages/settings";
-import MainProfile from "../pages/main-profile";
+import MainProfile from "../pages/main-profile/MainProfile";
 import TaskDetails from "../pages/tasks/TaskDetails";
 import Notification from "../pages/notification";
 import Customers from "../pages/customers";
