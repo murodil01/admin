@@ -52,7 +52,6 @@ export const router = createBrowserRouter([
           { path: "library", element: <Library /> },
           { path: "library/id", element: <CategoryDetailsPage /> },
           { path: "category/:id", element: <CategoryDetailsPage /> },
-          { path: "folder/category", element: <CategoryCard /> },
           { path: "library/folders/:id", element: <CategoryCard /> },
 
 

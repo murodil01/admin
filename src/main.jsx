@@ -6,37 +6,40 @@ import { router } from "./routes";
 import "@ant-design/v5-patch-for-react-19";
 import "aos/dist/aos.css";
 import "./index.css";
+import { HelmetProvider } from "react-helmet-async"; // 👈 qo‘shildi
 
 const root = createRoot(document.getElementById("root"));
 
 root.render(
   <>
-    <AuthProvider>
-      <RouterProvider router={router} />
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          duration: 5000,
-          style: {
-            background: '#363636',
-            color: '#fff',
-          },
-          success: {
-            duration: 3000,
-            iconTheme: {
-              primary: 'green',
-              secondary: 'white',
+    <HelmetProvider>
+      <AuthProvider>
+        <RouterProvider router={router} />
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 5000,
+            style: {
+              background: "#363636",
+              color: "#fff",
             },
-          },
-          error: {
-            duration: 4000,
-            iconTheme: {
-              primary: 'red',
-              secondary: 'white',
+            success: {
+              duration: 3000,
+              iconTheme: {
+                primary: "green",
+                secondary: "white",
+              },
             },
-          },
-        }}
-      />
-    </AuthProvider>
+            error: {
+              duration: 4000,
+              iconTheme: {
+                primary: "red",
+                secondary: "white",
+              },
+            },
+          }}
+        />
+      </AuthProvider>
+    </HelmetProvider>
   </>
 );

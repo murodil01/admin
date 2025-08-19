@@ -22,6 +22,10 @@ const Profile = () => {
     return localStorage.getItem("profileTab") || "Profile";
   });
 
+  useEffect(() => {
+    return () => localStorage.removeItem("profileTab");
+  }, []);
+
   const [birthday, setBirthday] = useState("1996-05-19");
   const [showDetails, setShowDetails] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -67,6 +71,8 @@ const Profile = () => {
       try {
         const data = await getEmployeeById(id);
         setEmployee(data);
+        console.log(data);
+        
         setBirthday(data.birthday || "");
       } catch (err) {
         // console.error("Error fetching employee:", err);
@@ -87,14 +93,14 @@ const Profile = () => {
 
     try {
       const formattedBirthday = birthday
-        ? new Date(birthday).toISOString().split("T")[0]
+        ? new Date(birthday + 'T00:00:00').toISOString().split('T')[0]
         : null;
 
       const formData = new FormData();
 
       // 1. Backend talabiga ko'ra departmentni yuborish
       // Agar backend 'department_id' talab qilsa:
-      formData.append('department_id', employee.department?.id || '');
+      formData.append('department_id', employee.department_id?.id || '');
       // Yoki agar 'department' talab qilsa:
       formData.append('department', employee.department?.id || '');
 
@@ -109,6 +115,19 @@ const Profile = () => {
           formData.append(key, value);
         }
       });
+
+      const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          setEmployee(prev => ({
+            ...prev,
+            profile_picture: URL.createObjectURL(file), // Preview uchun
+            profile_picture_file: file // Asl fayl
+          }));
+        }
+      };
+
+      // Keyin formData.append('profile_picture', employee.profile_picture_file);
 
       // 3. Tug'ilgan kunini qo'shamiz
       if (formattedBirthday) {
@@ -135,14 +154,25 @@ const Profile = () => {
       setSaveMessage("✅ Ma'lumotlar muvaffaqiyatli saqlandi");
       setTimeout(() => setSaveMessage(""), 3000);
     } catch (err) {
-      setSaveMessage(`❌ Saqlashda xatolik: ${err.response?.data?.message || err.message}`);
-      setTimeout(() => setSaveMessage(""), 5000);
+      const errorMessage = err.response?.data?.detail ||
+        err.response?.data?.message ||
+        err.message ||
+        "Noma'lum xatolik";
+      setSaveMessage(`❌ Saqlashda xatolik: ${errorMessage}`);
     }
   };
 
   useEffect(() => {
     localStorage.setItem("profileTab", activeTab);
   }, [activeTab]);
+
+  const statusOptions = [
+    { value: "free", label: "Free" },
+    { value: "sick", label: "Sick" },
+    { value: "working", label: "Working" },
+    { value: "overload", label: "Overload" },
+    { value: "on_leave", label: "On leave" }
+  ];
 
   const SidebarSections = employee
     ? [
@@ -162,7 +192,10 @@ const Profile = () => {
             label: "Status",
             name: "status",
             value: employee.status || "",
-            input: true
+            input: true,
+            isSelect: true,
+            options: statusOptions,
+            optionKey: "label" // Agar obyektlardan foydalansangiz
           },
         ],
       },
@@ -189,6 +222,12 @@ const Profile = () => {
             label: "Email",
             name: "email",
             value: employee.email || "",
+            input: true
+          },
+          {
+            label: "Address",
+            name: "address",
+            value: employee.address || "",
             input: true
           },
           {
@@ -315,9 +354,11 @@ const Profile = () => {
                 </h3>
                 <p className="text-xs sm:text-[14px] md:text-[16px] font-medium text-[#1F2937] flex items-center gap-1 md:gap-2">
                   {employee.role}
-                  <span className="text-[8px] md:text-[10px] border border-[#7D8592] px-1 py-0.5 md:px-[2px] md:py-[2px] rounded-[3px] md:rounded-[4px]">
-                    {employee.level}
-                  </span>
+                  {employee.level !== "none" && (
+                    <span className="text-[8px] md:text-[10px] border border-[#7D8592] px-1 py-0.5 md:px-[2px] md:py-[2px] rounded-[3px] md:rounded-[4px]">
+                      {employee.level}
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
@@ -342,23 +383,32 @@ const Profile = () => {
                             item.isSelect ? (
                               <select
                                 name={item.name}
-                                value={employee.department?.id || ""}
+                                value={item.name === 'department'
+                                  ? employee.department?.id
+                                  : employee[item.name] || ""}
                                 onChange={(e) => {
-                                  const selectedDept = departments.find(d => d.id === e.target.value);
-                                  setEmployee(prev => ({
-                                    ...prev,
-                                    department: selectedDept ? {
-                                      id: selectedDept.id,
-                                      name: selectedDept.name
-                                    } : null
-                                  }));
+                                  if (item.name === 'department') {
+                                    const selectedDept = departments.find(d => d.id === e.target.value);
+                                    setEmployee(prev => ({
+                                      ...prev,
+                                      department: selectedDept || null
+                                    }));
+                                  } else {
+                                    setEmployee(prev => ({
+                                      ...prev,
+                                      [item.name]: e.target.value,
+                                    }));
+                                  }
                                 }}
                                 className="w-full h-[40px] md:h-[48px] bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg md:rounded-xl px-3 md:px-4 py-1 md:py-2 font-normal text-xs md:text-[14px] text-[#7D8592] pr-8 md:pr-10"
                               >
-                                <option value="">Select department</option>
-                                {departments.map(dept => (
-                                  <option key={dept.id} value={dept.id}>
-                                    {dept.name}
+                                <option value="">Select {item.label.toLowerCase()}</option>
+                                {item.options.map((option) => (
+                                  <option
+                                    key={option.value || option.id || option}
+                                    value={option.value || option.id || option}
+                                  >
+                                    {option.label || option.name || option}
                                   </option>
                                 ))}
                               </select>
@@ -382,10 +432,12 @@ const Profile = () => {
                               </div>
                             )
                           ) : (
-                            <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg md:rounded-xl px-3 md:px-4 py-1 md:py-2 text-xs md:text-[14px] font-normal text-[#7D8592] h-[40px] md:h-[48px] flex items-center">
-                              {item.isSelect ?
-                                employee.department?.name || "No department selected" // Show department name
-                                : item.value}
+                              <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg md:rounded-xl px-3 md:px-4 py-1 md:py-2 text-xs md:text-[14px] font-normal text-[#7D8592] h-[40px] md:h-[48px] flex items-center">
+                                {item.isSelect ?
+                                  (item.name === 'department'
+                                    ? employee.department?.name
+                                    : employee[item.name]) || `No ${item.label.toLowerCase()} selected`
+                                  : item.value}
                             </div>
                           )
                         ) : (

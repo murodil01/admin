@@ -1,21 +1,38 @@
 import { createContext, useState, useEffect } from 'react';
 import api from '../api/base';
+import { roleHierarchy, ROLES } from '../components/constants/roles';
 
 const AuthContext = createContext();
 
 export default AuthContext;
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
+    const [user, setUser] = useState(() => {
+        // Dastlabki qiymat sifatida localStorage'dan token borligini tekshirish
+        const token = localStorage.getItem('token');
+        return token ? { role: 'loading' } : null;
+    });
+    const [authState, setAuthState] = useState({
+        user: null,
+        loading: true,
+        error: null
+    });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     const fetchUser = async () => {
         try {
+            setAuthState(prev => ({ ...prev, loading: true }));
             setLoading(true);
-            const { data } = await api.get('/me', {
+            const { data } = await api.get('me', {
                 withCredentials: true,
                 validateStatus: (status) => status < 500
+            });
+
+            setAuthState({
+                user: data,
+                loading: false,
+                error: null
             });
 
             if (!data?.id) {
@@ -34,12 +51,19 @@ export const AuthProvider = ({ children }) => {
             setError(null);
             return userData;
         } catch (err) {
+            setAuthState({
+                user: null,
+                loading: false,
+                error: err.message
+            });
             console.error('Auth error:', err.message);
             setUser(null);
             setError(err.message);
             // Clear auth state on error
-            document.cookie = 'token=; Max-Age=0; path=/;';
-            localStorage.removeItem('token');
+            if (err.response?.status === 401 || err.response?.status === 403) {
+                document.cookie = 'token=; Max-Age=0; path=/;';
+                localStorage.removeItem('token');
+            }
             throw err; // Re-throw for calling functions
         } finally {
             setLoading(false);
@@ -86,16 +110,21 @@ export const AuthProvider = ({ children }) => {
     };
 
     const value = {
+        ...authState,
         user,
         loading,
         error,
-        isAuthenticated: !!user,
+        isAuthenticated: !!authState.user,
+        role: authState.user?.role,
         isFounder: user?.role === 'founder',
-        isManager: ['founder', 'manager'].includes(user?.role),
+        isManager: user ? roleHierarchy[user.role] >= roleHierarchy[ROLES.MANAGER] : false,
+        isHeads: user ? roleHierarchy[user.role] >= roleHierarchy[ROLES.HEADS] : false,
+        isEmployee: user?.role === 'employee',
         login,
         logout,
         refreshAuth: fetchUser
     };
+
 
     return (
         <AuthContext.Provider value={value}>

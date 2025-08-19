@@ -24,7 +24,11 @@ const InnerCircle = () => {
     const [activeTab, setActiveTab] = useState(
         localStorage.getItem("innerCircleTab") || "list"
     );
-    const { user, isAuthenticated } = useAuth();
+    const { user, loading: authLoading } = useAuth();
+    const [dataLoading, setDataLoading] = useState(true);
+    // Yuklash holatini birlashtirish
+    const isLoading = authLoading || dataLoading;
+
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const navigate = useNavigate();
 
@@ -175,14 +179,22 @@ const InnerCircle = () => {
         localStorage.setItem("innerCircleTab", tab);
     };
 
+    useEffect(() => {
+        if (!authLoading) {
+            fetchEmployees().finally(() => setDataLoading(false));
+        }
+    }, [authLoading]);
+
+    if (isLoading) {
+        return <div className="flex justify-center items-center h-[100vh]">Loading...</div>;
+    }
+
     if (loading)
         return (
             <div className="flex justify-center items-center h-[100vh]">
                 Loading...
             </div>
         );
-
-        if (!isAuthenticated) return <div>Please login</div>;
 
     return (
         <div className="w-full max-w-screen-xl mx-auto ">
@@ -220,23 +232,25 @@ const InnerCircle = () => {
 
                 {/* Add Button */}
                 <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
-                    <div className="flex justify-center lg:justify-end">
-                        {/* Desktop Button - faqat lg: dan boshlab */}
-                        <button
-                            onClick={() => setIsAddModalOpen(true)}
-                            className="hidden lg:flex bg-[#0061fe] text-white text-sm sm:text-base rounded-2xl items-center gap-2 py-2 px-4 sm:py-3 sm:px-5 cursor-pointer"
-                        >
-                            <Plus size={18} /> <span>Add Employee</span>
-                        </button>
+                    {!loading && (
+                        <div className="flex justify-center lg:justify-end">
+                            {/* Desktop Button - faqat lg: dan boshlab */}
+                            <button
+                                onClick={() => setIsAddModalOpen(true)}
+                                className="hidden lg:flex bg-[#0061fe] text-white text-sm sm:text-base rounded-2xl items-center gap-2 py-2 px-4 sm:py-3 sm:px-5 cursor-pointer"
+                            >
+                                <Plus size={18} /> <span>Add Employee</span>
+                            </button>
 
-                        {/* Mobile + Tablet Floating Button */}
-                        <button
-                            onClick={() => setIsAddModalOpen(true)}
-                            className="lg:hidden fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#0061fe] text-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
-                        >
-                            <Plus size={24} />
-                        </button>
-                    </div>
+                            {/* Mobile + Tablet Floating Button */}
+                            <button
+                                onClick={() => setIsAddModalOpen(true)}
+                                className="lg:hidden fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#0061fe] text-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
+                            >
+                                <Plus size={24} />
+                            </button>
+                        </div>
+                    )}
                 </Permission>
             </div>
 

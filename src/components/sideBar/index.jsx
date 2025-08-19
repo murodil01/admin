@@ -8,19 +8,26 @@ import {
 import { useNavigate, useLocation } from "react-router-dom";
 import { BsFillGridFill } from "react-icons/bs";
 import { BiSupport } from "react-icons/bi";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { FaUsers } from "react-icons/fa";
 import { IoFileTrayFull, IoLibrary } from "react-icons/io5";
 import { TbReport } from "react-icons/tb";
 import { RiPieChart2Fill } from "react-icons/ri";
 import { HiTrophy } from "react-icons/hi2";
 import side_blue3 from "../../assets/side_blue3.png";
+import LeadSide from "../lead-parts/leads-side"; // LeadSide komponentini import qilish
+import { useSidebar } from "../../context/index";
 
 const menuItems = [
   { label: "Dashboard", icon: <BsFillGridFill size={20} />, path: "/" },
   { label: "Calendar", icon: <Calendar size={20} />, path: "/calendar" },
   { label: "Tasks", icon: <ClipboardList size={20} />, path: "/tasks" },
-  { label: "Leads", icon: <RiPieChart2Fill size={20} />, path: "/leads" },
+  {
+    label: "Leads",
+    icon: <RiPieChart2Fill size={20} />,
+    path: "/leads",
+    isModal: true,
+  },
   { label: "Customers", icon: <HiTrophy size={20} />, path: "/customers" },
   { label: "Departments", icon: <Landmark size={20} />, path: "/departments" },
   { label: "Inner Circle", icon: <FaUsers size={20} />, path: "/employees" },
@@ -30,12 +37,18 @@ const menuItems = [
   { label: "Archive", icon: <IoFileTrayFull size={20} />, path: "/archive" },
 ];
 
-const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
+const SideBar = ({ isMobileOpen, setIsMobileOpen }) => {
   const navigate = useNavigate();
+  const { collapsed } = useSidebar();
   const location = useLocation();
+  const [showLeadsModal, setShowLeadsModal] = useState(false);
 
-  const handleNavigate = (path) => {
-    navigate(path);
+  const handleNavigate = (path, isModal = false) => {
+    if (isModal) {
+      setShowLeadsModal(true);
+    } else {
+      navigate(path);
+    }
     if (isMobileOpen) setIsMobileOpen(false);
   };
 
@@ -105,28 +118,39 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
               }}
             >
               {menuItems.map((item) => {
-                const isActive =
-                  location.pathname === item.path ||
-                  location.pathname.startsWith(item.path + "/") ||
-                  (item.path === "/employees" &&
-                    location.pathname.startsWith("/profile"));
+                let active = false;
+
+                // Agar Leads bo'lsa
+                if (item.label === "Leads") {
+                  active =
+                    showLeadsModal ||
+                    location.pathname.startsWith("/leads-right");
+                } else {
+                  // Boshqa itemlar faqat Leads active bo'lmasa
+                  if (
+                    !(
+                      showLeadsModal ||
+                      location.pathname.startsWith("/leads-right")
+                    )
+                  ) {
+                    active =
+                      location.pathname === item.path ||
+                      location.pathname.startsWith(item.path + "/") ||
+                      (item.path === "/employees" &&
+                        location.pathname.startsWith("/profile"));
+                  }
+                }
 
                 return (
                   <button
                     key={item.label}
-                    onClick={() => handleNavigate(item.path)}
+                    onClick={() => handleNavigate(item.path, item.isModal)}
                     className={`flex items-center gap-3 py-2 rounded-xl transition-all duration-200 text-left group h-[40px]
-                      ${
-                        collapsed
-                          ? "justify-center px-2 w-[48px]"
-                          : "px-4 w-full"
-                      }
-                      ${
-                        isActive
-                          ? "bg-[#0061fe] font-semibold text-white shadow-md"
-                          : "text-[#7D8592] hover:text-white hover:shadow-sm"
-                      }
-                      hover:bg-[#0061fe] hover:text-white relative group`}
+        ${collapsed ? "justify-center px-2 w-[48px]" : "px-4 w-full"} ${
+                      active
+                        ? "bg-[#0061fe] font-semibold text-white shadow-md"
+                        : "text-[#7D8592] hover:text-white hover:shadow-sm"
+                    } hover:bg-[#0061fe] hover:text-white relative group`}
                   >
                     {item.icon}
                     {!collapsed && (
@@ -186,17 +210,31 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
 
             <nav className="flex flex-col gap-1 sm:gap-2">
               {menuItems.map((item) => {
-                const isActive = location.pathname === item.path;
+                const path = location.pathname;
+                let active = false;
+
+                if (item.label === "Leads") {
+                  // Leads active bo'lsin: modal ochiq yoki /leads-right pathida
+                  active = showLeadsModal || path.startsWith("/leads-right");
+                } else {
+                  // Boshqa menu itemlar
+                  active =
+                    path === item.path ||
+                    path.startsWith(item.path + "/") ||
+                    // employees uchun /profile
+                    (item.path === "/employees" && path.startsWith("/profile"));
+                }
+
                 return (
                   <button
                     key={item.label}
-                    onClick={() => handleNavigate(item.path)}
+                    onClick={() => handleNavigate(item.path, item.isModal)}
                     className={`flex items-center w-full rounded-xl transition px-3 py-2 sm:px-4 sm:py-2.5
-                      ${
-                        isActive
-                          ? "bg-[#0061fe] text-white font-semibold"
-                          : "text-[#7D8592] hover:bg-[#0061fe] hover:text-white"
-                      }`}
+        ${
+          active
+            ? "bg-[#0061fe] text-white font-semibold"
+            : "text-[#7D8592] hover:bg-[#0061fe] hover:text-white"
+        }`}
                   >
                     <div className="w-5 h-5 mr-2 sm:mr-3 flex-shrink-0">
                       {item.icon}
@@ -219,6 +257,43 @@ const SideBar = ({ isMobileOpen, setIsMobileOpen, collapsed }) => {
                 <BiSupport size={18} />
                 <span>Support</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leads Modal */}
+      {showLeadsModal && (
+        <div className="w-full fixed inset-0 z-[60] flex items-center">
+          {/* Backdrop */}
+          <div
+            className={`absolute inset-0 backdrop-blur-[3px] transition-all duration-300 ${
+              showLeadsModal ? "bg-opacity-50" : "bg-opacity-0"
+            }`}
+            onClick={() => setShowLeadsModal(false)}
+          />
+
+          {/* Modal Content: md ekranlarda sidebar kengligiga mos ml beradi */}
+          <div
+            className={`relative z-10 transform transition-all duration-300 
+        ${
+          showLeadsModal
+            ? "scale-100 opacity-100 translate-y-0"
+            : "scale-95 opacity-0 translate-y-4"
+        }
+        ${collapsed ? "md:ml-16" : "md:ml-64"}`}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => setShowLeadsModal(false)}
+              className="absolute -top-4 -right-0 z-20 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition-colors"
+            >
+              <X size={20} className="text-gray-600" />
+            </button>
+
+            {/* LeadSide Component */}
+            <div className="max-h-[90vh] overflow-auto">
+              <LeadSide closeModal={() => setShowLeadsModal(false)} />
             </div>
           </div>
         </div>
