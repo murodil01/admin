@@ -399,7 +399,7 @@ const CategoryDetailsPage = () => {
       <div className="mt-4 sm:mt-6 space-y-2 sm:space-y-3">
         {items.length === 0 && !isLoading && (
           <p className="text-gray-500 text-center py-3 text-sm sm:text-base">
-            There are no elements in this category.
+            There are no element in this category.
           </p>
         )}
         {items.map((item) => {
