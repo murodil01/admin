@@ -108,6 +108,7 @@ const CategoryCard = () => {
       formData.append('title', modalData.title.trim());
       formData.append('file', modalData.file);
       formData.append('folder_id', parseInt(id));
+      formData.append('view_options', modalData.view_options || 'public');
 
       await api.post('/library/libraries/', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -121,6 +122,7 @@ const CategoryCard = () => {
       setLoading(false);
     }
   };
+
 
   // Edit file
   const handleEdit = async (e) => {
@@ -318,7 +320,6 @@ const CategoryCard = () => {
                 </div>
               </div>
 
-
               {/* Actions Dropdown */}
               <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
                 <div className="col-span-12 sm:col-span-12 lg:col-span-2 flex justify-end">
@@ -363,62 +364,71 @@ const CategoryCard = () => {
                   </div>
                 </div>
               </Permission>
-
             </div>
           </div>
         ))}
       </div>
 
       {/* Add Modal */}
-      {showModal === 'add' && (
-        <Modal title="File Upload" onClose={closeModal}>
-          <form onSubmit={handleAddFile} className="p-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">File Title</label>
-            <input
-              type="text"
-              value={modalData.title}
-              onChange={(e) => setModalData({ ...modalData, title: e.target.value })}
-              placeholder="Enter file title..."
-              className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none mb-3"
-              autoFocus
-              required
-            />
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select File</label>
-            <input
-              type="file"
-              onChange={(e) => {
-                const file = e.target.files[0];
-                if (file && file.size > 50 * 1024 * 1024) {
-                  setError("Fayl hajmi 50MB dan kichik bo'lishi kerak!");
-                  return;
-                }
-             
-                setModalData({ ...modalData, file });
-              }}
-              className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none mb-3"
-              required
-            />
-            {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
-            <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={closeModal}
-                className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+        {showModal === 'add' && (
+          <Modal title="File Upload" onClose={closeModal}>
+            <form onSubmit={handleAddFile} className="p-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">File Title</label>
+              <input
+                type="text"
+                value={modalData.title}
+                onChange={(e) => setModalData({ ...modalData, title: e.target.value })}
+                placeholder="Enter file title..."
+                className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none mb-3"
+                autoFocus
+                required
+              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Select File</label>
+              <input
+                type="file"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file && file.size > 50 * 1024 * 1024) {
+                    setError("Fayl hajmi 50MB dan kichik bo'lishi kerak!");
+                    return;
+                  }
+                  setModalData({ ...modalData, file });
+                }}
+                className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none mb-3"
+                required
+              />
+              <label className="block text-sm font-medium text-gray-700 mb-2">View Options</label>
+              <select
+                value={modalData.view_options || 'public'}
+                onChange={(e) => setModalData({ ...modalData, view_options: e.target.value })}
+                className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none mb-3"
               >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
-                disabled={loading}
-              >
-                {loading ? 'Saving...' : 'Save'}
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
-
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+                <option value="chosen">Chosen</option>
+              </select>
+              {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition"
+                  disabled={loading}
+                >
+                  {loading ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </form>
+          </Modal>
+        )}
+      </Permission>
       {/* Edit Modal */}
       {showModal === 'edit' && modalData.item && (
         <Modal title="Edit File" onClose={closeModal}>
