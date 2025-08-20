@@ -5,29 +5,15 @@ import endpoints from "../endpoint";
 export const getBoards = () => api.get(endpoints.boards.getAll);
 
 // ID bo'yicha bitta boardni olish
-export const getBoardById = async (id) => {
-  try {
-    // Use the correct endpoint: /board/status/{board_id}/
-    const response = await api.get(`board/status/${id}/`);
-    
-    // The response should be an array of status objects
-    if (Array.isArray(response.data)) {
-      return { statuses: response.data };
-    }
-    
-    // If the response is an object with statuses property
-    if (response.data && response.data.statuses) {
-      return response.data;
-    }
-    
-    throw new Error("Invalid board data format");
-  } catch (error) {
-    console.error(`Error fetching board with ID ${id}:`, error);
-    throw error;
-  }
+export const getBoardById = (id) => api.get(endpoints.boards.getById(id));
+
+// Yangi board yaratish
+export const createBoard = (name, boardId) => {
+  return api.post(endpoints.boards.create, {
+    name,
+    board: boardId,
+  });
 };
-export const createBoard = (id, data) =>
-  api.put(endpoints.boards.update(id), data);
 
 // edit qilish
 export const updateBoard = (id, data) =>
@@ -35,7 +21,6 @@ export const updateBoard = (id, data) =>
 
 // Boardni o'chirish
 export const deleteBoard = (id) => api.delete(endpoints.boards.delete(id));
-
 
 
 export const getStatusesByBoard = async (boardId) => {
