@@ -58,9 +58,9 @@ const endpoints = {
   boards: {
     getAll: "board/list/",
     create: "board/list/",
-    getById: (id) => `board/list/${id}/`,    // board detail/list uchun
-    update: (id) => `board/list/${id}/`,
-    delete: (id) => `board/list/${id}/`,
+    getById: (id) => `board/board/${id}/`,    // board detail/list uchun
+    update: (id) => `board/board/${id}/`,
+    delete: (id) => `board/board/${id}/`,
   },
 
   group: {

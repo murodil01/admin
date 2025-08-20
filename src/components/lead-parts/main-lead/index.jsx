@@ -875,7 +875,7 @@ const MainLead = () => {
   }
 
   return (
-    <div className="bg-gray-50 py-2 px-4 sm:px-6 lg:px-8 rounded-b-[8px]  w-[1320px]  overflow-x">
+    <div className="bg-gray-50 py-2 px-4 sm:px-6 lg:px-8 rounded-b-[8px]   overflow-x">
       {showBoardSelector && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-md w-full">
