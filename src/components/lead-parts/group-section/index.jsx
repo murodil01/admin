@@ -5,15 +5,20 @@ import {
   MoreVertical,
   Edit2,
   Trash2,
-  X,
+  // X,
 } from "lucide-react";
-import ReactDatePicker from "react-datepicker";
+// import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { updateGroup } from "../../../api/services/groupService";
-import { getLeads, updateStatus,getLeadsById,updateLeads } from "../../../api/services/leadsService";
+import {
+  // getLeads,
+  updateStatus,
+  // getLeadsById,
+  updateLeads,
+} from "../../../api/services/leadsService";
 import StatusDropdown from "./status-board";
 import { Select, Avatar } from "antd";
-import TableBox from "./Table"
+import TableBox from "./Table";
 // const SingleDatePickerCell = ({ value = "", onChange, onSave, onCancel }) => {
 //   const [date, setDate] = useState(value ? new Date(value) : null);
 
@@ -22,8 +27,6 @@ import TableBox from "./Table"
 //     onChange(date ? date.toISOString().split("T")[0] : null);
 //   };
 
-
- 
 //   return (
 //     <div className="flex flex-col gap-1 w-full h-full">
 //       <ReactDatePicker
@@ -137,7 +140,6 @@ import TableBox from "./Table"
 // const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
 //   const [personOptions, setPersonOptions] = useState([]);
 
-  
 //   useEffect(() => {
 //     const fetchPersons = async () => {
 //       try {
@@ -169,7 +171,7 @@ import TableBox from "./Table"
 //  const handleChange = async (selectedId) => {
 //     const selectedPerson = personOptions.find((p) => p.id === selectedId) || null;
 //     onChange(selectedPerson);
-    
+
 //     if (groupId && leadId) {
 //       try {
 //         // Fixed: Use correct function with proper parameters
@@ -215,7 +217,7 @@ const GroupSection = ({
   expanded,
   onToggleExpanded,
   updateTitle,
-  addItem,
+  // addItem,
   updateItem,
   deleteGroup,
   // selected,
@@ -231,24 +233,24 @@ const GroupSection = ({
   const [titleValue, setTitleValue] = useState(title);
   const [localItems, setLocalItems] = useState((items || []).filter(Boolean));
   const [editingCell, setEditingCell] = useState(null);
-  const [addingItem, setAddingItem] = useState(false);
-  const [newItemName, setNewItemName] = useState("");
+  // const [addingItem, setAddingItem] = useState(false);
+  // const [newItemName, setNewItemName] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [editingColumnIndex, setEditingColumnIndex] = useState(null);
-  const [columnTitleValue, setColumnTitleValue] = useState("");
+  // const [editingColumnIndex, setEditingColumnIndex] = useState(null);
+  // const [columnTitleValue, setColumnTitleValue] = useState("");
   const dropdownRef = useRef();
 
-  const [columns, setColumns] = useState([
-    { key: "name", label: "Leads", isCustom: false },
-    { key: "phone", label: "Phone Number", isCustom: false },
-    { key: "link", label: "Source", isCustom: false },
-    { key: "person_detail", label: "Owner", isCustom: false },
-    { key: "last_interaction", label: "Last interaction", isCustom: false },
-    { key: "status", label: "Status", isCustom: false },
-    { key: "notes", label: "Notes", isCustom: false },
-    { key: "potential_value", label: "Potential value", isCustom: false },
-    { key: "timeline", label: "Timeline", isCustom: false },
-  ]);
+  // const [columns, setColumns] = useState([
+  //   { key: "name", label: "Leads", isCustom: false },
+  //   { key: "phone", label: "Phone Number", isCustom: false },
+  //   { key: "link", label: "Source", isCustom: false },
+  //   { key: "person_detail", label: "Owner", isCustom: false },
+  //   { key: "last_interaction", label: "Last interaction", isCustom: false },
+  //   { key: "status", label: "Status", isCustom: false },
+  //   { key: "notes", label: "Notes", isCustom: false },
+  //   { key: "potential_value", label: "Potential value", isCustom: false },
+  //   { key: "timeline", label: "Timeline", isCustom: false },
+  // ]);
 
   useEffect(() => {
     if (items) {
@@ -281,57 +283,60 @@ const GroupSection = ({
   // const startEditCell = (row, field) => setEditingCell({ row, field });
   const cancelEditCell = () => setEditingCell(null);
 
- const saveEditCell = async () => {
-  if (!editingCell) return;
-  const { row, field } = editingCell;
-  let val = localItems[row]?.[field] ?? "";
+  const saveEditCell = async () => {
+    if (!editingCell) return;
+    const { row, field } = editingCell;
+    let val = localItems[row]?.[field] ?? "";
 
-  if (typeof val === "string") val = val.trim();
-  if (val === "") val = field === "name" ? "Unnamed" : null;
+    if (typeof val === "string") val = val.trim();
+    if (val === "") val = field === "name" ? "Unnamed" : null;
 
-  if (field === "potential_value") {
-    val = val === "" || val === null ? null : parseInt(val, 10) || null;
-  }
+    if (field === "potential_value") {
+      val = val === "" || val === null ? null : parseInt(val, 10) || null;
+    }
 
-  const newItems = [...localItems];
-  newItems[row] = { ...newItems[row], [field]: val };
+    const newItems = [...localItems];
+    newItems[row] = { ...newItems[row], [field]: val };
 
-  if (field === "timeline") {
-    const timelineValue = val || { start: null, end: null };
-    newItems[row].timelineStart = timelineValue.start;
-    newItems[row].timelineEnd = timelineValue.end;
-  }
+    if (field === "timeline") {
+      const timelineValue = val || { start: null, end: null };
+      newItems[row].timelineStart = timelineValue.start;
+      newItems[row].timelineEnd = timelineValue.end;
+    }
 
-  if (field === "person_detail") {
-    val = val || null;
-  }
+    if (field === "person_detail") {
+      val = val || null;
+    }
 
     setLocalItems(newItems);
     updateItem(id, row, newItems[row]);
 
     // Save to backend
-     try {
-    if (field !== "timeline") {
-      if (!newItems[row].group || !newItems[row].id) {
-        console.error("Missing group or lead ID:", newItems[row]);
-        return;
-      }
-      
-      // Use the correct function based on the field being updated
-      if (field === "status") {
-        // For status updates, use updateStatus with the lead ID
-        await updateStatus(newItems[row].id, { [field]: val });
-      } else {
-        // For other fields, use updateLeads
-        await updateLeads(newItems[row].group, newItems[row].id, { [field]: val });
-      }
-    }
-  } catch (err) {
-    console.error(`Failed to update ${field}:`, err);
-  }
+    try {
+      if (field !== "timeline") {
+        if (!newItems[row].group || !newItems[row].id) {
+          console.error("Missing group or lead ID:", newItems[row]);
+          return;
+        }
 
-  cancelEditCell();
-};
+        // Use the correct function based on the field being updated
+        if (field === "status") {
+          // For status updates, use updateStatus with the lead ID
+          await updateStatus(newItems[row].id, { [field]: val });
+        } else {
+          // For other fields, use updateLeads
+          await updateLeads(newItems[row].group, newItems[row].id, {
+            [field]: val,
+          });
+        }
+      }
+    } catch (err) {
+      console.error(`Failed to update ${field}:`, err);
+    }
+
+    cancelEditCell();
+  };
+
   // const saveNewItem = () => {
   //   if (newItemName.trim()) {
   //     const newItem = {
@@ -490,8 +495,8 @@ const GroupSection = ({
       {/* Table */}
       {expanded && (
         <>
-        <TableBox />
-        </>   
+          <TableBox />
+        </>
       )}
     </div>
   );
