@@ -4,7 +4,9 @@ import Table from '../../../components/lead-parts/group-section/Table'
 function LeadsRight() {
   return (
     <div className=" border-gray-200 rounded-[8px]">
-     <Table/>
+<LeadNavbar/>
+<MainLead />
+
     </div>
   );
 }

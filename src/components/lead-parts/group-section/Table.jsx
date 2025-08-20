@@ -251,13 +251,12 @@ const Table = () => {
   };
 
   return (
-    <div className="h-auto w-[70%]">
-      {/* Header */}
-      <div className="mb-8">
+    <div className="h-auto  md:min-w-[95%]">
+
+      {/* <div className="mb-8">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Leads Management Board</h1>
-            {/* <p className="text-gray-600">Track and manage your leads from API</p> */}
             {loading && <p className="text-blue-600 text-sm">🔄 Loading data from API...</p>}
       
           </div>
@@ -267,7 +266,7 @@ const Table = () => {
           </button>
         </div>
 
-        {/* Controls Bar */}
+
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex-1 min-w-64">
@@ -299,7 +298,7 @@ const Table = () => {
             </button>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Table Container with Horizontal Scroll */}
       <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
