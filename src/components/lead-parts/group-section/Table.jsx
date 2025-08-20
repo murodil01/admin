@@ -5,6 +5,7 @@ import { getLeadsById, getLeads, updateLeads } from '../../../api/services/leads
 
 const Table = () => {
   const [hoveredRow, setHoveredRow] = useState(null);
+  
   const [selectedRows, setSelectedRows] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
