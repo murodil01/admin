@@ -250,7 +250,7 @@ const Table = () => {
   };
 
   return (
-    <div className="w-[1000px] h-auto">
+    <div className="h-auto w-[70%]">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">
