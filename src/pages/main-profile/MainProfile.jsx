@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
   Button,
   DatePicker,
-  Select,
   message,
   Card,
   Avatar,
@@ -10,8 +9,7 @@ import {
   Tag,
   Upload,
   Input,
-  Dropdown,
-  Menu,
+  Modal
 } from "antd";
 import {
   UserOutlined,
@@ -20,9 +18,11 @@ import {
   CloseOutlined,
   CameraOutlined,
   EyeInvisibleOutlined,
-  EyeTwoTone
+  EyeTwoTone,
+  LogoutOutlined
 } from "@ant-design/icons";
 import dayjs from "dayjs";
+import { useNavigate } from "react-router-dom";
 
 import { getMyProfile, updateMyProfile } from "../../api/services/profileService";
 
@@ -33,10 +33,30 @@ const MainProfile = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [changePassword, setChangePassword] = useState(false);
-
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [tokenExpired, setTokenExpired] = useState(false);
+  
+  const navigate = useNavigate();
+
+  // Token tekshirish funksiyasi
+  const checkTokenExpiration = (error) => {
+    if (error.response && error.response.status === 401) {
+      setTokenExpired(true);
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
+      
+      // 2 soniyadan keyin login page'ga yo'naltirish
+      setTimeout(() => {
+        message.error("Session expired. Please login again.");
+        navigate("/login");
+      }, 2000);
+      
+      return true;
+    }
+    return false;
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -48,14 +68,16 @@ const MainProfile = () => {
           profile_picture_preview: data.profile_picture || null,
         });
         setBirthday(data.birth_date || "");
-      } catch {
-        message.error("Error fetching user data");
+      } catch (error) {
+        if (!checkTokenExpiration(error)) {
+          message.error("Error fetching user data");
+        }
       } finally {
         setLoading(false);
       }
     };
     fetchUser();
-  }, []);
+  }, [navigate]);
 
   const handleInputChange = (field, value) => {
     setUser((prev) => ({ ...prev, [field]: value }));
@@ -97,7 +119,6 @@ const MainProfile = () => {
         updateData.password1 = user.password1;
       }
 
-      // 🔑 Profile picture faqat File bo‘lsa qo‘shiladi
       if (user.profile_picture instanceof File) {
         updateData.profile_picture = user.profile_picture;
       }
@@ -112,13 +133,87 @@ const MainProfile = () => {
       setIsEditing(false);
       setChangePassword(false);
       message.success("Profile updated successfully");
-    } catch {
-      message.error("Error during saving");
+    } catch (error) {
+      if (!checkTokenExpiration(error)) {
+        message.error("Error during saving");
+      }
     } finally {
       setUpdating(false);
     }
   };
 
+  // Token muddatini tekshirish
+  const checkTokenValidity = () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setTokenExpired(true);
+      return false;
+    }
+    
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const expirationTime = payload.exp * 1000;
+      const currentTime = Date.now();
+      
+      if (currentTime > expirationTime) {
+        setTokenExpired(true);
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        
+        // 2 soniyadan keyin login page'ga yo'naltirish
+        setTimeout(() => {
+          message.error("Session expired. Please login again.");
+          navigate("/login");
+        }, 2000);
+        
+        return false;
+      }
+      
+      // Token eskirishiga 5 minut qolganida ogohlantirish
+      const timeLeft = expirationTime - currentTime;
+      const minutesLeft = Math.floor(timeLeft / 60000);
+      
+      if (minutesLeft < 5) {
+        message.warning(`Your session will expire in ${minutesLeft} minutes. Please save your work.`);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Token validation error:", error);
+      setTokenExpired(true);
+      return false;
+    }
+  };
+
+  // Har 30 soniyada tokenni tekshirish
+  useEffect(() => {
+    checkTokenValidity();
+    
+    const interval = setInterval(checkTokenValidity, 30000);
+    return () => clearInterval(interval);
+  }, [navigate]);
+
+  // Logout funksiyasi
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    navigate("/login");
+    message.success("Logged out successfully");
+  };
+
+  if (tokenExpired) {
+    return (
+      <div className="p-6 max-w-3xl mx-auto">
+        <Card className="text-center py-10">
+          <div className="text-xl text-gray-600 mb-4">Your session has expired</div>
+          <div className="text-lg mb-6">Redirecting to login page...</div>
+          <Button type="primary" onClick={() => navigate("/login")}>
+            Go to Login Now
+          </Button>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -142,6 +237,17 @@ const MainProfile = () => {
 
   return (
     <div className="p-6 max-w-3xl mx-auto rounded-2xl shadow-md bg-white">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">My Profile</h1>
+        <Button 
+          icon={<LogoutOutlined />} 
+          onClick={handleLogout}
+          className="flex items-center"
+        >
+          Logout
+        </Button>
+      </div>
+      
       <div className="">
         {/* Top User Card */}
         <div className="flex flex-col md:flex-row items-center justify-between p-8 bg-white shadow-md rounded-2xl">
@@ -165,7 +271,7 @@ const MainProfile = () => {
                       profile_picture_preview: preview,
                       profile_picture: file,
                     }));
-                    return false; // Prevent auto-upload
+                    return false;
                   }}
                 >
                   <Button
@@ -222,7 +328,7 @@ const MainProfile = () => {
             </div>
           </div>
 
-          {/* Right Section - Edit Button tepada qoladi */}
+          {/* Right Section - Edit Button */}
           <div className="mt-6 md:mt-0">
             {!isEditing ? (
               <Button
@@ -238,25 +344,25 @@ const MainProfile = () => {
           </div>
         </div>
 
-        <div className="md:col-span-2 space-y-6">
+        <div className="md:col-span-2 space-y-6 mt-6">
           {/* Contact Info */}
-          <div className="p-6">
+          <div className="p-6 bg-gray-50 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-700 mb-4">Contact Information</h3>
             <div className="space-y-4">
               {/* Email */}
               <div>
                 <label className="block text-sm text-gray-500 mb-1">Email</label>
                 {isEditing ? (
-                  <input
+                  <Input
                     value={user.email || ""}
                     onChange={(e) => handleInputChange("email", e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg py-4 px-3"
+                    className="w-full"
                   />
                 ) : (
-                  <input
+                  <Input
                     value={user.email || "Not provided"}
                     readOnly
-                    className="w-full bg-gray-50 rounded-lg py-4 border border-gray-200 px-3"
+                    className="w-full"
                   />
                 )}
               </div>
@@ -265,16 +371,16 @@ const MainProfile = () => {
               <div>
                 <label className="block text-sm text-gray-500 mb-1">Phone Number</label>
                 {isEditing ? (
-                  <input
+                  <Input
                     value={user.phone_number || ""}
                     onChange={(e) => handleInputChange("phone_number", e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg py-4 px-3"
+                    className="w-full"
                   />
                 ) : (
-                  <input
+                  <Input
                     value={user.phone_number || "Not provided"}
                     readOnly
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg py-4 px-3"
+                    className="w-full"
                   />
                 )}
               </div>
@@ -284,16 +390,19 @@ const MainProfile = () => {
                 <label className="block text-sm text-gray-500 mb-1">Birthday</label>
                 {isEditing ? (
                   <DatePicker
+
                     className="w-full calendar"
+
+              
                     value={birthday ? dayjs(birthday) : null}
                     onChange={(date, dateString) => setBirthday(dateString)}
                     format="YYYY-MM-DD"
                   />
                 ) : (
-                  <input
+                  <Input
                     value={birthday ? dayjs(birthday).format("DD.MM.YYYY") : "Not provided"}
                     readOnly
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg py-4 px-3"
+                    className="w-full"
                   />
                 )}
               </div>
@@ -301,33 +410,34 @@ const MainProfile = () => {
               {/* Department */}
               <div>
                 <label className="block text-sm text-gray-500 mb-1">Department</label>
-                <input
+                <Input
                   value={user.department?.name || "Not provided"}
                   readOnly
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg py-4 px-3"
+                  className="w-full"
                 />
               </div>
             </div>
           </div>
 
           {/* Additional Info */}
-          <div className="p-6">
+          <div className="p-6 bg-gray-50 rounded-xl">
             <h3 className="text-lg font-semibold text-gray-700 mb-4">Additional Information</h3>
             <div className="space-y-4">
               {/* Telegram */}
               <div>
                 <label className="block text-sm text-gray-500 mb-1">Telegram Username</label>
                 {isEditing ? (
-                  <input
+                  <Input
                     value={user.tg_username || ""}
                     onChange={(e) => handleInputChange("tg_username", e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg py-4 px-3"
+                    className="w-full"
+                    addonBefore="@"
                   />
                 ) : (
-                  <input
-                    value={user.tg_username || "Not provided"}
+                  <Input
+                    value={user.tg_username ? `@${user.tg_username}` : "Not provided"}
                     readOnly
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg py-4 px-3"
+                    className="w-full"
                   />
                 )}
               </div>
@@ -336,16 +446,18 @@ const MainProfile = () => {
               <div>
                 <label className="block text-sm text-gray-500 mb-1">Address</label>
                 {isEditing ? (
-                  <input
+                  <Input.TextArea
                     value={user.address || ""}
                     onChange={(e) => handleInputChange("address", e.target.value)}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg py-4 px-3"
+                    className="w-full"
+                    rows={3}
                   />
                 ) : (
-                  <input
+                  <Input.TextArea
                     value={user.address || "Not provided"}
                     readOnly
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg py-4 px-3"
+                    className="w-full"
+                    rows={3}
                   />
                 )}
               </div>
@@ -357,6 +469,18 @@ const MainProfile = () => {
                 {isEditing ? (
                   <div className="flex flex-col gap-2">
 
+                    {/* Current Password */}
+                    <div className="relative">
+                      <Input.Password
+                        placeholder="Current Password"
+                        value={user.password || ""}
+                        onChange={(e) => handleInputChange("password", e.target.value)}
+                        className="w-full"
+                        iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
+                      />
+                    </div>
+
+
                     {!changePassword ? (
                       <Button type="link" onClick={() => setChangePassword(true)}>
                         Change Password
@@ -365,47 +489,34 @@ const MainProfile = () => {
                       <>
                         {/* New Password */}
                         <div className="relative">
-                          <input
-                            type={showNew ? "text" : "password"}
+                          <Input.Password
                             placeholder="New Password"
                             value={user.password || ""}
                             onChange={(e) => handleInputChange("password", e.target.value)}
-                            className="w-full bg-gray-50 border border-gray-200 rounded-lg py-4 px-3 pr-10"
-                            required
+                            className="w-full"
+                            iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
                           />
-                          <span
-                            onClick={() => setShowNew(!showNew)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500"
-                          >
-                            {showNew ? <EyeTwoTone /> : <EyeInvisibleOutlined />}
-                          </span>
                         </div>
 
                         {/* Confirm Password */}
                         <div className="relative">
-                          <input
-                            type={showConfirm ? "text" : "password"}
+                          <Input.Password
                             placeholder="Confirm Password"
                             value={user.password1 || ""}
                             onChange={(e) => handleInputChange("password1", e.target.value)}
-                            className="w-full bg-gray-50 border border-gray-200 rounded-lg py-4 px-3 pr-10"
-                            required
+                            className="w-full"
+                            iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
                           />
-                          <span
-                            onClick={() => setShowConfirm(!showConfirm)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500"
-                          >
-                            {showConfirm ? <EyeTwoTone /> : <EyeInvisibleOutlined />}
-                          </span>
                         </div>
 
                         <Button type="link" danger onClick={() => setChangePassword(false)}>
-                          Cancel
+                          Cancel Password Change
                         </Button>
                       </>
                     )}
                   </div>
                 ) : (
+
                   <div className="relative">
                     <input
                       type={showNew ? "text" : "password"}
@@ -428,15 +539,16 @@ const MainProfile = () => {
               {/* Created At */}
               <div>
                 <label className="block text-sm text-gray-500 mb-1">Account Created</label>
-                <input
+                <Input
                   value={dayjs(user.created_at).format("DD.MM.YYYY HH:mm")}
                   readOnly
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg py-4 px-3"
+                  className="w-full"
                 />
               </div>
-              {/* Save / Cancel tugmalari eng pastda */}
+              
+              {/* Save / Cancel buttons */}
               {isEditing && (
-                <div className="flex justify-end gap-3 mt-6 px-6 pb-6">
+                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
                   <Button
                     icon={<CloseOutlined />}
                     onClick={() => {
@@ -453,15 +565,13 @@ const MainProfile = () => {
                     onClick={handleSave}
                     loading={updating}
                   >
-                    Save
+                    Save Changes
                   </Button>
                 </div>
               )}
-
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );
