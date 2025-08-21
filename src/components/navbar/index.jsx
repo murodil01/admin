@@ -7,10 +7,25 @@ import { useContext } from "react";
 import AuthContext from "../../context/AuthContext";
 
 const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
-  const { user } = useContext(AuthContext)
+  const { user, loading, logout, refreshAuth } = useContext(AuthContext);
   const [isUserOpen, setIsUserOpen] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+
+  // Agar user ma'lumotlari 5 sekunddan keyin ham kelmasa, retry qilish
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token && !user && !loading && retryCount < 3) {
+      console.log('🔄 User data not loaded, retrying...', retryCount + 1);
+      const timer = setTimeout(() => {
+        setRetryCount(prev => prev + 1);
+        refreshAuth();
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [user, loading, retryCount, refreshAuth]);
 
   const navigateAndClose = (path) => {
     setIsUserOpen(false);
@@ -48,6 +63,39 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isUserOpen]);
+
+  // Agar user ma'lumotlari hali yuklanmagan bo'lsa, loading ko'rsatish
+  const renderUserAvatar = () => {
+    const token = localStorage.getItem('token');
+    
+    if (loading || (!user && token)) {
+      return (
+        <div className="w-11 h-11 sm:w-8 sm:h-8 rounded-full bg-gray-200 animate-pulse flex items-center justify-center">
+          <User size={20} className="text-gray-400" />
+        </div>
+      );
+    }
+
+    if (!user && !token) {
+      return (
+        <div className="w-11 h-11 sm:w-8 sm:h-8 rounded-full bg-red-100 flex items-center justify-center">
+          <User size={20} className="text-red-400" />
+        </div>
+      );
+    }
+    
+    return (
+      <img
+        src={user.profile_picture || '/default-avatar.png'}
+        alt="avatar"
+        className="w-11 h-11 sm:w-8 sm:h-8 rounded-full object-cover"
+        onError={(e) => {
+          e.target.style.display = 'none';
+          e.target.nextSibling.style.display = 'flex';
+        }}
+      />
+    );
+  };
 
   return (
     <header
@@ -107,11 +155,11 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
           className="sm:hidden cursor-pointer"
           onClick={() => setIsUserOpen((prev) => !prev)}
         >
-          <img
-            src={user?.profile_picture}
-            alt="avatar"
-            className="w-11 h-11 rounded-full object-cover"
-          />
+          {renderUserAvatar()}
+          {/* Fallback icon agar rasm yuklanmasa */}
+          <div className="w-11 h-11 rounded-full bg-gray-200 hidden items-center justify-center">
+            <User size={20} className="text-gray-400" />
+          </div>
         </div>
 
         {/* ✅ Desktop: button with dropdown */}
@@ -120,17 +168,33 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
             onClick={() => setIsUserOpen((prev) => !prev)}
             className="flex justify-between w-44 items-center gap-2 h-11 px-3 bg-white rounded-[14px] shadow  transition"
           >
-            <img
-              src={user?.profile_picture}
-              alt="Image"
-              className="w-8 h-8 rounded-full object-cover"
-            />
+            {renderUserAvatar()}
+            {/* Fallback icon agar rasm yuklanmasa */}
+            <div className="w-8 h-8 rounded-full bg-gray-200 hidden items-center justify-center">
+              <User size={16} className="text-gray-400" />
+            </div>
+            
             <span className="font-medium text-base text-gray-700 truncate w-20">
-              {user?.first_name}
+              {loading || (!user && localStorage.getItem('token')) ? (
+                <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
+              ) : user?.first_name ? (
+                user.first_name
+              ) : localStorage.getItem('token') ? (
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    refreshAuth();
+                  }}
+                  className="text-xs text-blue-500 hover:underline"
+                >
+                  Retry
+                </button>
+              ) : (
+                'Guest'
+              )}
             </span>
             <svg
-              className={`w-4 h-4 transition-transform duration-200 ${isUserOpen ? "rotate-180" : ""
-                }`}
+              className={`w-4 h-4 transition-transform duration-200 ${isUserOpen ? "rotate-180" : ""}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -146,7 +210,7 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
         </div>
 
         {/* 🔽 Dropdown (common for mobile and desktop) */}
-        {isUserOpen && (
+        {isUserOpen && !loading && user && (
           <div className="absolute top-[60px] md:top-12 right-0 w-56 sm:w-48 md:w-44 bg-white rounded-[14px] shadow-lg py-2 z-50 space-y-1 text-sm text-gray-700">
             {/* Profile */}
             <div
@@ -166,8 +230,8 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
 
             {/* Logout */}
             <div
-              onClick={() => {
-                localStorage.removeItem("token");
+              onClick={async () => {
+                await logout(); // AuthContext'dagi logout funksiyasini ishlatish
                 navigateAndClose("/login");
               }}
               className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-gray-100 cursor-pointer border-t border-gray-400 pt-2"
