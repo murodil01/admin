@@ -220,7 +220,7 @@ const CategoryCard = () => {
         <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
           <button
             onClick={() => openModal('add')}
-            className="flex items-center px-11 sm:px-11 py-2 sm:py-3 bg-blue-600 text-white text-xs sm:text-sm font-semibold rounded-lg hover:bg-blue-700 transition-all whitespace-nowrap"
+            className=" cursor-pointer flex items-center px-11 sm:px-11 py-2 sm:py-3 bg-blue-600 text-white text-xs sm:text-sm font-semibold rounded-lg hover:bg-blue-700 transition-all whitespace-nowrap"
           >
             <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
             Add File
@@ -384,6 +384,16 @@ const CategoryCard = () => {
                 autoFocus
                 required
               />
+                <label className="block text-sm font-medium text-gray-700 mb-2">View Options</label>
+              <select
+                value={modalData.view_options || 'public'}
+                onChange={(e) => setModalData({ ...modalData, view_options: e.target.value })}
+                className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none mb-3"
+              >
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+                <option value="chosen">Chosen</option>
+              </select>
               <label className="block text-sm font-medium text-gray-700 mb-1">Select File</label>
               <input
                 type="file"
@@ -398,16 +408,7 @@ const CategoryCard = () => {
                 className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none mb-3"
                 required
               />
-              <label className="block text-sm font-medium text-gray-700 mb-2">View Options</label>
-              <select
-                value={modalData.view_options || 'public'}
-                onChange={(e) => setModalData({ ...modalData, view_options: e.target.value })}
-                className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none mb-3"
-              >
-                <option value="public">Public</option>
-                <option value="private">Private</option>
-                <option value="chosen">Chosen</option>
-              </select>
+            
               {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
               <div className="flex justify-end gap-2">
                 <button
