@@ -85,6 +85,18 @@ const CreateCategoryModal = ({ isOpen, onClose, onSave, initialData }) => {
               placeholder="Enter category name"
             />
           </div>
+            <div>
+            <label className="block text-sm font-bold mb-2">Visibility</label>
+            <select
+              value={visibility}
+              onChange={(e) => setVisibility(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="public">Public</option>
+              <option value="private">Private</option>
+              <option value="chosen">Chosen</option>
+            </select>
+          </div>
           <div>
             <label className="block text-sm font-bold mb-2">Category Image</label>
             {!imagePreview ? (
@@ -105,14 +117,14 @@ const CreateCategoryModal = ({ isOpen, onClose, onSave, initialData }) => {
               </button>
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <img
+                {/* <img
                   src={imagePreview}
                   alt="Preview"
                   className="w-52 h-auto object-cover rounded-xl border"
-                />
+                /> */}
                 <button
                   type="button"
-                  className="text-red-500 text-sm"
+                  className="text-red-500 cursor-pointer text-sm"
                   onClick={() => {
                     setSelectedImage(null);
                     setImagePreview(null);
@@ -123,22 +135,11 @@ const CreateCategoryModal = ({ isOpen, onClose, onSave, initialData }) => {
               </div>
             )}
           </div>
-          <div>
-            <label className="block text-sm font-bold mb-2">Visibility</label>
-            <select
-              value={visibility}
-              onChange={(e) => setVisibility(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="public">Public</option>
-              <option value="private">Private</option>
-              <option value="chosen">Chosen</option>
-            </select>
-          </div>
+        
           <button
             type="submit"
             disabled={!categoryName.trim() || !imagePreview}
-            className="w-full py-3 bg-blue-600 text-white rounded-[14px] hover:bg-blue-700 disabled:opacity-50"
+            className="w-full py-3 bg-blue-600 cursor-pointer text-white rounded-[14px] hover:bg-blue-700 disabled:opacity-50"
           >
             {initialData ? 'Update Category' : 'Add Category'}
           </button>
@@ -297,20 +298,6 @@ const LibraryPage = () => {
     }
   };
 
-  // Function to get visibility badge color
-  // const getVisibilityBadgeColor = (visibility) => {
-  //   switch (visibility?.toLowerCase()) {
-  //     case 'public':
-  //       return 'bg-green-100 text-green-800';
-  //     case 'private':
-  //       return 'bg-red-100 text-red-800';
-  //     case 'chosen':
-  //       return 'bg-blue-100 text-blue-800';
-  //     default:
-  //       return 'bg-gray-100 text-gray-800';
-  //   }
-  // };
-
   return (
     <main className="min-h-screen">
       <header className="max-w-7xl mx-auto mt-5 md:mt-2">
@@ -322,7 +309,7 @@ const LibraryPage = () => {
                 setEditCategory(null);
                 setIsModalOpen(true);
               }}
-              className="inline-flex items-center justify-center px-3 py-2 sm:px-6 sm:py-3 bg-[#0061fe] text-white text-sm sm:text-base font-bold rounded-[14px] hover:bg-blue-700 transition-colors whitespace-nowrap"
+              className=" cursor-pointer inline-flex items-center justify-center px-3 py-2 sm:px-6 sm:py-3 bg-[#0061fe] text-white text-sm sm:text-base font-bold rounded-[14px] hover:bg-blue-700 transition-colors whitespace-nowrap"
               aria-label="Add new category"
             >
               <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1" />
@@ -361,7 +348,7 @@ const LibraryPage = () => {
                             setIsModalOpen(true);
                             setMenuId(null);
                           }}
-                          className="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50 text-blue-600"
+                          className="block w-full cursor-pointer px-4 py-2 text-left text-sm hover:bg-blue-50 text-blue-600"
                           disabled={loadingEdit}
                         >
                           {loadingEdit ? "Editing..." : "Edit"}
@@ -374,7 +361,7 @@ const LibraryPage = () => {
                             setConfirmOpen(true);
                           }}
                           disabled={loadingDelete}
-                          className="block w-full px-4 py-2 text-left text-sm hover:bg-red-50 text-red-600"
+                          className="block w-full cursor-pointer px-4 py-2 text-left text-sm hover:bg-red-50 text-red-600"
                         >
                           {loadingDelete ? "Deleting..." : "Delete"}
                         </button>
@@ -446,14 +433,14 @@ const LibraryPage = () => {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setConfirmOpen(false)}
-                className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100"
+                className="px-4 cursor-pointer py-2 rounded-lg border border-gray-300 hover:bg-gray-100"
                 aria-label="Cancel deletion"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600"
+                className="px-4 py-2 rounded-lg cursor-pointer bg-red-500 text-white hover:bg-red-600"
                 disabled={loadingDelete}
                 aria-label="Confirm deletion"
               >

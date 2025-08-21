@@ -319,7 +319,7 @@ const CategoryDetailsPage = () => {
           <div className="flex flex-row items-center w-full sm:w-auto">
             <button
               onClick={() => openModal('addFolder')}
-              className="p-3 sm:p-4 text-gray-800 hover:text-gray-600 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-all"
+              className="p-3 flex cursor-pointer sm:p-4 text-gray-800 hover:text-gray-600 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-all"
               disabled={loading}
               aria-label="Add folder"
             >
@@ -327,7 +327,7 @@ const CategoryDetailsPage = () => {
             </button>
             <button
               onClick={() => openModal('addFile')}
-              className="flex items-center justify-center px-6 py-3 sm:px-8 sm:py-3.5 bg-blue-600 text-white text-sm sm:text-base font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all w-[70%] sm:w-[170px]"
+              className="flex cursor-pointer items-center justify-center px-6 py-3 sm:px-8 sm:py-3.5 bg-blue-600 text-white text-sm sm:text-base font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all w-[70%] sm:w-[170px]"
               disabled={loading}
             >
               <Plus className="w-5 h-5 mr-2" />
@@ -631,6 +631,16 @@ const CategoryDetailsPage = () => {
                 className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none mb-3"
                 autoFocus
               />
+               <label className="block text-sm font-medium text-gray-700 mb-2">View Options</label>
+              <select
+                value={modalData.view_options || 'public'}
+                onChange={(e) => setModalData({ ...modalData, view_options: e.target.value })}
+                className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none mb-3"
+              >
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+                <option value="chosen">Chosen</option>
+              </select>
               <label className="block text-sm font-medium text-gray-700 mb-1">Select File</label>
               <input
                 type="file"
@@ -645,16 +655,7 @@ const CategoryDetailsPage = () => {
                 className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none mb-3"
               />
               {modalData.file && <p className="text-sm text-gray-600 mb-3">Selected: {modalData.file.name}</p>}
-              <label className="block text-sm font-medium text-gray-700 mb-2">View Options</label>
-              <select
-                value={modalData.view_options || 'public'}
-                onChange={(e) => setModalData({ ...modalData, view_options: e.target.value })}
-                className="w-full p-2 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 outline-none mb-3"
-              >
-                <option value="public">Public</option>
-                <option value="private">Private</option>
-                <option value="chosen">Chosen</option>
-              </select>
+             
               {error && <p className="text-red-500 text-sm bg-red-50 p-2 rounded-md mb-3">{error}</p>}
               <div className="flex justify-end gap-2">
                 <button
