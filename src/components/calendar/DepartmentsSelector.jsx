@@ -86,7 +86,7 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
     if (dept.id === "all") {
       return (
         <div className={`${baseClasses} ${isSelected ? 'bg-blue-100 text-blue-700' : 'text-gray-600'}`}>
-         <img src="/src/assets/M.png" alt="Department all" className=""/>
+         <img src="/M.png" alt="Department all" className=""/>
         </div>
       );
     }
