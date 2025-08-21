@@ -13,8 +13,8 @@ import { deleteUser } from "../../api/services/userService";
 import { Permission } from "../../components/Permissions";
 import { useAuth } from "../../hooks/useAuth";
 import { ROLES } from "../../components/constants/roles";
-
 import { message, Pagination, Modal } from "antd";
+import FilterDropdown from "./FilterDropdown";
 
 const InnerCircle = () => {
     const [searchParams] = useSearchParams();
@@ -33,15 +33,23 @@ const InnerCircle = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const navigate = useNavigate();
 
+    const [selectedDepartment, setSelectedDepartment] = useState(null);
+
+    // filter tanlanganda qayta fetch qilish
+    const handleFilter = (deptId) => {
+        setSelectedDepartment(deptId);
+        fetchEmployees(1, deptId);
+    };
+
+
     useEffect(() => {
         fetchEmployees();
     }, []);
 
-    const fetchEmployees = async (page = 1) => {
+    const fetchEmployees = async (page = 1, departmentId = null) => {
         setLoading(true);
         try {
-            const res = await getEmployees(page);
-
+            const res = await getEmployees(page, departmentId); // service department bo‘yicha filtrlanadi
             setEmployees(res.results || []);
             setTotalEmployees(res.count || 0);
         } catch (err) {
@@ -209,7 +217,7 @@ const InnerCircle = () => {
                 <div className="flex items-center bg-[#DBDBDB] rounded-4xl w-full md:w-[280px] xl:w-[350px] overflow-hidden p-1">
                     <button
                         onClick={() => handleTabClick("list")}
-                        className={`py-2 sm:py-[9px] text-sm sm:text-base font-bold w-1/2 transition-all duration-200 rounded-full ${activeTab === "list"
+                        className={`py-2 sm:py-[9px] text-sm sm:text-base font-bold w-1/2 transition-all duration-200 rounded-full cursor-pointer ${activeTab === "list"
                                 ? "bg-[#0061fe] text-white"
                                 : "bg-[#DBDBDB] text-[#1F2937]"
                             }`}
@@ -218,7 +226,7 @@ const InnerCircle = () => {
                     </button>
                     <button
                         onClick={() => handleTabClick("activity")}
-                        className={`py-2 sm:py-[9px] text-sm sm:text-base font-bold w-1/2 transition-all duration-200 rounded-full ${activeTab === "activity"
+                        className={`py-2 sm:py-[9px] text-sm sm:text-base font-bold w-1/2 transition-all duration-200 rounded-full cursor-pointer ${activeTab === "activity"
                                 ? "bg-[#0061fe] text-white"
                                 : "bg-[#DBDBDB] text-[#1F2937]"
                             }`}
@@ -227,32 +235,38 @@ const InnerCircle = () => {
                     </button>
                 </div>
 
-                <Permission anyOf={[ROLES.EMPLOYEE, ROLES.HEADS]}>
-                    <div className="flex justify-center lg:justify-end w-[240px]"></div>
-                </Permission>
+                <div className="flex items-center gap-5">
+                    {/* Filter button */}
+                    <div className="flex items-center gap-3">
+                        <FilterDropdown onFilter={handleFilter} />
+                    </div>
+                    <Permission anyOf={[ROLES.EMPLOYEE, ROLES.HEADS]}>
+                        <div className="flex justify-center lg:justify-end w-[240px]"></div>
+                    </Permission>
 
-                {/* Add Button */}
-                <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
-                    {!loading && (
-                        <div className="flex justify-center lg:justify-end">
-                            {/* Desktop Button - faqat lg: dan boshlab */}
-                            <button
-                                onClick={() => setIsAddModalOpen(true)}
-                                className="hidden lg:flex bg-[#0061fe] text-white text-sm sm:text-base rounded-2xl items-center gap-2 py-2 px-4 sm:py-3 sm:px-5 cursor-pointer"
-                            >
-                                <Plus size={18} /> <span>Add Employee</span>
-                            </button>
+                    {/* Add Button */}
+                    <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+                        {!loading && (
+                            <div className="flex justify-center lg:justify-end">
+                                {/* Desktop Button - faqat lg: dan boshlab */}
+                                <button
+                                    onClick={() => setIsAddModalOpen(true)}
+                                    className="hidden lg:flex bg-[#0061fe] text-white text-sm sm:text-base rounded-2xl items-center gap-2 py-2 px-4 sm:py-3 sm:px-5 cursor-pointer shadow-xl shadow-bg-blue-300"
+                                >
+                                    <Plus size={18} /> <span>Add Employee</span>
+                                </button>
 
-                            {/* Mobile + Tablet Floating Button */}
-                            <button
-                                onClick={() => setIsAddModalOpen(true)}
-                                className="lg:hidden fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#0061fe] text-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
-                            >
-                                <Plus size={24} />
-                            </button>
-                        </div>
-                    )}
-                </Permission>
+                                {/* Mobile + Tablet Floating Button */}
+                                <button
+                                    onClick={() => setIsAddModalOpen(true)}
+                                    className="lg:hidden fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#0061fe] text-white flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
+                                >
+                                    <Plus size={24} />
+                                </button>
+                            </div>
+                        )}
+                    </Permission>
+                </div>
             </div>
 
             {/* Content */}

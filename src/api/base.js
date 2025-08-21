@@ -15,7 +15,7 @@ api.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
-        
+
         // ✅ Content-Type ni dinamik ravishda o'rnatish
         if (config.data instanceof FormData) {
             // FormData uchun Content-Type ni browser avtomatik o'rnatsin
@@ -25,7 +25,7 @@ api.interceptors.request.use(
             // Oddiy JSON uchun
             config.headers['Content-Type'] = 'application/json';
         }
-        
+
         return config;
     },
     (error) => Promise.reject(error)

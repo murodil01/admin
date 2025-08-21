@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Paperclip, X } from 'lucide-react';
-import { Button, message, Modal } from 'antd';
+import { message, Modal } from 'antd';
 import avatarImage from '../../assets/default-avatar.png';
 import { getDepartments } from '../../api/services/departmentService';
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -432,7 +432,7 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                             <button
                                 type="primary"
                                 htmlType="submit"
-                                className="bg-[#0061FE] hover:bg-[#111827] text-white px-[40px] py-[13px] rounded-[14px] shadow-md shadow-blue-300"
+                                className="bg-[#0061FE] hover:opacity-90 text-white px-[40px] py-[13px] rounded-[14px] shadow-md shadow-blue-300 cursor-pointer"
                             >
                                 Save Employee
                             </button>

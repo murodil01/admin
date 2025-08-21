@@ -50,7 +50,9 @@ const Profiles = () => {
     if (key === "edit") handleEdit();
   };
 
-  const handleFileUpload = ({ file }) => {
+  const handleFileUpload = (info) => {
+    const {file} = info;
+
     if (file.status === 'done') {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -75,10 +77,12 @@ const Profiles = () => {
   const handleSave = async () => {
     try {
       setLoading(true);
+      setSaveMessage("");
 
       let response;
       if (formData.id) {
         // Mavjud yozuvni yangilash
+        console.log("Updating existing record with ID:", formData.id);
         response = await updateControlData(formData.id, formData);
         message.success("Ma'lumotlar yangilandi");
 
@@ -97,6 +101,7 @@ const Profiles = () => {
         }
       } else {
         // Yangi yozuv yaratish
+        console.log("Creating new record for user:", employeeId);
         response = await createControlDataForUser(employeeId, formData);
 
         // Yangi yaratilgan yozuv ID sini saqlash

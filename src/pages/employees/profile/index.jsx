@@ -6,6 +6,7 @@ import {
   Calendar,
   MoreVertical,
 } from "lucide-react";
+import { Select, Input } from "antd";
 import { useNavigate, useParams } from "react-router-dom";
 import Projects from "./projects";
 import Notes from "./notes";
@@ -116,17 +117,6 @@ const Profile = () => {
         }
       });
 
-      const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          setEmployee(prev => ({
-            ...prev,
-            profile_picture: URL.createObjectURL(file), // Preview uchun
-            profile_picture_file: file // Asl fayl
-          }));
-        }
-      };
-
       // Keyin formData.append('profile_picture', employee.profile_picture_file);
 
       // 3. Tug'ilgan kunini qo'shamiz
@@ -145,8 +135,8 @@ const Profile = () => {
         department: {
           id: updatedEmployee.department?.id || employee.department?.id,
           name: updatedEmployee.department?.name ||
-                updatedEmployee.department_name ||
-                employee.department?.name
+            updatedEmployee.department_name ||
+            employee.department?.name
         }
       });
 
@@ -165,6 +155,8 @@ const Profile = () => {
   useEffect(() => {
     localStorage.setItem("profileTab", activeTab);
   }, [activeTab]);
+
+  const levels = ["intern", "junior", "middle", "specialist", "senior", "expert", "none"];
 
   const statusOptions = [
     { value: "free", label: "Free" },
@@ -247,18 +239,18 @@ const Profile = () => {
     ]
     : [];
 
-    const availableTabs = [
-      { id: "Profile", label: "Profile", visible: isAdmin },
-      { id: "Projects", label: "Projects", visible: true }, // Always visible
-      { id: "Notes", label: "Notes", visible: isAdmin },
-    ].filter(tab => tab.visible);
+  const availableTabs = [
+    { id: "Profile", label: "Profile", visible: isAdmin },
+    { id: "Projects", label: "Projects", visible: true }, // Always visible
+    { id: "Notes", label: "Notes", visible: isAdmin },
+  ].filter(tab => tab.visible);
 
-    // If current tab becomes unavailable, switch to Projects
-    useEffect(() => {
-      if (!availableTabs.some(tab => tab.id === activeTab)) {
-        setActiveTab("Projects");
-      }
-    }, [isAdmin, activeTab]);
+  // If current tab becomes unavailable, switch to Projects
+  useEffect(() => {
+    if (!availableTabs.some(tab => tab.id === activeTab)) {
+      setActiveTab("Projects");
+    }
+  }, [isAdmin, activeTab]);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -353,13 +345,46 @@ const Profile = () => {
                   {employee.first_name} {employee.last_name}
                 </h3>
                 <p className="text-xs sm:text-[14px] md:text-[16px] font-medium text-[#1F2937] flex items-center gap-1 md:gap-2">
-                  {employee.profession}
-                  {employee.level !== "none" && (
-                    <span className="text-[8px] md:text-[10px] border border-[#7D8592] px-1 py-0.5 md:px-[2px] md:py-[2px] rounded-[3px] md:rounded-[4px]">
-                      {employee.level}
-                    </span>
+                  {isEditing ? (
+                    <>
+                      {/* Profession input */}
+                      <Input
+                        placeholder="Enter profession"
+                        value={employee.profession}
+                        onChange={(e) =>
+                          setEmployee((prev) => ({ ...prev, profession: e.target.value }))
+                        }
+                        className="w-full md:w-40"
+                      />
+
+                      {/* Level select */}
+                      <Select
+                        value={employee.level}
+                        onChange={(value) =>
+                          setEmployee((prev) => ({ ...prev, level: value }))
+                        }
+                        className="w-full md:w-28"
+                      >
+                        {levels.map((lvl) => (
+                          <Select.Option key={lvl} value={lvl}>
+                            {lvl}
+                          </Select.Option>
+                        ))}
+                      </Select>
+                    </>
+                  ) : (
+                    <>
+                      {/* Text view */}
+                      <span>{employee.profession}</span>
+                      {employee.level !== "none" && (
+                        <span className="text-[8px] md:text-[10px] border border-[#7D8592] px-1 py-0.5 md:px-[2px] md:py-[2px] rounded-[3px] md:rounded-[4px]">
+                          {employee.level}
+                        </span>
+                      )}
+                    </>
                   )}
                 </p>
+
               </div>
             </div>
 
@@ -432,12 +457,12 @@ const Profile = () => {
                               </div>
                             )
                           ) : (
-                              <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg md:rounded-xl px-3 md:px-4 py-1 md:py-2 text-xs md:text-[14px] font-normal text-[#7D8592] h-[40px] md:h-[48px] flex items-center">
-                                {item.isSelect ?
-                                  (item.name === 'department'
-                                    ? employee.department?.name
-                                    : employee[item.name]) || `No ${item.label.toLowerCase()} selected`
-                                  : item.value}
+                            <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg md:rounded-xl px-3 md:px-4 py-1 md:py-2 text-xs md:text-[14px] font-normal text-[#7D8592] h-[40px] md:h-[48px] flex items-center">
+                              {item.isSelect ?
+                                (item.name === 'department'
+                                  ? employee.department?.name
+                                  : employee[item.name]) || `No ${item.label.toLowerCase()} selected`
+                                : item.value}
                             </div>
                           )
                         ) : (
@@ -473,11 +498,10 @@ const Profile = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex-1 sm:flex-none px-3 sm:px-4 md:px-6 lg:px-[40px] xl:px-[56px] py-1 md:py-2 text-xs md:text-sm lg:text-base font-medium rounded-full transition-all duration-200 ${
-                      activeTab === tab.id
+                    className={`flex-1 sm:flex-none px-3 sm:px-4 md:px-6 lg:px-[40px] xl:px-[56px] py-1 md:py-2 text-xs md:text-sm lg:text-base font-medium rounded-full transition-all duration-200 ${activeTab === tab.id
                         ? "bg-[#0061fe] text-white shadow-sm"
                         : "text-[#0061fe] hover:bg-gray-200"
-                    }`}
+                      }`}
                   >
                     {tab.label}
                   </button>
