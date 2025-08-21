@@ -206,7 +206,7 @@ const InnerCircle = () => {
         );
 
     return (
-        <div className="w-full max-w-screen-xl mx-auto ">
+        <div className="w-full max-w-screen-xl mx-auto">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mt-6 mb-6 gap-4">
                 <h1 className="text-[#1F2937] font-bold text-2xl sm:text-3xl xl:text-4xl text-center md:text-left">

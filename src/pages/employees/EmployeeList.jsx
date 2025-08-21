@@ -23,12 +23,26 @@ const EmployeeList = ({ employees, onDelete, onStatusUpdate }) => {
             return;
         }
 
+        const tableRect = e.currentTarget.getBoundingClientRect();
         const buttonRect = e.currentTarget.getBoundingClientRect();
-        const spaceBelow = window.innerHeight - buttonRect.bottom;
-        const spaceAbove = buttonRect.top;
 
-        const position = spaceBelow < 300 && spaceAbove > spaceBelow ? "top" : "bottom";
-        setDropdownPosition((prev) => ({ ...prev, [id]: position }));
+        const spaceBelow = tableRect.bottom - buttonRect.bottom;
+        const spaceAbove = buttonRect.top - tableRect.top;
+        const dropdownheight = 120;
+
+        console.log(spaceAbove);
+        console.log(spaceBelow);
+
+        const position = spaceBelow < dropdownheight && spaceAbove > spaceBelow ? "top" : "bottom";
+
+        let adjustPosition = position;
+        if (position === 'bottom' && spaceBelow < dropdownheight) {
+            adjustPosition = 'top';
+        } else if (position === 'top' && spaceAbove < dropdownheight) {
+            adjustPosition = 'bottom';
+        }
+
+        setDropdownPosition((prev) => ({ ...prev, [id]: adjustPosition }));
         setOpenDropdown(id);
     };
 
@@ -49,7 +63,7 @@ const EmployeeList = ({ employees, onDelete, onStatusUpdate }) => {
 
     return (
         <div className="bg-gray-50 rounded-2xl shadow">
-            <div className="overflow-x-auto p-1">
+            <div className="overflow-x-auto p-3">
                 <div className="w-full">
                     {/* Table Header */}
                     <div className="hidden lg:grid grid-cols-17 text-gray-500 text-md font-bold py-3 px-4 border-b border-b-gray-200 mb-7 pb-5">
@@ -353,32 +367,59 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
     );
 };
 
-const StatusBadge = ({ status }) => (
-    <span className={`flex px-2 w-[84px] py-[6px] rounded-lg text-xs font-medium capitalize items-center gap-1 justify-center
-    ${status === "free" ? "text-green-600 bg-green-100" :
-            status === "overload" ? "text-red-600 bg-red-100" :
-                status === "working" ? "text-blue-600 bg-blue-100" :
-                    status === "sick" ? "text-yellow-600 bg-yellow-100" :
-                        "text-gray-600 bg-gray-200"
-        }`}
-    >
-        <div className={`w-[5px] h-[5px] rounded-full
-      ${status === "free" ? "bg-green-500" :
-                status === "overload" ? "bg-red-500" :
-                    status === "working" ? "bg-blue-500" :
-                        status === "sick" ? "bg-yellow-500" :
-                            "bg-gray-400"
-            }`}
-        ></div>
-        <span className="ml-2 capitalize">{status}</span>
-    </span>
-);
+const StatusBadge = ({ status }) => {
+    // Statusni ko‘rsatish uchun "On_leave" ni "On Leave" ga o‘zgartirish
+    const formattedStatus =
+        status?.toLowerCase() === "on_leave"
+            ? "On Leave"
+            : status;
 
-const EmployeeDropdownMenu = ({ emp, dropdownPosition, setIsStatusModalOpen, onDelete, navigate, setOpenDropdown }) => (
-    <div
-        className={`absolute z-10 w-40 bg-white rounded-lg shadow border border-gray-300 dropdown-menu
-            ${dropdownPosition[emp.id] === "top" ? "bottom-full mb-2" : "mt-2"}`}
-        style={{ right: 0 }}
+    return (
+        <span
+            className={`flex px-2 w-[90px] py-[6px] rounded-lg text-xs font-medium capitalize items-center gap-1 justify-center
+    ${status === "free"
+                    ? "text-green-600 bg-green-100"
+                    : status === "overload"
+                        ? "text-red-600 bg-red-100"
+                        : status === "working"
+                            ? "text-blue-600 bg-blue-100"
+                            : status === "sick"
+                                ? "text-yellow-600 bg-yellow-100"
+                                : status === "on_leave"
+                                    ? "text-gray-600 bg-purple-100"
+                                    : "text-gray-600 bg-gray-200"
+                }`}
+        >
+            <div
+                className={`w-[5px] h-[5px] rounded-full
+      ${status === "free"
+                        ? "bg-green-500"
+                        : status === "overload"
+                            ? "bg-red-500"
+                            : status === "working"
+                                ? "bg-blue-500"
+                                : status === "sick"
+                                    ? "bg-yellow-500"
+                                    : status === "on_leave"
+                                        ? "bg-gray-500"
+                                        : "bg-gray-400"
+                    }`}
+            ></div>
+            <span className="ml-2">{formattedStatus}</span>
+        </span>
+    );
+};
+
+const EmployeeDropdownMenu = ({ emp, dropdownPosition, setIsStatusModalOpen, onDelete, navigate, setOpenDropdown }) => {
+    const calculatePosition = () => {
+        const position = dropdownPosition[emp.id] || "bottom";
+        return position === "top" ? { bottom: '100%', marginBottom: '8px' } : { top: '100%', marginTop: '8px' };
+    };
+    return (
+        <div
+        className={`fixed z-9999 w-40 bg-white rounded-lg shadow border border-gray-300 dropdown-menu
+            ${dropdownPosition[emp.id] === "top" ? "bottom-full mb-" : "mt-2"}`}
+        style={{ right: 0, ...calculatePosition() }}
         onClick={(e) => e.stopPropagation()}
     >
         <>
@@ -424,6 +465,7 @@ const EmployeeDropdownMenu = ({ emp, dropdownPosition, setIsStatusModalOpen, onD
             </div>
         </>
     </div>
-);
+    )
+};
 
 export default EmployeeList;
