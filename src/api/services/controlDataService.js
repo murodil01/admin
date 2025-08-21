@@ -16,7 +16,7 @@ import { getUserById } from "./userService";
 export const getControlDataByUserId = async (userId) => {
     try {
         const response = await api.get(endpoints.controlData.getByUserId(userId));
-        console.log("controlData id:", response);
+        console.log("controlData id:", response.data);
 
         console.log('API Response:', {
             status: response.status,
@@ -53,13 +53,11 @@ export const getControlDataByUserId = async (userId) => {
     }
 };
 
-export const updateControlData = async (id, data) => {
+export const updateControlData = async (controlDataId, data) => {
     let dataToSend;
     try {
-        const user = await getUserById(data.user_id || data.user_info?.id);
         // Create clean dataToSend object with only allowed fields
         dataToSend = {
-            id: data.id,
             accept_reason: data.accept_reason,
             expertise_level: data.expertise_level,
             strengths: data.strengths,
@@ -72,17 +70,18 @@ export const updateControlData = async (id, data) => {
             access_level: data.access_level,
             serial_number: data.serial_number,
             pinfl: data.pinfl ? parseInt(data.pinfl) : null,
-            user_info: {
-                id: user.id,
-                first_name: user.first_name,
-                last_name: user.last_name,
-                email: user.email,
-                role: user.role,
-                full_name: user.full_name,
-            },
+            // user_info: {
+            //     id: user.id,
+            //     first_name: user.first_name,
+            //     last_name: user.last_name,
+            //     email: user.email,
+            //     role: user.role,
+            //     full_name: user.full_name,
+            // },
         };
 
-        console.log("Cleaned data being sent:", dataToSend);
+        console.log("Updating control data with ID:", controlDataId);
+        console.log("Data being sent:", dataToSend);
 
         if (data.passport_picture instanceof File) {
             const formData = new FormData();
@@ -96,74 +95,75 @@ export const updateControlData = async (id, data) => {
             });
 
             const response = await api.patch(
-                endpoints.controlData.update(id),
+                endpoints.controlData.update(controlDataId),
                 formData,
                 {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 }
             );
+            console.log("Update successful:", response.data);
             return response.data;
         }
 
         // Regular update without file
         const response = await api.patch(
-            endpoints.controlData.update(id),
+            endpoints.controlData.update(controlDataId),
             dataToSend
         );
+
+        console.log("Update successful:", response.data);
         return response.data;
     } catch (error) {
         console.error('Update error:', {
             error: error.response?.data || error.message,
-            id,
+            controlDataId,
             sentData: dataToSend
         });
         throw error;
     }
 };
 
-export const createControlDataForUser = async (userInfo, data) => {
+export const createControlDataForUser = async (userId, data) => {
     try {
         const dataToSend = {
-            ...data,
-            user_info: {  // user_info strukturasini to'g'ri shaklda yuboramiz
-                id: userInfo.id,
-                first_name: userInfo.first_name,
-                last_name: userInfo.last_name,
-                email: userInfo.email,
-                role: userInfo.role,
-                full_name: userInfo.full_name,
-            },
-            pinfl: data.pinfl ? parseInt(data.pinfl) : null
+            user_id: userId, // Send user_id directly
+            accept_reason: data.accept_reason,
+            expertise_level: data.expertise_level,
+            strengths: data.strengths,
+            weaknesses: data.weaknesses,
+            biography: data.biography,
+            trial_period: data.trial_period,
+            work_hours: data.work_hours,
+            contact_type: data.contact_type,
+            assigned_devices: data.assigned_devices,
+            access_level: data.access_level,
+            serial_number: data.serial_number,
+            pinfl: data.pinfl ? parseInt(data.pinfl) : null,
         };
 
-        delete dataToSend.pinfl;
-        delete dataToSend.id;
-        delete dataToSend.employee;
-
         const response = await api.post(
-            endpoints.controlData.createForUser(userInfo.id), // User ID ni endpointga qo'shamiz
+            endpoints.controlData.createForUser,
             dataToSend
         );
 
-        // console.log('CREATE for user response:', response.data);
+        console.log('CREATE response:', response.data);
         return response.data;
     } catch (error) {
-        console.error('Error creating for user:', {
-            userInfo,
+        console.error('Error creating control data:', {
             error: error.response?.data || error.message
         });
         throw error;
     }
 };
 
-export const uploadControlDataFile = async (id, file) => {
+export const uploadControlDataFile = async (controlDataId, file) => {
     try {
         const formData = new FormData();
         formData.append('passport_picture', file);
 
         // Mavjud update endpointidan foydalanamiz
         const response = await api.patch(
-            endpoints.controlData.update(id),
+            endpoints.controlData.update(controlDataId),
             formData,
             {
                 headers: { 'Content-Type': 'multipart/form-data' }

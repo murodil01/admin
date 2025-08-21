@@ -110,10 +110,19 @@ const endpoints = {
     create: "users/",
   },
 
+  // controlData: {
+  //   getByUserId: (userId) => `control-data/?user_id=${userId}/`,
+  //   createForUser: (userId) => `control-data/?user_id=${userId}/`, // Faqat o'sha user uchun yaratish
+  //   update: (userId) => `control-data/?user_id=${userId}`,
+  // },
+
   controlData: {
-    getByUserId: (userId) => `control-data/?user_id=${userId}/`,
-    createForUser: (userId) => `control-data/?user_id=${userId}/`, // Faqat o'sha user uchun yaratish
-    update: (userId, id) => `control-data/?user_id=${userId}/${id}/`,
+    getAll: "control-data/",
+    getByUserId: (userId) => `control-data/?user_id=${userId}`, // GET by user ID
+    getById: (id) => `control-data/${id}/`, // GET by control data ID
+    create: "control-data/", // POST to create
+    update: (id) => `control-data/${id}/`, // PATCH by control data ID
+    delete: (id) => `control-data/${id}/`, // DELETE by control data ID
   },
 
   userProjects: {
