@@ -32,14 +32,14 @@ const AppLayout = () => {
 
   return (
     <SidebarContext.Provider value={{ collapsed }}>
-      <div className="flex w-full h-screen overflow-hidden">
+      <div className="flex h-screen overflow-hidden w-full">
         <SideBar
           collapsed={collapsed}
           setIsMobileOpen={setIsMobileOpen}
           isMobileOpen={isMobileOpen}
         />
 
-        <div className="flex w-[80%] flex-col flex-1 bg-[#F2F2F2]">
+        <div className="flex flex-col flex-1 bg-[#F2F2F2]  w-[80%]">
           <Navbar
             onToggleDesktop={() => setCollapsed(!collapsed)}
             onToggleMobile={() => setIsMobileOpen(true)}
