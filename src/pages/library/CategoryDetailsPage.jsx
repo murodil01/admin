@@ -314,7 +314,7 @@ const CategoryDetailsPage = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 mb-4 w-full">
         <h1 className="text-base sm:text-lg md:text-xl font-bold text-gray-900">
           {category?.name || 'M Library'}
-        </h1>
+        </h1>   
         <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
           <div className="flex flex-row items-center w-full sm:w-auto">
             <button
