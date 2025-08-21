@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../../../api/base"; // axios instance
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const ChiefOfficers = () => {
   const [manager, setManager] = useState(null);
@@ -8,24 +10,15 @@ const ChiefOfficers = () => {
   const fetchUsers = async () => {
     try {
       const { data } = await api.get("/messenger/departments/users/");
-
       const users = Array.isArray(data) ? data : [];
 
-      const managerUser = users.find(
-        (user) => user.role?.toLowerCase() === "manager"
-      );
-
-      const headsUsers = users.filter((user) => {
-        const role = user.role?.toLowerCase();
-        return role === "head" || role === "heads";
-      });
-
-      setManager(managerUser || null);
-      setHeads(headsUsers || []);
+      setManager(users.find((u) => u.role?.toLowerCase() === "manager") || null);
+      setHeads(users.filter((u) => ["head", "heads"].includes(u.role?.toLowerCase())) || []);
     } catch (error) {
-      console.error("Error fetching users:", error);
       if (error.response?.status === 401) {
-        console.warn("Token noto‘g‘ri yoki muddati tugagan. Qayta login qiling.");
+        toast.error("Token noto‘g‘ri yoki muddati tugagan. Qayta login qiling.");
+      } else {
+        toast.error("Foydalanuvchilarni yuklashda xatolik!");
       }
     }
   };
@@ -36,6 +29,9 @@ const ChiefOfficers = () => {
 
   return (
     <main className="flex flex-col gap-6 sm:gap-8 px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 max-w-7xl mx-auto py-6 sm:py-8">
+      {/* Toast container */}
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
+
       {/* Manager card */}
       {manager && (
         <section className="flex justify-center mb-8">
@@ -57,7 +53,7 @@ const ChiefOfficers = () => {
   );
 };
 
-// Reusable card for officer
+// Reusable Officer card
 const OfficerCard = ({ officer }) => {
   return (
     <div className="flex flex-col justify-between p-4 bg-white rounded-3xl shadow-md hover:shadow-xl transition duration-300 w-full max-w-[320px] mx-auto h-full">
@@ -68,7 +64,7 @@ const OfficerCard = ({ officer }) => {
           className="w-28 h-28 rounded-full object-cover mb-3 border-2 border-gray-200"
         />
         <p className="text-lg font-bold h-6 overflow-hidden">
-          {officer.profession || "No position"}
+          {officer.profession || "Unknown profession"}
         </p>
         <p className="text-sm text-gray-500 h-5 overflow-hidden">
           {officer.position || "Department Head"}
@@ -78,7 +74,7 @@ const OfficerCard = ({ officer }) => {
       <div className="mt-5">
         <p className="font-semibold truncate">{officer.full_name || "Unknown"}</p>
         <p className="text-gray-600 text-sm">
-          Phone: {officer.phone_number || "No phone number"}
+          Phone: {officer.phone_number || "Not provided"}
         </p>
       </div>
 
@@ -88,7 +84,11 @@ const OfficerCard = ({ officer }) => {
       </div>
 
       <a
-        href={officer.tg_username ? `https://t.me/${officer.tg_username.replace(/^@/, "")}` : "#"}
+        href={
+          officer.tg_username
+            ? `https://t.me/${officer.tg_username.replace(/^@/, "")}`
+            : "#"
+        }
         target="_blank"
         rel="noopener noreferrer"
         className="group flex items-center justify-center gap-2 px-5 py-2 mt-4 border border-gray-300 bg-gray-100 rounded-lg text-gray-600 font-medium hover:border-blue-300 hover:bg-white hover:text-blue-600 transition w-full"

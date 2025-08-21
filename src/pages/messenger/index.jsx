@@ -18,13 +18,13 @@ const AddMessageModal = ({ onClose }) => {
         name: reason,
         body: description,
       });
-      alert("SOS xabari muvaffaqiyatli yuborildi!");
+      alert("SOS message sent successfully!");
       setReason("");
       setDescription("");
       onClose();
     } catch (error) {
-      console.error("SOS yuborishda xatolik:", error.response?.data || error);
-      alert("Xabar yuborishda xatolik yuz berdi.");
+      console.error("Error sending SOS:", error.response?.data || error);
+      alert("There was an error sending the message.");
     } finally {
       setLoading(false);
     }
@@ -69,7 +69,7 @@ const AddMessageModal = ({ onClose }) => {
               required
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="⚠️This message goes directly to the Founder. Please use only when necessary."
+              placeholder="This message goes directly to the Founder. Please use only when necessary."
               rows={4}
               className="border border-gray-300 rounded-lg px-3 py-2 text-sm sm:text-base resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
             ></textarea>
@@ -105,7 +105,7 @@ const Messenger = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 py-6 sm:py-8">
+    <header className="flex flex-col gap-6 py-6 sm:py-8">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">Messenger</h2>
       </div>
@@ -116,7 +116,7 @@ const Messenger = () => {
             <img
               src={logoM}
               alt="M company"
-              className="w-full h-auto rounded-lg object-cover "
+              className="w-full h-auto rounded-lg object-contain"
             />
           </div>
           <div className="flex flex-col gap-3 sm:gap-4 items-center text-center px-2 sm:px-4">
@@ -124,8 +124,8 @@ const Messenger = () => {
               M Company
             </h5>
             <div>
-              <blockquote className="italic text-xs sm:text-sm md:text-base text-left text-gray-600">
-                <span className="text-[20px] font-normal not-italic">🏛️</span>{" "}
+              <blockquote className="text-xs sm:text-sm md:text-base text-left text-gray-600">
+                <span className="text-[20px] font-normal"></span>{" "}
                 {showMore ? (
                   <>
                     M Company is not just a workplace - it is a system. We build
@@ -141,15 +141,15 @@ const Messenger = () => {
                     fulfills their role with excellence, and together they build
                     something greater than themselves. <br />
                     <br />
-                    <span className="text-[16px] font-normal not-italic">
+                    <span className="text-[16px] font-normal">
                       🔰
                     </span>
                     Every department has a clear purpose. <br />
-                    <span className="text-[16px] font-normal not-italic">
+                    <span className="text-[16px] font-normal">
                       🔰
                     </span>
                     Every member contributes to the whole. <br />
-                    <span className="text-[16px] font-normal not-italic">
+                    <span className="text-[16px]">
                       🔰
                     </span>
                     The company grows when each individual grows.
@@ -328,7 +328,7 @@ const Messenger = () => {
       </div>
 
       {showModal && <AddMessageModal onClose={() => setShowModal(false)} />}
-    </div>
+    </header>
   );
 };
 
