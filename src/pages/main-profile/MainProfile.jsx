@@ -72,12 +72,15 @@ const MainProfile = () => {
         last_name: user.last_name,
         email: user.email,
         phone_number: user.phone_number,
-        birth_date: birthday ? dayjs(birthday).format("YYYY-MM-DD") : null,
         address: user.address,
         tg_username: user.tg_username,
-        password: user.password,
-        password1: user.password1,
+        // password: user.password,
+        // password1: user.password1,
       };
+
+      if (birthday) {
+        updateData.birth_date = dayjs(birthday).format("YYYY-MM-DD");
+      }
 
       if (changePassword) {
         if (!user.password || !user.password1) {
@@ -90,7 +93,6 @@ const MainProfile = () => {
           setUpdating(false);
           return;
         }
-
         updateData.password = user.password;
         updateData.password1 = user.password1;
       }
@@ -282,7 +284,7 @@ const MainProfile = () => {
                 <label className="block text-sm text-gray-500 mb-1">Birthday</label>
                 {isEditing ? (
                   <DatePicker
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg py-4 px-3"
+                    className="w-full calendar"
                     value={birthday ? dayjs(birthday) : null}
                     onChange={(date, dateString) => setBirthday(dateString)}
                     format="YYYY-MM-DD"
@@ -354,23 +356,6 @@ const MainProfile = () => {
 
                 {isEditing ? (
                   <div className="flex flex-col gap-2">
-                    {/* Current Password */}
-                    <div className="relative">
-                      <input
-                        type={showCurrent ? "text" : "password"}
-                        placeholder="Current Password"
-                        value={user.password || ""}
-                        onChange={(e) => handleInputChange("password", e.target.value)}
-                        className="w-full bg-gray-50 border border-gray-200 rounded-lg py-4 px-3 pr-10"
-                        required
-                      />
-                      <span
-                        onClick={() => setShowCurrent(!showCurrent)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500"
-                      >
-                        {showCurrent ? <EyeTwoTone /> : <EyeInvisibleOutlined />}
-                      </span>
-                    </div>
 
                     {!changePassword ? (
                       <Button type="link" onClick={() => setChangePassword(true)}>
@@ -421,11 +406,22 @@ const MainProfile = () => {
                     )}
                   </div>
                 ) : (
-                  <input
-                    value="••••••"
-                    readOnly
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg py-4 px-3"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showNew ? "text" : "password"}
+                      placeholder="New Password"
+                      value={user.password || ""}
+                      onChange={(e) => handleInputChange("password", e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg py-4 px-3 pr-10"
+                      required
+                    />
+                    <span
+                      onClick={() => setShowNew(!showNew)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500"
+                    >
+                      {showNew ? <EyeTwoTone /> : <EyeInvisibleOutlined />}
+                    </span>
+                  </div>
                 )}
               </div>
 
