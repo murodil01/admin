@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaFile, FaEye, FaDownload } from 'react-icons/fa';
 import { MdMoreVert } from 'react-icons/md';
-import { FiEdit2, FiTrash2 } from 'react-icons/fi'; // Added missing imports
+import { FiEdit2, FiTrash2 } from 'react-icons/fi'; 
 import { Plus } from 'lucide-react';
 import api from '../../api/base';
 import { Permission } from "../../components/Permissions";
@@ -20,10 +20,8 @@ const CategoryCard = () => {
   const [modalData, setModalData] = useState({ title: '', file: null, item: null });
   const dropdownRefs = useRef({});
   const [folder, setFolder] = useState(null);
-
   const { user, loading: authLoading } = useAuth();
   const [dataLoading, setDataLoading] = useState(true);
-  // Yuklash holatini birlashtirish
   const isLoading = authLoading || dataLoading;
 
 
@@ -122,7 +120,6 @@ const CategoryCard = () => {
       setLoading(false);
     }
   };
-
 
   // Edit file
   const handleEdit = async (e) => {

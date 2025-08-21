@@ -31,7 +31,7 @@ const AddMessageModal = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm p-4 sm:p-6">
+    <header className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm p-4 sm:p-6">
       <div className="flex flex-col items-center gap-4 sm:gap-6 p-4 sm:p-6 md:p-8 bg-white rounded-2xl shadow-lg w-full max-w-md">
         <div className="w-full flex justify-between items-center">
           <b className="text-lg sm:text-xl md:text-2xl text-gray-800">
@@ -88,7 +88,7 @@ const AddMessageModal = ({ onClose }) => {
           </button>
         </form>
       </div>
-    </div>
+    </header>
   );
 };
 

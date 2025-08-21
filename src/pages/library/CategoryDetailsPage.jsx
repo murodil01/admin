@@ -23,7 +23,7 @@ const CategoryDetailsPage = () => {
   const { user, loading: authLoading } = useAuth();
   const [dataLoading, setDataLoading] = useState(true);
   const isLoading = authLoading || dataLoading;
-
+  
   const fetchCategoryDetails = async () => {
     try {
       setDataLoading(true);
