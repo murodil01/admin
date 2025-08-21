@@ -283,7 +283,7 @@ const CategoryCard = () => {
         <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
           <button
             onClick={() => openModal('add')}
-            className="flex items-center justify-center w-full sm:w-auto px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="flex items-center justify-center w-full sm:w-auto px-11 py-3 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50"
             disabled={state.loading}
           >
             <Plus className="w-4 h-4 mr-2" />
