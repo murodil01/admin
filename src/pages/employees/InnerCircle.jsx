@@ -41,6 +41,16 @@ const InnerCircle = () => {
         fetchEmployees(1, deptId);
     };
 
+    const handleStatusUpdate = (employeeId, newStatus) => {
+        // Update the employee in the local state
+        setEmployees(prevEmployees =>
+            prevEmployees.map(emp =>
+                emp.id === employeeId
+                    ? { ...emp, status: newStatus }
+                    : emp
+            )
+        );
+    };
 
     useEffect(() => {
         fetchEmployees();
@@ -322,7 +332,7 @@ const InnerCircle = () => {
                     employees={employees}
                     loading={loading}
                     onDelete={showDeleteModal}
-                    onStatusUpdate={fetchEmployees}
+                    onStatusUpdate={handleStatusUpdate}
                 />
             )}
 
