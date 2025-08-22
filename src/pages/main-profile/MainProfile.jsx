@@ -28,6 +28,8 @@ import { getMyProfile, updateMyProfile } from "../../api/services/profileService
 import { Divider } from "antd";
 import { Grid } from "antd";
 const { useBreakpoint } = Grid;
+import useTokenManager from "../../hooks/useTokenManager";
+import TokenExpiredScreen from "../../components/TokenExpiredScreen";
 
 const MainProfile = () => {
   const [user, setUser] = useState(null);
@@ -39,7 +41,7 @@ const MainProfile = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [tokenExpired, setTokenExpired] = useState(false);
+  const [tokenExpiredSection, setTokenExpiredSection] = useState(false);
 
   const screens = useBreakpoint();
 
@@ -49,11 +51,12 @@ const MainProfile = () => {
   if (screens.lg) size = 120;
 
   const navigate = useNavigate();
+  const { tokenExpired, redirecting, checkApiError } = useTokenManager();
 
   // Token tekshirish funksiyasi
   const checkTokenExpiration = (error) => {
     if (error.response && error.response.status === 401) {
-      setTokenExpired(true);
+      setTokenExpiredSection(true);
       localStorage.removeItem("token");
       localStorage.removeItem("refreshToken");
 
@@ -84,6 +87,8 @@ const MainProfile = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
+      if (tokenExpired || redirecting) return;
+
       try {
         setLoading(true);
         const data = await getMyProfile();
@@ -105,15 +110,16 @@ const MainProfile = () => {
         setLoading(false);
       }
     };
+
     fetchUser();
-  }, [navigate]);
+  }, [tokenExpired, redirecting, checkApiError]);
 
   const handleInputChange = (field, value) => {
     setUser((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
-    if (!user) return;
+    if (!user || tokenExpired || redirecting) return;
 
     try {
       setUpdating(true);
@@ -125,8 +131,6 @@ const MainProfile = () => {
         phone_number: user.phone_number,
         address: user.address,
         tg_username: user.tg_username,
-        // password: user.password,
-        // password1: user.password1,
       };
 
       if (birthday) {
@@ -136,12 +140,10 @@ const MainProfile = () => {
       if (changePassword) {
         if (!user.password || !user.password1) {
           message.error("Please fill out both password fields.");
-          setUpdating(false);
           return;
         }
         if (user.password !== user.password1) {
           message.error("New password and confirmation do not match.");
-          setUpdating(false);
           return;
         }
         updateData.password = user.password;
@@ -156,14 +158,13 @@ const MainProfile = () => {
 
       setUser({
         ...updatedUser,
-        profile_picture_preview:
-          updatedUser.profile_picture || user.profile_picture_preview || null,
+        profile_picture_preview: updatedUser.profile_picture || user.profile_picture_preview || null,
       });
       setIsEditing(false);
       setChangePassword(false);
       message.success("Profile updated successfully");
     } catch (error) {
-      if (!checkTokenExpiration(error)) {
+      if (!checkApiError(error)) {
         message.error("Error during saving");
       }
     } finally {
@@ -175,7 +176,7 @@ const MainProfile = () => {
   const checkTokenValidity = () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      setTokenExpired(true);
+      setTokenExpiredSection(true);
       return false;
     }
 
@@ -185,7 +186,7 @@ const MainProfile = () => {
       const currentTime = Date.now();
 
       if (currentTime > expirationTime) {
-        setTokenExpired(true);
+        setTokenExpiredSection(true);
         localStorage.removeItem("token");
         localStorage.removeItem("refreshToken");
 
@@ -209,7 +210,7 @@ const MainProfile = () => {
       return true;
     } catch (error) {
       console.error("Token validation error:", error);
-      setTokenExpired(true);
+      setTokenExpiredSection(true);
       return false;
     }
   };
@@ -223,6 +224,7 @@ const MainProfile = () => {
   }, [navigate]);
 
   if (tokenExpired) {
+
     return (
       <div className="p-6 max-w-3xl mx-auto">
         <Card className="text-center py-10">
@@ -234,6 +236,11 @@ const MainProfile = () => {
         </Card>
       </div>
     );
+  }
+
+  // Token eskirgan bo'lsa qizil ekran
+  if (tokenExpired || redirecting) {
+    return <TokenExpiredScreen />;
   }
 
   if (loading) {
