@@ -758,7 +758,7 @@ const handleEditTask = async () => {
                             </div>
                           )}
                           <span className="text-sm">
-                            {userObj.first_name} {userObj.last_name}
+                            {userObj.first_name}
                           </span>
                         </div>
                       ) : null;
@@ -1250,7 +1250,7 @@ const handleEditTask = async () => {
         <div>
              
           <div className="flex justify-between items-center mb-3">
-           <div className="flex max-sm:-mr-4">
+           <div className=" w-[80%] flex max-sm:-mr-4">
                       <div className="relative w-full max-w-md bg-white rounded-xl max-md:border max-md:border-gray-300 max-sm:border-0 flex max-sm:flex-row-reverse items-center">
                         {/* Search icon */}
                         <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none max-sm:hidden">
@@ -1266,7 +1266,7 @@ const handleEditTask = async () => {
                           placeholder="Search..."
                              value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                          className="w-full py-[7px] bg-[#F2F2F2] pr-4 pl-10 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-blue-500 max-sm:py-1
+                          className=" flex-1  py-[7px] bg-[#F2F2F2] pr-4 pl-10 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-blue-500 max-sm:py-1
                                max-sm:pl-3 max-sm:placeholder-transparent"
                         />
                           {searchTerm && (
@@ -1297,6 +1297,7 @@ const handleEditTask = async () => {
                 ? "Deselect All Users" 
                 : "Select All Users"}
             </button>
+          
           </div>
           <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-[14px] p-4">
             <div className="grid grid-cols-1 gap-3">
@@ -1305,6 +1306,7 @@ const handleEditTask = async () => {
                   key={user.id}
                   className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 rounded-lg border border-gray-100"
                 >
+                  
                   <input
                     type="checkbox"
                     checked={selectedUsers.includes(user.id)}
@@ -1323,14 +1325,15 @@ const handleEditTask = async () => {
                         <span className="text-sm font-medium">
                           {user.first_name?.[0] || "U"}
                         </span>
+                      
                       </div>
                     )}
                     <div className="flex flex-col">
                       <span className="text-sm font-medium text-gray-900">
-                        {user.first_name} {user.last_name}
+                        {user.first_name} {user.last_name} 
                       </span>
                       <span className="text-xs text-gray-500">
-                        {user.department?.name || "No Department"}
+                        {user.profession || "No Profession"}
                       </span>
                     </div>
                   </div>
