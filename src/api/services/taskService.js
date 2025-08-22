@@ -41,6 +41,8 @@ export const getProjectTaskById = (id) =>
   api.get(endpoints.projects.getByIdTasks(id));
 export const getProjectUsers = (id) =>
   api.get(endpoints.projects.getByIdUsers(id));
+export const updateProjectUsers = (id) =>
+  api.patch(endpoints.projects.updateByIdUsers(id));
 
 export const getTaskFiles = () => api.get(endpoints.tasks.getTaskFiles);
 export const uploadTaskFile = (formData) =>
