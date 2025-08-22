@@ -862,7 +862,7 @@ const handleEditTask = async () => {
   };
 
   return (
-    <div className="">
+   <div className="">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
         <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
@@ -877,29 +877,29 @@ const handleEditTask = async () => {
         </button>
       </div>
 
-      {/* Tasks Grid */}
-      <div className={`flex flex-wrap gap-x-5 gap-y-5 ${justifyClass}`}>
+      {/* Tasks Grid - Responsive Grid Layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2">
         {projects.map((project) => (
           <div
             key={project.id}
-            className="max-w-[290px] w-full border-2 border-[#EFEFEF] rounded-[14px] p-3 bg-white relative group flex flex-col gap-3 cursor-pointer"
+            className=" border-2 border-[#EFEFEF] rounded-[14px] p-3 bg-white relative group flex flex-col gap-3 cursor-pointer hover:shadow-lg transition-shadow duration-200"
           >
             {project.image ? (
               <button
                 onClick={() => navigate(`/tasks/${project.id}`)}
-                className="cursor-pointer"
+                className="cursor-pointer w-full"
               >
                 <img
                   onClick={() => navigate(`/tasks/${project.id}`)}
                   src={project.image}
                   alt="Task image"
-                  className="h-[134px] w-full object-contain rounded-[14px]"
+                  className="h-[134px] w-full object-cover rounded-[14px]"
                 />
               </button>
             ) : (
               <button
                 onClick={() => navigate(`/tasks/${project.id}`)}
-                className="h-[134px] rounded-[14px] mb-2 overflow-hidden bg-gray-200 flex items-center justify-center cursor-pointer"
+                className="h-[134px] w-full rounded-[14px] mb-2 overflow-hidden bg-gray-200 flex items-center justify-center cursor-pointer"
               >
                 <span className="text-gray-500 text-sm">No Image</span>
               </button>
@@ -907,85 +907,83 @@ const handleEditTask = async () => {
 
             <button
               onClick={() => navigate(`/tasks/${project.id}`)}
-              className="flex items-center gap-1 mb-2 cursor-pointer"
+              className="flex items-center gap-1 mb-2 cursor-pointer w-full"
             >
-              <span className="text-xs font-bold text-gray-600 whitespace-nowrap">
+              <span className="text-xs font-bold text-gray-600 whitespace-nowrap flex-shrink-0">
                 {project?.progress}%
               </span>
-              <div className="w-full h-2 bg-gray-300 rounded">
+              <div className="flex-1 h-2 bg-gray-300 rounded">
                 <div
                   className="h-full bg-blue-500 rounded"
                   style={{ width: `${project?.progress}%` }}
                 ></div>
               </div>
             </button>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-<div className="flex items-center relative w-12 h-5">
-  {project?.assigned?.length > 0 ? (
-    <div className="flex items-center">
-      {/* Agar "All Departments" tanlangan bo'lsa */}
-      {project.is_all_departments ? (
-        <img
-          src="/M.png"
-          alt="All departments project"
-          className="w-[24px] h-[24px] rounded-full border-2 border-white shadow-sm"
-        />
-      ) : (
-        /* Aks holda odatiy ko'rsatish */
-        <>
-          {/* Birinchi 2 ta assigned user'ni ko'rsatish */}
-          {project.assigned.slice(0, 2).map((user, index) => {
-            const userObj = typeof user === "object" ? user : allUsers.find(u => u.id === user);
-            return userObj ? (
-              <div
-                key={userObj.id || index}
-                className="relative"
-                style={{ marginLeft: index > 0 ? "-8px" : "0" }}
-              >
-                {userObj.profile_picture ? (
-                  <img
-                    src={userObj.profile_picture}
-                    alt={`${userObj.first_name} ${userObj.last_name}`}
-                    className="w-[24px] h-[24px] rounded-full border-2 border-white shadow-sm object-cover"
-                  />
-                ) : (
-                  <div className="bg-gray-300 rounded-full flex items-center justify-center w-[24px] h-[24px] border-2 border-white shadow-sm">
-                    <span className="text-xs font-medium">
-                      {userObj.first_name?.[0] || "U"}
-                    </span>
-                  </div>
-                )}
-              </div>
-            ) : null;
-          })}
-          
-          {/* 3 yoki undan ko'p assigned user bo'lsa */}
-          {project.assigned.length >= 3 && (
-            <div
-              className="relative"
-              style={{ marginLeft: "-8px" }}
-            >
-              <div className="w-[24px] h-[24px] bg-blue-500 rounded-full flex items-center justify-center border-2 border-white shadow-sm text-white text-xs font-medium">
-                +{project.assigned.length - 2}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  ) : (
-    <span className="text-gray-400 text-xs">No users</span>
-  )}
-</div>
+
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1 flex-1 min-w-0">
+                <div className="flex items-center relative w-12 h-5 flex-shrink-0">
+                  {project?.assigned?.length > 0 ? (
+                    <div className="flex items-center">
+                      {/* Agar "All Departments" tanlangan bo'lsa */}
+                      {project.is_all_departments ? (
+                        <img
+                          src="/M.png"
+                          alt="All departments project"
+                          className="w-[24px] h-[24px] rounded-full border-2 border-white shadow-sm"
+                        />
+                      ) : (
+                        /* Aks holda odatiy ko'rsatish */
+                        <>
+                          {/* Birinchi 2 ta assigned user'ni ko'rsatish */}
+                          {project.assigned.slice(0, 2).map((user, index) => {
+                            const userObj = typeof user === "object" ? user : allUsers.find(u => u.id === user);
+                            return userObj ? (
+                              <div
+                                key={userObj.id || index}
+                                className="relative"
+                                style={{ marginLeft: index > 0 ? "-8px" : "0" }}
+                              >
+                                {userObj.profile_picture ? (
+                                  <img
+                                    src={userObj.profile_picture}
+                                    alt={`${userObj.first_name} ${userObj.last_name}`}
+                                    className="w-[24px] h-[24px] rounded-full border-2 border-white shadow-sm object-cover"
+                                  />
+                                ) : (
+                                  <div className="bg-gray-300 rounded-full flex items-center justify-center w-[24px] h-[24px] border-2 border-white shadow-sm">
+                                    <span className="text-xs font-medium">
+                                      {userObj.first_name?.[0] || "U"}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            ) : null;
+                          })}
+                          
+                          {/* 3 yoki undan ko'p assigned user bo'lsa */}
+                          {project.assigned.length >= 3 && (
+                            <div
+                              className="relative"
+                              style={{ marginLeft: "-8px" }}
+                            >
+                              <div className="w-[24px] h-[24px] bg-blue-500 rounded-full flex items-center justify-center border-2 border-white shadow-sm text-white text-xs font-medium">
+                                +{project.assigned.length - 2}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400 text-xs">No users</span>
+                  )}
+                </div>
+
                 <button
                   onClick={() => navigate(`/tasks/${project.id}`)}
-                  className="font-bold text-lg cursor-pointer troncate max-w-[180px]"
-                  style={{
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
+                  className="font-bold text-lg cursor-pointer truncate flex-1 text-left"
+                  title={project.name}
                 >
                   {project.name}
                 </button>
@@ -997,20 +995,20 @@ const handleEditTask = async () => {
                 placement="bottomRight"
                 overlayClassName="w-[260px] rounded-lg shadow-lg border border-gray-200"
               >
-                <button>
+                <button className="flex-shrink-0 p-1">
                   <MoreVertical className="w-5 h-5 text-gray-600 hover:text-black cursor-pointer" />
                 </button>
               </Dropdown>
             </div>
 
-            <div className="flex mt-1 justify-between text-sm">
-              <div>
-                <span className="text-gray-900 font-medium">
+            <div className="flex mt-1 justify-between text-sm gap-2">
+              <div className="flex-1">
+                <span className="text-gray-900 font-medium text-xs sm:text-sm">
                   {formatDate2(project?.created_at)}
                 </span>
               </div>
-              <div>
-                <span className="text-gray-900 font-medium">
+              <div className="flex-1 text-right">
+                <span className="text-gray-900 font-medium text-xs sm:text-sm">
                   {formatDate2(project?.deadline)}
                 </span>
               </div>
@@ -1249,14 +1247,11 @@ const handleEditTask = async () => {
       deptModalFilteredUsers.length > 0 && (
         <div>
              
-          <div className="flex justify-between items-center mb-3">
-           <div className=" w-[80%] flex max-sm:-mr-4">
-                      <div className="relative w-full max-w-md bg-white rounded-xl max-md:border max-md:border-gray-300 max-sm:border-0 flex max-sm:flex-row-reverse items-center">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-3">
+           <div className="w-full sm:w-[80%] flex">
+                      <div className="relative w-full max-w-md bg-white rounded-xl border border-gray-300 sm:border-0 flex items-center">
                         {/* Search icon */}
-                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none max-sm:hidden">
-                          <Search className="w-5 h-5 text-[#0A1629]" />
-                        </span>
-                        <span className="hidden max-sm:flex absolute inset-y-0 right-0 pr-3 items-center pointer-events-none">
+                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <Search className="w-5 h-5 text-[#0A1629]" />
                         </span>
               
@@ -1266,13 +1261,12 @@ const handleEditTask = async () => {
                           placeholder="Search..."
                              value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                          className=" flex-1  py-[7px] bg-[#F2F2F2] pr-4 pl-10 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-blue-500 max-sm:py-1
-                               max-sm:pl-3 max-sm:placeholder-transparent"
+                          className="flex-1 py-[7px] bg-[#F2F2F2] pr-4 pl-10 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                           {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center max-sm:right-8"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
                 >
                   <svg className="w-4 h-4 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1281,17 +1275,16 @@ const handleEditTask = async () => {
               )}
                       </div>
                     </div>
-            <h4 className="text-lg font-semibold">
-              
-                   {searchTerm && (
-                  <span className=" mr-1 text-[14px]">
+            <h4 className="text-lg font-semibold hidden sm:block">
+              {searchTerm && (
+                  <span className="mr-1 text-[14px]">
                     
                   </span>
                 )}
             </h4>
             <button 
               onClick={handleSelectAllUsers}
-              className="h-[38px]  px-4 cursor-pointer flex items-center justify-center rounded-xl text-white bg-[#1677FF]"
+              className="h-[38px] px-4 cursor-pointer flex items-center justify-center rounded-xl text-white bg-[#1677FF] whitespace-nowrap"
             >
               {deptModalFilteredUsers.every(user => selectedUsers.includes(user.id)) 
                 ? "Deselect All Users" 
@@ -1311,28 +1304,28 @@ const handleEditTask = async () => {
                     type="checkbox"
                     checked={selectedUsers.includes(user.id)}
                     onChange={() => toggleUserSelection(user.id)}
-                    className="w-5 h-5 accent-blue-600"
+                    className="w-5 h-5 accent-blue-600 flex-shrink-0"
                   />
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
                     {user.profile_picture ? (
                       <img
                         src={user.profile_picture}
                         alt={`${user.first_name} ${user.last_name}`}
-                        className="w-10 h-10 rounded-full object-cover"
+                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                       />
                     ) : (
-                      <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                      <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
                         <span className="text-sm font-medium">
                           {user.first_name?.[0] || "U"}
                         </span>
                       
                       </div>
                     )}
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-900">
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-medium text-gray-900 truncate">
                         {user.first_name} {user.last_name} 
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500 truncate">
                         {user.profession || "No Profession"}
                       </span>
                     </div>
