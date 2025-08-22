@@ -12,6 +12,7 @@ export const getMyProfile = async () => {
     try {
         const res = await api.get(url);
         let data = res.data;
+        console.log("📤 Yuborilayotgan updateData:", data);
 
         if (data.profile_picture && data.profile_picture.startsWith("/")) {
             data.profile_picture = `${API_BASE}${data.profile_picture}`;

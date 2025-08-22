@@ -19,6 +19,7 @@ import {
   getProjectTaskById,
   getProjectUsers,
 } from "../../api/services/taskService";
+import { getProjectById } from "../../api/services/projectService";
 import dayjs from "dayjs";
 
 import { Permission } from "../../components/Permissions";
@@ -76,7 +77,22 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
   const [loadingTags, setLoadingTags] = useState(false);
   const [file, setFile] = useState(null);       // File object
   const [preview, setPreview] = useState(null);
+  const [projectName, setProjectName] = useState("");
   const { user, isAuthenticated } = useAuth();
+
+
+  useEffect(() => {
+  if (projectId) {
+    getProjectById(projectId)
+      .then((response) => {
+        setProjectName(response.name); // Adjust according to your API response structure
+      })
+      .catch((error) => {
+        console.error("Error fetching project:", error);
+        message.error("Failed to fetch project details");
+      });
+  }
+}, [projectId]);
 
   useEffect(() => {
     if (!file) {
@@ -373,7 +389,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
         <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
-          Project name
+          {projectName || "Loading..."}
         </h3>
         <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
           <button

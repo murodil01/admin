@@ -359,3 +359,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   border: none !important;
 }
 
+.calendar {
+  padding: 16px 12px;
+  background-color: rgb(250, 250, 250);
+}

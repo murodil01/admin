@@ -78,10 +78,13 @@ const MainProfile = () => {
         last_name: user.last_name,
         email: user.email,
         phone_number: user.phone_number,
-        birth_date: birthday ? dayjs(birthday).format("YYYY-MM-DD") : null,
         address: user.address,
         tg_username: user.tg_username,
       };
+
+      if (birthday) {
+        updateData.birth_date = dayjs(birthday).format("YYYY-MM-DD");
+      }
 
       if (changePassword) {
         if (!user.password || !user.password1) {
@@ -305,7 +308,10 @@ const MainProfile = () => {
                 <label className="block text-sm text-gray-500 mb-1">Birthday</label>
                 {isEditing ? (
                   <DatePicker
-                    className="w-full"
+
+                    className="w-full calendar"
+
+              
                     value={birthday ? dayjs(birthday) : null}
                     onChange={(date, dateString) => setBirthday(dateString)}
                     format="YYYY-MM-DD"
