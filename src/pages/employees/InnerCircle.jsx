@@ -41,6 +41,16 @@ const InnerCircle = () => {
         fetchEmployees(1, deptId);
     };
 
+    const handleStatusUpdate = (employeeId, newStatus) => {
+        // Update the employee in the local state
+        setEmployees(prevEmployees =>
+            prevEmployees.map(emp =>
+                emp.id === employeeId
+                    ? { ...emp, status: newStatus }
+                    : emp
+            )
+        );
+    };
 
     useEffect(() => {
         fetchEmployees();
@@ -114,72 +124,119 @@ const InnerCircle = () => {
     };
 
     const handleAddEmployee = async (employeeData) => {
+        console.log("=== Starting handleAddEmployee ===");
+        console.log("Received data:", employeeData);
+
+        // ✅ Prevent multiple submissions
+        if (loading) {
+            console.log("Already processing, ignoring duplicate call");
+            return;
+        }
+
         try {
+            setLoading(true); // Prevent duplicate calls
+
+            // ✅ Server-side validation
+            if (employeeData.password !== employeeData.password1) {
+                message.error('Passwords do not match');
+                return;
+            }
+
+            if (employeeData.password.length < 8) {
+                message.error('Password must be at least 8 characters');
+                return;
+            }
+
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(employeeData.email)) {
+                message.error('Please enter a valid email address');
+                return;
+            }
+
+            // ✅ Build FormData carefully
             const form = new FormData();
+
+            // Required fields
             form.append("first_name", employeeData.first_name);
             form.append("last_name", employeeData.last_name);
             form.append("email", employeeData.email);
             form.append("password", employeeData.password);
             form.append("password1", employeeData.password1);
 
+            // Optional fields - only append if they exist
             if (employeeData.department) {
                 form.append("department_id", employeeData.department);
             }
-            if (employeeData.profession)
-                form.append("profession", employeeData.profession);
-            if (employeeData.phone_number)
-                form.append("phone_number", employeeData.phone_number);
-            if (employeeData.tg_username)
-                form.append("tg_username", employeeData.tg_username);
-            if (employeeData.profession) {
-                form.append("profession", employeeData.profession);
+            if (employeeData.profession?.trim()) {
+                form.append("profession", employeeData.profession.trim());
+            }
+            if (employeeData.phone_number?.trim()) {
+                form.append("phone_number", employeeData.phone_number.trim());
+            }
+            if (employeeData.tg_username?.trim()) {
+                form.append("tg_username", employeeData.tg_username.trim());
             }
             if (employeeData.level) {
                 form.append("level", employeeData.level);
             }
-            if (employeeData.role) form.append("role", employeeData.role);
-            if (employeeData.address) form.append("address", employeeData.address);
+            if (employeeData.role) {
+                form.append("role", employeeData.role);
+            }
+            if (employeeData.address?.trim()) {
+                form.append("address", employeeData.address.trim());
+            }
             if (employeeData.profile_picture) {
-                form.set(
-                    "profile_picture",
-                    employeeData.profile_picture,
-                    employeeData.profile_picture.name
-                );
+                form.append("profile_picture", employeeData.profile_picture, employeeData.profile_picture.name);
             }
-
             if (employeeData.birth_date) {
-                if (employeeData.birth_date instanceof Date) {
-                    form.append(
-                        "birth_date",
-                        employeeData.birth_date.toISOString().split("T")[0]
-                    );
-                } else if (typeof employeeData.birth_date === "string") {
-                    form.append("birth_date", employeeData.birth_date);
-                }
+                form.append("birth_date", employeeData.birth_date);
             }
 
-            await createEmployees(form);
+            // ✅ Debug FormData
+            console.log("FormData contents:");
+            for (let [key, value] of form.entries()) {
+                console.log(`${key}:`, value);
+            }
+
+            // ✅ Single API call with proper error handling
+            console.log("Making API call...");
+            const response = await createEmployees(form);
+            console.log("✅ API Success:", response);
+
+            // ✅ Success actions
             message.success("Employee added successfully");
             setIsAddModalOpen(false);
-            fetchEmployees();
-            const response = await createEmployees(form);
-            console.log("API Response:", response.data);  // API javobini ko'rish
-            message.success("Employee added successfully");
-        } catch (err) {
-            console.error("Full error:", err);
-            const errorMessage =
-                err.response?.data?.message ||
-                err.response?.data?.detail ||
-                "Failed to add employee";
+            await fetchEmployees(); // Refresh the list
+            console.log("=== handleAddEmployee completed successfully ===");
 
-            if (err.response?.data?.errors) {
-                const errors = Object.entries(err.response.data.errors)
-                    .map(([field, messages]) => `${field}: ${messages.join(", ")}`)
-                    .join("\n");
-                message.error(`Validation errors:\n${errors}`);
-            } else {
-                message.error(errorMessage);
+        } catch (err) {
+            console.error("❌ API Error:", err);
+            console.error("Error response:", err.response?.data);
+            console.error("Error status:", err.response?.status);
+
+            // ✅ Better error handling
+            let errorMessage = "Failed to add employee";
+
+            if (err.response?.status === 400) {
+                if (err.response.data?.email) {
+                    errorMessage = "Email already exists. Please use a different email.";
+                } else if (err.response.data?.errors) {
+                    const errors = Object.entries(err.response.data.errors)
+                        .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(", ") : messages}`)
+                        .join("; ");
+                    errorMessage = `Validation errors: ${errors}`;
+                } else if (err.response.data?.detail) {
+                    errorMessage = err.response.data.detail;
+                } else if (err.response.data?.message) {
+                    errorMessage = err.response.data.message;
+                }
+            } else if (err.response?.status === 500) {
+                errorMessage = "Server error. Please try again later.";
             }
+
+            message.error(errorMessage);
+            console.log("=== handleAddEmployee failed ===");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -253,7 +310,7 @@ const InnerCircle = () => {
                                     onClick={() => setIsAddModalOpen(true)}
                                     className="hidden lg:flex bg-[#0061fe] text-white text-sm sm:text-base rounded-2xl items-center gap-2 py-2 px-4 sm:py-3 sm:px-5 cursor-pointer shadow-xl shadow-bg-blue-300"
                                 >
-                                    <Plus size={18} /> <span>Add Employee</span>
+                                    <Plus size={18} /> <span>Add Member</span>
                                 </button>
 
                                 {/* Mobile + Tablet Floating Button */}
@@ -275,7 +332,7 @@ const InnerCircle = () => {
                     employees={employees}
                     loading={loading}
                     onDelete={showDeleteModal}
-                    onStatusUpdate={fetchEmployees}
+                    onStatusUpdate={handleStatusUpdate}
                 />
             )}
 

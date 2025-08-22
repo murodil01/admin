@@ -16,7 +16,7 @@ const EmployeeStatusModal = ({ employeeId, currentStatus, visible, onClose, onSu
         try {
             await updateEmployeeStatus(employeeId, status);
             message.success('Status muvaffaqiyatli yangilandi');
-            onSuccess();
+            onSuccess(status);
             onClose();
         } catch (error) {
             console.error('Status yangilashda xato:', error);
