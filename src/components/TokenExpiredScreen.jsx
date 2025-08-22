@@ -11,7 +11,7 @@ const TokenExpiredScreen = () => {
             indicator={<LoadingOutlined style={{ fontSize: 48, color: '#ef4444' }} spin />} 
           />
           <div className="text-xl text-red-600 font-semibold">Session Expired</div>
-          <div className="text-lg text-gray-600">Redirecting to login page...</div>
+          <div className="text-lg text-gray-600">Redirecting to login page!</div>
         </div>
       </Card>
     </div>
