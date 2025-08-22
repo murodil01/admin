@@ -12,6 +12,7 @@ import { useParams } from "react-router-dom";
 
 const Profiles = () => {
   const { id: employeeId } = useParams(); // Get employee ID from URL
+  const numericEmployeeId = parseInt(employeeId);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(true);
@@ -51,27 +52,45 @@ const Profiles = () => {
   };
 
   const handleFileUpload = (info) => {
-    const {file} = info;
+    const { file } = info;
 
-    if (file.status === 'done') {
+    // Handle file selection immediately
+    if (file.originFileObj || file) {
+      const fileObj = file.originFileObj || file;
+
+      // Validate file type and size
+      const isImage = fileObj.type?.startsWith('image/');
+      const isLt5M = fileObj.size / 1024 / 1024 < 5;
+
+      if (!isImage) {
+        message.error('Faqat rasm fayllari qabul qilinadi!');
+        return false;
+      }
+
+      if (!isLt5M) {
+        message.error('Rasm hajmi 5MB dan kichik bo\'lishi kerak!');
+        return false;
+      }
+
       const reader = new FileReader();
       reader.onload = (e) => {
         setFormData((prev) => ({
           ...prev,
-          passport_picture: file.originFileObj,
-          passport_picture_url: e.target.result, // Preview uchun
+          passport_picture: fileObj,
+          passport_picture_url: e.target.result,
         }));
       };
-      reader.readAsDataURL(file.originFileObj);
+      reader.readAsDataURL(fileObj);
 
       setFileList([{
         uid: file.uid,
         name: file.name,
         status: 'done',
+        originFileObj: fileObj,
       }]);
       message.success(`${file.name} file uploaded successfully`);
     }
-    return false; // Avtomatik yuklashni oldini olish
+    return false;
   };
 
   const handleSave = async () => {
@@ -88,9 +107,6 @@ const Profiles = () => {
 
         // Agar rasm yangilangan bo'lsa
         if (formData.passport_picture instanceof File) {
-          await uploadControlDataFile(response.id, formData.passport_picture);
-          message.success("Passport rasmi yangilandi");
-
           // Fayl ro'yxatini yangilash
           setFileList([{
             uid: '-1',
@@ -98,29 +114,41 @@ const Profiles = () => {
             status: 'done',
             url: URL.createObjectURL(formData.passport_picture),
           }]);
+          // await uploadControlDataFile(response.id, formData.passport_picture);
+          // message.success("Passport rasmi yangilandi");
         }
       } else {
         // Yangi yozuv yaratish
-        console.log("Creating new record for user:", employeeId);
-        response = await createControlDataForUser(employeeId, formData);
+        console.log("Creating new record for user:", numericEmployeeId);
+        const createData ={
+          ...formData,
+          user_id: numericEmployeeId
+        }
+
+        response = await createControlDataForUser(numericEmployeeId, createData);
 
         // Yangi yaratilgan yozuv ID sini saqlash
-        setFormData(prev => ({ ...prev, id: response.id }));
+        setFormData(prev => ({ ...prev, id: response.id, user_id: numericEmployeeId }));
 
         // Agar rasm mavjud bo'lsa
         if (formData.passport_picture instanceof File) {
-          await uploadControlDataFile(response.id, formData.passport_picture);
-          message.success("Passport rasmi saqlandi");
+          try {
+            await uploadControlDataFile(response.id, formData.passport_picture);
+            message.success("Passport rasmi saqlandi");
+          } catch (fileError) {
+            console.error('File upload error:', fileError);
+            message.warning("Ma'lumotlar saqlandi, lekin rasm yuklanmadi");
+          }
         }
 
-        message.success("Yangi yozuv yaratildi");
+        message.success("New control data successfully added");
         setIsNewRecord(false);
       }
 
       setIsEditing(false);
     } catch (error) {
-      console.error('Saqlashda xato:', error);
-      message.error(error.response?.data?.message || "Saqlash muvaffaqiyatsiz tugadi");
+      console.error('Save error:', error);
+      message.error(error.response?.data?.message || "Error in saving");
     } finally {
       setLoading(false);
     }
@@ -130,7 +158,7 @@ const Profiles = () => {
     const fetchData = async () => {
       const initEmptyForm = () => {
         setFormData({
-          user_id: employeeId,
+          user_id: numericEmployeeId,
           accept_reason: '',
           expertise_level: '',
           strengths: '',
@@ -151,29 +179,33 @@ const Profiles = () => {
 
       try {
         setLoading(true);
-        const response = await getControlDataByUserId(employeeId);
+        const response = await getControlDataByUserId(numericEmployeeId);
 
         if (response && response.length > 0) {
           const employeeData = response.find(item =>
-            item?.user_info?.id === employeeId || item?.user_id === employeeId
+            item?.user_info?.id === numericEmployeeId ||
+            item?.user_id === numericEmployeeId ||
+            parseInt(item?.user_info?.id) === numericEmployeeId ||
+            parseInt(item?.user_id) === numericEmployeeId
           );
+
 
           if (employeeData) {
             setFormData({
               id: employeeData.id,
-              user_id: employeeData.user_info.id,
-              accept_reason: employeeData.accept_reason,
-              expertise_level: employeeData.expertise_level,
-              strengths: employeeData.strengths,
-              weaknesses: employeeData.weaknesses,
-              biography: employeeData.biography,
-              trial_period: employeeData.trial_period,
-              work_hours: employeeData.work_hours,
-              contact_type: employeeData.contact_type,
-              assigned_devices: employeeData.assigned_devices,
-              access_level: employeeData.access_level,
-              serial_number: employeeData.serial_number,
-              pinfl: employeeData.pinfl ? String(employeeData.pinfl) : null,
+              user_id: numericEmployeeId,
+              accept_reason: employeeData.accept_reason || '',
+              expertise_level: employeeData.expertise_level || '',
+              strengths: employeeData.strengths || '',
+              weaknesses: employeeData.weaknesses || '',
+              biography: employeeData.biography || '',
+              trial_period: employeeData.trial_period || '',
+              work_hours: employeeData.work_hours || '',
+              contact_type: employeeData.contact_type || '',
+              assigned_devices: employeeData.assigned_devices || '',
+              access_level: employeeData.access_level || '',
+              serial_number: employeeData.serial_number || '',
+              pinfl: employeeData.pinfl ? String(employeeData.pinfl) : '',
               passport_picture: employeeData.passport_picture || null,
             });
             setIsNewRecord(false);
@@ -187,27 +219,32 @@ const Profiles = () => {
               }]);
             }
           } else {
-            initEmptyForm();
+            console.log('No data found for employee:', numericEmployeeId);
+            setFileList([]);
           }
         } else {
+          console.log('No response data for employee:', numericEmployeeId);
           initEmptyForm();
         }
       } catch (err) {
         console.error("Fetch error:", {
           error: err,
-          response: err.response?.data
+          response: err.response?.data,
+          employeeId: numericEmployeeId
         });
-        message.error(err.response?.data?.message || "Ma'lumotlarni yuklashda xato");
+        message.error(err.response?.data?.message || "Error in loading data");
         initEmptyForm();
       } finally {
         setLoading(false);
       }
     };
 
-    if (employeeId) {
+    if (employeeId && !isNaN(numericEmployeeId)) {
       fetchData();
+    } else {
+      message.error("Noto'g'ri foydalanuvchi ID");
     }
-  }, [employeeId]);
+  }, [employeeId, numericEmployeeId]);
 
   if (loading && !formData.id && !isNewRecord) {
     return <Spin size="large" className="flex justify-center mt-10" />;

@@ -90,59 +90,39 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
         }
     };
 
-    // AddEmployeeModal.js
+    // In AddEmployeeModal.js - REPLACE the handleSubmit function:
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        // Tug'ilgan kunini to'g'ri formatga keltirish
-        // let formattedBirthDate = null;
-        if (formData.birth_date) {
-            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-            // Agar inputdan string kelgan bo'lsa (YYYY-MM-DD)
-            if (!dateRegex.test(formData.birth_date)) {
-                message.error('Iltimos, tug\'ilgan kunni "YYYY-MM-DD" formatida kiriting');
-                return;
-            }
-            // Agar Date obyekti bo'lsa
-            // else if (formData.birth_date instanceof Date) {
-            //     formattedBirthDate = formData.birth_date.toISOString().split('T')[0];
-            // }
+        // ✅ Only basic client-side validation here
+        if (!formData.first_name || !formData.last_name || !formData.email || !formData.password) {
+            message.error('Please fill in all required fields');
+            return;
         }
 
+        if (formData.password !== formData.password1) {
+            message.error('Passwords do not match');
+            return;
+        }
+
+        // ✅ Simple date validation
+        if (formData.birth_date) {
+            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+            if (!dateRegex.test(formData.birth_date)) {
+                message.error('Please enter birth date in YYYY-MM-DD format');
+                return;
+            }
+        }
+
+        // ✅ Pass clean data to parent - NO API CALL HERE
         const submitData = {
             ...formData,
             department: selectedDepartment ? selectedDepartment.id : null,
             profile_picture: avatarFile
         };
 
-        onSubmit(submitData);
-
-        // Validatsiya
-        if (formData.password !== formData.password1) {
-            message.error('Passwords do not match');
-            return;
-        }
-
-        if (formData.password.length < 8) {
-            message.error('Password must be at least 8 characters');
-            return;
-        }
-
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            message.error('Please enter a valid email address');
-            return;
-        }
-
-        const requiredFields = ['first_name', 'last_name', 'email', 'password'];
-        const missingFields = requiredFields.filter(field => !formData[field]);
-
-        if (missingFields.length > 0) {
-            message.error(`Missing required fields: ${missingFields.join(', ')}`);
-            return;
-        }
-
-        onSubmit({ ...formData, avatarFile });
-        console.log("Form data before submit:", formData);  // Forma ma'lumotlarini ko'rish
+        console.log("Submitting data to parent:", submitData);
+        onSubmit(submitData); // Only call parent function
     };
 
     return (
