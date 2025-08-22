@@ -8,8 +8,7 @@ import {
   Skeleton,
   Tag,
   Upload,
-  Input,
-  Modal
+  Input
 } from "antd";
 import {
   UserOutlined,
@@ -25,6 +24,8 @@ import dayjs from "dayjs";
 import { useNavigate } from "react-router-dom";
 
 import { getMyProfile, updateMyProfile } from "../../api/services/profileService";
+import useTokenManager from "../../hooks/useTokenManager";
+import TokenExpiredScreen from "../../components/TokenExpiredScreen";
 
 const MainProfile = () => {
   const [user, setUser] = useState(null);
@@ -33,33 +34,15 @@ const MainProfile = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [changePassword, setChangePassword] = useState(false);
-  const [showCurrent, setShowCurrent] = useState(false);
-  const [showNew, setShowNew] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [tokenExpired, setTokenExpired] = useState(false);
   
   const navigate = useNavigate();
+  const { tokenExpired, redirecting, checkApiError } = useTokenManager();
 
-  // Token tekshirish funksiyasi
-  const checkTokenExpiration = (error) => {
-    if (error.response && error.response.status === 401) {
-      setTokenExpired(true);
-      localStorage.removeItem("token");
-      localStorage.removeItem("refreshToken");
-      
-      // 2 soniyadan keyin login page'ga yo'naltirish
-      setTimeout(() => {
-        message.error("Session expired. Please login again.");
-        navigate("/login");
-      }, 2000);
-      
-      return true;
-    }
-    return false;
-  };
-
+  // User ma'lumotlarini olish
   useEffect(() => {
     const fetchUser = async () => {
+      if (tokenExpired || redirecting) return;
+      
       try {
         setLoading(true);
         const data = await getMyProfile();
@@ -69,22 +52,23 @@ const MainProfile = () => {
         });
         setBirthday(data.birth_date || "");
       } catch (error) {
-        if (!checkTokenExpiration(error)) {
+        if (!checkApiError(error)) {
           message.error("Error fetching user data");
         }
       } finally {
         setLoading(false);
       }
     };
+
     fetchUser();
-  }, [navigate]);
+  }, [tokenExpired, redirecting, checkApiError]);
 
   const handleInputChange = (field, value) => {
     setUser((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
-    if (!user) return;
+    if (!user || tokenExpired || redirecting) return;
 
     try {
       setUpdating(true);
@@ -96,8 +80,6 @@ const MainProfile = () => {
         phone_number: user.phone_number,
         address: user.address,
         tg_username: user.tg_username,
-        // password: user.password,
-        // password1: user.password1,
       };
 
       if (birthday) {
@@ -107,12 +89,10 @@ const MainProfile = () => {
       if (changePassword) {
         if (!user.password || !user.password1) {
           message.error("Please fill out both password fields.");
-          setUpdating(false);
           return;
         }
         if (user.password !== user.password1) {
           message.error("New password and confirmation do not match.");
-          setUpdating(false);
           return;
         }
         updateData.password = user.password;
@@ -127,14 +107,13 @@ const MainProfile = () => {
 
       setUser({
         ...updatedUser,
-        profile_picture_preview:
-          updatedUser.profile_picture || user.profile_picture_preview || null,
+        profile_picture_preview: updatedUser.profile_picture || user.profile_picture_preview || null,
       });
       setIsEditing(false);
       setChangePassword(false);
       message.success("Profile updated successfully");
     } catch (error) {
-      if (!checkTokenExpiration(error)) {
+      if (!checkApiError(error)) {
         message.error("Error during saving");
       }
     } finally {
@@ -142,77 +121,16 @@ const MainProfile = () => {
     }
   };
 
-  // Token muddatini tekshirish
-  const checkTokenValidity = () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setTokenExpired(true);
-      return false;
-    }
-    
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const expirationTime = payload.exp * 1000;
-      const currentTime = Date.now();
-      
-      if (currentTime > expirationTime) {
-        setTokenExpired(true);
-        localStorage.removeItem("token");
-        localStorage.removeItem("refreshToken");
-        
-        // 2 soniyadan keyin login page'ga yo'naltirish
-        setTimeout(() => {
-          message.error("Session expired. Please login again.");
-          navigate("/login");
-        }, 2000);
-        
-        return false;
-      }
-      
-      // Token eskirishiga 5 minut qolganida ogohlantirish
-      const timeLeft = expirationTime - currentTime;
-      const minutesLeft = Math.floor(timeLeft / 60000);
-      
-      if (minutesLeft < 5) {
-        message.warning(`Your session will expire in ${minutesLeft} minutes. Please save your work.`);
-      }
-      
-      return true;
-    } catch (error) {
-      console.error("Token validation error:", error);
-      setTokenExpired(true);
-      return false;
-    }
-  };
-
-  // Har 30 soniyada tokenni tekshirish
-  useEffect(() => {
-    checkTokenValidity();
-    
-    const interval = setInterval(checkTokenValidity, 30000);
-    return () => clearInterval(interval);
-  }, [navigate]);
-
-  // Logout funksiyasi
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("refreshToken");
-    navigate("/login");
     message.success("Logged out successfully");
+    window.location.href = "/login";
   };
 
-  if (tokenExpired) {
-    return (
-      <div className="p-6 max-w-3xl mx-auto">
-        <Card className="text-center py-10">
-          <div className="text-xl text-gray-600 mb-4">Your session has expired</div>
-          <div className="text-lg mb-6">Redirecting to login page...</div>
-          <Button type="primary" onClick={() => navigate("/login")}>
-            Go to Login Now
-          </Button>
-        </Card>
-      </div>
-    );
+  // Token eskirgan bo'lsa qizil ekran
+  if (tokenExpired || redirecting) {
+    return <TokenExpiredScreen />;
   }
 
   if (loading) {
@@ -248,7 +166,7 @@ const MainProfile = () => {
         </Button>
       </div>
       
-      <div className="">
+      <div>
         {/* Top User Card */}
         <div className="flex flex-col md:flex-row items-center justify-between p-8 bg-white shadow-md rounded-2xl">
           {/* Left Section */}
@@ -465,50 +383,31 @@ const MainProfile = () => {
               {/* Password */}
               <div>
                 <label className="block text-sm text-gray-500 mb-1">Password</label>
-
                 {isEditing ? (
                   <div className="flex flex-col gap-2">
-
-                    {/* Current Password */}
-                    <div className="relative">
-                      <Input.Password
-                        placeholder="Current Password"
-                        value={user.password || ""}
-                        onChange={(e) => handleInputChange("password", e.target.value)}
-                        className="w-full"
-                        iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
-                      />
-                    </div>
-
-
                     {!changePassword ? (
-                      <Button type="link" onClick={() => setChangePassword(true)}>
-                        Change Password
-                      </Button>
+                      <div>
+                        <Input value="••••••••" readOnly className="w-full" />
+                        <Button type="link" onClick={() => setChangePassword(true)}>
+                          Change Password
+                        </Button>
+                      </div>
                     ) : (
                       <>
-                        {/* New Password */}
-                        <div className="relative">
-                          <Input.Password
-                            placeholder="New Password"
-                            value={user.password || ""}
-                            onChange={(e) => handleInputChange("password", e.target.value)}
-                            className="w-full"
-                            iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
-                          />
-                        </div>
-
-                        {/* Confirm Password */}
-                        <div className="relative">
-                          <Input.Password
-                            placeholder="Confirm Password"
-                            value={user.password1 || ""}
-                            onChange={(e) => handleInputChange("password1", e.target.value)}
-                            className="w-full"
-                            iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
-                          />
-                        </div>
-
+                        <Input.Password
+                          placeholder="New Password"
+                          value={user.password || ""}
+                          onChange={(e) => handleInputChange("password", e.target.value)}
+                          className="w-full"
+                          iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
+                        />
+                        <Input.Password
+                          placeholder="Confirm Password"
+                          value={user.password1 || ""}
+                          onChange={(e) => handleInputChange("password1", e.target.value)}
+                          className="w-full"
+                          iconRender={(visible) => (visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />)}
+                        />
                         <Button type="link" danger onClick={() => setChangePassword(false)}>
                           Cancel Password Change
                         </Button>
@@ -516,23 +415,7 @@ const MainProfile = () => {
                     )}
                   </div>
                 ) : (
-
-                  <div className="relative">
-                    <input
-                      type={showNew ? "text" : "password"}
-                      placeholder="New Password"
-                      value={user.password || ""}
-                      onChange={(e) => handleInputChange("password", e.target.value)}
-                      className="w-full bg-gray-50 border border-gray-200 rounded-lg py-4 px-3 pr-10"
-                      required
-                    />
-                    <span
-                      onClick={() => setShowNew(!showNew)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500"
-                    >
-                      {showNew ? <EyeTwoTone /> : <EyeInvisibleOutlined />}
-                    </span>
-                  </div>
+                  <Input value="••••••••" readOnly className="w-full" />
                 )}
               </div>
 
