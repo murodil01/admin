@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { message } from "antd";
-import { MoreVertical, Paperclip } from "lucide-react";
+import { MoreVertical, Paperclip, Search } from "lucide-react";
 import { Modal, Input, Dropdown } from "antd";
 import pencil from "../../assets/icons/pencil.svg";
 import info from "../../assets/icons/info.svg";
@@ -20,7 +20,7 @@ const Projects = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
-  const [modalType, setModalType] = useState(null); // "edit" | "info" | "delete"
+  const [modalType, setModalType] = useState(null);
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const dropdownRef = useRef(null);
   const [taskName, setTaskName] = useState("");
@@ -29,6 +29,33 @@ const Projects = () => {
   const { collapsed } = useSidebar();
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [deadline, setDeadline] = useState("");
+  
+  // ✅ Avval search state
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [projects, setProjects] = useState([]);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
+  const [selectedDepartments, setSelectedDepartments] = useState([]);
+  const [allDepartments, setAllDepartments] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [allDepartmentsSelected, setAllDepartmentsSelected] = useState(false);
+  
+  const [deptModalFilteredUsers, setDeptModalFilteredUsers] = useState([]);
+
+    const filteredUsersBySearch = useMemo(() => {
+    if (!searchTerm.trim()) return deptModalFilteredUsers;
+    
+    return deptModalFilteredUsers.filter(user => 
+      `${user.first_name || ''} ${user.last_name || ''}`
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+    );
+  }, [deptModalFilteredUsers, searchTerm]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -43,23 +70,8 @@ const Projects = () => {
   const justifyClass =
     collapsed && !isSmallScreen ? "justify-start" : "justify-start";
 
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
-  const [selectedDepartments, setSelectedDepartments] = useState([]);
-  const [allDepartments, setAllDepartments] = useState([]);
-
+  const [loading, setLoading] = useState(true);  
   // Users uchun state'lar
-  const [allUsers, setAllUsers] = useState([]);
-  const [filteredUsers, setFilteredUsers] = useState([]);
-  const [selectedUsers, setSelectedUsers] = useState([]);
-  const [allDepartmentsSelected, setAllDepartmentsSelected] = useState(false);
-  // Department modal ichidagi userlarni ko'rsatish uchun
-  const [deptModalFilteredUsers, setDeptModalFilteredUsers] = useState([]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -1206,8 +1218,14 @@ const handleEditTask = async () => {
          {/* Department tanlash modal - YANGILANGAN */}
         <Modal
           open={isDeptModalOpen}
-          onCancel={() => setIsDeptModalOpen(false)}
-          onOk={() => setIsDeptModalOpen(false)}
+           onCancel={() => {
+        setIsDeptModalOpen(false);
+        setSearchTerm(""); // Modal yopilganda qidiruvni tozalash
+      }}
+      onOk={() => {
+        setIsDeptModalOpen(false);
+        setSearchTerm(""); // Modal yopilganda qidiruvni tozalash
+      }}
           okText="Done"
           className="custom-modal"
           width={800}
@@ -1229,9 +1247,46 @@ const handleEditTask = async () => {
     {selectedDepartments.length > 0 &&
       deptModalFilteredUsers.length > 0 && (
         <div>
+              <div className="flex-1 flex max-sm:-mr-4">
+                      <div className="relative w-full max-w-md bg-white rounded-xl max-md:border max-md:border-gray-300 max-sm:border-0 flex max-sm:flex-row-reverse items-center">
+                        {/* Search icon */}
+                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none max-sm:hidden">
+                          <Search className="w-5 h-5 text-[#0A1629]" />
+                        </span>
+                        <span className="hidden max-sm:flex absolute inset-y-0 right-0 pr-3 items-center pointer-events-none">
+                          <Search className="w-5 h-5 text-[#0A1629]" />
+                        </span>
+              
+                        {/* Input */}
+                        <input
+                          type="text"
+                          placeholder="Search..."
+                             value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full py-[7px] bg-[#F2F2F2] pr-4 pl-10 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-blue-500 max-sm:py-1
+                               max-sm:pl-3 max-sm:placeholder-transparent"
+                        />
+                          {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center max-sm:right-8"
+                >
+                  <svg className="w-4 h-4 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+                      </div>
+                    </div>
           <div className="flex justify-between items-center mb-3">
+        
             <h4 className="text-lg font-semibold">
               Select Users from Selected Departments
+                   {searchTerm && (
+                  <span className="ml-2">
+                    (Showing {filteredUsersBySearch.length} of {deptModalFilteredUsers.length} users)
+                  </span>
+                )}
             </h4>
             <button 
               onClick={handleSelectAllUsers}
@@ -1244,7 +1299,7 @@ const handleEditTask = async () => {
           </div>
           <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-[14px] p-4">
             <div className="grid grid-cols-1 gap-3">
-              {deptModalFilteredUsers.map((user) => (
+              {filteredUsersBySearch.map((user) => (
                 <label
                   key={user.id}
                   className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 rounded-lg border border-gray-100"
@@ -1292,13 +1347,13 @@ const handleEditTask = async () => {
       )}
 
     {/* Agar department tanlangan bo'lsa lekin userlar yo'q bo'lsa */}
-    {selectedDepartments.length > 0 &&
-      deptModalFilteredUsers.length === 0 &&
-      !selectedDepartments.includes("none") && (
-        <div className="text-center py-8 text-gray-500">
-          <p>No users found in selected departments</p>
-        </div>
-      )}
+  {selectedDepartments.length > 0 &&
+          deptModalFilteredUsers.length === 0 &&
+          !selectedDepartments.includes("none") && (
+            <div className="text-center py-8 text-gray-500">
+              <p>No users found in selected departments</p>
+            </div>
+          )}
   </div>
 </Modal>
 
