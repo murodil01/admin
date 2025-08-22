@@ -28,7 +28,7 @@ const Login = () => {
       });
       localStorage.setItem("token", res.data.access);
       toast.success("Successful login!",{
-        duration:1500,
+        duration: 1500,
         position: "top-center"
       });
       navigate("/");

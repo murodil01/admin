@@ -386,7 +386,7 @@ const StatusBadge = ({ status }) => {
                             : status === "sick"
                                 ? "text-yellow-600 bg-yellow-100"
                                 : status === "on_leave"
-                                    ? "text-gray-600 bg-purple-100"
+                                    ? "text-gray-600 bg-gray-200"
                                     : "text-gray-600 bg-gray-200"
                 }`}
         >
