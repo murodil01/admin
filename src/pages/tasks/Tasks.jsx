@@ -708,15 +708,15 @@ const handleEditTask = async () => {
 
             <div className="grid grid-cols-3 w-full">
               <p className="text-gray-400 font-medium">Department</p>
-              <div className="w-14 h-8">
-                <div className="flex gap-2 col-span-2">
+              <div className="w-21 h-10">
+                <div className="flex gap-1 w-full  col-span-2">
                   {selectedTask.departments?.map((dept) => (
-                    <div key={dept.id} className="flex flex-col items-center">
+                    <div key={dept.id} className=" w-full  flex flex-col items-center">
                       {dept.photo ? (
                         <img
                           src={dept.photo}
                           alt={`Department ${dept.id}`}
-                          className="w-10 h-10 border border-blue-300 rounded-full object-cover hover:opacity-80 transition cursor-pointer"
+                          className=" w-14 h-10 border border-blue-300 rounded-full object-cover hover:opacity-80 transition cursor-pointer"
                         />
                       ) : (
                         <div className="bg-gray-200 rounded-full flex items-center justify-center">
@@ -1064,56 +1064,56 @@ const handleEditTask = async () => {
 
             {/* Image */}
            {/* Image */}
-<div>
-  <label className="block text-[14px] font-bold text-[#7D8592]">
-    Image
-  </label>
+          <div>
+            <label className="block text-[14px] font-bold text-[#7D8592]">
+              Image
+            </label>
 
-  <input
-    type="file"
-    accept="image/*"
-    onChange={handleImageChange}
-    className="hidden"
-    id="imageInput"
-  />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+              id="imageInput"
+            />
 
-  <label
-    htmlFor="imageInput"
-    className="mt-1 h-[50px] flex items-center justify-between w-full border border-gray-300 rounded-[14px] px-3 py-2 cursor-pointer hover:border-blue-500 transition"
-  >
-    <span className="text-gray-400">
-      {selectedImage ? "Upload image" : "Upload image"}
-    </span>
-    <Paperclip />
-  </label>
+            <label
+              htmlFor="imageInput"
+              className="mt-1 h-[50px] flex items-center justify-between w-full border border-gray-300 rounded-[14px] px-3 py-2 cursor-pointer hover:border-blue-500 transition"
+            >
+              <span className="text-gray-400">
+                {selectedImage ? "Upload image" : "Upload image"}
+              </span>
+              <Paperclip />
+            </label>
 
-  {imageFile && selectedImage && (
-    <div className="mt-3 flex items-center gap-3">
-      <img
-        src={selectedImage}
-        alt={imageFile.name}
-        className="w-16 h-16 object-cover rounded-md border"
-      />
-      <div>
-        <div className="font-medium">{imageFile.name}</div>
-        <div className="text-sm text-gray-500">
-          {(imageFile.size / 1024).toFixed(1)} KB • {imageFile.type}
-        </div>
-        <div className="mt-2">
-          <button
-            className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-md"
-            onClick={() => {
-              setImageFile(null);
-              setSelectedImage(null);
-            }}
-          >
-            Remove
-          </button>
-        </div>
-      </div>
-    </div>
-  )}
-</div>
+            {imageFile && selectedImage && (
+              <div className="mt-3 flex items-center gap-3">
+                <img
+                  src={selectedImage}
+                  alt={imageFile.name}
+                  className="w-16 h-16 object-cover rounded-md border"
+                />
+                <div>
+                  <div className="font-medium">{imageFile.name}</div>
+                  <div className="text-sm text-gray-500">
+                    {(imageFile.size / 1024).toFixed(1)} KB • {imageFile.type}
+                  </div>
+                  <div className="mt-2">
+                    <button
+                      className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-md"
+                      onClick={() => { 
+                        setImageFile(null);
+                        setSelectedImage(null);
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
             {/* Department */}
             <div>
