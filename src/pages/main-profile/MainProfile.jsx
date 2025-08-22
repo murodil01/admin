@@ -1,4 +1,4 @@
-import { FiEdit3 } from "react-icons/fi"; 
+import { FiEdit3 } from "react-icons/fi";
 import React, { useEffect, useState } from "react";
 import {
   Button,
@@ -574,17 +574,6 @@ const MainProfile = () => {
                       </span>
                     </div>
                   )}
-                </div>
-
-                {/* Created At */}
-                <div>
-                  <label className="block text-sm text-gray-500 mb-1">Account Created</label>
-                  <input
-                    value={dayjs(user.created_at).format("DD.MM.YYYY HH:mm")}
-                    readOnly
-                    className="w-full border p-3 border-gray-300 rounded-lg bg-gray-50"
-                    placeholder="Please enter your email text-gray-400"
-                  />
                 </div>
               </div>
             </div>
