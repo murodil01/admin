@@ -142,25 +142,6 @@ const Projects = () => {
       setFilteredUsers([]);
     }
   }, [selectedDepartments, allUsers]);
-  const handleSelectAllDepartments = () => {
-  if (allDepartmentsSelected) {
-    // If already selected, deselect all
-    setSelectedDepartments([]);
-    setSelectedUsers([]); // Also deselect all users
-  } else {
-    // Select all departments
-    const allDeptIds = allDepartments.map(dept => dept.id);
-    setSelectedDepartments(["all", ...allDeptIds]);
-    
-    // Automatically select all users from all departments
-    if (allUsers.length > 0) {
-      const allUserIds = allUsers.map(user => user.id);
-      setSelectedUsers(allUserIds);
-    }
-  }
-  setAllDepartmentsSelected(!allDepartmentsSelected);
-};
-
 const handleSelectAllUsers = () => {
   if (deptModalFilteredUsers.length > 0) {
     const allFilteredUserIds = deptModalFilteredUsers.map(user => user.id);
@@ -1082,37 +1063,57 @@ const handleEditTask = async () => {
             </div>
 
             {/* Image */}
-            <div>
-              <label className="block text-[14px] font-bold text-[#7D8592]">
-                Image
-              </label>
+           {/* Image */}
+<div>
+  <label className="block text-[14px] font-bold text-[#7D8592]">
+    Image
+  </label>
 
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="hidden"
-                id="imageInput"
-              />
+  <input
+    type="file"
+    accept="image/*"
+    onChange={handleImageChange}
+    className="hidden"
+    id="imageInput"
+  />
 
-              <label
-                htmlFor="imageInput"
-                className="mt-1 h-[50px] flex items-center justify-between w-full border border-gray-300 rounded-[14px] px-3 py-2 cursor-pointer hover:border-blue-500 transition"
-              >
-                <span className="text-gray-400">
-                  {selectedImage ? "Upload image" : "Upload image"}
-                </span>
-                <Paperclip />
-              </label>
+  <label
+    htmlFor="imageInput"
+    className="mt-1 h-[50px] flex items-center justify-between w-full border border-gray-300 rounded-[14px] px-3 py-2 cursor-pointer hover:border-blue-500 transition"
+  >
+    <span className="text-gray-400">
+      {selectedImage ? "Upload image" : "Upload image"}
+    </span>
+    <Paperclip />
+  </label>
 
-              {selectedImage && (
-                <img
-                  src={selectedImage}
-                  alt="Selected"
-                  className="mt-2 w-20 h-20 object-cover rounded"
-                />
-              )}
-            </div>
+  {imageFile && selectedImage && (
+    <div className="mt-3 flex items-center gap-3">
+      <img
+        src={selectedImage}
+        alt={imageFile.name}
+        className="w-16 h-16 object-cover rounded-md border"
+      />
+      <div>
+        <div className="font-medium">{imageFile.name}</div>
+        <div className="text-sm text-gray-500">
+          {(imageFile.size / 1024).toFixed(1)} KB • {imageFile.type}
+        </div>
+        <div className="mt-2">
+          <button
+            className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-md"
+            onClick={() => {
+              setImageFile(null);
+              setSelectedImage(null);
+            }}
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+</div>
 
             {/* Department */}
             <div>
@@ -1247,7 +1248,9 @@ const handleEditTask = async () => {
     {selectedDepartments.length > 0 &&
       deptModalFilteredUsers.length > 0 && (
         <div>
-              <div className="flex-1 flex max-sm:-mr-4">
+             
+          <div className="flex justify-between items-center mb-3">
+           <div className="flex max-sm:-mr-4">
                       <div className="relative w-full max-w-md bg-white rounded-xl max-md:border max-md:border-gray-300 max-sm:border-0 flex max-sm:flex-row-reverse items-center">
                         {/* Search icon */}
                         <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none max-sm:hidden">
@@ -1278,19 +1281,17 @@ const handleEditTask = async () => {
               )}
                       </div>
                     </div>
-          <div className="flex justify-between items-center mb-3">
-        
             <h4 className="text-lg font-semibold">
-              Select Users from Selected Departments
+              
                    {searchTerm && (
-                  <span className="ml-2">
-                    (Showing {filteredUsersBySearch.length} of {deptModalFilteredUsers.length} users)
+                  <span className=" mr-1 text-[14px]">
+                    
                   </span>
                 )}
             </h4>
             <button 
               onClick={handleSelectAllUsers}
-              className="h-8 px-4 cursor-pointer flex items-center justify-center rounded-xl text-white bg-[#1677FF]"
+              className="h-[38px]  px-4 cursor-pointer flex items-center justify-center rounded-xl text-white bg-[#1677FF]"
             >
               {deptModalFilteredUsers.every(user => selectedUsers.includes(user.id)) 
                 ? "Deselect All Users" 
@@ -1340,6 +1341,7 @@ const handleEditTask = async () => {
 
           {/* Tanlangan userlar soni */}
           <div className="mt-3 text-sm text-gray-600">
+            (Showing {filteredUsersBySearch.length} of {deptModalFilteredUsers.length} users)
             Selected: {selectedUsers.length} user
             {selectedUsers.length !== 1 ? "s" : ""}
           </div>
