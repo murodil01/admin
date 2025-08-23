@@ -19,7 +19,9 @@ import dayjs from "dayjs";
 import { DownloadOutlined } from "@ant-design/icons";
 import memberSearch from "../../assets/icons/memberSearch.svg";
 import pencil from "../../assets/icons/pencil.svg";
-
+import { Permission } from "../../components/Permissions";
+import { useAuth } from "../../hooks/useAuth";
+import { ROLES } from "../../components/constants/roles";
 import {
   Modal,
   Input,
@@ -107,19 +109,40 @@ const taskColumns = [
   },
   {
     id: "return_for_fixes",
-    title: "Return for Fixes",
+     title: (
+      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+        <span className="flex items-center gap-1">
+          <img src={rework} alt="" />
+          Return for Fixes
+        </span>
+      </Permission>
+    ),
     color: "bg-[#E2C7A9]",
     icon: <img src={rework} alt="" />,
   },
   {
     id: "dropped",
-    title: "Dropped",
+     title: (
+      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+        <span className="flex items-center gap-1">
+          <img src={dropped} alt="" />
+          Dropped
+        </span>
+      </Permission>
+    ),
     color: "bg-[#FFDADA]",
     icon: <img src={dropped} alt="" />,
   },
   {
     id: "approved",
-    title: "Approved",
+     title: (
+    <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+      <span className="flex items-center gap-1">
+        <img src={approved} alt="" />
+        Approved
+      </span>
+    </Permission>
+  ),
     color: "bg-[#C2FFCF]",
     icon: <img src={approved} alt="" />,
   },
@@ -129,7 +152,7 @@ const Board = ({ cards, setCards }) => {
   // const [hasChecked, setHasChecked] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
-
+  
   const handleEdit = (card) => {
     setSelectedCard(card);
     setEditModalVisible(true);
@@ -225,7 +248,7 @@ const Column = ({
   showHeader = true,
 }) => {
   const [active, setActive] = useState(false);
-
+  
   const handleDragStart = (e, card) => {
     e.dataTransfer.setData("cardId", card.id);
   };
@@ -407,7 +430,10 @@ const Card = ({
   const [newChecklistItem, setNewChecklistItem] = useState("");
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
-
+  const { user, loading: authLoading } = useAuth();
+    const [dataLoading, setDataLoading] = useState(true);
+    // Yuklash holatini birlashtirish
+    const isLoading = authLoading || dataLoading;
   // ✅ TUZATISH: Progress va total_count uchun alohida state'lar
   const [cardProgress, setCardProgress] = useState(0);
   const [cardTotalCount, setCardTotalCount] = useState(0);
@@ -1143,53 +1169,73 @@ const Card = ({
       >
         {/* New 3 point button */}
         <div className="absolute top-2 right-1">
-          <Dropdown
-            menu={{
-              items: [
-                {
-                  key: "edit",
-                  label: "Edit",
-                  onClick: (e) => {
-                    e.domEvent.stopPropagation();
-                    handleEditCard(); // Yangi funksiya chaqiriladi
-                  },
-                },
-                {
-                  key: "detail",
-                  label: "Detail",
-                  onClick: (e) => {
-                    e.domEvent.stopPropagation();
-                    openViewModal();
-                  },
-                },
-                {
-                  key: "move_to",
-                  label: "Move to",
-                  children: taskColumns.map((col) => ({
-                    key: col.id,
-                    label: col.title,
-                    onClick: () => handleMoveToColumn(col.id),
-                  })),
-                },
-                {
-                  key: "delete",
-                  label: "Delete",
-                  onClick: (e) => {
-                    e.domEvent.stopPropagation();
-                    showDeleteModal(); // qo‘lda modal ochamiz
-                  },
-                },
-              ],
-            }}
-            trigger={["click"]}
-          >
-            <button
-              onClick={(e) => e.stopPropagation()}
-              className="p-1 rounded hover:bg-gray-200 cursor-pointer"
+      <Dropdown
+  menu={{
+    items: [
+      {
+        key: "edit",
+        label: (
+          <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEditCard();
+              }}
             >
-              <MoreVertical className="size-4" />
-            </button>
-          </Dropdown>
+              Edit
+            </span>
+          </Permission>
+        ),
+      },
+      {
+        key: "detail",
+        label: (
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              openViewModal();
+            }}
+          >
+            Detail
+          </span>
+        ),
+      },
+      {
+        key: "move_to",
+        label: "Move to",
+        children: taskColumns.map((col) => ({
+          key: col.id,
+          label: col.title,
+          onClick: () => handleMoveToColumn(col.id),
+        })),
+      },
+      {
+        key: "delete",
+        label: (
+          <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                showDeleteModal();
+              }}
+            >
+              Delete
+            </span>
+          </Permission>
+        ),
+      },
+    ],
+  }}
+  trigger={["click"]}
+>
+  <button
+    onClick={(e) => e.stopPropagation()}
+    className="p-1 rounded hover:bg-gray-200 cursor-pointer"
+  >
+    <MoreVertical className="size-4" />
+  </button>
+</Dropdown>
+
 
           {/* Delete Confirmation Modal */}
           <Modal
