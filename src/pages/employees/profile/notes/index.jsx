@@ -1,13 +1,15 @@
 import { useState, useEffect, useRef } from "react";
+import { useParams } from "react-router-dom";
 import { SendHorizontal, X, MoreVertical, Edit, Trash2, Clock } from "lucide-react";
 import {
-  getNotesAll,
   createNote,
   updateNote,
-  deleteNote
+  deleteNote,
+  getUserNotes,
+  getCurrentUser,
 } from "../../../../api/services/notesService";
 import { toast } from 'react-toastify';
- 
+
 const Notes = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
@@ -15,23 +17,53 @@ const Notes = () => {
   const [loading, setLoading] = useState(true);
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [isSending, setIsSending] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const bottomRef = useRef(null);
 
-  // Backenddan ma'lumotlarni olish va real vaqtda yangilash
+  // Get user ID from URL parameters - matches the /profile/:id route structure
+  const { id: targetUserId } = useParams();
+
+  console.log('Notes component - Target User ID:', targetUserId); // Debug log
+
+  // Get current user info on component mount
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const user = await getCurrentUser();
+        setCurrentUser(user);
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+        toast.error("Error fetching user information");
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
+  // Fetch notes for specific user
+  // Fetch notes for specific user
+  // Fetch notes for specific user
   useEffect(() => {
     const fetchNotes = async () => {
+      if (!targetUserId) {
+        setMessages([]);
+        setLoading(false);
+        return;
+      }
+
       try {
-        const response = await getNotesAll();
+        // Fetch notes for specific user
+        const response = await getUserNotes(targetUserId);
 
         if (!response || !Array.isArray(response)) {
           setMessages([]);
           return;
         }
 
-        // To'g'ri formatga o'tkazish
+        // Format messages
         const formattedMessages = response.map(note => ({
           id: note.id || Date.now(),
-          text: note.message || 'No content', // message ni text ga o'zgartirish
+          text: note.message || 'No content', // Use message field
           time: note.created_at
             ? new Date(note.created_at).toLocaleTimeString([], {
               hour: "2-digit",
@@ -45,47 +77,45 @@ const Notes = () => {
             ? new Date(note.created_at).toLocaleDateString()
             : new Date().toLocaleDateString(),
           user: {
-            id: note.user,
+            id: note.user || note.user_id,
             email: note.user_email,
-            avatar: note.profile_picture
-          }
+            avatar: note.author_profile_picture
+          },
+          targetUserId: note.recipient // Use recipient field
         }));
 
         setMessages(formattedMessages);
       } catch (error) {
-        console.error('Xatolik yuz berdi:', error);
+        console.error('Error fetching notes:', error);
         toast.error("Error during fetching messages");
+        setMessages([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchNotes();
-  }, []);
+  }, [targetUserId]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Dropdown tugmasi va menyusini tekshirish
       const dropdownButtons = document.querySelectorAll('[data-dropdown-button]');
       const dropdownMenus = document.querySelectorAll('[data-dropdown-menu]');
 
       let isClickInside = false;
 
-      // Tugma ichidami?
       dropdownButtons.forEach(button => {
         if (button.contains(event.target)) {
           isClickInside = true;
         }
       });
 
-      // Menyu ichidami?
       dropdownMenus.forEach(menu => {
         if (menu.contains(event.target)) {
           isClickInside = true;
         }
       });
 
-      // Agar tashqi joyga bosilsa
       if (!isClickInside) {
         setOpenDropdownId(null);
       }
@@ -97,7 +127,6 @@ const Notes = () => {
     };
   }, []);
 
-  // Avtomatik scroll
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -108,24 +137,32 @@ const Notes = () => {
 
   const deleteMessage = async (id) => {
     try {
-      const response = await deleteNote(id);
-
-      // Agar backend faqat status code 204 qaytarsa (No Content)
+      // Optimistically remove from UI first
       setMessages(prev => prev.filter(msg => msg.id !== id));
       setOpenDropdownId(null);
+
+      // Then make the API call
+      await deleteNote(id);
+
       toast.success("Successfully deleted");
-
     } catch (error) {
-      console.error('Full error details:', error);
-      console.log('Error response data:', error.response?.data);
+      console.error('Delete error:', error);
 
-      let errorMessage = "Error during fetching messages";
-      if (error.response) {
-        if (error.response.status === 404) {
-          errorMessage = "Message no found (don't exist in server)";
-        } else if (error.response.data?.message) {
-          errorMessage = error.response.data.message;
-        }
+      // If delete fails, add the message back to the UI
+      const deletedMessage = messages.find(msg => msg.id === id);
+      if (deletedMessage) {
+        setMessages(prev => [...prev, deletedMessage]);
+      }
+
+      let errorMessage = "Error during deletion";
+      if (error.response?.status === 404) {
+        errorMessage = "Message not found";
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data) {
+        errorMessage = typeof error.response.data === 'object'
+          ? JSON.stringify(error.response.data)
+          : error.response.data;
       }
 
       toast.error(errorMessage);
@@ -138,9 +175,19 @@ const Notes = () => {
       return;
     }
 
+    if (!targetUserId) {
+      toast.error("No target user selected");
+      return;
+    }
+
+    setIsSending(true);
+
+    // Define tempId here so it's accessible in the catch block
+    let tempId = null;
+
     try {
       if (editingId) {
-        // Tahrirlash rejimi
+        // Edit mode
         const updatedNote = await updateNote(editingId, input.trim());
 
         if (updatedNote) {
@@ -165,30 +212,59 @@ const Notes = () => {
         }
         setEditingId(null);
       } else {
-        // Yangi xabar qo'shish rejimi
-        const newNote = await createNote(input.trim());
-        console.log('Create response:', newNote);
+        // Create new note mode - OPTIMISTIC UPDATE
+        // First add the note to UI immediately
+        tempId = Date.now(); // Temporary ID for optimistic update
+        const newNoteItem = {
+          id: tempId,
+          text: input.trim(),
+          time: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit"
+          }),
+          date: new Date().toLocaleDateString(),
+          user: {
+            id: currentUser?.id,
+            email: currentUser?.email,
+            avatar: currentUser?.profile_picture
+          },
+          targetUserId: targetUserId
+        };
+
+        // Optimistically update UI
+        setMessages(prev => [newNoteItem, ...prev]);
+
+        // Then make the API call
+        const newNote = await createNote(input.trim(), targetUserId);
 
         if (newNote) {
-          setMessages(prev => [
-            ...prev,
-            {
-              id: newNote.id,
-              text: newNote.message || input.trim(),
-              time: new Date(newNote.created_at || new Date()).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit"
-              }),
-              date: new Date(newNote.created_at || new Date()).toLocaleDateString(),
-              user: {
-                id: newNote.user,
-                email: newNote.user_email,
-                avatar: newNote.profile_picture
-              }
-            }
-          ]);
+          // Replace the temporary note with the real one from server
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.id === tempId
+                ? {
+                  ...msg,
+                  id: newNote.id,
+                  text: newNote.message || input.trim(),
+                  time: new Date(newNote.created_at || new Date()).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                  }),
+                  date: new Date(newNote.created_at || new Date()).toLocaleDateString(),
+                  user: {
+                    id: newNote.user || currentUser?.id,
+                    email: newNote.user_email || currentUser?.email,
+                    avatar: newNote.profile_picture || currentUser?.profile_picture
+                  },
+                  targetUserId: newNote.recipient || targetUserId
+                }
+                : msg
+            )
+          );
           toast.success("Successfully added");
         } else {
+          // If API call fails, remove the optimistic update
+          setMessages(prev => prev.filter(msg => msg.id !== tempId));
           toast.warning("Couldn't add");
         }
       }
@@ -196,34 +272,67 @@ const Notes = () => {
       setInput("");
       scrollToBottom();
     } catch (error) {
-      console.error('Error:', error);
-      toast.error("Error: " + error.message);
+      console.error('Send message error details:', error.response?.data);
+
+      // Remove the optimistic update on error (only for create mode)
+      if (!editingId && tempId) {
+        setMessages(prev => prev.filter(msg => msg.id !== tempId));
+      }
+
+      let errorMessage = "Error sending message";
+      if (error.response?.data) {
+        if (typeof error.response.data === 'object') {
+          errorMessage = Object.entries(error.response.data)
+            .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+            .join('\n');
+        } else {
+          errorMessage = error.response.data;
+        }
+      }
+
+      toast.error(errorMessage);
+    } finally {
+      setIsSending(false);
     }
   };
 
-  // Tahrirlashni boshlash
+  useEffect(() => {
+    console.log('Current user:', currentUser);
+    console.log('Auth token:', localStorage.getItem('authToken'));
+  }, [currentUser]);
+
   const startEditing = (id, text) => {
     setEditingId(id);
     setInput(text);
     setOpenDropdownId(null);
-    // Inputga fokus qilish
     setTimeout(() => {
       document.querySelector('textarea')?.focus();
     }, 0);
   };
 
-  // Tahrirlashni bekor qilish
   const cancelEdit = () => {
     setEditingId(null);
     setInput("");
   };
+
+  // Show message if no target user is selected
+  if (!targetUserId) {
+    return (
+      <div className="w-full rounded-[24px] h-screen flex items-center justify-center bg-white">
+        <div className="flex flex-col items-center text-gray-500">
+          <Clock size={48} className="mb-4" />
+          <p>Please select a user to view notes</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
       <div className="w-full rounded-[24px] h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mb-2"></div>
-          <p className="text-gray-500">Updating...</p>
+          <p className="text-gray-500">Loading...</p>
         </div>
       </div>
     );
@@ -234,7 +343,7 @@ const Notes = () => {
       {/* Header */}
       <div className="sticky top-0 bg-white z-10 p-4 border-b border-gray-200">
         <h2 className="text-xl font-bold text-gray-800">Notes</h2>
-        <p className="text-sm text-gray-500">{messages.length} messeges</p>
+        <p className="text-sm text-gray-500">{messages.length} messages</p>
       </div>
 
       {/* Message List */}
@@ -242,11 +351,10 @@ const Notes = () => {
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-gray-400">
             <Clock size={48} className="mb-4" />
-            <p>There is no note</p>
+            <p>No notes for this user</p>
           </div>
         ) : (
           messages.map((msg, index) => {
-            // Agar oldingi xabar bilan bir kun bo'lsa, sana ko'rsatilmaydi
             const showDate = index === 0 ||
               msg.date !== messages[index - 1].date;
 
@@ -255,7 +363,7 @@ const Notes = () => {
                 {showDate && (
                   <div className="text-center my-4">
                     <span className="bg-gray-100 px-3 py-1 rounded-full text-xs text-gray-500">
-                      {msg.time}
+                      {msg.date}
                     </span>
                   </div>
                 )}
@@ -283,6 +391,7 @@ const Notes = () => {
                           </span>
 
                           <button
+                            data-dropdown-button
                             onClick={() => setOpenDropdownId(prev => prev === msg.id ? null : msg.id)}
                             className="p-1 rounded-full cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
                           >
@@ -293,25 +402,29 @@ const Notes = () => {
                     </div>
 
                     {openDropdownId === msg.id && (
-                      <div className="absolute right-4 top-8 mt-1 w-[180px] bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden p-1">
+                      <div
+                        data-dropdown-menu
+                        className="absolute right-4 top-8 mt-1 w-[180px] bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden p-1"
+                      >
                         <button
                           onClick={() => {
                             startEditing(msg.id, msg.text);
-                            setOpenDropdownId(prev => prev === msg.id ? null : msg.id)
+                            setOpenDropdownId(null);
                           }}
-                          onMouseDown={(e) => e.stopPropagation()} // Bubblingni to'xtatish
+                          onMouseDown={(e) => e.stopPropagation()}
                           className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-blue-50 flex items-center gap-2 cursor-pointer hover:text-blue-500 rounded-lg"
                         >
+                          <Edit size={16} />
                           <span>Edit message</span>
                         </button>
                         <button
                           onClick={() => {
                             deleteMessage(msg.id);
-                            setOpenDropdownId(prev => prev === msg.id ? null : msg.id)
                           }}
-                          onMouseDown={(e) => e.stopPropagation()} // Bubblingni to'xtatish
+                          onMouseDown={(e) => e.stopPropagation()}
                           className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-blue-50 hover:text-red-500 flex items-center gap-2 cursor-pointer rounded-lg"
                         >
+                          <Trash2 size={16} />
                           <span>Delete</span>
                         </button>
                       </div>
@@ -325,53 +438,106 @@ const Notes = () => {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input Area */}
-      <div className="sticky bottom-0 left-0 right-0 bg-white p-4 border-t border-gray-200">
-        <div className="flex items-center gap-2">
-          <textarea
-            rows={1}
-            placeholder={editingId ? "Editing a note..." : "Writing a new note..."}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-              }
-            }}
-            className="flex-1 px-4 py-3 border border-[#D8E0F0] rounded-[14px] outline-none resize-none placeholder:text-gray-400 focus:border-blue-500 transition"
-            disabled={isSending}
-          />
-
-          {editingId && (
-            <button
-              onClick={cancelEdit}
-              className="p-2 text-gray-500 hover:text-red-500 transition"
-              title="Cancel"
-              disabled={isSending}
-            >
-              <X size={20} />
-            </button>
-          )}
-
-          <button
-            onClick={sendMessage}
-            className={`p-2 rounded-[14px] transition ${editingId ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-500 hover:bg-gray-600'} text-white`}
-            disabled={isSending || !input.trim()}
-          >
-            {isSending ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            ) : (
-              <SendHorizontal size={20} />
+      {/* Write Note Section */}
+      <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+        <div className="p-4">
+          {/* Header for writing section */}
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold text-gray-800">
+              {editingId ? "Edit Note" : "Write a New Note"}
+            </h3>
+            {editingId && (
+              <button
+                onClick={cancelEdit}
+                className="text-gray-500 hover:text-red-500 transition-colors"
+                title="Cancel editing"
+                disabled={isSending}
+              >
+                <X size={18} />
+              </button>
             )}
-          </button>
-        </div>
+          </div>
 
-        {editingId && (
-          <p className="text-xs text-gray-500 mt-1 ml-2">
-            Editing a note
-          </p>
-        )}
+          {/* Input Area */}
+          <div className="space-y-3">
+            <div className="relative">
+              <textarea
+                rows={3}
+                placeholder={editingId ? "Edit your note here..." : "What would you like to note down?"}
+                value={input}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  // Auto-resize textarea
+                  e.target.style.height = 'auto';
+                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+                className="w-full px-4 py-3 border border-[#D8E0F0] rounded-[12px] outline-none resize-none placeholder:text-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200 min-h-[80px] max-h-[120px]"
+                disabled={isSending}
+                style={{ height: 'auto' }}
+              />
+
+              {/* Character count */}
+              <div className="absolute bottom-2 right-2 text-xs text-gray-400">
+                {input.length} characters
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {editingId && (
+                  <span className="text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                    Editing mode
+                  </span>
+                )}
+                <span className="text-xs text-gray-500">
+                  Press Enter to send, Shift+Enter for new line
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {editingId && (
+                  <button
+                    onClick={cancelEdit}
+                    className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-[10px] transition-colors text-sm font-medium"
+                    disabled={isSending}
+                  >
+                    Cancel
+                  </button>
+                )}
+
+                <button
+                  onClick={sendMessage}
+                  className={`px-6 py-2 rounded-[10px] transition-all duration-200 text-sm font-medium flex items-center gap-2 ${input.trim() && !isSending
+                    ? editingId
+                      ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl'
+                      : 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                  disabled={isSending || !input.trim()}
+                >
+                  {isSending ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Sending...</span>
+                    </>
+                  ) : (
+                    <>
+                      <SendHorizontal size={16} />
+                      <span>{editingId ? "Update Note" : "Send Note"}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
