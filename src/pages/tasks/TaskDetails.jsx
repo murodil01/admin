@@ -90,7 +90,6 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
       })
       .catch((error) => {
         console.error("Error fetching project:", error);
-        message.error("Failed to fetch project details");
       });
   }
 }, [projectId]);
@@ -155,9 +154,10 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
         console.error("Error fetching tasks:", err);
         if (err.response?.status === 401) {
           message.error("Session expired. Please log in again.");
-        } else {
-          message.error("Failed to fetch tasks");
-        }
+        } 
+        // else {
+        //   message.error("Failed to fetch tasks");
+        // }
       });
   }, [projectId]);
 
