@@ -112,7 +112,7 @@ const taskColumns = [
      title: (
       <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
         <span className="flex items-center gap-1">
-          <img src={rework} alt="" />
+          
           Return for Fixes
         </span>
       </Permission>
@@ -125,7 +125,7 @@ const taskColumns = [
      title: (
       <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
         <span className="flex items-center gap-1">
-          <img src={dropped} alt="" />
+      
           Dropped
         </span>
       </Permission>
@@ -138,7 +138,7 @@ const taskColumns = [
      title: (
     <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
       <span className="flex items-center gap-1">
-        <img src={approved} alt="" />
+       
         Approved
       </span>
     </Permission>
