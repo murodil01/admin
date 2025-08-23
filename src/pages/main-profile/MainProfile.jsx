@@ -325,9 +325,31 @@ const MainProfile = () => {
 
             {/* User Info */}
             <div className="flex flex-col gap-2 sm:text-left w-full">
-              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
-                {user.first_name} {user.last_name}
-              </h2>
+              <div className="flex items-center gap-2">
+                {/* First Name */}
+                {isEditing ? (
+                  <input
+                    value={user.first_name}
+                    onChange={(e) => handleInputChange("first_name", e.target.value)}
+                    className="border py-1 rounded-lg border-gray-300 px-2 overflow-none focus:!shadow-none focus:!outline-none placeholder:text-[14px]"
+                    placeholder="Please enter your first name"
+                  />
+                ) : (
+                  <h2 className="text-[16px] font-bold md:text-[20px]">{user.first_name}</h2>
+                )}
+
+                {/* Last Name */}
+                {isEditing ? (
+                  <input
+                    value={user.last_name}
+                    onChange={(e) => handleInputChange("last_name", e.target.value)}
+                    className="border py-1 rounded-lg border-gray-300 px-2 overflow-none focus:!shadow-none focus:!outline-none placeholder:text-[14px]"
+                    placeholder="Please enter your last name"
+                  />
+                ) : (
+                  <h2 className="text-[16px] font-bold md:text-[20px]">{user.last_name}</h2>
+                )}
+              </div>
               <span className="text-gray-500 text-xs sm:text-sm">
                 {user.profession || "No profession"}
               </span>
@@ -399,10 +421,7 @@ const MainProfile = () => {
                   <label className="block text-sm text-gray-500 mb-1">Date of birth</label>
                   {isEditing ? (
                     <DatePicker
-
                       className="w-full calendar"
-
-
                       value={birthday ? dayjs(birthday) : null}
                       onChange={(date, dateString) => setBirthday(dateString)}
                       format="YYYY-MM-DD"
@@ -570,7 +589,7 @@ const MainProfile = () => {
                         className="w-full border p-3 border-gray-300 rounded-lg bg-gray-50 text-gray-800"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
-                        {showCurrentPassword ? <EyeTwoTone /> : <EyeInvisibleOutlined />}
+                        {showCurrentPassword}
                       </span>
                     </div>
                   )}

@@ -297,8 +297,8 @@ const InnerCircle = () => {
                     <div className="flex items-center gap-3">
                         <FilterDropdown onFilter={handleFilter} />
                     </div>
-                    <Permission anyOf={[ROLES.EMPLOYEE, ROLES.HEADS]}>
-                        <div className="flex justify-center lg:justify-end w-[240px]"></div>
+                    <Permission anyOf={[ROLES.EMPLOYEE, ROLES.MANAGER]}>
+                        <div className="hidden justify-center lg:justify-end w-[240px]"></div>
                     </Permission>
 
                     {/* Add Button */}
