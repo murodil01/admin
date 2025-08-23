@@ -45,7 +45,7 @@ import {
   getTaskFiles,
   uploadTaskFile,
   deleteTaskFile,
-  updateProjectUsers,
+  // updateProjectUsers,
   // getCommentTask, ///
   createComment, //
   createChecklistItem,
@@ -1544,7 +1544,7 @@ const Card = ({
 
           {description && (
             <div>
-              <img src={descriptionIcon} alt="Description Icon" />
+              <img src={descriptionIcon} alt="Description Icon"/>
             </div>
           )}
 
@@ -1554,7 +1554,7 @@ const Card = ({
               <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] rounded-full size-4 flex items-center justify-center">
                 {commentsCount}
               </span>
-              <img src={comment} alt="Comment Icon" className="w-6" />
+              <img src={comment} alt="Comment Icon" className="w-6"/>
             </div>
           )}
 
@@ -2076,16 +2076,16 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       message.error("Task ID topilmadi");
       return;
     }
-
+  
     if (!title.trim()) {
       message.error("Task nomi kiritilishi shart");
       return;
     }
-
+  
     setSaveLoading(true);
-
+  
     try {
-      // 1. First update the task details (excluding assigned field)
+      // FormData yaratish
       const formData = new FormData();
       formData.append("name", title.trim());
       formData.append("description", description.trim() || "");
@@ -2093,80 +2093,63 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       formData.append("deadline", date ? date.format("YYYY-MM-DD") : "");
       formData.append("project", projectId);
       formData.append("is_active", notification === "On");
-
-      // Tags field
-      if (Array.isArray(selectedTags) && selectedTags.length > 0) {
-        selectedTags.forEach((tag, index) => {
-          formData.append(`tags_ids[${index}]`, tag);
-        });
+  
+      // ✅ TUZATISH: assigned maydonini FormData ga qo'shish
+      // updateTask assigned uchun array ichida string kutayotgan bo'lsa:
+      if (selectedAssignee) {
+        // Format 1: JSON array
+        formData.append("assigned", selectedAssignee);
+        // Format 2: Oddiy string (yuqoridagi qatorni comment qilib, buni sinab ko'ring)
+        // formData.append("assigned", selectedAssignee);
+        
+        // Format 3: Multiple entries (yuqoridagilarni comment qilib, buni sinab ko'ring)
+        // formData.append("assigned", selectedAssignee);
+        
+        console.log("🎯 Selected assignee:", selectedAssignee);
+        console.log("🎯 Assigned format: JSON array");
       }
-
-      // ✅ Image field - yangi rasm yuklangan bo'lsa
+  
+        // ✅ TUZATILGAN: tags - har bir ID ni alohida yuborish
+        if (Array.isArray(selectedTags) && selectedTags.length > 0) {
+          // Backend har bir tag ID ni alohida kutadi
+          selectedTags.forEach((tag) => {
+            formData.append("tags_ids", tag);
+          });
+          
+          console.log("🎯 Selected tags:", selectedTags);
+          console.log("🎯 Tags format: Multiple separate fields");
+        }
+    
+  
+      // Image field
       if (newImage) {
         formData.append("task_image", newImage);
       } else if (currentImage === null && cardData.task_image) {
-        // Agar current image o'chirilgan bo'lsa, bo'sh string yuboramiz
         formData.append("task_image", "");
       }
-
-      // 2. Update the task (without assigned field)
-      const response = await updateTask(cardData.id, formData);
-
-      // 3. Update assignee separately using updateProjectUsers if it changed
-      if (selectedAssignee !== originalAssignee) {
-        const updateData = {
-          task_id: cardData.id.toString(),
-          remove_ids: originalAssignee ? [originalAssignee] : [],
-          add_ids: selectedAssignee ? [selectedAssignee] : [],
-        };
-
-        console.log(
-          "updateProjectUsers uchun yuborilayotgan ma'lumot:",
-          JSON.stringify(updateData)
-        );
-
-        try {
-          // updateProjectUsers ni chaqiramiz
-          const assigneeResponse = await updateProjectUsers(updateData);
-          console.log(
-            "Assignee muvaffaqiyatli yangilandi!",
-            assigneeResponse.data
-          );
-        } catch (error) {
-          console.error("Assignee yangilashda xatolik:", error);
-
-          // Serverdan qaytgan xabarni chiqaramiz
-          if (error.response) {
-            console.error("Server javobi:", error.response.data);
-            console.error("Status kod:", error.response.status);
-
-            // Agar 500 xatosi bo'lsa, backend loglarini tekshirish kerak
-            if (error.response.status === 500) {
-              message.error(
-                "Server xatosi: Iltimos, tizim administratoriga murojaat qiling"
-              );
-            }
-          }
-
-          // Asosiy task yangilandi, lekin assignee yangilanmadi
-          message.warning(
-            "Task yangilandi, lekin tayinlangan foydalanuvchi yangilanmadi"
-          );
-        }
+  
+      // Debug: FormData ni tekshirish
+      console.log("FormData contents:");
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
       }
-
-      // 4. Save checklist items
+  
+      // Task ni yangilash
+      const response = await updateTask(cardData.id, formData);
+      console.log("✅ Task muvaffaqiyatli yangilandi:", response.data);
+  
+      // Checklist saqlash
       await saveChecklist();
-
-      // 5. Upload files if any
+  
+      // Fayllarni yuklash
       let newUploadedFiles = [];
       if (files.length > 0) {
         newUploadedFiles = await uploadMultipleFiles(cardData.id);
       }
-
+  
       message.success("Task muvaffaqiyatli yangilandi!");
-
-      // 6. Update state with the new data
+  
+      // State ni yangilash
       if (response && response.data) {
         const updatedCardData = {
           ...response.data,
@@ -2180,16 +2163,31 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
           description: description.trim(),
           tasks_type: type,
           deadline: date ? date.format("YYYY-MM-DD") : null,
+          assigned: selectedAssignee ? [selectedAssignee] : [],
           task_image: newImage ? imagePreviewUrl : currentImage,
           files: [...uploadedFiles, ...newUploadedFiles],
           id: cardData.id,
         });
       }
-
+  
       onClose();
     } catch (error) {
       console.error("❌ Task yangilashda xatolik:", error);
-      // ... existing error handling code ...
+      
+      if (error.response) {
+        console.error("Response data:", error.response.data);
+        console.error("Response status:", error.response.status);
+        
+        // Server xabarini ko'rsatish
+        const errorMessage = error.response.data?.message || 
+                            error.response.data?.error || 
+                            `Server error: ${error.response.status}`;
+        message.error(`Task yangilashda xatolik: ${errorMessage}`);
+      } else if (error.request) {
+        message.error("Server bilan bog'lanishda xatolik");
+      } else {
+        message.error("Kutilmagan xatolik yuz berdi");
+      }
     } finally {
       setSaveLoading(false);
     }
