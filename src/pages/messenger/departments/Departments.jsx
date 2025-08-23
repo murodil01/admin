@@ -56,14 +56,14 @@ const DepartmentCard = React.memo(({ user }) => {
 
   return (
     <div className="flex flex-col items-center p-5 bg-white shadow-md rounded-xl hover:shadow-lg transition-all duration-300 text-center max-w-full transform hover:scale-105">
-      <div className="relative w-full max-w-[300px] h-48">
+      <div className="relative w-full">
         {!imageLoaded && (
           <div className="absolute inset-0 bg-gray-300 rounded-[10px] animate-pulse"></div>
         )}
         <img
           src={imageError ? "/placeholder-image.jpg" : imageUrl}
           alt={user.name || "Department photo"}
-          className={`w-full h-full object-cover bg-[#f7f5f2] rounded-[10px] transition-opacity duration-300 ${
+          className={`w-full h-full object-contain bg-[#f7f5f2] rounded-[10px] transition-opacity duration-300 ${
             imageLoaded ? "opacity-100" : "opacity-0"
           }`}
           onLoad={handleImageLoad}
