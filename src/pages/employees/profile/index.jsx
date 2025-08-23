@@ -19,6 +19,7 @@ import { useAuth } from "../../../hooks/useAuth";
 import { ROLES } from "../../../components/constants/roles";
 import dayjs from "dayjs";
 import { DatePicker } from "antd";
+import { RefreshCw } from "lucide-react";
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState(() => {
@@ -37,6 +38,7 @@ const Profile = () => {
   const [employee, setEmployee] = useState(null);
   const { id } = useParams();
   const [saveMessage, setSaveMessage] = useState("");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const [departments, setDepartments] = useState([]);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
@@ -71,7 +73,9 @@ const Profile = () => {
 
     const fetchEmployee = async () => {
       try {
+        console.log('Fetching employee with ID:', id); // Debug log
         const data = await getEmployeeById(id);
+        console.log('Employee data received:', data); // Debug log
 
         let departmentObj = null;
         if (typeof data.department === "number") {
@@ -88,8 +92,12 @@ const Profile = () => {
         setEmployee({ ...data, department: departmentObj });
         setBirthday(data.birth_date || "");
       } catch (err) {
+        console.error('Error fetching employee:', err); // Debug log
         if (err.response?.status === 404) {
           message.error("Employee not found");
+          navigate("/employees");
+        } else if (err.response?.status === 400) {
+          message.error("Invalid employee ID");
           navigate("/employees");
         } else {
           message.error("Failed to load employee data");
@@ -98,7 +106,7 @@ const Profile = () => {
     };
 
     fetchEmployee();
-  }, [id, navigate, departments]);
+  }, [id, navigate, departments, refreshTrigger]);
 
   const handleSave = async () => {
     if (!employee) return;
@@ -146,6 +154,9 @@ const Profile = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
+      // Trigger a refresh of the data
+      setRefreshTrigger(prev => prev + 1);
+
       // Update local state with the response
       setEmployee(updatedEmployee);
 
@@ -166,7 +177,7 @@ const Profile = () => {
     localStorage.setItem("profileTab", activeTab);
   }, [activeTab]);
 
-  const levels = ["Intern", "Junior", "Middle", "Specialist", "Senior", "Expert", "None"];
+  const levels = ["intern", "junior", "middle", "specialist", "senior", "expert", "none"];
 
   const statusOptions = [
     { value: "free", label: "Free" },
@@ -184,7 +195,7 @@ const Profile = () => {
           {
             label: "Department",
             name: "department",
-            value: employee.department?.name || "", // FIXED: Use name instead of id
+            value: employee.department?.name || "",
             displayValue: employee.department?.name || "",
             input: true,
             options: departments.map(dept => ({
@@ -300,6 +311,14 @@ const Profile = () => {
               {saveMessage}
             </div>
           )}
+          {/* Add refresh button */}
+            <button
+              onClick={() => setRefreshTrigger(prev => prev + 1)}
+              className="hidden justify-center rounded-[14px] items-center gap-2 text-sm md:text-[16px] font-bold text-[#1F2937] hover:text-[#6b82a8] shadow bg-white w-[40px] md:w-[48px] h-[40px] md:h-[48px] cursor-pointer"
+              title="Refresh data"
+            >
+              <RefreshCw size={16} className="md:size-5" />
+            </button>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
@@ -350,7 +369,8 @@ const Profile = () => {
                 <h3 className="text-sm sm:text-[16px] md:text-[18px] lg:text-[20px] font-bold text-[#0061fe] whitespace-nowrap">
                   <span className="capitalize">{employee.first_name}</span> <span className="capitalize">{employee.last_name}</span>
                 </h3>
-                <p className="text-xs sm:text-[14px] md:text-[16px] font-medium text-[#1F2937] flex items-center gap-1 md:gap-2">
+                {/* FIXED: Changed from <p> to <div> to avoid nesting issues */}
+                <div className="text-xs sm:text-[14px] md:text-[16px] font-medium text-[#1F2937] flex items-center gap-1 md:gap-2">
                   {isEditing ? (
                     <>
                       <Input
@@ -362,8 +382,9 @@ const Profile = () => {
                         className="w-full md:w-40"
                       />
 
+                      {/* Level select */}
                       <Select
-                        value={employee.level || "None"} // FIXED: Handle null/undefined
+                        value={employee.level}
                         onChange={(value) =>
                           setEmployee((prev) => ({ ...prev, level: value }))
                         }
@@ -378,16 +399,15 @@ const Profile = () => {
                     </>
                   ) : (
                     <>
-                      <span>{employee.profession || "No profession"}</span>
-                      {employee.level && employee.level.toLowerCase() !== "none" && ( // FIXED: Check lowercase
+                      <span>{employee.profession}</span>
+                      {employee.level !== "none" && (
                         <span className="text-[8px] md:text-[10px] border border-[#7D8592] px-1 py-0.5 md:px-[2px] md:py-[2px] rounded-[3px] md:rounded-[4px] capitalize">
                           {employee.level}
                         </span>
                       )}
                     </>
                   )}
-                </p>
-
+                </div>
               </div>
             </div>
 
@@ -411,7 +431,7 @@ const Profile = () => {
                               <select
                                 name={item.name}
                                 value={item.name === 'department'
-                                  ? employee.department?.id
+                                  ? employee.department?.id || ""
                                   : employee[item.name] || ""}
                                 onChange={(e) => {
                                   if (item.name === 'department') {
@@ -441,12 +461,12 @@ const Profile = () => {
                               </select>
                             ) : item.type === "date" ? (
                               <div className="relative">
-                                  <DatePicker
-                                    className="w-full calendar-details"
-                                    value={birthday ? dayjs(birthday) : null}
-                                    onChange={(date, dateString) => setBirthday(dateString)}
-                                    format="YYYY-MM-DD"
-                                  />
+                                <DatePicker
+                                  className="w-full calendar-details"
+                                  value={birthday ? dayjs(birthday) : null}
+                                  onChange={(date, dateString) => setBirthday(dateString)}
+                                  format="YYYY-MM-DD"
+                                />
                               </div>
                             ) : (
                               <input
@@ -466,8 +486,8 @@ const Profile = () => {
                             <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg md:rounded-xl px-3 md:px-4 py-1 md:py-2 text-xs md:text-[14px] font-normal text-[#7D8592] h-[40px] md:h-[48px] flex items-center">
                               {item.isSelect ?
                                 (item.name === 'department'
-                                  ? employee.department?.name
-                                  : employee[item.name]) || `No ${item.label.toLowerCase()} selected`
+                                  ? employee.department?.name || `No ${item.label.toLowerCase()} selected`
+                                  : employee[item.name] || `No ${item.label.toLowerCase()} selected`)
                                 : item.value}
                             </div>
                           )
