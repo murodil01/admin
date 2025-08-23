@@ -1060,17 +1060,35 @@ const Card = ({
   };
 
   const handleUpdateCard = (updatedCard) => {
-    console.log("Updated card: ", updatedCard);
+    console.log("Updated card received:", updatedCard);
+    
     setIsEditModalOpen(false);
+    
+    // ✅ MUHIM: Progress state'larini yangilash
+    if (updatedCard.progress !== undefined) {
+      setCardProgress(updatedCard.progress);
+    }
+    if (updatedCard.total_count !== undefined) {
+      setCardTotalCount(updatedCard.total_count);
+    }
+    if (updatedCard.comment_count !== undefined) {
+      setCommentsCount(updatedCard.comment_count);
+    }
+    
+    // Cards listini yangilash
     setCards((prev) =>
       prev.map((card) =>
         card.id === updatedCard.id
           ? {
               ...card,
-              title: updatedCard.name,
-              time: updatedCard.deadline,
+              title: updatedCard.name || updatedCard.title,
+              time: updatedCard.deadline || updatedCard.time,
               description: updatedCard.description,
-              column: updatedCard.tasks_type,
+              column: updatedCard.tasks_type || updatedCard.column,
+              // ✅ Progress ma'lumotlarini ham yangilash
+              progress: updatedCard.progress || 0,
+              total_count: updatedCard.total_count || 0,
+              comment_count: updatedCard.comment_count || 0,
             }
           : card
       )
@@ -2208,7 +2226,6 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       for (let [key, value] of formData.entries()) {
         console.log(key, value);
       }
-
       // Task ni yangilash
       const response = await updateTask(cardData.id, formData);
       console.log("✅ Task muvaffaqiyatli yangilandi:", response.data);
@@ -2222,30 +2239,29 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
         newUploadedFiles = await uploadMultipleFiles(cardData.id);
       }
 
+      // ✅ MUHIM: Yangilangan task ma'lumotlarini qayta yuklash
+      const updatedTaskResponse = await getTaskById(cardData.id);
       message.success("Task muvaffaqiyatli yangilandi!");
+          // ✅ TUZATISH: To'g'ri formatda ma'lumot yuborish
+    const updatedCardData = {
+      id: cardData.id,
+      title: updatedTaskResponse.data.name,
+      name: updatedTaskResponse.data.name,
+      time: updatedTaskResponse.data.deadline,
+      description: updatedTaskResponse.data.description,
+      column: updatedTaskResponse.data.tasks_type,
+      tasks_type: updatedTaskResponse.data.tasks_type,
+      assigned: updatedTaskResponse.data.assigned,
+      task_image: updatedTaskResponse.data.task_image,
+      // ✅ MUHIM: Progress ma'lumotlarini qo'shish
+      progress: updatedTaskResponse.data.progress || 0,
+      total_count: updatedTaskResponse.data.total_count || 0,
+      comment_count: updatedTaskResponse.data.comment_count || 0,
+      files: [...uploadedFiles, ...newUploadedFiles],
+    };
 
-      // State ni yangilash
-      if (response && response.data) {
-        const updatedCardData = {
-          ...response.data,
-          files: [...uploadedFiles, ...newUploadedFiles],
-        };
-        onUpdate(updatedCardData);
-      } else {
-        onUpdate({
-          ...cardData,
-          name: title.trim(),
-          description: description.trim(),
-          tasks_type: type,
-          deadline: date ? date.format("YYYY-MM-DD") : null,
-          assigned: selectedAssignee ? [selectedAssignee] : [],
-          task_image: newImage ? imagePreviewUrl : currentImage,
-          files: [...uploadedFiles, ...newUploadedFiles],
-          id: cardData.id,
-        });
-      }
-
-      onClose();
+    onUpdate(updatedCardData);
+    onClose();
     } catch (error) {
       console.error("❌ Task yangilashda xatolik:", error);
 
