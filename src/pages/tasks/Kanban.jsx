@@ -1774,14 +1774,17 @@ const AddCard = ({ column, setCards }) => {
       </div>
     </motion.form>
   ) : (
+      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
     <motion.button
       layout
       onClick={() => setAdding(true)}
       className="flex w-full items-center gap-1.5 p-2 text-xs text-black font-bold hover:bg-white hover:rounded-lg cursor-pointer"
     >
+    
       <FiPlus />
-      <span>Add a card</span>
+      <span>Add a card</span>  
     </motion.button>
+     </Permission>
   );
 
   // tugashi.
