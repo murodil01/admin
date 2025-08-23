@@ -602,12 +602,18 @@ const Card = ({
         commentsList = response.data.comments;
       }
 
-      // projectUsers massiv ekanligiga ishonch hosil qilish
-      const safeProjectUsers = Array.isArray(projectUsers) ? projectUsers : [];
-
+      // ✅ YANGILASH: User ma'lumotlarini to'g'ri mapping qilish
       const mappedComments = commentsList.map((comment) => ({
         ...comment,
-        user_name: getAssigneeName(comment.user) || "Unknown",
+        user_name: comment.user
+          ? `${comment.user.first_name} ${comment.user.last_name}`
+          : "Unknown User",
+        user_avatar: comment.user?.profile_picture || null,
+        user_initials: comment.user
+          ? `${comment.user.first_name?.[0] || ""}${
+              comment.user.last_name?.[0] || ""
+            }`.toUpperCase()
+          : "U",
       }));
 
       console.log("📋 Extracted and mapped comments:", mappedComments);
@@ -621,7 +627,7 @@ const Card = ({
     } finally {
       setCommentsLoading(false);
     }
-  }, [id, projectUsers]);
+  }, [id]);
 
   // ✅ Checklist o'zgarishida progress ni yangilash
   const fetchChecklist = useCallback(async () => {
@@ -1394,21 +1400,43 @@ const Card = ({
                     {comments.length > 0 ? (
                       comments.map((c) => (
                         <div key={c.id} className="rounded-lg bg-blue-50 mb-3">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
-                              👤 {c.user_name[0]}
+                          <div className="flex items-center gap-3 mb-2">
+                            {/* ✅ YANGILANGAN: User avatar with profile picture */}
+                            <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center text-xs font-semibold">
+                              {c.user_avatar ? (
+                                <img
+                                  src={c.user_avatar}
+                                  alt={c.user_name}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    // Agar rasm yuklanmasa, initials ko'rsatiladi
+                                    e.target.style.display = "none";
+                                    e.target.nextSibling.style.display = "flex";
+                                  }}
+                                />
+                              ) : null}
+                              <span
+                                className={`${
+                                  c.user_avatar ? "hidden" : "flex"
+                                } w-full h-full items-center justify-center bg-blue-500 text-white text-xs font-semibold`}
+                              >
+                                {c.user_initials}
+                              </span>
                             </div>
+
+                            {/* ✅ YANGILANGAN: User full name */}
                             <span className="text-sm font-medium">
-                              {c.user_name || "You"}
+                              {c.user_name || "Unknown User"}
                             </span>
-                            <p className="text-xs text-gray-500 ml-2">
+
+                            <p className="text-xs text-gray-500 ml-auto">
                               {dayjs(c.created_at).format("MMM D, YYYY h:mm A")}
                             </p>
                           </div>
-                          <div>
-                            <div className="bg-white p-1 rounded-sm">
+                          <div className="ml-11">
+                            <div className="bg-white p-3 rounded-lg">
                               <p className="text-sm text-gray-700">
-                                {c.text || c.message}
+                                {c.message || c.text}
                               </p>
                             </div>
                           </div>
@@ -1499,7 +1527,9 @@ const Card = ({
 
                 <div>
                   <p className="text-gray-400">Progress</p>
-                  <p className="mt-1">{taskData.progress}%</p>
+                  <p className="mt-1">
+                    {taskData.progress}/{taskData.total_count}
+                  </p>
                 </div>
 
                 <div>
@@ -1544,7 +1574,7 @@ const Card = ({
 
           {description && (
             <div>
-              <img src={descriptionIcon} alt="Description Icon"/>
+              <img src={descriptionIcon} alt="Description Icon" />
             </div>
           )}
 
@@ -1554,7 +1584,7 @@ const Card = ({
               <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] rounded-full size-4 flex items-center justify-center">
                 {commentsCount}
               </span>
-              <img src={comment} alt="Comment Icon" className="w-6"/>
+              <img src={comment} alt="Comment Icon" className="w-6" />
             </div>
           )}
 
@@ -2076,14 +2106,14 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       message.error("Task ID topilmadi");
       return;
     }
-  
+
     if (!title.trim()) {
       message.error("Task nomi kiritilishi shart");
       return;
     }
-  
+
     setSaveLoading(true);
-  
+
     try {
       // FormData yaratish
       const formData = new FormData();
@@ -2093,7 +2123,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       formData.append("deadline", date ? date.format("YYYY-MM-DD") : "");
       formData.append("project", projectId);
       formData.append("is_active", notification === "On");
-  
+
       // ✅ TUZATISH: assigned maydonini FormData ga qo'shish
       // updateTask assigned uchun array ichida string kutayotgan bo'lsa:
       if (selectedAssignee) {
@@ -2101,54 +2131,53 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
         formData.append("assigned", selectedAssignee);
         // Format 2: Oddiy string (yuqoridagi qatorni comment qilib, buni sinab ko'ring)
         // formData.append("assigned", selectedAssignee);
-        
+
         // Format 3: Multiple entries (yuqoridagilarni comment qilib, buni sinab ko'ring)
         // formData.append("assigned", selectedAssignee);
-        
+
         console.log("🎯 Selected assignee:", selectedAssignee);
         console.log("🎯 Assigned format: JSON array");
       }
-  
-        // ✅ TUZATILGAN: tags - har bir ID ni alohida yuborish
-        if (Array.isArray(selectedTags) && selectedTags.length > 0) {
-          // Backend har bir tag ID ni alohida kutadi
-          selectedTags.forEach((tag) => {
-            formData.append("tags_ids", tag);
-          });
-          
-          console.log("🎯 Selected tags:", selectedTags);
-          console.log("🎯 Tags format: Multiple separate fields");
-        }
-    
-  
+
+      // ✅ TUZATILGAN: tags - har bir ID ni alohida yuborish
+      if (Array.isArray(selectedTags) && selectedTags.length > 0) {
+        // Backend har bir tag ID ni alohida kutadi
+        selectedTags.forEach((tag) => {
+          formData.append("tags_ids", tag);
+        });
+
+        console.log("🎯 Selected tags:", selectedTags);
+        console.log("🎯 Tags format: Multiple separate fields");
+      }
+
       // Image field
       if (newImage) {
         formData.append("task_image", newImage);
       } else if (currentImage === null && cardData.task_image) {
         formData.append("task_image", "");
       }
-  
+
       // Debug: FormData ni tekshirish
       console.log("FormData contents:");
       for (let [key, value] of formData.entries()) {
         console.log(key, value);
       }
-  
+
       // Task ni yangilash
       const response = await updateTask(cardData.id, formData);
       console.log("✅ Task muvaffaqiyatli yangilandi:", response.data);
-  
+
       // Checklist saqlash
       await saveChecklist();
-  
+
       // Fayllarni yuklash
       let newUploadedFiles = [];
       if (files.length > 0) {
         newUploadedFiles = await uploadMultipleFiles(cardData.id);
       }
-  
+
       message.success("Task muvaffaqiyatli yangilandi!");
-  
+
       // State ni yangilash
       if (response && response.data) {
         const updatedCardData = {
@@ -2169,19 +2198,20 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
           id: cardData.id,
         });
       }
-  
+
       onClose();
     } catch (error) {
       console.error("❌ Task yangilashda xatolik:", error);
-      
+
       if (error.response) {
         console.error("Response data:", error.response.data);
         console.error("Response status:", error.response.status);
-        
+
         // Server xabarini ko'rsatish
-        const errorMessage = error.response.data?.message || 
-                            error.response.data?.error || 
-                            `Server error: ${error.response.status}`;
+        const errorMessage =
+          error.response.data?.message ||
+          error.response.data?.error ||
+          `Server error: ${error.response.status}`;
         message.error(`Task yangilashda xatolik: ${errorMessage}`);
       } else if (error.request) {
         message.error("Server bilan bog'lanishda xatolik");

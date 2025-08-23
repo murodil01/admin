@@ -591,7 +591,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
               <label className="block text-sm text-gray-400 mb-2 font-bold">
                 Task tags
               </label>
-              <div className="grid grid-cols-2 gap-2  w-[300px]">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                 {tagOptions.map((tag) => (
                   <label
                     key={tag.id}
