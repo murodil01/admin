@@ -29,7 +29,7 @@ const Projects = () => {
   const { collapsed } = useSidebar();
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [deadline, setDeadline] = useState("");
-  
+
   // ✅ Avval search state
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -44,13 +44,13 @@ const Projects = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [allDepartmentsSelected, setAllDepartmentsSelected] = useState(false);
-  
+
   const [deptModalFilteredUsers, setDeptModalFilteredUsers] = useState([]);
 
-    const filteredUsersBySearch = useMemo(() => {
+  const filteredUsersBySearch = useMemo(() => {
     if (!searchTerm.trim()) return deptModalFilteredUsers;
-    
-    return deptModalFilteredUsers.filter(user => 
+
+    return deptModalFilteredUsers.filter(user =>
       `${user.first_name || ''} ${user.last_name || ''}`
         .toLowerCase()
         .includes(searchTerm.toLowerCase())
@@ -70,7 +70,7 @@ const Projects = () => {
   const justifyClass =
     collapsed && !isSmallScreen ? "justify-start" : "justify-start";
 
-  const [loading, setLoading] = useState(true);  
+  const [loading, setLoading] = useState(true);
   // Users uchun state'lar
 
   useEffect(() => {
@@ -100,13 +100,13 @@ const Projects = () => {
         setDeptModalFilteredUsers([]);
         return;
       }
-  
+
       // ✅ "All" tanlanganda hamma userlar
       if (selectedDepartments.includes("all")) {
         setDeptModalFilteredUsers(allUsers);
         return;
       }
-  
+
       const filtered = allUsers.filter(
         (user) =>
           user.department?.id &&
@@ -125,13 +125,13 @@ const Projects = () => {
         setFilteredUsers([]);
         return;
       }
-  
+
       // ✅ Agar "all" tanlangan bo'lsa - hamma userlarni ko'rsatish
       if (selectedDepartments.includes("all")) {
         setFilteredUsers(allUsers);
         return;
       }
-  
+
       const filtered = allUsers.filter(
         (user) =>
           user.department?.id &&
@@ -142,20 +142,20 @@ const Projects = () => {
       setFilteredUsers([]);
     }
   }, [selectedDepartments, allUsers]);
-const handleSelectAllUsers = () => {
-  if (deptModalFilteredUsers.length > 0) {
-    const allFilteredUserIds = deptModalFilteredUsers.map(user => user.id);
-    const allSelected = allFilteredUserIds.every(id => selectedUsers.includes(id));
-    
-    if (allSelected) {
-      // Deselect all filtered users
-      setSelectedUsers(prev => prev.filter(id => !allFilteredUserIds.includes(id)));
-    } else {
-      // Select all filtered users
-      setSelectedUsers(prev => [...new Set([...prev, ...allFilteredUserIds])]);
+  const handleSelectAllUsers = () => {
+    if (deptModalFilteredUsers.length > 0) {
+      const allFilteredUserIds = deptModalFilteredUsers.map(user => user.id);
+      const allSelected = allFilteredUserIds.every(id => selectedUsers.includes(id));
+
+      if (allSelected) {
+        // Deselect all filtered users
+        setSelectedUsers(prev => prev.filter(id => !allFilteredUserIds.includes(id)));
+      } else {
+        // Select all filtered users
+        setSelectedUsers(prev => [...new Set([...prev, ...allFilteredUserIds])]);
+      }
     }
-  }
-};
+  };
   // ✅ Edit modal'da assigned userlarni ko'r satish uchun useEffect qo'shing
   useEffect(() => {
     // Edit modal ochilganda, mavjud assigned userlarni filteredUsers ga qo'shish
@@ -222,12 +222,12 @@ const handleSelectAllUsers = () => {
     setModalType(type);
     setIsActionModalOpen(true);
     setOpenDropdownId(null);
-  
+
     if (type === "edit") {
       setTaskName(task.name);
       setDescription(task.description || "");
       setSelectedImage(task.image || null);
-      
+
       // ✅ Deadline mavjud bo'lsa, uni set qilish
       if (task.deadline) {
         const deadlineDate = new Date(task.deadline);
@@ -236,10 +236,10 @@ const handleSelectAllUsers = () => {
       } else {
         setDeadline(""); // Agar deadline yo'q bo'lsa bo'sh qoldirish
       }
-      
+
       const deptIds = task.departments?.map(dept => dept.id) || [];
       setSelectedDepartments(deptIds);
-      
+
       const assignedUserIds = task.assigned?.map(user => user.id || user) || [];
       setSelectedUsers(assignedUserIds);
     }
@@ -275,8 +275,8 @@ const handleSelectAllUsers = () => {
     );
   };
 
-  
-  
+
+
   // ✅ Edit modal'da tanlangan userlarni ko'rsatish uchun component qo'shing
   const renderAssignedUsers = () => {
     if (modalType !== "edit" || !selectedTask?.assigned) return null;
@@ -345,112 +345,112 @@ const handleSelectAllUsers = () => {
     );
   };
 
- const handleAddTask = async () => {
-  if (!taskName.trim()) {
-    return message.error("Task name kiritilishi kerak!");
-  }
-
-  if (selectedDepartments.length === 0) {
-    return message.error("Kamida bitta department tanlang!");
-  }
-
-  try {
-    const formData = new FormData();
-    formData.append("name", taskName);
-    formData.append("description", description);
-
-    if (deadline) {
-      formData.append("deadline", deadline);
+  const handleAddTask = async () => {
+    if (!taskName.trim()) {
+      return message.error("Task name kiritilishi kerak!");
     }
 
-    // ✅ YANGILANGAN MANTIQ: "All" tugmasi bosilgan YOKI barcha departmentlar qo'lda tanlangan
-    const isAllDepartmentsSelected = selectedDepartments.includes("all") || 
-      (selectedDepartments.length === allDepartments.length && !selectedDepartments.includes("none"));
-    
-    formData.append("is_all_departments", isAllDepartmentsSelected);
-
-    if (selectedDepartments.includes("all")) {
-      allDepartments.forEach((dept) => {
-        formData.append("department_ids", dept.id);
-      });
-    } else if (!selectedDepartments.includes("none")) {
-      selectedDepartments.forEach((id) => {
-        if (id !== "none" && id !== "all") {
-          formData.append("department_ids", id);
-        }
-      });
+    if (selectedDepartments.length === 0) {
+      return message.error("Kamida bitta department tanlang!");
     }
 
-    selectedUsers.forEach((id) => formData.append("assigned", id));
+    try {
+      const formData = new FormData();
+      formData.append("name", taskName);
+      formData.append("description", description);
 
-    if (imageFile) {
-      formData.append("image", imageFile);
+      if (deadline) {
+        formData.append("deadline", deadline);
+      }
+
+      // ✅ YANGILANGAN MANTIQ: "All" tugmasi bosilgan YOKI barcha departmentlar qo'lda tanlangan
+      const isAllDepartmentsSelected = selectedDepartments.includes("all") ||
+        (selectedDepartments.length === allDepartments.length && !selectedDepartments.includes("none"));
+
+      formData.append("is_all_departments", isAllDepartmentsSelected);
+
+      if (selectedDepartments.includes("all")) {
+        allDepartments.forEach((dept) => {
+          formData.append("department_ids", dept.id);
+        });
+      } else if (!selectedDepartments.includes("none")) {
+        selectedDepartments.forEach((id) => {
+          if (id !== "none" && id !== "all") {
+            formData.append("department_ids", id);
+          }
+        });
+      }
+
+      selectedUsers.forEach((id) => formData.append("assigned", id));
+
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
+
+      await createProject(formData);
+      message.success("✅ Task created successfully");
+
+      await loadProjects();
+      handleAddClose();
+    } catch (error) {
+      console.error("❌ Task yaratishda xatolik:", error);
+      message.error("Failed to create task");
+    }
+  };
+
+  const handleEditTask = async () => {
+    if (!taskName.trim()) {
+      return message.error("Task name kiritilishi kerak!");
     }
 
-    await createProject(formData);
-    message.success("✅ Task created successfully");
-
-    await loadProjects();
-    handleAddClose();
-  } catch (error) {
-    console.error("❌ Task yaratishda xatolik:", error);
-    message.error("Failed to create task");
-  }
-};
-
-const handleEditTask = async () => {
-  if (!taskName.trim()) {
-    return message.error("Task name kiritilishi kerak!");
-  }
-
-  if (selectedDepartments.length === 0) {
-    return message.error("Kamida bitta department tanlang!");
-  }
-
-  try {
-    const formData = new FormData();
-    formData.append("name", taskName);
-    formData.append("description", description);
-
-    if (deadline) {
-      formData.append("deadline", deadline);
+    if (selectedDepartments.length === 0) {
+      return message.error("Kamida bitta department tanlang!");
     }
 
-    // ✅ YANGILANGAN MANTIQ: "All" tugmasi bosilgan YOKI barcha departmentlar qo'lda tanlangan
-    const isAllDepartmentsSelected = selectedDepartments.includes("all") || 
-      (selectedDepartments.length === allDepartments.length && !selectedDepartments.includes("none"));
-    
-    formData.append("is_all_departments", isAllDepartmentsSelected);
+    try {
+      const formData = new FormData();
+      formData.append("name", taskName);
+      formData.append("description", description);
 
-    if (selectedDepartments.includes("all")) {
-      allDepartments.forEach((dept) => {
-        formData.append("department_ids", dept.id);
-      });
-    } else if (!selectedDepartments.includes("none")) {
-      selectedDepartments.forEach((id) => {
-        if (id !== "none" && id !== "all") {
-          formData.append("department_ids", id);
-        }
-      });
+      if (deadline) {
+        formData.append("deadline", deadline);
+      }
+
+      // ✅ YANGILANGAN MANTIQ: "All" tugmasi bosilgan YOKI barcha departmentlar qo'lda tanlangan
+      const isAllDepartmentsSelected = selectedDepartments.includes("all") ||
+        (selectedDepartments.length === allDepartments.length && !selectedDepartments.includes("none"));
+
+      formData.append("is_all_departments", isAllDepartmentsSelected);
+
+      if (selectedDepartments.includes("all")) {
+        allDepartments.forEach((dept) => {
+          formData.append("department_ids", dept.id);
+        });
+      } else if (!selectedDepartments.includes("none")) {
+        selectedDepartments.forEach((id) => {
+          if (id !== "none" && id !== "all") {
+            formData.append("department_ids", id);
+          }
+        });
+      }
+
+      const allSelectedUserIds = [...new Set([...selectedUsers])];
+      allSelectedUserIds.forEach((id) => formData.append("assigned", id));
+
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
+
+      await updateProject(selectedTask.id, formData);
+      message.success("✅ Task updated successfully");
+
+      await loadProjects();
+      handleActionClose();
+    } catch (error) {
+      console.error("❌ Task yangilashda xatolik:", error);
+      message.error("Failed to update task");
     }
-
-    const allSelectedUserIds = [...new Set([...selectedUsers])];
-    allSelectedUserIds.forEach((id) => formData.append("assigned", id));
-
-    if (imageFile) {
-      formData.append("image", imageFile);
-    }
-
-    await updateProject(selectedTask.id, formData);
-    message.success("✅ Task updated successfully");
-
-    await loadProjects();
-    handleActionClose();
-  } catch (error) {
-    console.error("❌ Task yangilashda xatolik:", error);
-    message.error("Failed to update task");
-  }
-};
+  };
 
   const handleDeleteTask = async () => {
     try {
@@ -700,10 +700,10 @@ const handleEditTask = async () => {
             <div className="grid grid-cols-3 w-full">
               <p className="text-gray-400 font-medium">Task's deadline</p>
               <p className="text-gray-900 font-medium col-span-2">
-          {selectedTask.deadline 
-            ? formatDate(selectedTask.deadline) 
-            : 'No deadline set'}
-        </p>
+                {selectedTask.deadline
+                  ? formatDate(selectedTask.deadline)
+                  : 'No deadline set'}
+              </p>
             </div>
 
             <div className="grid grid-cols-3 w-full">
@@ -877,29 +877,29 @@ const handleEditTask = async () => {
         </button>
       </div>
 
-      {/* Tasks Grid */}
-      <div className={`flex flex-wrap gap-x-5 gap-y-5 ${justifyClass}`}>
+      {/* Tasks Grid - Responsive Grid Layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2">
         {projects.map((project) => (
           <div
             key={project.id}
-            className="max-w-[290px] w-full border-2 border-[#EFEFEF] rounded-[14px] p-3 bg-white relative group flex flex-col gap-3 cursor-pointer"
+            className=" border-2 border-[#EFEFEF] rounded-[14px] p-3 bg-white relative group flex flex-col gap-3 cursor-pointer hover:shadow-lg transition-shadow duration-200"
           >
             {project.image ? (
               <button
                 onClick={() => navigate(`/tasks/${project.id}`)}
-                className="cursor-pointer"
+                className="cursor-pointer w-full"
               >
                 <img
                   onClick={() => navigate(`/tasks/${project.id}`)}
                   src={project.image}
                   alt="Task image"
-                  className="h-[134px] w-full object-contain rounded-[14px]"
+                  className="h-[134px] w-full object-cover rounded-[14px]"
                 />
               </button>
             ) : (
               <button
                 onClick={() => navigate(`/tasks/${project.id}`)}
-                className="h-[134px] rounded-[14px] mb-2 overflow-hidden bg-gray-200 flex items-center justify-center cursor-pointer"
+                className="h-[134px] w-full rounded-[14px] mb-2 overflow-hidden bg-gray-200 flex items-center justify-center cursor-pointer"
               >
                 <span className="text-gray-500 text-sm">No Image</span>
               </button>
@@ -907,85 +907,124 @@ const handleEditTask = async () => {
 
             <button
               onClick={() => navigate(`/tasks/${project.id}`)}
-              className="flex items-center gap-1 mb-2 cursor-pointer"
+              className="flex items-center gap-1 mb-2 cursor-pointer w-full"
             >
-              <span className="text-xs font-bold text-gray-600 whitespace-nowrap">
+              <span className="text-xs font-bold text-gray-600 whitespace-nowrap flex-shrink-0">
                 {project?.progress}%
               </span>
-              <div className="w-full h-2 bg-gray-300 rounded">
+              <div className="flex-1 h-2 bg-gray-300 rounded">
                 <div
                   className="h-full bg-blue-500 rounded"
                   style={{ width: `${project?.progress}%` }}
                 ></div>
               </div>
             </button>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-<div className="flex items-center relative w-12 h-5">
-  {project?.assigned?.length > 0 ? (
-    <div className="flex items-center">
-      {/* Agar "All Departments" tanlangan bo'lsa */}
-      {project.is_all_departments ? (
-        <img
-          src="/M.png"
-          alt="All departments project"
-          className="w-[24px] h-[24px] rounded-full border-2 border-white shadow-sm"
-        />
-      ) : (
-        /* Aks holda odatiy ko'rsatish */
-        <>
-          {/* Birinchi 2 ta assigned user'ni ko'rsatish */}
-          {project.assigned.slice(0, 2).map((user, index) => {
-            const userObj = typeof user === "object" ? user : allUsers.find(u => u.id === user);
-            return userObj ? (
-              <div
-                key={userObj.id || index}
-                className="relative"
-                style={{ marginLeft: index > 0 ? "-8px" : "0" }}
-              >
-                {userObj.profile_picture ? (
-                  <img
-                    src={userObj.profile_picture}
-                    alt={`${userObj.first_name} ${userObj.last_name}`}
-                    className="w-[24px] h-[24px] rounded-full border-2 border-white shadow-sm object-cover"
-                  />
-                ) : (
-                  <div className="bg-gray-300 rounded-full flex items-center justify-center w-[24px] h-[24px] border-2 border-white shadow-sm">
-                    <span className="text-xs font-medium">
-                      {userObj.first_name?.[0] || "U"}
-                    </span>
-                  </div>
-                )}
-              </div>
-            ) : null;
-          })}
-          
-          {/* 3 yoki undan ko'p assigned user bo'lsa */}
-          {project.assigned.length >= 3 && (
-            <div
-              className="relative"
-              style={{ marginLeft: "-8px" }}
-            >
-              <div className="w-[24px] h-[24px] bg-blue-500 rounded-full flex items-center justify-center border-2 border-white shadow-sm text-white text-xs font-medium">
-                +{project.assigned.length - 2}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  ) : (
-    <span className="text-gray-400 text-xs">No users</span>
-  )}
-</div>
+
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1 flex-1 min-w-0">
+                <div className="flex items-center relative w-12 h-5 flex-shrink-0">
+                  {project?.assigned?.length > 0 ? (
+                    <div className="flex items-center">
+                      {(() => {
+                        // Check if all users from any department are completely selected
+                        const findDepartmentWithAllUsersSelected = () => {
+                          if (!project.departments?.length || !allUsers.length) return null;
+
+                          // Check each department in the project
+                          for (const dept of project.departments) {
+                            // Get all users in this department
+                            const deptUsers = allUsers.filter(
+                              user => user.department?.id === dept.id
+                            );
+
+                            // Check if all users in this department are assigned to the project
+                            const allDeptUsersAssigned = deptUsers.length > 0 &&
+                              deptUsers.every(
+                                user => project.assigned.some(
+                                  assignedUser => (assignedUser.id || assignedUser) === user.id
+                                )
+                              );
+
+                            if (allDeptUsersAssigned) {
+                              return dept; // Return the department where all users are selected
+                            }
+                          }
+
+                          return null; // No department has all users selected
+                        };
+
+                        // If all users from any department are selected, show department image
+                        const departmentWithAllUsers = findDepartmentWithAllUsersSelected();
+                        if (departmentWithAllUsers) {
+                          return (
+                            <img
+                              src={departmentWithAllUsers.photo || "/default-dept.png"}
+                              alt={`Department ${departmentWithAllUsers.name}`}
+                              className="w-[24px] h-[24px] rounded-full border-2 border-white shadow-sm object-cover"
+                            />
+                          );
+                        }
+
+                        // Fallback for is_all_departments
+                        if (project.is_all_departments) {
+                          return (
+                            <img
+                              src="/M.png"
+                              alt="All departments project"
+                              className="w-[24px] h-[24px] rounded-full border-2 border-white shadow-sm"
+                            />
+                          );
+                        }
+
+                        // Default: Show up to 2 user avatars + badge for additional users
+                        return (
+                          <>
+                            {project.assigned.slice(0, 2).map((user, index) => {
+                              const userObj = typeof user === "object" ? user : allUsers.find((u) => u.id === user);
+                              return userObj ? (
+                                <div
+                                  key={userObj.id || index}
+                                  className="relative"
+                                  style={{ marginLeft: index > 0 ? "-8px" : "0" }}
+                                >
+                                  {userObj.profile_picture ? (
+                                    <img
+                                      src={userObj.profile_picture}
+                                      alt={`${userObj.first_name} ${userObj.last_name}`}
+                                      className="w-[24px] h-[24px] rounded-full border-2 border-white shadow-sm object-cover"
+                                    />
+                                  ) : (
+                                    <div className="bg-gray-300 rounded-full flex items-center justify-center w-[24px] h-[24px] border-2 border-white shadow-sm">
+                                      <span className="text-xs font-medium">
+                                        {userObj.first_name?.[0] || "U"}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : null;
+                            })}
+                            {project.assigned.length >= 3 && (
+                              <div
+                                className="relative"
+                                style={{ marginLeft: "-8px" }}
+                              >
+                                <div className="w-[24px] h-[24px] bg-blue-500 rounded-full flex items-center justify-center border-2 border-white shadow-sm text-white text-xs font-medium">
+                                  +{project.assigned.length - 2}
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  ) : (
+                    <span className="text-gray-400 text-xs">No users</span>
+                  )}
+                </div>
                 <button
                   onClick={() => navigate(`/tasks/${project.id}`)}
-                  className="font-bold text-lg cursor-pointer troncate max-w-[180px]"
-                  style={{
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
+                  className="font-bold text-lg cursor-pointer truncate flex-1 text-left"
+                  title={project.name}
                 >
                   {project.name}
                 </button>
@@ -997,20 +1036,20 @@ const handleEditTask = async () => {
                 placement="bottomRight"
                 overlayClassName="w-[260px] rounded-lg shadow-lg border border-gray-200"
               >
-                <button>
+                <button className="flex-shrink-0 p-1">
                   <MoreVertical className="w-5 h-5 text-gray-600 hover:text-black cursor-pointer" />
                 </button>
               </Dropdown>
             </div>
 
-            <div className="flex mt-1 justify-between text-sm">
-              <div>
-                <span className="text-gray-900 font-medium">
+            <div className="flex mt-1 justify-between text-sm gap-2">
+              <div className="flex-1">
+                <span className="text-gray-900 font-medium text-xs sm:text-sm">
                   {formatDate2(project?.created_at)}
                 </span>
               </div>
-              <div>
-                <span className="text-gray-900 font-medium">
+              <div className="flex-1 text-right">
+                <span className="text-gray-900 font-medium text-xs sm:text-sm">
                   {formatDate2(project?.deadline)}
                 </span>
               </div>
@@ -1063,57 +1102,57 @@ const handleEditTask = async () => {
             </div>
 
             {/* Image */}
-           {/* Image */}
-          <div>
-            <label className="block text-[14px] font-bold text-[#7D8592]">
-              Image
-            </label>
+            {/* Image */}
+            <div>
+              <label className="block text-[14px] font-bold text-[#7D8592]">
+                Image
+              </label>
 
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="hidden"
-              id="imageInput"
-            />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+                id="imageInput"
+              />
 
-            <label
-              htmlFor="imageInput"
-              className="mt-1 h-[50px] flex items-center justify-between w-full border border-gray-300 rounded-[14px] px-3 py-2 cursor-pointer hover:border-blue-500 transition"
-            >
-              <span className="text-gray-400">
-                {selectedImage ? "Upload image" : "Upload image"}
-              </span>
-              <Paperclip />
-            </label>
+              <label
+                htmlFor="imageInput"
+                className="mt-1 h-[50px] flex items-center justify-between w-full border border-gray-300 rounded-[14px] px-3 py-2 cursor-pointer hover:border-blue-500 transition"
+              >
+                <span className="text-gray-400">
+                  {selectedImage ? "Upload image" : "Upload image"}
+                </span>
+                <Paperclip />
+              </label>
 
-            {imageFile && selectedImage && (
-              <div className="mt-3 flex items-center gap-3">
-                <img
-                  src={selectedImage}
-                  alt={imageFile.name}
-                  className="w-16 h-16 object-cover rounded-md border"
-                />
-                <div>
-                  <div className="font-medium">{imageFile.name}</div>
-                  <div className="text-sm text-gray-500">
-                    {(imageFile.size / 1024).toFixed(1)} KB • {imageFile.type}
-                  </div>
-                  <div className="mt-2">
-                    <button
-                      className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-md"
-                      onClick={() => { 
-                        setImageFile(null);
-                        setSelectedImage(null);
-                      }}
-                    >
-                      Remove
-                    </button>
+              {imageFile && selectedImage && (
+                <div className="mt-3 flex items-center gap-3">
+                  <img
+                    src={selectedImage}
+                    alt={imageFile.name}
+                    className="w-16 h-16 object-cover rounded-md border"
+                  />
+                  <div>
+                    <div className="font-medium">{imageFile.name}</div>
+                    <div className="text-sm text-gray-500">
+                      {(imageFile.size / 1024).toFixed(1)} KB • {imageFile.type}
+                    </div>
+                    <div className="mt-2">
+                      <button
+                        className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-md"
+                        onClick={() => {
+                          setImageFile(null);
+                          setSelectedImage(null);
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
             {/* Department */}
             <div>
@@ -1212,155 +1251,147 @@ const handleEditTask = async () => {
             </div>
           </div>
         </div>
-        </Modal>
-  
-                  {/* Department tanlash modal - YANGILANGAN */}
-              {/* Department tanlash modal - YANGILANGAN */}
-         {/* Department tanlash modal - YANGILANGAN */}
-        <Modal
-          open={isDeptModalOpen}
-           onCancel={() => {
-        setIsDeptModalOpen(false);
-        setSearchTerm(""); // Modal yopilganda qidiruvni tozalash
-      }}
-      onOk={() => {
-        setIsDeptModalOpen(false);
-        setSearchTerm(""); // Modal yopilganda qidiruvni tozalash
-      }}
-          okText="Done"
-          className="custom-modal"
-          width={800}
-        >
-          <div className="space-y-6">
-            {/* Department selector */}
-            <div>
-              <div className="flex justify-between items-center mb-3">
-                <h4 className="text-lg font-semibold">Select Departments</h4>
-              </div>
-              <DepartmentsSelector
-                selectedIds={selectedDepartments}
-                onChange={(ids) => setSelectedDepartments(ids)}
-                onDataLoaded={(data) => setAllDepartments(data)}
-              />
-            </div>
+      </Modal>
 
-    {/* Users ro'yxati - Department modal ichida */}
-    {selectedDepartments.length > 0 &&
-      deptModalFilteredUsers.length > 0 && (
-        <div>
-             
-          <div className="flex justify-between items-center mb-3">
-           <div className=" w-[80%] flex max-sm:-mr-4">
-                      <div className="relative w-full max-w-md bg-white rounded-xl max-md:border max-md:border-gray-300 max-sm:border-0 flex max-sm:flex-row-reverse items-center">
-                        {/* Search icon */}
-                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none max-sm:hidden">
-                          <Search className="w-5 h-5 text-[#0A1629]" />
-                        </span>
-                        <span className="hidden max-sm:flex absolute inset-y-0 right-0 pr-3 items-center pointer-events-none">
-                          <Search className="w-5 h-5 text-[#0A1629]" />
-                        </span>
-              
-                        {/* Input */}
-                        <input
-                          type="text"
-                          placeholder="Search..."
-                             value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                          className=" flex-1  py-[7px] bg-[#F2F2F2] pr-4 pl-10 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-blue-500 max-sm:py-1
-                               max-sm:pl-3 max-sm:placeholder-transparent"
-                        />
-                          {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center max-sm:right-8"
-                >
-                  <svg className="w-4 h-4 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-                      </div>
-                    </div>
-            <h4 className="text-lg font-semibold">
-              
-                   {searchTerm && (
-                  <span className=" mr-1 text-[14px]">
-                    
-                  </span>
-                )}
-            </h4>
-            <button 
-              onClick={handleSelectAllUsers}
-              className="h-[38px]  px-4 cursor-pointer flex items-center justify-center rounded-xl text-white bg-[#1677FF]"
-            >
-              {deptModalFilteredUsers.every(user => selectedUsers.includes(user.id)) 
-                ? "Deselect All Users" 
-                : "Select All Users"}
-            </button>
-          
+      {/* Department tanlash modal - YANGILANGAN */}
+      <Modal
+        open={isDeptModalOpen}
+        onCancel={() => {
+          setIsDeptModalOpen(false);
+          setSearchTerm(""); // Modal yopilganda qidiruvni tozalash
+        }}
+        onOk={() => {
+          setIsDeptModalOpen(false);
+          setSearchTerm(""); // Modal yopilganda qidiruvni tozalash
+        }}
+        okText="Done"
+        className="custom-modal"
+        width={800}
+      >
+        <div className="space-y-6">
+          {/* Department selector */}
+          <div>
+            <div className="flex justify-between items-center mb-3">
+              <h4 className="text-lg font-semibold">Select Departments</h4>
+            </div>
+            <DepartmentsSelector
+              selectedIds={selectedDepartments}
+              onChange={(ids) => setSelectedDepartments(ids)}
+              onDataLoaded={(data) => setAllDepartments(data)}
+            />
           </div>
-          <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-[14px] p-4">
-            <div className="grid grid-cols-1 gap-3">
-              {filteredUsersBySearch.map((user) => (
-                <label
-                  key={user.id}
-                  className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 rounded-lg border border-gray-100"
-                >
-                  
-                  <input
-                    type="checkbox"
-                    checked={selectedUsers.includes(user.id)}
-                    onChange={() => toggleUserSelection(user.id)}
-                    className="w-5 h-5 accent-blue-600"
-                  />
-                  <div className="flex items-center gap-3">
-                    {user.profile_picture ? (
-                      <img
-                        src={user.profile_picture}
-                        alt={`${user.first_name} ${user.last_name}`}
-                        className="w-10 h-10 rounded-full object-cover"
+
+          {/* Users ro'yxati - Department modal ichida */}
+          {selectedDepartments.length > 0 &&
+            deptModalFilteredUsers.length > 0 && (
+              <div>
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-3">
+                  <div className="w-full sm:w-[80%] flex">
+                    <div className="relative w-full max-w-md bg-white rounded-xl border border-gray-300 sm:border-0 flex items-center">
+                      {/* Search icon */}
+                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search className="w-5 h-5 text-[#0A1629]" />
+                      </span>
+
+                      {/* Input */}
+                      <input
+                        type="text"
+                        placeholder="Search..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="flex-1 py-[7px] bg-[#F2F2F2] pr-4 pl-10 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
-                    ) : (
-                      <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium">
-                          {user.first_name?.[0] || "U"}
-                        </span>
-                      
-                      </div>
-                    )}
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-900">
-                        {user.first_name} {user.last_name} 
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {user.profession || "No Profession"}
-                      </span>
+                      {searchTerm && (
+                        <button
+                          onClick={() => setSearchTerm('')}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        >
+                          <svg className="w-4 h-4 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   </div>
-                </label>
-              ))}
-            </div>
-          </div>
+                  <h4 className="text-lg font-semibold hidden sm:block">
+                    {searchTerm && (
+                      <span className="mr-1 text-[14px]">
 
-          {/* Tanlangan userlar soni */}
-          <div className="mt-3 text-sm text-gray-600">
-            (Showing {filteredUsersBySearch.length} of {deptModalFilteredUsers.length} users)
-            Selected: {selectedUsers.length} user
-            {selectedUsers.length !== 1 ? "s" : ""}
-          </div>
+                      </span>
+                    )}
+                  </h4>
+                  <button
+                    onClick={handleSelectAllUsers}
+                    className="h-[38px] px-4 cursor-pointer flex items-center justify-center rounded-xl text-white bg-[#1677FF] whitespace-nowrap"
+                  >
+                    {deptModalFilteredUsers.every(user => selectedUsers.includes(user.id))
+                      ? "Deselect All Users"
+                      : "Select All Users"}
+                  </button>
+
+                </div>
+                <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-[14px] p-4">
+                  <div className="grid grid-cols-1 gap-3">
+                    {filteredUsersBySearch.map((user) => (
+                      <label
+                        key={user.id}
+                        className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 rounded-lg border border-gray-100"
+                      >
+
+                        <input
+                          type="checkbox"
+                          checked={selectedUsers.includes(user.id)}
+                          onChange={() => toggleUserSelection(user.id)}
+                          className="w-5 h-5 accent-blue-600 flex-shrink-0"
+                        />
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          {user.profile_picture ? (
+                            <img
+                              src={user.profile_picture}
+                              alt={`${user.first_name} ${user.last_name}`}
+                              className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-sm font-medium">
+                                {user.first_name?.[0] || "U"}
+                              </span>
+
+                            </div>
+                          )}
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-medium text-gray-900 truncate">
+                              {user.first_name} {user.last_name}
+                            </span>
+                            <span className="text-xs text-gray-500 truncate">
+                              {user.profession || "No Profession"}
+                            </span>
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tanlangan userlar soni */}
+                <div className="mt-3 text-sm text-gray-600">
+                  (Showing {filteredUsersBySearch.length} of {deptModalFilteredUsers.length} users)
+                  Selected: {selectedUsers.length} user
+                  {selectedUsers.length !== 1 ? "s" : ""}
+                </div>
+              </div>
+            )}
+
+          {/* Agar department tanlangan bo'lsa lekin userlar yo'q bo'lsa */}
+          {selectedDepartments.length > 0 &&
+            deptModalFilteredUsers.length === 0 &&
+            !selectedDepartments.includes("none") && (
+              <div className="text-center py-8 text-gray-500">
+                <p>No users found in selected departments</p>
+              </div>
+            )}
         </div>
-      )}
-
-    {/* Agar department tanlangan bo'lsa lekin userlar yo'q bo'lsa */}
-  {selectedDepartments.length > 0 &&
-          deptModalFilteredUsers.length === 0 &&
-          !selectedDepartments.includes("none") && (
-            <div className="text-center py-8 text-gray-500">
-              <p>No users found in selected departments</p>
-            </div>
-          )}
-  </div>
-</Modal>
+      </Modal>
 
       {/* Action Modal (Edit / Info / Delete) */}
       <Modal
