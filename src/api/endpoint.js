@@ -138,8 +138,9 @@ const endpoints = {
     getById: (id) => `notes/${id}/`,
     create: "notes/",
     update: (id) => `notes/${id}/`,
-    updateStatus: (id) => `/notes/${id}/`,
+    partialUpdate: (id) => `/notes/${id}/`,
     delete: (id) => `notes/${id}/`,
+    getUserNotes: (userId) => `notes/user/${userId}/`,
   },
 };
 
