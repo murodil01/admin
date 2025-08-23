@@ -500,9 +500,11 @@ const Projects = () => {
   {
     key: "Arxiv",
     label: (
+       <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
       <button className=" flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer">
        <ArchiveRestore  className=" size-4" /> <span>Arxiv</span>
       </button>
+      </Permission>
     ),
   },
   {
