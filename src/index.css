@@ -363,3 +363,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   padding: 16px 12px;
   background-color: rgb(250, 250, 250);
 }
+
+input:focus {
+  outline: none;
+}
+
+.calendar-details {
+  width: 100%;
+  height: 48px;
+  background-color: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 4px 12px;
+}

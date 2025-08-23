@@ -17,6 +17,8 @@ import { message } from "antd";
 import { Permission } from "../../../components/Permissions";
 import { useAuth } from "../../../hooks/useAuth";
 import { ROLES } from "../../../components/constants/roles";
+import dayjs from "dayjs";
+import { DatePicker } from "antd";
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState(() => {
@@ -66,20 +68,29 @@ const Profile = () => {
 
   useEffect(() => {
     if (!id) return;
-    // console.log("Employee ID:", id); // Check the ID format
 
     const fetchEmployee = async () => {
       try {
         const data = await getEmployeeById(id);
-        setEmployee(data);
-        console.log(data);
 
-        setBirthday(data.birthday || "");
+        let departmentObj = null;
+        if (typeof data.department === "number") {
+          const foundDept = departments.find(d => d.id === data.department);
+          if (foundDept) {
+            departmentObj = foundDept;
+          } else {
+            departmentObj = { id: data.department, name: `Department ${data.department}` };
+          }
+        } else {
+          departmentObj = data.department; // already object
+        }
+
+        setEmployee({ ...data, department: departmentObj });
+        setBirthday(data.birth_date || "");
       } catch (err) {
-        // console.error("Error fetching employee:", err);
         if (err.response?.status === 404) {
           message.error("Employee not found");
-          navigate("/employees"); // Redirect if employee doesn't exist
+          navigate("/employees");
         } else {
           message.error("Failed to load employee data");
         }
@@ -87,63 +98,62 @@ const Profile = () => {
     };
 
     fetchEmployee();
-  }, [id, navigate]);
+  }, [id, navigate, departments]);
 
   const handleSave = async () => {
     if (!employee) return;
 
     try {
-      const formattedBirthday = birthday
-        ? new Date(birthday + 'T00:00:00').toISOString().split('T')[0]
-        : null;
-
       const formData = new FormData();
 
-      // 1. Backend talabiga ko'ra departmentni yuborish
-      // Agar backend 'department_id' talab qilsa:
-      formData.append('department_id', employee.department_id?.id || '');
-      // Yoki agar 'department' talab qilsa:
-      formData.append('department', employee.department?.id || '');
-
-      // 2. Boshqa maydonlarni qo'shamiz
+      // Add all employee data to formData
       Object.entries(employee).forEach(([key, value]) => {
-        if (key === 'department') return; // Departmentni allaqachon qo'shganmiz
-        if (key === 'profile_picture') {
-          if (value instanceof File) {
-            formData.append(key, value);
+        // Skip profile_picture if it's not a File (already uploaded)
+        if (key === 'profile_picture' && !(value instanceof File)) {
+          return;
+        }
+
+        // Handle department field
+        if (key === 'department') {
+          if (value && value.id) {
+            formData.append('department_id', value.id);
           }
-        } else if (value !== null && value !== undefined) {
+          return;
+        }
+
+        if (value !== null && value !== undefined) {
           formData.append(key, value);
         }
       });
 
-      // Keyin formData.append('profile_picture', employee.profile_picture_file);
-
-      // 3. Tug'ilgan kunini qo'shamiz
-      if (formattedBirthday) {
-        formData.append('birth_date', formattedBirthday);
+      // Add birthday if it exists
+      if (birthday) {
+        formData.append('birth_date', birthday);
       }
 
-      // 5. API so'rovini yuboramiz
+      // Add profile picture if it's a File
+      if (employee.profile_picture instanceof File) {
+        formData.append('profile_picture', employee.profile_picture);
+      }
+
+      // Log form data for debugging
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+
+      // API call to update employee
       const updatedEmployee = await updateEmployees(employee.id, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // 6. Yangilangan ma'lumotlarni saqlaymiz
-      setEmployee({
-        ...updatedEmployee,
-        department: {
-          id: updatedEmployee.department?.id || employee.department?.id,
-          name: updatedEmployee.department?.name ||
-            updatedEmployee.department_name ||
-            employee.department?.name
-        }
-      });
+      // Update local state with the response
+      setEmployee(updatedEmployee);
 
       setIsEditing(false);
       setSaveMessage("✅ Ma'lumotlar muvaffaqiyatli saqlandi");
       setTimeout(() => setSaveMessage(""), 3000);
     } catch (err) {
+      console.error("Save error:", err);
       const errorMessage = err.response?.data?.detail ||
         err.response?.data?.message ||
         err.message ||
@@ -156,7 +166,7 @@ const Profile = () => {
     localStorage.setItem("profileTab", activeTab);
   }, [activeTab]);
 
-  const levels = ["intern", "junior", "middle", "specialist", "senior", "expert", "none"];
+  const levels = ["Intern", "Junior", "Middle", "Specialist", "Senior", "Expert", "None"];
 
   const statusOptions = [
     { value: "free", label: "Free" },
@@ -174,10 +184,13 @@ const Profile = () => {
           {
             label: "Department",
             name: "department",
-            value: employee.department?.id || "",
+            value: employee.department?.name || "", // FIXED: Use name instead of id
             displayValue: employee.department?.name || "",
             input: true,
-            options: departments,
+            options: departments.map(dept => ({
+              value: dept.id,
+              label: dept.name
+            })),
             isSelect: true
           },
           {
@@ -187,7 +200,6 @@ const Profile = () => {
             input: true,
             isSelect: true,
             options: statusOptions,
-            optionKey: "label" // Agar obyektlardan foydalansangiz
           },
         ],
       },
@@ -230,7 +242,7 @@ const Profile = () => {
           {
             label: "Birthday Date",
             name: "birth_date",
-            value: employee.birth_date || "",
+            value: birthday || "",
             input: true,
             type: "date"
           },
@@ -241,11 +253,10 @@ const Profile = () => {
 
   const availableTabs = [
     { id: "Profile", label: "Profile", visible: isAdmin },
-    { id: "Projects", label: "Projects", visible: true }, // Always visible
+    { id: "Projects", label: "Projects", visible: true },
     { id: "Notes", label: "Notes", visible: isAdmin },
   ].filter(tab => tab.visible);
 
-  // If current tab becomes unavailable, switch to Projects
   useEffect(() => {
     if (!availableTabs.some(tab => tab.id === activeTab)) {
       setActiveTab("Projects");
@@ -257,7 +268,7 @@ const Profile = () => {
       case "Profile":
         return isAdmin ? <Profiles /> : null;
       case "Projects":
-        return <Projects />; // Always visible to all roles
+        return <Projects />;
       case "Notes":
         return isAdmin ? <Notes /> : null;
       default:
@@ -274,11 +285,10 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="py-4 md:py-6 px-4 sm:px-6">
-        {/* Orqaga qaytish tugmasi */}
         <div className="mb-4 md:mb-6 flex items-center justify-between">
           <button
             onClick={() => navigate("/employees")}
-            className="flex justify-center rounded-[14px] items-center gap-2 text-sm md:text-[16px] font-bold text-[#1F2937] hover:text-[#6b82a8] shadow bg-white w-[100px] md:w-[133px] h-[40px] md:h-[48px]"
+            className="flex justify-center rounded-[14px] items-center gap-2 text-sm md:text-[16px] font-bold text-[#1F2937] hover:text-[#6b82a8] shadow bg-white w-[100px] md:w-[133px] h-[40px] md:h-[48px] cursor-pointer"
           >
             <ArrowLeft size={16} className="md:size-5" />
             <span className="hidden sm:inline">Go Back</span>
@@ -292,11 +302,8 @@ const Profile = () => {
           )}
         </div>
 
-        {/* Asosiy kontent */}
         <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
-          {/* SIDEBAR */}
           <div className="w-full lg:w-[350px] xl:w-[430px] bg-white border border-gray-100 rounded-[20px] md:rounded-[24px] p-4 md:p-6 shadow-sm relative">
-            {/* Edit icon */}
             <div className="absolute top-4 md:top-5 right-4 md:right-5 z-10">
               <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
                 <button
@@ -305,7 +312,7 @@ const Profile = () => {
                     e.stopPropagation();
                     setShowEditDropdown((prev) => !prev);
                   }}
-                  className="p-1 md:p-2 text-gray-600 hover:bg-gray-100 rounded-full"
+                  className="p-1 md:p-2 text-gray-600 hover:bg-gray-100 rounded-full cursor-pointer"
                 >
                   <MoreVertical className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
@@ -322,7 +329,7 @@ const Profile = () => {
                       setIsEditing(true);
                       setShowEditDropdown(false);
                     }}
-                    className="w-full px-3 py-1 md:px-4 md:py-2 text-xs md:text-sm text-left hover:bg-gray-100"
+                    className="w-full px-3 py-1 md:px-4 md:py-2 text-xs md:text-sm text-left hover:bg-gray-100 cursor-pointer"
                   >
                     Edit
                   </button>
@@ -330,7 +337,6 @@ const Profile = () => {
               )}
             </div>
 
-            {/* Profile section */}
             <div
               className="flex items-center border-b border-[#E4E6E8] pb-4 md:pb-5 cursor-pointer"
               onClick={() => setShowDetails(!showDetails)}
@@ -342,24 +348,22 @@ const Profile = () => {
               />
               <div className="ml-3 md:ml-4 flex flex-col">
                 <h3 className="text-sm sm:text-[16px] md:text-[18px] lg:text-[20px] font-bold text-[#0061fe] whitespace-nowrap">
-                  {employee.first_name} {employee.last_name}
+                  <span className="capitalize">{employee.first_name}</span> <span className="capitalize">{employee.last_name}</span>
                 </h3>
                 <p className="text-xs sm:text-[14px] md:text-[16px] font-medium text-[#1F2937] flex items-center gap-1 md:gap-2">
                   {isEditing ? (
                     <>
-                      {/* Profession input */}
                       <Input
                         placeholder="Enter profession"
-                        value={employee.profession}
+                        value={employee.profession || ""}
                         onChange={(e) =>
                           setEmployee((prev) => ({ ...prev, profession: e.target.value }))
                         }
                         className="w-full md:w-40"
                       />
 
-                      {/* Level select */}
                       <Select
-                        value={employee.level}
+                        value={employee.level || "None"} // FIXED: Handle null/undefined
                         onChange={(value) =>
                           setEmployee((prev) => ({ ...prev, level: value }))
                         }
@@ -374,10 +378,9 @@ const Profile = () => {
                     </>
                   ) : (
                     <>
-                      {/* Text view */}
-                      <span>{employee.profession}</span>
-                      {employee.level !== "none" && (
-                        <span className="text-[8px] md:text-[10px] border border-[#7D8592] px-1 py-0.5 md:px-[2px] md:py-[2px] rounded-[3px] md:rounded-[4px]">
+                      <span>{employee.profession || "No profession"}</span>
+                      {employee.level && employee.level.toLowerCase() !== "none" && ( // FIXED: Check lowercase
+                        <span className="text-[8px] md:text-[10px] border border-[#7D8592] px-1 py-0.5 md:px-[2px] md:py-[2px] rounded-[3px] md:rounded-[4px] capitalize">
                           {employee.level}
                         </span>
                       )}
@@ -388,7 +391,6 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Content info */}
             <div className={`mt-4 md:mt-6 space-y-6 md:space-y-8 ${showDetails ? "block" : "hidden lg:block"}`}>
               {SidebarSections.map((section, index) => (
                 <div key={index}>
@@ -413,7 +415,7 @@ const Profile = () => {
                                   : employee[item.name] || ""}
                                 onChange={(e) => {
                                   if (item.name === 'department') {
-                                    const selectedDept = departments.find(d => d.id === e.target.value);
+                                    const selectedDept = departments.find(d => d.id == e.target.value);
                                     setEmployee(prev => ({
                                       ...prev,
                                       department: selectedDept || null
@@ -437,24 +439,28 @@ const Profile = () => {
                                   </option>
                                 ))}
                               </select>
-                            ) : (
+                            ) : item.type === "date" ? (
                               <div className="relative">
-                                <input
-                                  type={item.type || "text"}
-                                  name={item.name}
-                                  value={employee[item.name] || ""}
-                                  onChange={(e) =>
-                                    setEmployee((prev) => ({
-                                      ...prev,
-                                      [item.name]: e.target.value,
-                                    }))
-                                  }
-                                  className="w-full h-[40px] md:h-[48px] bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg md:rounded-xl px-3 md:px-4 py-1 md:py-2 font-normal text-xs md:text-[14px] text-[#7D8592] pr-8 md:pr-10"
-                                />
-                                {item.type === "date" && (
-                                  <Calendar className="absolute right-2 md:right-3 top-2 md:top-2.5 text-gray-400 w-4 h-4 md:w-5 md:h-5 pointer-events-none" />
-                                )}
+                                  <DatePicker
+                                    className="w-full calendar-details"
+                                    value={birthday ? dayjs(birthday) : null}
+                                    onChange={(date, dateString) => setBirthday(dateString)}
+                                    format="YYYY-MM-DD"
+                                  />
                               </div>
+                            ) : (
+                              <input
+                                type={item.type || "text"}
+                                name={item.name}
+                                value={employee[item.name] || ""}
+                                onChange={(e) =>
+                                  setEmployee((prev) => ({
+                                    ...prev,
+                                    [item.name]: e.target.value,
+                                  }))
+                                }
+                                className="w-full h-[40px] md:h-[48px] bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg md:rounded-xl px-3 md:px-4 py-1 md:py-2 font-normal text-xs md:text-[14px] text-[#7D8592] pr-8 md:pr-10"
+                              />
                             )
                           ) : (
                             <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg md:rounded-xl px-3 md:px-4 py-1 md:py-2 text-xs md:text-[14px] font-normal text-[#7D8592] h-[40px] md:h-[48px] flex items-center">
@@ -490,7 +496,6 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* MAIN CONTENT */}
           <div className="flex-1">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-2 md:gap-4">
               <div className="flex flex-wrap sm:flex-nowrap bg-[#E3EDFA] rounded-full p-0.5 md:p-1 w-full sm:w-auto">

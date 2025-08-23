@@ -36,16 +36,16 @@ const endpoints = {
     deleteTaskInstruction: id => `project/instructions/${id}/`,
   },
 
-    projects: {
-        getAll: "project/projects/",
-        create: "project/projects/",
-        getById: (id) => `project/projects/${id}/`,
-        getByIdTasks: (id) => `project/projects/${id}/tasks/`,
-        getByIdUsers: (id) => `project/projects/${id}/users/`,
-        updateByIdUsers: (id) => `project/projects/${id}/users`,
-        update: (id) => `project/projects/${id}/`,
-        delete: (id) => `project/projects/${id}/`,
-    },
+  projects: {
+    getAll: "project/projects/",
+    create: "project/projects/",
+    getById: (id) => `project/projects/${id}/`,
+    getByIdTasks: (id) => `project/projects/${id}/tasks/`,
+    getByIdUsers: (id) => `project/projects/${id}/users/`,
+    updateByIdUsers: (id) => `project/projects/${id}/users`,
+    update: (id) => `project/projects/${id}/`,
+    delete: (id) => `project/projects/${id}/`,
+  },
 
 
   departments: {
@@ -80,7 +80,7 @@ const endpoints = {
     delete: (groupId, leadId) => `board/leads/${leadId}/?group=${groupId}`,
   },
 
-  status:{
+  status: {
 
     getAllstatus: (boardId) => `board/status/${boardId}`,
     create: (boardId) => `board/status/${boardId}`,
@@ -119,11 +119,13 @@ const endpoints = {
 
   controlData: {
     getAll: "control-data/",
-    getByUserId: (userId) => `control-data/?user_id=${userId}`, // GET by user ID
-    getById: (id) => `control-data/${id}/`, // GET by control data ID
-    create: "control-data/", // POST to create
-    update: (id) => `control-data/${id}/`, // PATCH by control data ID
-    delete: (id) => `control-data/${id}/`, // DELETE by control data ID
+    getAllEmployees: "control-data/all-employees/",
+    getAvailableUsers: "control-data/available-users/",
+    getByUserId: (userId) => `control-data/${userId}/`, // GET /control-data/{user_id}/
+    create: "control-data/", // POST /control-data/
+    update: (userId) => `control-data/${userId}/`, // PUT /control-data/{user_id}/
+    partialUpdate: (userId) => `control-data/${userId}/`, // PATCH /control-data/{user_id}/
+    delete: (userId) => `control-data/${userId}/`, // DELETE /control-data/{user_id}/
   },
 
   userProjects: {
