@@ -45,7 +45,6 @@ import {
   getTaskFiles,
   uploadTaskFile,
   deleteTaskFile,
-
   updateProjectUsers,
   // getCommentTask, ///
   createComment, //
@@ -56,11 +55,9 @@ import {
   updateInstruction,
   deleteInstruction,
   deleteChecklistItem,
-
-
-  getTaskFilesByTask,           // ✅ YANGI
-  getTaskInstructionsByTask,    // ✅ YANGI  
-  getTaskCommentsByTask, 
+  getTaskFilesByTask, // ✅ YANGI
+  getTaskInstructionsByTask, // ✅ YANGI
+  getTaskCommentsByTask,
 } from "../../api/services/taskService";
 
 const NotionKanban = ({ cards, setCards, assignees, getAssigneeName }) => {
@@ -410,9 +407,11 @@ const Card = ({
   const [newChecklistItem, setNewChecklistItem] = useState("");
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
-  const [commentsCount, setCommentsCount] = useState(0); 
+
+  // ✅ TUZATISH: Progress va total_count uchun alohida state'lar
+  const [cardProgress, setCardProgress] = useState(0);
+  const [cardTotalCount, setCardTotalCount] = useState(0);
+  const [commentsCount, setCommentsCount] = useState(0);
 
   // Helper functions
   const getFileIcon = (fileName) => {
@@ -468,7 +467,20 @@ const Card = ({
 
   const getAssigneeName = (assignee) => {
     if (!assignee) return "Not assigned";
-  
+
+    // Agar projectUsers massiv bo'lmasa yoki bo'sh bo'lsa
+    if (!Array.isArray(projectUsers) || projectUsers.length === 0) {
+      if (typeof assignee === "object") {
+        if (assignee.first_name && assignee.last_name) {
+          return `${assignee.first_name} ${assignee.last_name}`;
+        }
+        if (assignee.name) {
+          return assignee.name;
+        }
+      }
+      return "Unknown";
+    }
+
     // Agar assignee object bo'lsa
     if (typeof assignee === "object") {
       if (assignee.first_name && assignee.last_name) {
@@ -479,7 +491,7 @@ const Card = ({
       }
       return "Unknown";
     }
-  
+
     // Agar assignee ID bo'lsa
     const user = projectUsers.find((u) => u.id === assignee);
     return user ? `${user.first_name} ${user.last_name}` : "Unknown";
@@ -551,99 +563,118 @@ const Card = ({
     try {
       console.log("🔄 Fetching files for task ID:", id);
       const response = await getTaskFilesByTask(id);
-    console.log("📥 Files API Response:", response);
+      console.log("📥 Files API Response:", response);
 
-    let filesList = [];
-    if (Array.isArray(response.data)) {
-      filesList = response.data;
-    } else if (response.data && Array.isArray(response.data.results)) {
-      filesList = response.data.results;
-    } else if (response.data && Array.isArray(response.data.files)) {
-      filesList = response.data.files;
+      let filesList = [];
+      if (Array.isArray(response.data)) {
+        filesList = response.data;
+      } else if (response.data && Array.isArray(response.data.results)) {
+        filesList = response.data.results;
+      } else if (response.data && Array.isArray(response.data.files)) {
+        filesList = response.data.files;
+      }
+
+      console.log("📁 Extracted files:", filesList);
+      setFiles(filesList);
+    } catch (error) {
+      console.error("❌ Error fetching files:", error);
+      message.error("Failed to load files");
+      setFiles([]);
+    } finally {
+      setFilesLoading(false);
     }
+  }, [id]);
 
-    console.log("📁 Extracted files:", filesList);
-    setFiles(filesList);
-  } catch (error) {
-    console.error("❌ Error fetching files:", error);
-    message.error("Failed to load files");
-    setFiles([]);
-  } finally {
-    setFilesLoading(false);
-  }
-}, [id]);
+  const fetchComments = useCallback(async () => {
+    if (!id) return;
+    setCommentsLoading(true);
+    try {
+      console.log("🔄 Fetching comments for task ID:", id);
+      const response = await getTaskCommentsByTask(id);
+      console.log("📥 Comments API Response:", response);
 
-const fetchComments = useCallback(async () => {
-  if (!id) return;
-  setCommentsLoading(true);
-  try {
-    console.log("🔄 Fetching comments for task ID:", id);
-    const response = await getTaskCommentsByTask(id);
-    console.log("📥 Comments API Response:", response);
+      let commentsList = [];
+      if (Array.isArray(response.data)) {
+        commentsList = response.data;
+      } else if (response.data && Array.isArray(response.data.results)) {
+        commentsList = response.data.results;
+      } else if (response.data && Array.isArray(response.data.comments)) {
+        commentsList = response.data.comments;
+      }
 
-    let commentsList = [];
-    if (Array.isArray(response.data)) {
-      commentsList = response.data;
-    } else if (response.data && Array.isArray(response.data.results)) {
-      commentsList = response.data.results;
-    } else if (response.data && Array.isArray(response.data.comments)) {
-      commentsList = response.data.comments;
+      // projectUsers massiv ekanligiga ishonch hosil qilish
+      const safeProjectUsers = Array.isArray(projectUsers) ? projectUsers : [];
+
+      const mappedComments = commentsList.map((comment) => ({
+        ...comment,
+        user_name: getAssigneeName(comment.user) || "Unknown",
+      }));
+
+      console.log("📋 Extracted and mapped comments:", mappedComments);
+      setComments(mappedComments);
+      setCommentsCount(mappedComments.length);
+    } catch (error) {
+      console.error("❌ Error fetching comments:", error);
+      message.error("Failed to load comments");
+      setComments([]);
+      setCommentsCount(0);
+    } finally {
+      setCommentsLoading(false);
     }
+  }, [id, projectUsers]);
 
-    const mappedComments = commentsList.map((comment) => ({
-      ...comment,
-      user_name: getAssigneeName(comment.user) || "Unknown",
-    }));
+  // ✅ Checklist o'zgarishida progress ni yangilash
+  const fetchChecklist = useCallback(async () => {
+    if (!id) return;
+    setChecklistLoading(true);
+    try {
+      console.log("🔄 Fetching checklist for task ID:", id);
+      const response = await getTaskInstructionsByTask(id);
+      console.log("📥 RAW API Response:", response);
 
-    console.log("📋 Extracted and mapped comments:", mappedComments);
-    setComments(mappedComments);
-    setCommentsCount(mappedComments.length); // Commentlar sonini yangilash
-  } catch (error) {
-    console.error("❌ Error fetching comments:", error);
-    message.error("Failed to load comments");
-    setComments([]);
-    setCommentsCount(0); // Xatolik yuz bersa, soni 0 ga tenglash
-  } finally {
-    setCommentsLoading(false);
-  }
-}, [id, projectUsers]);
+      let items = [];
+      if (Array.isArray(response.data)) {
+        items = response.data;
+      } else if (response.data && Array.isArray(response.data.results)) {
+        items = response.data.results;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        items = response.data.data;
+      } else if (response.data && Array.isArray(response.data.instructions)) {
+        items = response.data.instructions;
+      }
+      console.log("📋 Extracted items:", items);
 
-const fetchChecklist = useCallback(async () => {
-  if (!id) return;
-  setChecklistLoading(true);
-  try {
-    console.log("🔄 Fetching checklist for task ID:", id);
-    const response = await getTaskInstructionsByTask(id);
-    console.log("📥 RAW API Response:", response);
+      const normalizedItems = items.map((item) => {
+        console.log("🔄 Processing item:", item);
+        return {
+          ...item,
+          completed: item.status !== undefined ? item.status : false,
+        };
+      });
+      setChecklistItems(normalizedItems);
 
-    let items = [];
-    if (Array.isArray(response.data)) {
-      items = response.data;
-    } else if (response.data && Array.isArray(response.data.results)) {
-      items = response.data.results;
-    } else if (response.data && Array.isArray(response.data.data)) {
-      items = response.data.data;
-    } else if (response.data && Array.isArray(response.data.instructions)) {
-      items = response.data.instructions;
+      // ✅ TUZATISH: Progress ni qayta hisoblash
+      const totalItems = normalizedItems.length;
+      const completedItems = normalizedItems.filter(
+        (item) => item.status
+      ).length;
+
+      console.log("📊 Recalculating progress:", {
+        totalItems,
+        completedItems,
+        taskId: id,
+      });
+
+      setCardTotalCount(totalItems);
+      setCardProgress(completedItems);
+    } catch (error) {
+      console.error("Error fetching checklist:", error);
+      message.error("Failed to load checklist");
+      setChecklistItems([]);
+    } finally {
+      setChecklistLoading(false);
     }
-    console.log("📋 Extracted items:", items);
-
-    const normalizedItems = items.map((item) => {
-      console.log("🔄 Processing item:", item);
-      return {
-        ...item,
-        completed: item.status !== undefined ? item.status : false,
-      };
-    });
-    setChecklistItems(normalizedItems);
-  } catch (error) {
-    console.error("Error fetching checklist:", error);
-    message.error("Failed to load checklist");
-    setChecklistItems([]);
-  } finally {
-    setChecklistLoading(false);
-  }
-}, [id]);
+  }, [id]);
 
   // Comment handlers
   const handleAddComment = async () => {
@@ -789,11 +820,14 @@ const fetchChecklist = useCallback(async () => {
     // Calculate new progress
     const total = updatedItems.length;
     const completedCount = updatedItems.filter((item) => item.status).length;
-    const newProgress =
-      total > 0 ? Math.round((completedCount / total) * 100) : 0;
+    console.log("📊 Updating progress:", {
+      total,
+      completedCount,
+      taskId: id,
+    });
 
-    setProgress(newProgress);
-    setTotalCount(total);
+    setCardProgress(completedCount);
+    setCardTotalCount(total);
 
     try {
       await updateInstruction(itemId, { status: completed });
@@ -806,15 +840,12 @@ const fetchChecklist = useCallback(async () => {
       const originalCompleted = originalItems.filter(
         (item) => item.status
       ).length;
-      setProgress(
-        originalItems.length > 0
-          ? Math.round((originalCompleted / originalItems.length) * 100)
-          : 0
-      );
-      setTotalCount(originalItems.length);
+      setCardProgress(originalCompleted);
+      setCardTotalCount(originalItems.length);
     }
   };
   // Modal handlers
+  // ✅ Modal ochilganda task ma'lumotlarini yuklash
   const openViewModal = async () => {
     setIsModalOpen(true);
     setLoading(true);
@@ -823,8 +854,25 @@ const fetchChecklist = useCallback(async () => {
       console.log("🔄 Fetching task data for ID:", id);
       const response = await getTaskById(id);
       console.log("📥 Task data:", response.data);
+
       setTaskData(response.data);
 
+      // ✅ MUHIM: Progress va total_count ni to'g'ri o'rnatish
+      const taskProgress = response.data.progress || 0;
+      const taskTotalCount = response.data.total_count || 0;
+
+      console.log(
+        "📊 Setting progress:",
+        taskProgress,
+        "total_count:",
+        taskTotalCount
+      );
+
+      setCardProgress(taskProgress);
+      setCardTotalCount(taskTotalCount);
+
+      // Project users ni yuklash
+      let users = [];
       if (
         response.data.projectId ||
         response.data.project_id ||
@@ -837,14 +885,49 @@ const fetchChecklist = useCallback(async () => {
         try {
           const usersResponse = await getProjectUsers(projectId);
           console.log("👥 Project users:", usersResponse.data);
-          setProjectUsers(usersResponse.data || []);
+
+          if (Array.isArray(usersResponse.data)) {
+            users = usersResponse.data;
+          } else if (
+            usersResponse.data &&
+            Array.isArray(usersResponse.data.users)
+          ) {
+            users = usersResponse.data.users;
+          } else if (
+            usersResponse.data &&
+            Array.isArray(usersResponse.data.results)
+          ) {
+            users = usersResponse.data.results;
+          }
         } catch (error) {
           console.warn("⚠️ Failed to fetch project users:", error);
-          setProjectUsers([]);
+          users = [];
         }
+      }
+
+      setProjectUsers(users);
+
+      // Comments count ni o'rnatish
+      if (response.data.comment_count !== undefined) {
+        setCommentsCount(response.data.comment_count);
       } else {
-        console.warn("No project ID found in task data");
-        setProjectUsers([]);
+        const commentsResponse = await getTaskCommentsByTask(id);
+        let commentsList = [];
+
+        if (Array.isArray(commentsResponse.data)) {
+          commentsList = commentsResponse.data;
+        } else if (
+          commentsResponse.data &&
+          Array.isArray(commentsResponse.data.results)
+        ) {
+          commentsList = commentsResponse.data.results;
+        } else if (
+          commentsResponse.data &&
+          Array.isArray(commentsResponse.data.comments)
+        ) {
+          commentsList = commentsResponse.data.comments;
+        }
+        setCommentsCount(commentsList.length);
       }
 
       await Promise.all([fetchComments(), fetchChecklist(), fetchFiles()]);
@@ -855,6 +938,37 @@ const fetchChecklist = useCallback(async () => {
       setLoading(false);
     }
   };
+
+  // ✅ Task yaratilganda yoki yangilanganda progress ma'lumotlarini yuklash
+  useEffect(() => {
+    const loadProgressData = async () => {
+      if (!id) return;
+
+      try {
+        console.log("🔄 Loading progress data for task:", id);
+        const response = await getTaskById(id);
+
+        if (response.data) {
+          const taskProgress = response.data.progress || 0;
+          const taskTotalCount = response.data.total_count || 0;
+
+          console.log("📊 Initial progress data:", {
+            taskProgress,
+            taskTotalCount,
+            id,
+          });
+
+          setCardProgress(taskProgress);
+          setCardTotalCount(taskTotalCount);
+        }
+      } catch (error) {
+        console.error("❌ Error loading progress data:", error);
+        // Error yuz bersa default qiymatlar qoladi
+      }
+    };
+
+    loadProgressData();
+  }, [id]);
 
   const handleMoveToColumn = async (newColumn) => {
     try {
@@ -930,6 +1044,35 @@ const fetchChecklist = useCallback(async () => {
       )
     );
   };
+
+  useEffect(() => {
+    // Task yaratilganda commentlarni yuklash
+    const loadInitialComments = async () => {
+      if (!id) return;
+
+      try {
+        console.log("🔄 Loading initial comments for task:", id);
+        const response = await getTaskCommentsByTask(id);
+
+        let commentsList = [];
+        if (Array.isArray(response.data)) {
+          commentsList = response.data;
+        } else if (response.data && Array.isArray(response.data.results)) {
+          commentsList = response.data.results;
+        } else if (response.data && Array.isArray(response.data.comments)) {
+          commentsList = response.data.comments;
+        }
+
+        console.log(`📋 Found ${commentsList.length} comments for task ${id}`);
+        setCommentsCount(commentsList.length);
+      } catch (error) {
+        console.error("❌ Error loading initial comments:", error);
+        // Xatoni chop etish lekin foydalanuvchiga xabar bermaslik
+      }
+    };
+
+    loadInitialComments();
+  }, [id]);
 
   // Effects
   useEffect(() => {
@@ -1405,22 +1548,28 @@ const fetchChecklist = useCallback(async () => {
             </div>
           )}
 
-         {/* Comment Icon - faqat commentlar mavjud bo'lganda ko'rinadi */}
-        {commentsCount > 0 && (
-          <div className="relative">
-            <span className="absolute -top-2 -right-2  bg-blue-500 text-white text-[10px] rounded-full size-4 flex items-center justify-center">
-              {commentsCount}
-            </span>
-            <img src={comment} alt="Comment Icon" className="w-6 "/>
-          </div>
-        )}
+          {/* Comment Icon */}
+          {commentsCount > 0 && (
+            <div className="relative">
+              <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] rounded-full size-4 flex items-center justify-center">
+                {commentsCount}
+              </span>
+              <img src={comment} alt="Comment Icon" className="w-6" />
+            </div>
+          )}
 
-          {/* Checklist */}
-          {progress !== undefined && totalCount > 0 && (
+          {/* ✅ TUZATILGAN: Checklist Progress */}
+          {cardTotalCount > 0 && (
             <div className="flex items-center gap-2">
-              <span className="bg-[#64C064] text-white text-[11px] px-2 py-0.5 rounded flex items-center gap-1">
+              <span
+                className={`text-[11px] px-2 py-0.5 rounded flex items-center gap-1 ${
+                  cardProgress > 0
+                    ? "bg-[#64C064] text-white"
+                    : "bg-gray-200 text-gray-600"
+                }`}
+              >
                 <img src={checkList} alt="Checklist" />
-                {progress} / {totalCount}
+                {cardProgress} / {cardTotalCount}
               </span>
             </div>
           )}
@@ -1437,7 +1586,6 @@ const DropIndicator = ({ beforeId, column }) => (
     className="my-0.5 h-2 w-full bg-violet-400 opacity-0"
   />
 );
-
 
 const AddCard = ({ column, setCards }) => {
   const [text, setText] = useState("");
@@ -1495,7 +1643,7 @@ const AddCard = ({ column, setCards }) => {
     }
   };
 
-// bu yerda permission yozilishi kerak (boshlanish)
+  // bu yerda permission yozilishi kerak (boshlanish)
 
   return adding ? (
     <motion.form layout onSubmit={handleSubmit}>
@@ -1544,7 +1692,6 @@ const AddCard = ({ column, setCards }) => {
   );
 
   // tugashi.
-
 };
 
 const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
@@ -1590,26 +1737,29 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       loadModalData();
       loadTaskFiles();
       loadTaskInstructions(cardData.id);
-      
+
       // Save the original assignee when modal opens
-      if (cardData.assigned && Array.isArray(cardData.assigned) && cardData.assigned.length > 0) {
+      if (
+        cardData.assigned &&
+        Array.isArray(cardData.assigned) &&
+        cardData.assigned.length > 0
+      ) {
         // Extract the ID from the assigned object/ID
-        const assigneeId = typeof cardData.assigned[0] === 'object' 
-          ? cardData.assigned[0].id 
-          : cardData.assigned[0];
+        const assigneeId =
+          typeof cardData.assigned[0] === "object"
+            ? cardData.assigned[0].id
+            : cardData.assigned[0];
         setOriginalAssignee(assigneeId);
       } else {
         setOriginalAssignee(null);
       }
     }
-    
+
     // Reset when modal closes
     if (!visible) {
       setOriginalAssignee(null);
     }
   }, [visible, cardData?.id]);
-
-
 
   // Card ma'lumotlarini form ga yuklash
   React.useEffect(() => {
@@ -1628,9 +1778,10 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
         cardData.assigned.length > 0
       ) {
         // Extract just the ID for the select value
-        const assigneeId = typeof cardData.assigned[0] === 'object' 
-          ? cardData.assigned[0].id 
-          : cardData.assigned[0];
+        const assigneeId =
+          typeof cardData.assigned[0] === "object"
+            ? cardData.assigned[0].id
+            : cardData.assigned[0];
         setSelectedAssignee(assigneeId);
       } else {
         setSelectedAssignee(null);
@@ -1639,7 +1790,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       setDescription(cardData.description || "");
       setSelectedTags(cardData.tags ? cardData.tags.map((tag) => tag.id) : []);
       setProgress(cardData.progress || 0);
-      setTotalCount(cardData.totalCount || 0);
+      setTotalCount(cardData.total_count || 0);
       // ✅ Image ma'lumotlarini yuklash
       if (cardData.task_image) {
         setCurrentImage(cardData.task_image);
@@ -1837,7 +1988,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
         getProjectUsers(projectId),
         getTaskTags(),
       ]);
-  
+
       // Users ma'lumotlarini formatlash - YANGILANDI
       let usersData = [];
       if (usersResponse.data && usersResponse.data.users) {
@@ -1845,13 +1996,13 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       } else if (Array.isArray(usersResponse.data)) {
         usersData = usersResponse.data;
       }
-  
+
       const formattedUsers = usersData.map((user) => ({
         value: user.id,
         label: `${user.first_name} ${user.last_name}`,
         email: user.email,
       }));
-  
+
       setAvailableUsers(formattedUsers);
       setAvailableTags(tagsResponse.data);
     } catch (error) {
@@ -1966,31 +2117,41 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
         const updateData = {
           task_id: cardData.id.toString(),
           remove_ids: originalAssignee ? [originalAssignee] : [],
-          add_ids: selectedAssignee ? [selectedAssignee] : []
+          add_ids: selectedAssignee ? [selectedAssignee] : [],
         };
-        
-        console.log("updateProjectUsers uchun yuborilayotgan ma'lumot:", JSON.stringify(updateData));
-        
+
+        console.log(
+          "updateProjectUsers uchun yuborilayotgan ma'lumot:",
+          JSON.stringify(updateData)
+        );
+
         try {
           // updateProjectUsers ni chaqiramiz
           const assigneeResponse = await updateProjectUsers(updateData);
-          console.log("Assignee muvaffaqiyatli yangilandi!", assigneeResponse.data);
+          console.log(
+            "Assignee muvaffaqiyatli yangilandi!",
+            assigneeResponse.data
+          );
         } catch (error) {
           console.error("Assignee yangilashda xatolik:", error);
-          
+
           // Serverdan qaytgan xabarni chiqaramiz
           if (error.response) {
             console.error("Server javobi:", error.response.data);
             console.error("Status kod:", error.response.status);
-            
+
             // Agar 500 xatosi bo'lsa, backend loglarini tekshirish kerak
             if (error.response.status === 500) {
-              message.error("Server xatosi: Iltimos, tizim administratoriga murojaat qiling");
+              message.error(
+                "Server xatosi: Iltimos, tizim administratoriga murojaat qiling"
+              );
             }
           }
-          
+
           // Asosiy task yangilandi, lekin assignee yangilanmadi
-          message.warning("Task yangilandi, lekin tayinlangan foydalanuvchi yangilanmadi");
+          message.warning(
+            "Task yangilandi, lekin tayinlangan foydalanuvchi yangilanmadi"
+          );
         }
       }
 
@@ -2196,37 +2357,39 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                 </div>
 
                 <div className="md:col-span-2">
-  <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
-    Assignee
-  </label>
-  <div className="relative">
-    <Select
-      showSearch
-      placeholder="Select assignee"
-      value={selectedAssignee}
-      optionFilterProp="label"
-      className="custom-assigne"
-      onChange={setSelectedAssignee}
-      options={availableUsers}
-      filterOption={(input, option) =>
-        (option?.label ?? "")
-          .toLowerCase()
-          .includes(input.toLowerCase()) ||
-        (option?.email ?? "").toLowerCase().includes(input.toLowerCase())
-      }
-      notFoundContent={
-        availableUsers.length === 0 ? "No users found" : null
-      }
-    />
-    <span className="absolute top-7 right-10 -translate-y-1/2 flex items-center pointer-events-none">
-      <img
-        src={memberSearch}
-        alt="avatar"
-        className="w-6 h-6 rounded-full object-cover"
-      />
-    </span>
-  </div>
-</div>
+                  <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
+                    Assignee
+                  </label>
+                  <div className="relative">
+                    <Select
+                      showSearch
+                      placeholder="Select assignee"
+                      value={selectedAssignee}
+                      optionFilterProp="label"
+                      className="custom-assigne"
+                      onChange={setSelectedAssignee}
+                      options={availableUsers}
+                      filterOption={(input, option) =>
+                        (option?.label ?? "")
+                          .toLowerCase()
+                          .includes(input.toLowerCase()) ||
+                        (option?.email ?? "")
+                          .toLowerCase()
+                          .includes(input.toLowerCase())
+                      }
+                      notFoundContent={
+                        availableUsers.length === 0 ? "No users found" : null
+                      }
+                    />
+                    <span className="absolute top-7 right-10 -translate-y-1/2 flex items-center pointer-events-none">
+                      <img
+                        src={memberSearch}
+                        alt="avatar"
+                        className="w-6 h-6 rounded-full object-cover"
+                      />
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Description */}
