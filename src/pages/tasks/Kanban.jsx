@@ -110,10 +110,9 @@ const taskColumns = [
   {
     id: "return_for_fixes",
      title: (
-      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
         <span className="flex items-center gap-1">
-          
-          Return for Fixes
+          Return for Fixes 
         </span>
       </Permission>
     ),
@@ -123,7 +122,7 @@ const taskColumns = [
   {
     id: "dropped",
      title: (
-      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
         <span className="flex items-center gap-1">
       
           Dropped
@@ -136,7 +135,7 @@ const taskColumns = [
   {
     id: "approved",
      title: (
-    <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+    <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
       <span className="flex items-center gap-1">
        
         Approved
@@ -1175,7 +1174,7 @@ const Card = ({
       {
         key: "edit",
         label: (
-          <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+          <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
             <span
               onClick={(e) => {
                 e.stopPropagation();
@@ -1212,7 +1211,7 @@ const Card = ({
       {
         key: "delete",
         label: (
-          <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+          <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
             <span
               onClick={(e) => {
                 e.stopPropagation();
