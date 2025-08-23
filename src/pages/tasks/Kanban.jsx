@@ -109,11 +109,9 @@ const taskColumns = [
   },
   {
     id: "return_for_fixes",
-     title: (
-      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
-        <span className="flex items-center gap-1">
-          Return for Fixes 
-        </span>
+    title: (
+      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+        <span className="flex items-center gap-1">Return for Fixes</span>
       </Permission>
     ),
     color: "bg-[#E2C7A9]",
@@ -121,12 +119,9 @@ const taskColumns = [
   },
   {
     id: "dropped",
-     title: (
-      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
-        <span className="flex items-center gap-1">
-      
-          Dropped
-        </span>
+    title: (
+      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+        <span className="flex items-center gap-1">Dropped</span>
       </Permission>
     ),
     color: "bg-[#FFDADA]",
@@ -134,14 +129,11 @@ const taskColumns = [
   },
   {
     id: "approved",
-     title: (
-    <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
-      <span className="flex items-center gap-1">
-       
-        Approved
-      </span>
-    </Permission>
-  ),
+    title: (
+      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+        <span className="flex items-center gap-1">Approved</span>
+      </Permission>
+    ),
     color: "bg-[#C2FFCF]",
     icon: <img src={approved} alt="" />,
   },
@@ -151,7 +143,7 @@ const Board = ({ cards, setCards }) => {
   // const [hasChecked, setHasChecked] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
-  
+
   const handleEdit = (card) => {
     setSelectedCard(card);
     setEditModalVisible(true);
@@ -247,7 +239,7 @@ const Column = ({
   showHeader = true,
 }) => {
   const [active, setActive] = useState(false);
-  
+
   const handleDragStart = (e, card) => {
     e.dataTransfer.setData("cardId", card.id);
   };
@@ -412,6 +404,7 @@ const Card = ({
   setCards,
 }) => {
   const [hovered, setHovered] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
@@ -430,9 +423,9 @@ const Card = ({
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const { user, loading: authLoading } = useAuth();
-    const [dataLoading, setDataLoading] = useState(true);
-    // Yuklash holatini birlashtirish
-    const isLoading = authLoading || dataLoading;
+  const [dataLoading, setDataLoading] = useState(true);
+  // Yuklash holatini birlashtirish
+  const isLoading = authLoading || dataLoading;
   // ✅ TUZATISH: Progress va total_count uchun alohida state'lar
   const [cardProgress, setCardProgress] = useState(0);
   const [cardTotalCount, setCardTotalCount] = useState(0);
@@ -878,6 +871,7 @@ const Card = ({
   // Modal handlers
   // ✅ Modal ochilganda task ma'lumotlarini yuklash
   const openViewModal = async () => {
+    setDropdownOpen(false); // ✅ Dropdown ni yopish
     setIsModalOpen(true);
     setLoading(true);
 
@@ -1045,6 +1039,7 @@ const Card = ({
   };
 
   const handleEditCard = async () => {
+    setDropdownOpen(false); // ✅ Dropdown ni yopish
     setLoading(true);
     try {
       const response = await getTaskById(id);
@@ -1060,9 +1055,9 @@ const Card = ({
 
   const handleUpdateCard = (updatedCard) => {
     console.log("Updated card received:", updatedCard);
-    
+
     setIsEditModalOpen(false);
-    
+
     // ✅ MUHIM: Progress state'larini yangilash
     if (updatedCard.progress !== undefined) {
       setCardProgress(updatedCard.progress);
@@ -1073,7 +1068,7 @@ const Card = ({
     if (updatedCard.comment_count !== undefined) {
       setCommentsCount(updatedCard.comment_count);
     }
-    
+
     // Cards listini yangilash
     setCards((prev) =>
       prev.map((card) =>
@@ -1168,73 +1163,83 @@ const Card = ({
       >
         {/* New 3 point button */}
         <div className="absolute top-2 right-1">
-      <Dropdown
-  menu={{
-    items: [
-      {
-        key: "edit",
-        label: (
-          <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
-            <span
-              onClick={(e) => {
-                e.stopPropagation();
-                handleEditCard();
-              }}
-            >
-              Edit
-            </span>
-          </Permission>
-        ),
-      },
-      {
-        key: "detail",
-        label: (
-          <span
-            onClick={(e) => {
-              e.stopPropagation();
-              openViewModal();
+          <Dropdown
+           open={dropdownOpen} // ✅ Controlled dropdown
+           onOpenChange={setDropdownOpen} // ✅ State bilan boshqarish
+            menu={{
+              items: [
+                {
+                  key: "edit",
+                  label: (
+                    <Permission
+                      anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}
+                    >
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditCard();
+                        }}
+                      >
+                        Edit
+                      </span>
+                    </Permission>
+                  ),
+                },
+                {
+                  key: "detail",
+                  label: (
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openViewModal();
+                      }}
+                    >
+                      Detail
+                    </span>
+                  ),
+                },
+                {
+                  key: "move_to",
+                  label: "Move to",
+                  children: taskColumns.map((col) => ({
+                    key: col.id,
+                    label: col.title,
+                    onClick: () => handleMoveToColumn(col.id),
+                  })),
+                },
+                {
+                  key: "delete",
+                  label: (
+                    <Permission
+                      anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}
+                    >
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          showDeleteModal();
+                        }}
+                      >
+                        Delete
+                      </span>
+                    </Permission>
+                  ),
+                },
+              ],
             }}
+            trigger={["click"]}
+             // ✅ Z-index ni modal dan past qilish
+             overlayStyle={{ zIndex: 999 }}
           >
-            Detail
-          </span>
-        ),
-      },
-      {
-        key: "move_to",
-        label: "Move to",
-        children: taskColumns.map((col) => ({
-          key: col.id,
-          label: col.title,
-          onClick: () => handleMoveToColumn(col.id),
-        })),
-      },
-      {
-        key: "delete",
-        label: (
-          <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
-            <span
+            <button
               onClick={(e) => {
                 e.stopPropagation();
-                showDeleteModal();
+                setDropdownOpen(!dropdownOpen);
               }}
+              className="p-1 rounded hover:bg-gray-200 cursor-pointer"
             >
-              Delete
-            </span>
-          </Permission>
-        ),
-      },
-    ],
-  }}
-  trigger={["click"]}
->
-  <button
-    onClick={(e) => e.stopPropagation()}
-    className="p-1 rounded hover:bg-gray-200 cursor-pointer"
-  >
-    <MoreVertical className="size-4" />
-  </button>
-</Dropdown>
-
+              <MoreVertical className="size-4" />
+            </button>
+          </Dropdown>
 
           {/* Delete Confirmation Modal */}
           <Modal
@@ -1774,17 +1779,16 @@ const AddCard = ({ column, setCards }) => {
       </div>
     </motion.form>
   ) : (
-      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
-    <motion.button
-      layout
-      onClick={() => setAdding(true)}
-      className="flex w-full items-center gap-1.5 p-2 text-xs text-black font-bold hover:bg-white hover:rounded-lg cursor-pointer"
-    >
-    
-      <FiPlus />
-      <span>Add a card</span>  
-    </motion.button>
-     </Permission>
+    <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+      <motion.button
+        layout
+        onClick={() => setAdding(true)}
+        className="flex w-full items-center gap-1.5 p-2 text-xs text-black font-bold hover:bg-white hover:rounded-lg cursor-pointer"
+      >
+        <FiPlus />
+        <span>Add a card</span>
+      </motion.button>
+    </Permission>
   );
 
   // tugashi.
@@ -2244,26 +2248,26 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       // ✅ MUHIM: Yangilangan task ma'lumotlarini qayta yuklash
       const updatedTaskResponse = await getTaskById(cardData.id);
       message.success("Task muvaffaqiyatli yangilandi!");
-          // ✅ TUZATISH: To'g'ri formatda ma'lumot yuborish
-    const updatedCardData = {
-      id: cardData.id,
-      title: updatedTaskResponse.data.name,
-      name: updatedTaskResponse.data.name,
-      time: updatedTaskResponse.data.deadline,
-      description: updatedTaskResponse.data.description,
-      column: updatedTaskResponse.data.tasks_type,
-      tasks_type: updatedTaskResponse.data.tasks_type,
-      assigned: updatedTaskResponse.data.assigned,
-      task_image: updatedTaskResponse.data.task_image,
-      // ✅ MUHIM: Progress ma'lumotlarini qo'shish
-      progress: updatedTaskResponse.data.progress || 0,
-      total_count: updatedTaskResponse.data.total_count || 0,
-      comment_count: updatedTaskResponse.data.comment_count || 0,
-      files: [...uploadedFiles, ...newUploadedFiles],
-    };
+      // ✅ TUZATISH: To'g'ri formatda ma'lumot yuborish
+      const updatedCardData = {
+        id: cardData.id,
+        title: updatedTaskResponse.data.name,
+        name: updatedTaskResponse.data.name,
+        time: updatedTaskResponse.data.deadline,
+        description: updatedTaskResponse.data.description,
+        column: updatedTaskResponse.data.tasks_type,
+        tasks_type: updatedTaskResponse.data.tasks_type,
+        assigned: updatedTaskResponse.data.assigned,
+        task_image: updatedTaskResponse.data.task_image,
+        // ✅ MUHIM: Progress ma'lumotlarini qo'shish
+        progress: updatedTaskResponse.data.progress || 0,
+        total_count: updatedTaskResponse.data.total_count || 0,
+        comment_count: updatedTaskResponse.data.comment_count || 0,
+        files: [...uploadedFiles, ...newUploadedFiles],
+      };
 
-    onUpdate(updatedCardData);
-    onClose();
+      onUpdate(updatedCardData);
+      onClose();
     } catch (error) {
       console.error("❌ Task yangilashda xatolik:", error);
 
