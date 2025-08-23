@@ -17,6 +17,7 @@ import memberSearch from "../../assets/icons/memberSearch.svg";
 import {
   createTask,
   getProjectTaskById,
+  updateProjectUsers,
   getProjectUsers,
 } from "../../api/services/taskService";
 import { getProjectById } from "../../api/services/projectService";
@@ -175,16 +176,19 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
         message.error("Please log in to access users");
         return;
       }
-
+  
       const response = await getProjectUsers(projectId);
-
-      const userOptions = response.data.map(user => ({
-        label: user.name || user.username || `${user.first_name} ${user.last_name}`.trim() || "Unknown User",
-        value: user.id || user.user_id,
+  
+      // ✅ Yangi data structure: response.users arrayini ishlatamiz
+      const users = response.users || response.data?.users || [];
+      
+      const userOptions = users.map(user => ({
+        label: `${user.first_name} ${user.last_name}`.trim() || user.email || "Unknown User",
+        value: user.id,
         avatar: user.avatar || user.profile_picture,
         email: user.email
       }));
-
+  
       setAssignees(userOptions);
     } catch (error) {
       console.error("Error fetching project users:", error);
