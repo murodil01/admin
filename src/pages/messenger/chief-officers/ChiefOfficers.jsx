@@ -102,9 +102,7 @@ const ChiefOfficers = () => {
 
 // Reusable Officer card
 const OfficerCard = ({ officer, professionsData }) => {
-  // officer.profession ga mos ma'lumotlarni olish
   const getProfessionInfo = () => {
-    // Agar officer.profession mavjud va professionsData da bor bo'lsa
     if (officer.profession && professionsData[officer.profession]) {
       return professionsData[officer.profession];
     }
@@ -125,25 +123,23 @@ const OfficerCard = ({ officer, professionsData }) => {
           src={officer.profile_picture || "https://via.placeholder.com/150"}
           alt={officer.full_name || "Officer"}
           className="w-28 h-28 rounded-full object-cover mb-3 border-2 border-gray-200"
-        />      
-
-        {/* Original profession kodi */}
+        />
         <p className="text-sm text-gray-500 h-5 overflow-hidden">
-          {officer.profession ? `${officer.profession}` : "Chief Officer"}
+          {officer.profession ? `(${officer.profession})` : "Chief Officer"}
         </p>
-          <p className="text-lg font-bold h-6 overflow-hidden">
+        
+        <p className="text-lg font-bold h-6 overflow-hidden">
           {professionInfo.title}
         </p>
       </div>
 
       <div className="mt-5">
-        <p className="font-semibold truncate">Name : {officer.full_name || "Unknown"}</p>
+        <p className="font-semibold truncate"> Name:{officer.full_name || "Unknown"}</p>
         <p className="text-gray-600 text-sm">
           Phone: {officer.phone_number || "Not provided"}
         </p>
       </div>
 
-      {/* professionsData dan olingan description */}
       <div className="text-sm text-gray-700 mt-3">
         {professionInfo.description}
       </div>
