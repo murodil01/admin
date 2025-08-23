@@ -15,6 +15,12 @@ import {
 } from "../../api/services/projectService";
 import { getUsers } from "../../api/services/userService";
 import { useSidebar } from "../../context";
+import { Permission } from "../../components/Permissions";
+import { useAuth } from "../../hooks/useAuth";
+import { ROLES } from "../../components/constants/roles";
+
+// ✅ Import o'rniga assets papkasidan import qiling
+import allDepartmentsIcon from '/M2.png'; // TUZATILDI: to'g'ri yo'l
 
 const Projects = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -30,7 +36,10 @@ const Projects = () => {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [deadline, setDeadline] = useState("");
 
-  // ✅ Avval search state
+  const { user, loading: authLoading } = useAuth(); 
+  const [dataLoading, setDataLoading] = useState(true);
+  const isLoading = authLoading || dataLoading;
+
   const [searchTerm, setSearchTerm] = useState('');
 
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -44,6 +53,7 @@ const Projects = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [allDepartmentsSelected, setAllDepartmentsSelected] = useState(false);
+  const [totalDepartmentsCount, setTotalDepartmentsCount] = useState(0);
 
   const [deptModalFilteredUsers, setDeptModalFilteredUsers] = useState([]);
 
@@ -67,11 +77,29 @@ const Projects = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const justifyClass =
-    collapsed && !isSmallScreen ? "justify-start" : "justify-start";
+  // const justifyClass =
+  //   collapsed && !isSmallScreen ? "justify-start" : "justify-start";
 
   const [loading, setLoading] = useState(true);
-  // Users uchun state'lar
+  
+  useEffect(() => {
+    loadProjects();
+    loadUsers();
+  }, []);
+  
+  // useEffect(() => {
+  //   const fetchDepartmentsCount = async () => {
+  //     try {
+  //       const response = await getDepartments(); 
+  //       setTotalDepartmentsCount(response.length);
+  //     } catch (error) {
+  //       console.error("Error fetching departments count:", error);
+  //     }
+  //   };
+    
+  //   fetchDepartmentsCount();
+  // }, []);
+ 
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -92,8 +120,6 @@ const Projects = () => {
     }
   };
 
-  // Department modal ichidagi userlarni filter qilish
-  // YANGI KOD (yuqoridagi o'rniga qo'ying):
   useEffect(() => {
     if (selectedDepartments.length > 0 && allUsers.length > 0) {
       if (selectedDepartments.includes("none")) {
@@ -101,7 +127,6 @@ const Projects = () => {
         return;
       }
 
-      // ✅ "All" tanlanganda hamma userlar
       if (selectedDepartments.includes("all")) {
         setDeptModalFilteredUsers(allUsers);
         return;
@@ -118,7 +143,6 @@ const Projects = () => {
     }
   }, [selectedDepartments, allUsers]);
 
-
   useEffect(() => {
     if (selectedDepartments.length > 0 && allUsers.length > 0) {
       if (selectedDepartments.includes("none")) {
@@ -126,7 +150,6 @@ const Projects = () => {
         return;
       }
 
-      // ✅ Agar "all" tanlangan bo'lsa - hamma userlarni ko'rsatish
       if (selectedDepartments.includes("all")) {
         setFilteredUsers(allUsers);
         return;
@@ -142,23 +165,21 @@ const Projects = () => {
       setFilteredUsers([]);
     }
   }, [selectedDepartments, allUsers]);
+
   const handleSelectAllUsers = () => {
     if (deptModalFilteredUsers.length > 0) {
       const allFilteredUserIds = deptModalFilteredUsers.map(user => user.id);
       const allSelected = allFilteredUserIds.every(id => selectedUsers.includes(id));
 
       if (allSelected) {
-        // Deselect all filtered users
         setSelectedUsers(prev => prev.filter(id => !allFilteredUserIds.includes(id)));
       } else {
-        // Select all filtered users
         setSelectedUsers(prev => [...new Set([...prev, ...allFilteredUserIds])]);
       }
     }
   };
-  // ✅ Edit modal'da assigned userlarni ko'r satish uchun useEffect qo'shing
+
   useEffect(() => {
-    // Edit modal ochilganda, mavjud assigned userlarni filteredUsers ga qo'shish
     if (modalType === "edit" && selectedTask?.assigned && allUsers.length > 0) {
       const currentAssignedUsers = selectedTask.assigned
         .map((user) =>
@@ -166,16 +187,12 @@ const Projects = () => {
         )
         .filter(Boolean);
 
-      // Agar assigned userlar boshqa departmentdan bo'lsa, ularni ham ko'rsatish
       const currentFilteredUsers = [...filteredUsers];
       currentAssignedUsers.forEach((user) => {
         if (!currentFilteredUsers.find((u) => u.id === user.id)) {
           currentFilteredUsers.push(user);
         }
       });
-
-      // Bu yerda filteredUsers ni yangilamaslik kerak, chunki u department bo'yicha filtrlanadi
-      // Lekin assigned userlarni alohida track qilish kerak
     }
   }, [modalType, selectedTask, allUsers, filteredUsers]);
 
@@ -206,17 +223,15 @@ const Projects = () => {
 
   const handleAddClose = () => {
     setIsAddModalOpen(false);
-    // Form ni tozalash
     setTaskName("");
     setDescription("");
-    setDeadline(""); // ✅ Bo'sh qilish
+    setDeadline("");
     setSelectedDepartments([]);
     setSelectedUsers([]);
     setImageFile(null);
     setSelectedImage(null);
   };
 
-  // ✅ handleActionOpen funksiyasini yangilang
   const handleActionOpen = (task, type) => {
     setSelectedTask(task);
     setModalType(type);
@@ -228,13 +243,12 @@ const Projects = () => {
       setDescription(task.description || "");
       setSelectedImage(task.image || null);
 
-      // ✅ Deadline mavjud bo'lsa, uni set qilish
       if (task.deadline) {
         const deadlineDate = new Date(task.deadline);
-        const formattedDeadline = deadlineDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+        const formattedDeadline = deadlineDate.toISOString().split('T')[0];
         setDeadline(formattedDeadline);
       } else {
-        setDeadline(""); // Agar deadline yo'q bo'lsa bo'sh qoldirish
+        setDeadline("");
       }
 
       const deptIds = task.departments?.map(dept => dept.id) || [];
@@ -249,10 +263,9 @@ const Projects = () => {
     setIsActionModalOpen(false);
     setSelectedTask(null);
     setModalType(null);
-    // Edit mode dan chiqayotganda formni tozalash
     setTaskName("");
     setDescription("");
-    setDeadline(""); // ✅ Bo'sh qilish
+    setDeadline("");
     setSelectedDepartments([]);
     setSelectedUsers([]);
     setImageFile(null);
@@ -275,9 +288,6 @@ const Projects = () => {
     );
   };
 
-
-
-  // ✅ Edit modal'da tanlangan userlarni ko'rsatish uchun component qo'shing
   const renderAssignedUsers = () => {
     if (modalType !== "edit" || !selectedTask?.assigned) return null;
 
@@ -325,7 +335,6 @@ const Projects = () => {
                         ...selectedTask,
                         assigned: newAssigned,
                       });
-                      // selectedUsers dan ham olib tashlash
                       setSelectedUsers((prev) =>
                         prev.filter((id) => id !== userObj.id)
                       );
@@ -363,7 +372,6 @@ const Projects = () => {
         formData.append("deadline", deadline);
       }
 
-      // ✅ YANGILANGAN MANTIQ: "All" tugmasi bosilgan YOKI barcha departmentlar qo'lda tanlangan
       const isAllDepartmentsSelected = selectedDepartments.includes("all") ||
         (selectedDepartments.length === allDepartments.length && !selectedDepartments.includes("none"));
 
@@ -416,7 +424,6 @@ const Projects = () => {
         formData.append("deadline", deadline);
       }
 
-      // ✅ YANGILANGAN MANTIQ: "All" tugmasi bosilgan YOKI barcha departmentlar qo'lda tanlangan
       const isAllDepartmentsSelected = selectedDepartments.includes("all") ||
         (selectedDepartments.length === allDepartments.length && !selectedDepartments.includes("none"));
 
@@ -603,10 +610,8 @@ const Projects = () => {
                 </div>
               </div>
 
-              {/* ✅ Currently Assigned Users */}
               {renderAssignedUsers()}
 
-              {/* Users ro'yxati - faqat departmentlar tanlanganida ko'rsatiladi */}
               {selectedDepartments.length > 0 && filteredUsers.length > 0 && (
                 <div>
                   <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
@@ -658,7 +663,7 @@ const Projects = () => {
                   value={deadline}
                   onChange={(e) => setDeadline(e.target.value)}
                   className="mt-1 w-full h-[50px] border border-gray-300 rounded-[14px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  min={new Date().toISOString().split("T")[0]} // Bugungi kundan oldingi sanalarni taqiqlash
+                  min={new Date().toISOString().split("T")[0]}
                 />
               </div>
               {/* Description */}
@@ -706,25 +711,34 @@ const Projects = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-3 w-full">
+            <div className="grid grid-cols-3 w-full gap-4">
               <p className="text-gray-400 font-medium">Department</p>
-              <div className="w-21 h-10">
-                <div className="flex gap-1 w-full  col-span-2">
-                  {selectedTask.departments?.map((dept) => (
-                    <div key={dept.id} className=" w-full  flex flex-col items-center">
-                      {dept.photo ? (
-                        <img
-                          src={dept.photo}
-                          alt={`Department ${dept.id}`}
-                          className=" w-14 h-10 border border-blue-300 rounded-full object-cover hover:opacity-80 transition cursor-pointer"
-                        />
-                      ) : (
-                        <div className="bg-gray-200 rounded-full flex items-center justify-center">
-                          <span className="text-xs">D</span>
-                        </div>
-                      )}
-                    </div>
-                  )) || "-"}
+              <div className="col-span-2">
+                <div className="flex flex-wrap gap-2">
+                  {selectedTask.departments?.length > 0 ? (
+                    selectedTask.departments.map((dept) => (
+                      <div 
+                        key={dept.id} 
+                        className="flex items-center justify-center flex-shrink-0"
+                      >
+                        {dept.photo ? (
+                          <img
+                            src={dept.photo}
+                            alt={`Department ${dept.name || dept.id}`}
+                            className="w-8 h-8 border-2 border-blue-300 rounded-full object-cover hover:opacity-80 transition cursor-pointer shadow-sm"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 bg-gray-200 border-2 border-gray-300 rounded-full flex items-center justify-center shadow-sm">
+                            <span className="text-xs font-medium text-gray-600">
+                              {dept.name ? dept.name.charAt(0).toUpperCase() : 'D'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-gray-500">-</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -801,8 +815,6 @@ const Projects = () => {
     switch (modalType) {
       case "edit":
         return "Edit Task";
-      // case "info":
-      //   return "Task Details";
       case "delete":
         return "Delete Task";
       default:
@@ -868,15 +880,16 @@ const Projects = () => {
         <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
           Project
         </h3>
-        <button
+        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+           <button
           onClick={handleAddOpen}
           className="capitalize w-full sm:max-w-[172px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
         >
           <span className="text-[22px]">+</span>
           <span>Add Project</span>
         </button>
+       </Permission>
       </div>
-
       {/* Tasks Grid - Responsive Grid Layout */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2">
         {projects.map((project) => (
@@ -904,7 +917,6 @@ const Projects = () => {
                 <span className="text-gray-500 text-sm">No Image</span>
               </button>
             )}
-
             <button
               onClick={() => navigate(`/tasks/${project.id}`)}
               className="flex items-center gap-1 mb-2 cursor-pointer w-full"
@@ -916,114 +928,99 @@ const Projects = () => {
                 <div
                   className="h-full bg-blue-500 rounded"
                   style={{ width: `${project?.progress}%` }}
+                  
                 ></div>
               </div>
-            </button>
-
+              
+            </button> 
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1 flex-1 min-w-0">
-                <div className="flex items-center relative w-12 h-5 flex-shrink-0">
-                  {project?.assigned?.length > 0 ? (
-                    <div className="flex items-center">
-                      {(() => {
-                        // Check if all users from any department are completely selected
-                        const findDepartmentWithAllUsersSelected = () => {
-                          if (!project.departments?.length || !allUsers.length) return null;
-
-                          // Check each department in the project
-                          for (const dept of project.departments) {
-                            // Get all users in this department
-                            const deptUsers = allUsers.filter(
-                              user => user.department?.id === dept.id
-                            );
-
-                            // Check if all users in this department are assigned to the project
-                            const allDeptUsersAssigned = deptUsers.length > 0 &&
-                              deptUsers.every(
-                                user => project.assigned.some(
-                                  assignedUser => (assignedUser.id || assignedUser) === user.id
-                                )
-                              );
-
-                            if (allDeptUsersAssigned) {
-                              return dept; // Return the department where all users are selected
-                            }
-                          }
-
-                          return null; // No department has all users selected
-                        };
-
-                        // If all users from any department are selected, show department image
-                        const departmentWithAllUsers = findDepartmentWithAllUsersSelected();
-                        if (departmentWithAllUsers) {
-                          return (
-                            <img
-                              src={departmentWithAllUsers.photo || "/default-dept.png"}
-                              alt={`Department ${departmentWithAllUsers.name}`}
-                              className="w-[24px] h-[24px] rounded-full border-2 border-white shadow-sm object-cover"
-                            />
-                          );
-                        }
-
-                        // Fallback for is_all_departments
-                        if (project.is_all_departments) {
-                          return (
-                            <img
-                              src="/M.png"
-                              alt="All departments project"
-                              className="w-[24px] h-[24px] rounded-full border-2 border-white shadow-sm"
-                            />
-                          );
-                        }
-
-                        // Default: Show up to 2 user avatars + badge for additional users
-                        return (
-                          <>
-                            {project.assigned.slice(0, 2).map((user, index) => {
-                              const userObj = typeof user === "object" ? user : allUsers.find((u) => u.id === user);
-                              return userObj ? (
-                                <div
-                                  key={userObj.id || index}
-                                  className="relative"
-                                  style={{ marginLeft: index > 0 ? "-8px" : "0" }}
-                                >
-                                  {userObj.profile_picture ? (
-                                    <img
-                                      src={userObj.profile_picture}
-                                      alt={`${userObj.first_name} ${userObj.last_name}`}
-                                      className="w-[24px] h-[24px] rounded-full border-2 border-white shadow-sm object-cover"
-                                    />
-                                  ) : (
-                                    <div className="bg-gray-300 rounded-full flex items-center justify-center w-[24px] h-[24px] border-2 border-white shadow-sm">
-                                      <span className="text-xs font-medium">
-                                        {userObj.first_name?.[0] || "U"}
-                                      </span>
-                                    </div>
-                                  )}
-                                </div>
-                              ) : null;
-                            })}
-                            {project.assigned.length >= 3 && (
-                              <div
-                                className="relative"
-                                style={{ marginLeft: "-8px" }}
-                              >
-                                <div className="w-[24px] h-[24px] bg-blue-500 rounded-full flex items-center justify-center border-2 border-white shadow-sm text-white text-xs font-medium">
-                                  +{project.assigned.length - 2}
+                <div className="flex items-center relative w-auto h-8 flex-shrink-0">                   
+            {project.departments?.length > 0 ? (
+                      <div className="flex items-center">
+                        {(() => {
+                          // 🔥 ASOSIY O'ZGARISH: is_all_departments maydonini tekshirish
+                          const isAllDepartments = project.is_all_departments || 
+                            (allDepartments.length > 0 && project.departments.length >= allDepartments.length);
+                          
+                          if (isAllDepartments) {
+                            // Barcha departmentlar tanlangan bo'lsa, faqat M ikonkasini ko'rsatish
+                            return (
+                              <div className="flex items-center">
+                                <div className="relative w-[25px] flex items-center">
+                                  <img
+                                    src={allDepartmentsIcon} 
+                                    alt="All Departments"
+                                    className="w-7 h-7 border-2 border-white rounded-full object-cover hover:opacity-80 transition cursor-pointer shadow-sm"
+                                    onError={(e) => {
+                                      // Agar allDepartmentsIcon topilmasa, fallback div yaratish
+                                      const fallbackDiv = document.createElement('div');
+                                      fallbackDiv.className = 'w-7 h-7 border-2 border-white rounded-full bg-blue-500 flex items-center justify-center shadow-sm';
+                                      fallbackDiv.innerHTML = '<span class="text-xs font-bold text-white">M</span>';
+                                      e.target.parentNode.replaceChild(fallbackDiv, e.target);
+                                    }}
+                                  />
                                 </div>
                               </div>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </div>
-                  ) : (
-                    <span className="text-gray-400 text-xs">No users</span>
-                  )}
+                            );
+                          } else {
+                            // Faqat ba'zi departmentlar tanlangan bo'lsa, ularni alohida ko'rsatish
+                            const totalDepts = project.departments.length;
+                            const maxVisible = 2;
+                            const visibleDepts = project.departments.slice(0, maxVisible);
+                            const remainingCount = totalDepts - maxVisible;
+                            
+                            return (
+                              <div className="flex items-center w-auto">
+                                {visibleDepts.map((dept, index) => (
+                                  <div
+                                    key={dept.id}
+                                    className="relative w-[25px] flex items-center"
+                                    style={{
+                                      marginLeft: index > 0 ? '-8px' : '0',
+                                      zIndex: maxVisible - index
+                                    }}
+                                  >
+                                    {dept.photo ? (
+                                      <img
+                                        src={dept.photo}
+                                        alt={`Department ${dept.name || dept.id}`}
+                                        className="w-7 h-7 border-2 border-white rounded-full object-cover hover:opacity-80 transition cursor-pointer shadow-sm"
+                                      />
+                                    ) : (
+                                      <div className="w-7 h-7 bg-gray-200 border-2 border-white rounded-full flex items-center justify-center shadow-sm">
+                                        <span className="text-xs font-medium">
+                                          {dept.name ? dept.name.charAt(0).toUpperCase() : 'D'}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                                {remainingCount > 0 && (
+                                  <div
+                                    className="relative flex items-center bg-blue-100 border-2 border-white rounded-full w-7 h-7 shadow-sm"
+                                    style={{
+                                      marginLeft: '-8px',
+                                      zIndex: 0
+                                    }}
+                                  >
+                                    <span className="text-xs font-medium text-blue-600 w-full text-center">
+                                      +{remainingCount}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+                        })()}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 text-xs">-</span>
+                    )}
                 </div>
                 <button
                   onClick={() => navigate(`/tasks/${project.id}`)}
-                  className="font-bold text-lg cursor-pointer truncate flex-1 text-left"
+                  className="font-bold ml-3 text-lg cursor-pointer truncate flex-1 text-left"
                   title={project.name}
                 >
                   {project.name}
@@ -1096,12 +1093,10 @@ const Projects = () => {
                 type="text"
                 value={taskName}
                 onChange={(e) => setTaskName(e.target.value)}
-                // placeholder="M Tech"
                 className="mt-1 w-full h-[50px] border border-gray-300 rounded-[14px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
-            {/* Image */}
             {/* Image */}
             <div>
               <label className="block text-[14px] font-bold text-[#7D8592]">
@@ -1258,11 +1253,11 @@ const Projects = () => {
         open={isDeptModalOpen}
         onCancel={() => {
           setIsDeptModalOpen(false);
-          setSearchTerm(""); // Modal yopilganda qidiruvni tozalash
+          setSearchTerm("");
         }}
         onOk={() => {
           setIsDeptModalOpen(false);
-          setSearchTerm(""); // Modal yopilganda qidiruvni tozalash
+          setSearchTerm("");
         }}
         okText="Done"
         className="custom-modal"
@@ -1274,7 +1269,7 @@ const Projects = () => {
             <div className="flex justify-between items-center mb-3">
               <h4 className="text-lg font-semibold">Select Departments</h4>
             </div>
-            <DepartmentsSelector
+            <DepartmentsSelector 
               selectedIds={selectedDepartments}
               onChange={(ids) => setSelectedDepartments(ids)}
               onDataLoaded={(data) => setAllDepartments(data)}
@@ -1292,7 +1287,6 @@ const Projects = () => {
                       <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search className="w-5 h-5 text-[#0A1629]" />
                       </span>
-
                       {/* Input */}
                       <input
                         type="text"
