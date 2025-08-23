@@ -76,12 +76,8 @@ const DepartmentCard = React.memo(({ user }) => {
         {user.name || "Unknown department"}
       </h3>
       
-      <p className="text-xs sm:text-sm text-gray-500 break-words mt-1">
-        {user.description || "No description available"}
-      </p>
-      
       <p className="mt-3 text-xs sm:text-sm text-gray-600 leading-relaxed line-clamp-4 sm:line-clamp-none max-w-[300px] mx-auto">
-        {user.additionalInfo || "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla ac erat at dui viverra dapibus."}
+        {user.description || "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla ac erat at dui viverra dapibus."}
       </p>
 
       <div className="w-full flex justify-center mt-4">
