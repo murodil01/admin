@@ -40,7 +40,7 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
       .catch((err) => {
         console.error("Failed to fetch departments:", err);
       })
-      .finally(() => setLoading());
+      .finally(() => setLoading(false)); // TUZATILDI: false parametri qo'shildi
   }, [selectedIds]);
 
   const toggleDepartment = (id) => {
@@ -86,11 +86,10 @@ const renderAvatar = (dept) => {
     return (
       <div className={`${baseClasses} ${isSelected ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
         <img 
-          src="/public/M.png" 
+          src="/M2.png"  // TUZATILDI: /public/ qo'shimcha qismi olib tashlandi
           alt="All Departments" 
           className="w-8 h-8 rounded-full object-cover"
           onError={(e) => {
-            // ✅ Yaxshiroq fallback yechim
             e.target.style.display = 'none';
             const fallbackSpan = document.createElement('span');
             fallbackSpan.className = `text-sm font-bold ${isSelected ? 'text-white' : 'text-gray-600'}`;

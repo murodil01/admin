@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { message } from "antd";
-import { MoreVertical, Paperclip, Search } from "lucide-react";
+import { Archive, ArchiveIcon, ArchiveRestore, MoreVertical, Paperclip, Search } from "lucide-react";
 import { Modal, Input, Dropdown } from "antd";
 import pencil from "../../assets/icons/pencil.svg";
 import info from "../../assets/icons/info.svg";
@@ -472,41 +472,54 @@ const Projects = () => {
     }
   };
 
-  const dropdownItems = (task) => [
-    {
-      key: "edit",
-      label: (
+ const dropdownItems = (task) => [
+  {
+    key: "edit",
+    label: (
+      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
         <button
           onClick={() => handleActionOpen(task, "edit")}
           className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer"
         >
           <img src={pencil} alt="" /> <span>Edit</span>
         </button>
-      ),
-    },
-    {
-      key: "info",
-      label: (
-        <button
-          onClick={() => handleActionOpen(task, "info")}
-          className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer"
-        >
-          <img src={info} alt="" /> <span>Info</span>
-        </button>
-      ),
-    },
-    {
-      key: "delete",
-      label: (
+      </Permission>
+    ),
+  },
+  {
+    key: "info",
+    label: (
+      <button
+        onClick={() => handleActionOpen(task, "info")}
+        className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer"
+      >
+        <img src={info} alt="" /> <span>Info</span>
+      </button>
+    ),
+  },
+  {
+    key: "Arxiv",
+    label: (
+      <button className=" flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer">
+       <ArchiveRestore  className=" size-4" /> <span>Arxiv</span>
+      </button>
+    ),
+  },
+  {
+    key: "delete",
+    label: (
+      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
         <button
           onClick={() => handleActionOpen(task, "delete")}
           className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer"
         >
           <img src={trash} alt="" /> <span>Delete</span>
         </button>
-      ),
-    },
-  ];
+      </Permission>
+    ),
+  },
+];
+
 
   const formatDate2 = (dateStr) => {
     if (!dateStr) return "N/A";
@@ -936,87 +949,88 @@ const Projects = () => {
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1 flex-1 min-w-0">
                 <div className="flex items-center relative w-auto h-8 flex-shrink-0">                   
-            {project.departments?.length > 0 ? (
-                      <div className="flex items-center">
-                        {(() => {
-                          // 🔥 ASOSIY O'ZGARISH: is_all_departments maydonini tekshirish
-                          const isAllDepartments = project.is_all_departments || 
-                            (allDepartments.length > 0 && project.departments.length >= allDepartments.length);
-                          
-                          if (isAllDepartments) {
-                            // Barcha departmentlar tanlangan bo'lsa, faqat M ikonkasini ko'rsatish
-                            return (
-                              <div className="flex items-center">
-                                <div className="relative w-[25px] flex items-center">
-                                  <img
-                                    src={allDepartmentsIcon} 
-                                    alt="All Departments"
-                                    className="w-7 h-7 border-2 border-white rounded-full object-cover hover:opacity-80 transition cursor-pointer shadow-sm"
-                                    onError={(e) => {
-                                      // Agar allDepartmentsIcon topilmasa, fallback div yaratish
-                                      const fallbackDiv = document.createElement('div');
-                                      fallbackDiv.className = 'w-7 h-7 border-2 border-white rounded-full bg-blue-500 flex items-center justify-center shadow-sm';
-                                      fallbackDiv.innerHTML = '<span class="text-xs font-bold text-white">M</span>';
-                                      e.target.parentNode.replaceChild(fallbackDiv, e.target);
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            );
-                          } else {
-                            // Faqat ba'zi departmentlar tanlangan bo'lsa, ularni alohida ko'rsatish
-                            const totalDepts = project.departments.length;
-                            const maxVisible = 2;
-                            const visibleDepts = project.departments.slice(0, maxVisible);
-                            const remainingCount = totalDepts - maxVisible;
-                            
-                            return (
-                              <div className="flex items-center w-auto">
-                                {visibleDepts.map((dept, index) => (
-                                  <div
-                                    key={dept.id}
-                                    className="relative w-[25px] flex items-center"
-                                    style={{
-                                      marginLeft: index > 0 ? '-8px' : '0',
-                                      zIndex: maxVisible - index
-                                    }}
-                                  >
-                                    {dept.photo ? (
-                                      <img
-                                        src={dept.photo}
-                                        alt={`Department ${dept.name || dept.id}`}
-                                        className="w-7 h-7 border-2 border-white rounded-full object-cover hover:opacity-80 transition cursor-pointer shadow-sm"
-                                      />
-                                    ) : (
-                                      <div className="w-7 h-7 bg-gray-200 border-2 border-white rounded-full flex items-center justify-center shadow-sm">
-                                        <span className="text-xs font-medium">
-                                          {dept.name ? dept.name.charAt(0).toUpperCase() : 'D'}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                                {remainingCount > 0 && (
-                                  <div
-                                    className="relative flex items-center bg-blue-100 border-2 border-white rounded-full w-7 h-7 shadow-sm"
-                                    style={{
-                                      marginLeft: '-8px',
-                                      zIndex: 0
-                                    }}
-                                  >
-                                    <span className="text-xs font-medium text-blue-600 w-full text-center">
-                                      +{remainingCount}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          }
-                        })()}
-                      </div>
-                    ) : (
-                      <span className="text-gray-400 text-xs">-</span>
-                    )}
+          
+
+{project.departments?.length > 0 ? (
+  <div className="flex items-center">
+    {(() => {
+      const totalDepts = project.departments.length;
+      
+      // ASOSIY MANTIQ: Agar project'dagi departmentlar soni umumiy departmentlar soniga teng bo'lsa
+      const isAllDepartments = allDepartments.length > 0 && totalDepts >= allDepartments.length;
+      
+      if (isAllDepartments) {
+        // Barcha departmentlar tanlangan - M ikonkasini ko'rsatish
+        return (
+          <div className="flex items-center">
+            <div className="relative w-[25px] flex items-center">
+              <img
+                src="/public/M2.png" 
+                alt="All Departments"
+                className="w-7 h-7 border-2 border-white rounded-full object-cover hover:opacity-80 transition cursor-pointer shadow-sm"
+                onError={(e) => {
+                  const fallbackDiv = document.createElement('div');
+                  fallbackDiv.className = 'w-7 h-7 border-2 border-white rounded-full bg-blue-500 flex items-center justify-center shadow-sm';
+                  fallbackDiv.innerHTML = '<span class="text-xs font-bold text-white">M</span>';
+                  e.target.parentNode.replaceChild(fallbackDiv, e.target);
+                }}
+              />
+            </div>
+          </div>
+        );
+      } else {
+        // Ba'zi departmentlar tanlangan - alohida ko'rsatish
+        const maxVisible = 2;
+        const visibleDepts = project.departments.slice(0, maxVisible);
+        const remainingCount = totalDepts - maxVisible;
+        
+        return (
+          <div className="flex items-center w-auto">
+            {visibleDepts.map((dept, index) => (
+              <div
+                key={dept.id}
+                className="relative w-[25px] flex items-center"
+                style={{
+                  marginLeft: index > 0 ? '-8px' : '0',
+                  zIndex: maxVisible - index
+                }}
+              >
+                {dept.photo ? (
+                  <img
+                    src={dept.photo}
+                    alt={`Department ${dept.name || dept.id}`}
+                    className="w-7 h-7 border-2 border-white rounded-full object-cover hover:opacity-80 transition cursor-pointer shadow-sm"
+                  />
+                ) : (
+                  <div className="w-7 h-7 bg-gray-200 border-2 border-white rounded-full flex items-center justify-center shadow-sm">
+                    <span className="text-xs font-medium">
+                      {dept.name ? dept.name.charAt(0).toUpperCase() : 'D'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+            {remainingCount > 0 && (
+              <div
+                className="relative flex items-center bg-blue-100 border-2 border-white rounded-full w-7 h-7 shadow-sm"
+                style={{
+                  marginLeft: '-8px',
+                  zIndex: 0
+                }}
+              >
+                <span className="text-xs font-medium text-blue-600 w-full text-center">
+                  +{remainingCount}
+                </span>
+              </div>
+            )}
+          </div>
+        );
+      }
+    })()}
+  </div>
+) : (
+  <span className="text-gray-400 text-xs">-</span>
+)}
                 </div>
                 <button
                   onClick={() => navigate(`/tasks/${project.id}`)}
@@ -1110,7 +1124,6 @@ const Projects = () => {
                 className="hidden"
                 id="imageInput"
               />
-
               <label
                 htmlFor="imageInput"
                 className="mt-1 h-[50px] flex items-center justify-between w-full border border-gray-300 rounded-[14px] px-3 py-2 cursor-pointer hover:border-blue-500 transition"
@@ -1280,9 +1293,9 @@ const Projects = () => {
           {selectedDepartments.length > 0 &&
             deptModalFilteredUsers.length > 0 && (
               <div>
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-3">
-                  <div className="w-full sm:w-[80%] flex">
-                    <div className="relative w-full max-w-md bg-white rounded-xl border border-gray-300 sm:border-0 flex items-center">
+                <div className=" flex flex-col sm:flex-row  sm:items-center  mb-3">
+                  <div className="  flex-2/5 flex">
+                    <div className="relative  w-full max-w-md bg-white rounded-xl border border-gray-300 sm:border-0 flex items-center">
                       {/* Search icon */}
                       <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search className="w-5 h-5 text-[#0A1629]" />
@@ -1293,7 +1306,7 @@ const Projects = () => {
                         placeholder="Search..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="flex-1 py-[7px] bg-[#F2F2F2] pr-4 pl-10 rounded-md text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 py-[7px]   bg-gray-100 pr-4 pl-10 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       {searchTerm && (
                         <button
@@ -1307,21 +1320,16 @@ const Projects = () => {
                       )}
                     </div>
                   </div>
-                  <h4 className="text-lg font-semibold hidden sm:block">
-                    {searchTerm && (
-                      <span className="mr-1 text-[14px]">
-
-                      </span>
-                    )}
-                  </h4>
                   <button
                     onClick={handleSelectAllUsers}
-                    className="h-[38px] px-4 cursor-pointer flex items-center justify-center rounded-xl text-white bg-[#1677FF] whitespace-nowrap"
+                    className="h-[39px]   flex-1 px-9 cursor-pointer flex items-center justify-center rounded-xl text-white bg-[#1677FF] whitespace-nowrap"
                   >
                     {deptModalFilteredUsers.every(user => selectedUsers.includes(user.id))
                       ? "Deselect All Users"
                       : "Select All Users"}
                   </button>
+                  
+                  
 
                 </div>
                 <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-[14px] p-4">
@@ -1388,6 +1396,7 @@ const Projects = () => {
       </Modal>
 
       {/* Action Modal (Edit / Info / Delete) */}
+      
       <Modal
         open={isActionModalOpen}
         onCancel={handleActionClose}
