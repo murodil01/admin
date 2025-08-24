@@ -1164,8 +1164,8 @@ const Card = ({
         {/* New 3 point button */}
         <div className="absolute top-2 right-1">
           <Dropdown
-           open={dropdownOpen} // ✅ Controlled dropdown
-           onOpenChange={setDropdownOpen} // ✅ State bilan boshqarish
+            open={dropdownOpen} // ✅ Controlled dropdown
+            onOpenChange={setDropdownOpen} // ✅ State bilan boshqarish
             menu={{
               items: [
                 {
@@ -1227,8 +1227,8 @@ const Card = ({
               ],
             }}
             trigger={["click"]}
-             // ✅ Z-index ni modal dan past qilish
-             overlayStyle={{ zIndex: 999 }}
+            // ✅ Z-index ni modal dan past qilish
+            overlayStyle={{ zIndex: 999 }}
           >
             <button
               onClick={(e) => {
@@ -2190,7 +2190,10 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       formData.append("name", title.trim());
       formData.append("description", description.trim() || "");
       formData.append("tasks_type", type);
-      formData.append("deadline", date ? date.format("YYYY-MM-DD") : "");
+      // formData.append("deadline", date ? date.format("YYYY-MM-DD") : "");
+      if (date) {
+        formData.append("deadline", date.format("YYYY-MM-DD"));
+      }
       formData.append("project", projectId);
       formData.append("is_active", notification === "On");
 
@@ -2434,6 +2437,11 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                     style={{ borderRadius: "14px", height: "54px" }}
                     value={date}
                     onChange={(date) => setDate(date)}
+                    disabledDate={(current) => {
+                      // O'tgan sanalarni disable qilish
+                      return current && current < dayjs().startOf("day");
+                    }}
+                    // placeholder="Select deadline"
                   />
                 </div>
 
