@@ -17,7 +17,7 @@ export const createTask = (formData) => {
 export const updateTask = (id, data) => {
   // Agar data FormData bo'lsa, multipart/form-data ishlatamiz
   if (data instanceof FormData) {
-    return api.put(endpoints.tasks.update(id), data, {
+    return api.patch(endpoints.tasks.update(id), data, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
