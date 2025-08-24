@@ -483,39 +483,84 @@ const Card = ({
     }
   };
 
-  const getAssigneeName = (assignee) => {
-    if (!assignee) return "Not assigned";
+  // const getAssigneeName = (assignee) => {
+  //   if (!assignee) return "Not assigned";
 
-    // Agar projectUsers massiv bo'lmasa yoki bo'sh bo'lsa
-    if (!Array.isArray(projectUsers) || projectUsers.length === 0) {
-      if (typeof assignee === "object") {
-        if (assignee.first_name && assignee.last_name) {
-          return `${assignee.first_name} ${assignee.last_name}`;
-        }
-        if (assignee.name) {
-          return assignee.name;
-        }
-      }
-      return "Unknown";
-    }
+  //   // Agar projectUsers massiv bo'lmasa yoki bo'sh bo'lsa
+  //   if (!Array.isArray(projectUsers) || projectUsers.length === 0) {
+  //     if (typeof assignee === "object") {
+  //       if (assignee.first_name && assignee.last_name) {
+  //         return `${assignee.first_name} ${assignee.last_name}`;
+  //       }
+  //       if (assignee.name) {
+  //         return assignee.name;
+  //       }
+  //     }
+  //     return "Unknown";
+  //   }
 
-    // Agar assignee object bo'lsa
-    if (typeof assignee === "object") {
-      if (assignee.first_name && assignee.last_name) {
-        return `${assignee.first_name} ${assignee.last_name}`;
-      }
-      if (assignee.name) {
-        return assignee.name;
-      }
-      return "Unknown";
-    }
+  //   // Agar assignee object bo'lsa
+  //   if (typeof assignee === "object") {
+  //     if (assignee.first_name && assignee.last_name) {
+  //       return `${assignee.first_name} ${assignee.last_name}`;
+  //     }
+  //     if (assignee.name) {
+  //       return assignee.name;
+  //     }
+  //     return "Unknown";
+  //   }
 
-    // Agar assignee ID bo'lsa
-    const user = projectUsers.find((u) => u.id === assignee);
-    return user ? `${user.first_name} ${user.last_name}` : "Unknown";
-  };
+  //   // Agar assignee ID bo'lsa
+  //   const user = projectUsers.find((u) => u.id === assignee);
+  //   return user ? `${user.first_name} ${user.last_name}` : "Unknown";
+  // };
 
   // getCurrentUser function
+
+  const getAssigneeInfo = (assignee) => {
+    if (!assignee)
+      return { name: "Not assigned", avatar: null, initials: "NA" };
+
+    let assigneeData = null;
+
+    // projectUsers dan qidirish
+    if (Array.isArray(projectUsers) && projectUsers.length > 0) {
+      if (typeof assignee === "number" || typeof assignee === "string") {
+        assigneeData = projectUsers.find((user) => user.id == assignee);
+      } else if (typeof assignee === "object") {
+        assigneeData = assignee;
+      }
+    } else if (typeof assignee === "object") {
+      assigneeData = assignee;
+    }
+
+    if (!assigneeData) return { name: "Unknown", avatar: null, initials: "U" };
+
+    // Ma'lumotlarni formatlash
+    let name = "Unknown";
+    let initials = "U";
+
+    if (assigneeData.first_name && assigneeData.last_name) {
+      name = `${assigneeData.first_name} ${assigneeData.last_name}`;
+      initials =
+        `${assigneeData.first_name[0]}${assigneeData.last_name[0]}`.toUpperCase();
+    } else if (assigneeData.name) {
+      name = assigneeData.name;
+      const nameParts = name.split(" ");
+      initials = nameParts
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase()
+        .substring(0, 2);
+    }
+
+    return {
+      name,
+      avatar: assigneeData.profile_picture || assigneeData.avatar,
+      initials,
+      email: assigneeData.email,
+    };
+  };
   const getCurrentUser = () => {
     console.log("🔍 Checking user storage...");
 
@@ -1286,6 +1331,7 @@ const Card = ({
             top: 30, // px qiymati, modal yuqoriga yaqinlashadi
           }}
           footer={[
+            <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
             <Button
               key="edit"
               onClick={() => {
@@ -1301,7 +1347,8 @@ const Card = ({
             >
               <span className="text-gray-500">Edit</span>{" "}
               <img src={pencil} className="w-[14px]" alt="pencil" />
-            </Button>,
+            </Button>
+            </Permission>,
             <Button
               key="gotit"
               type="primary"
@@ -1544,7 +1591,7 @@ const Card = ({
               <div className="md:col-span-4 space-y-4 text-sm">
                 <div>
                   <p className="text-gray-400">Assignee by</p>
-                  <div className="flex items-center gap-2 mt-1">
+                  {/* <div className="flex items-center gap-2 mt-1">
                     <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
                       👤
                     </div>
@@ -1571,6 +1618,51 @@ const Card = ({
                         return getAssigneeName(assignee);
                       })()}
                     </span>
+                  </div> */}
+                  <div className="flex items-center gap-2 mt-1">
+                    {(() => {
+                      const assignee =
+                        selectedAssignee ||
+                        taskData?.assignee ||
+                        taskData?.assigned_to ||
+                        taskData?.assigned?.[0];
+                      const assigneeInfo = getAssigneeInfo(assignee);
+
+                      return (
+                        <div className="flex items-center gap-3">
+                          {/* Avatar */}
+                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center">
+                            {assigneeInfo.avatar ? (
+                              <img
+                                src={assigneeInfo.avatar}
+                                alt={assigneeInfo.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.style.display = "none";
+                                  e.target.parentNode.innerHTML = `<span class="text-xs font-semibold text-white bg-blue-500 w-full h-full flex items-center justify-center">${assigneeInfo.initials}</span>`;
+                                }}
+                              />
+                            ) : (
+                              <span className="text-xs font-semibold text-gray-600">
+                                {assigneeInfo.initials}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Info */}
+                          <div>
+                            <span className="font-medium text-gray-900">
+                              {assigneeInfo.name}
+                            </span>
+                            {/* {assigneeInfo.email && (
+                              <p className="text-xs text-gray-500">
+                                {assigneeInfo.email}
+                              </p>
+                            )} */}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 

@@ -122,9 +122,9 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
       } catch (error) {
         console.error("Error fetching tags:", error);
         if (error.message.includes("Authentication")) {
-          message.error("Session expired. Please log in again.");
+          console.error("Session expired. Please log in again.");
         } else {
-          message.error("Failed to load tags");
+          console.error("Failed to load tags");
         }
         // Set empty array as fallback
         setTagOptions([]);
@@ -153,11 +153,11 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
       .catch((err) => {
         console.error("Error fetching tasks:", err);
         if (err.response?.status === 401) {
-          message.error("Session expired. Please log in again.");
+          console.error("Session expired. Please log in again.");
         } 
-        // else {
-        //   message.error("Failed to fetch tasks");
-        // }
+        else {
+          console.error("Failed to fetch tasks");
+        }
       });
   }, [projectId]);
 
@@ -370,9 +370,9 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
     }
     
     if (error.response?.status === 401) {
-      message.error("Session expired. Please log in again.");
+      console.error("Session expired. Please log in again.");
     } else {
-      message.error(error.response?.data?.message || "Failed to create task");
+      console.error(error.response?.data?.message || "Failed to create task");
     }
   }
 };
