@@ -136,9 +136,21 @@ const Profiles = () => {
       setLoading(true);
       setSaveMessage("");
 
+      // Convert PINFL to integer if it exists and is not empty
+      const pinflValue = formData.pinfl && formData.pinfl.trim() !== ''
+        ? parseInt(formData.pinfl, 10)
+        : null;
+
+      // Validate PINFL is a valid number if provided
+      if (formData.pinfl && formData.pinfl.trim() !== '' && isNaN(pinflValue)) {
+        message.error("PINFL must be a valid number");
+        return;
+      }
+
       // ✅ Ensure user_id is always included in formData
       const dataToSave = {
         ...formData,
+        pinfl: pinflValue, // Use the converted integer value
         user_id: employeeIdString // Always include user_id
       };
 
@@ -205,7 +217,7 @@ const Profiles = () => {
           assigned_devices: '',
           access_level: '',
           serial_number: '',
-          pinfl: '',
+          pinfl: null,
           passport_picture: null,
           passport_picture_url: null,
           passport_file_name: null,
@@ -254,7 +266,7 @@ const Profiles = () => {
               assigned_devices: employeeData.assigned_devices || '',
               access_level: employeeData.access_level || '',
               serial_number: employeeData.serial_number || '',
-              pinfl: employeeData.pinfl ? String(employeeData.pinfl) : '',
+              pinfl: employeeData.pinfl || '',
               passport_picture: employeeData.passport_picture || null,
               passport_picture_url: employeeData.passport_picture || null,
               passport_file_name: employeeData.passport_file_name || null,
@@ -420,7 +432,7 @@ const Profiles = () => {
                   <input
                     type="text"
                     value={formData.pinfl || ""}
-                    onChange={(e) => handleChange("PINFL", e.target.value)}
+                    onChange={(e) => handleChange("PINFL", e.target.value.replace(/\D/g, ''))}
                     placeholder="45245875495734"
                     className="px-4 border border-[#D8E0F0] h-[48px] rounded-[14px] w-full"
                   />
@@ -533,7 +545,7 @@ const Profiles = () => {
                       assigned_devices: '',
                       access_level: '',
                       serial_number: '',
-                      pinfl: '',
+                      pinfl: null,
                       passport_picture: null,
                       passport_picture_url: null,
                       passport_file_name: null,

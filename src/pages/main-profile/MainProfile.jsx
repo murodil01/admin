@@ -495,9 +495,9 @@ const MainProfile = () => {
                   <label className="block text-sm text-gray-500 mb-1">Password</label>
 
                   {isEditing ? (
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-4">
                       {/* Current Password - only show when changing password */}
-                      {changePassword && (
+                      {/* {changePassword && (
                         <div className="relative">
                           <input
                             type={showCurrentPassword ? "text" : "password"}
@@ -513,16 +513,15 @@ const MainProfile = () => {
                             {showCurrentPassword ? <EyeTwoTone /> : <EyeInvisibleOutlined />}
                           </span>
                         </div>
-                      )}
+                      )} */}
 
                       {/* New Password */}
                       {changePassword ? (
                         <>
                           <div className="relative">
-                            <label className="block text-sm text-gray-500 mb-1">New Password</label>
                             <input
                               type={showNewPassword ? "text" : "password"}
-                              value={""}
+                              value={user.password || ""}
                               onChange={(e) => handleInputChange("password", e.target.value)}
                               className="w-full border p-3 border-gray-300 rounded-lg bg-gray-50"
                               placeholder="Enter your new password"
@@ -537,7 +536,7 @@ const MainProfile = () => {
 
                           {/* Confirm Password */}
                           <div className="relative">
-                            <label className="block text-sm text-gray-500 mb-1">Confirm Password</label>
+                            <label className="block text-sm text-gray-500 mb-1">Confirm password</label>
                             <input
                               type={showConfirmPassword ? "text" : "password"}
                               value={user.password1 || ""}
