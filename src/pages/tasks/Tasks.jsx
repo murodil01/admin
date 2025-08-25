@@ -1098,12 +1098,7 @@ const Projects = () => {
         cancelText="none"
               style={{
               padding: "10px",
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              maxHeight: "100vh",   
-              overflowY: "auto",   
+              top:0,  
             }}
         footer={[
           <button
@@ -1437,8 +1432,7 @@ const Projects = () => {
         title={getModalTitle()}
         footer={getModalFooter()}
         className="custom-modal"
-        style={modalType === "edit" ? { top: 0 } : {}}
-      >
+        style={modalType === "edit" ? { top: 0 } : {}}>
         {renderModalContent()}
       </Modal>
     </div>
