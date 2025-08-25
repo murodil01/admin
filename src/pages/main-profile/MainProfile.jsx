@@ -598,6 +598,8 @@ const MainProfile = () => {
             </div>
           </div>
         </div>
+        <div>
+        </div>
         {/* Save / Cancel buttons */}
         {isEditing && (
           <div className="flex justify-end gap-3">
