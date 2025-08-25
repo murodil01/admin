@@ -1742,8 +1742,8 @@ const Card = ({
                     </div>
                   </div>
                 </div>
-                {/* Delete Comment Confirmation Modal */}
-                <Modal
+                  {/* Delete Comment Confirmation Modal */}
+           <Modal
                   title="Delete Comment"
                   open={deleteCommentModalOpen}
                   onOk={handleConfirmDeleteComment}
