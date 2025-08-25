@@ -109,21 +109,23 @@ body {
 
 /* Modal contentga radius berish */
 .custom-modal .ant-modal-content {
-  border-radius: 16px !important;
-  width: 62%;
-  height:210px;
-  margin:0 auto;
- 
-}
-
-.delete-modal .ant-modal-content {
-  border-radius: 10px !important;
+  border-radius: 24px !important;
+  padding: 40px 24px;
   margin: 0;
 }
 
-.custom-modal{
-  padding:10px;
+.delete-modal .ant-modal-content {
+  border-radius: 14px !important;
+  margin: 0;
 }
+
+.custom-modal {
+  padding: 10px;
+
+}
+
+
+
 
 @media (max-width: 768px) {
   .custom-modal .ant-modal-content {

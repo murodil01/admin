@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { message } from "antd";
-import { Archive, ArchiveIcon, ArchiveRestore, ArrowBigDown, LucideFolderArchive, MoreVertical, Paperclip, Search } from "lucide-react";
+import { Archive, MoreVertical, Paperclip, Search } from "lucide-react";
 import { Modal, Input, Dropdown } from "antd";
 import pencil from "../../assets/icons/pencil.svg";
 import info from "../../assets/icons/info.svg";
@@ -13,6 +13,7 @@ import {
   updateProject,
   deleteProject,
 } from "../../api/services/projectService";
+import { FaArchive } from "react-icons/fa";
 import { getUsers } from "../../api/services/userService";
 import { useSidebar } from "../../context";
 import { Permission } from "../../components/Permissions";
@@ -502,7 +503,7 @@ const Projects = () => {
     label: (
        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
       <button className=" flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer">
-       <LucideFolderArchive  className=" text-black size-4" /> <span>Archive</span>
+       <FaArchive  className=" text-black"/> <span>Archive</span>
       </button>
       </Permission>
     ),
@@ -587,13 +588,30 @@ const Projects = () => {
                 >
                   Change image
                 </label>
-
                 {selectedImage && (
-                  <img
+                  <>
+                  <div className="flex items-baseline  gap-2">
+                   <img
                     src={selectedImage}
                     alt="Selected"
                     className="mt-2 w-20 h-20 object-cover rounded"
+                    
                   />
+                    <div className="mt-2">
+                      <button
+                        className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-md"
+                        onClick={() => {
+                          setImageFile(null);
+                          setSelectedImage(null);
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                     </div>
+                  </>
+                 
+                 
                 )}
               </div>
 
@@ -810,7 +828,7 @@ const Projects = () => {
 
       case "delete":
         return (
-          <div className="py-5">
+          <div className="p-1">
             <p className="text-sm text-center text-gray-600">
               Are you sure you want to delete "
               <strong>{selectedTask.name}</strong>"?
@@ -844,14 +862,14 @@ const Projects = () => {
           <button
             key="cancel"
             onClick={handleActionClose}
-            className="mr-2 px-4 py-2 border border-gray-300 rounded-[15px] text-gray-700 hover:bg-gray-50"
+            className="mr-2 px-4 py-2 border border-gray-300 cursor-pointer rounded-[15px] text-gray-700 hover:bg-gray-50"
           >
             Cancel
           </button>,
           <button
             key="save"
             onClick={handleEditTask}
-            className="bg-[#0061fe] hover:bg-[#3b77d7] text-white rounded-[15px] px-[20px] py-[12px] text-base font-bold transition"
+            className="bg-[#0061fe] hover:bg-[#3b77d7] text-white rounded-[15px] cursor-pointer px-4 py-2 text-base font-bold transition"
           >
             Save Changes
           </button>,
@@ -889,7 +907,7 @@ const Projects = () => {
   };
 
   return (
-    <div className="">
+    <div className=" pt-5">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
         <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
@@ -1078,11 +1096,20 @@ const Projects = () => {
         onOk={handleAddTask}
         okText="Add Task"
         cancelText="none"
+              style={{
+              padding: "10px",
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              maxHeight: "100vh",   
+              overflowY: "auto",   
+            }}
         footer={[
           <button
             key="submit"
             onClick={handleAddTask}
-            className="bg-[#0061fe] hover:bg-[#3b77d7] text-white rounded-[15px] px-[20px] py-[12px] text-base font-bold transition"
+            className="bg-[#0061fe] hover:bg-[#3b77d7] text-white rounded-[15px] px-[20px] py-[8px] text-base font-bold transition"
           >
             Save Task
           </button>,
@@ -1092,8 +1119,8 @@ const Projects = () => {
             Add Task
           </div>
         }
-        width={550}
-        className="custom-modal"
+        width={500}
+        className="custom-modal "
       >
         <div>
           <div className="space-y-4">
@@ -1239,12 +1266,15 @@ const Projects = () => {
               <label className="block text-[14px] font-bold text-[#7D8592]">
                 Deadline
               </label>
+              <div className="flex items-center relative">
               <input
                 type="date"
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
                 className="mt-1 w-full h-[50px] border border-gray-300 rounded-[14px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              <div className=" absolute right-3"></div>
+              </div>
             </div>
 
             {/* Description */}
@@ -1261,8 +1291,9 @@ const Projects = () => {
             </div>
           </div>
         </div>
+        
       </Modal>
-
+  
       {/* Department tanlash modal - YANGILANGAN */}
       <Modal
         open={isDeptModalOpen}
@@ -1402,10 +1433,11 @@ const Projects = () => {
       <Modal
         open={isActionModalOpen}
         onCancel={handleActionClose}
-        width={modalType === "edit" ? 550 : 814}
+        width={modalType === "edit" ? 550 : 814 && modalType === "delete" ? 480 : 814}
         title={getModalTitle()}
         footer={getModalFooter()}
         className="custom-modal"
+        style={modalType === "edit" ? { top: 0 } : {}}
       >
         {renderModalContent()}
       </Modal>
