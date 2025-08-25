@@ -448,21 +448,21 @@ const Card = ({
     const extension = fileName.split(".").pop()?.toLowerCase();
     switch (extension) {
       case "pdf":
-        return "📄";
+        return <img src="/pdf-icon.png" alt="PDF" className="w-5 h-5" />;
       case "doc":
       case "docx":
-        return "📝";
+        return <img src="/docx_icon.png" alt="Word" className="w-5 h-5" />;
       case "xls":
       case "xlsx":
-        return "📊";
+        return <img src="/excel-icon.png" alt="Excel" className="w-5 h-5" />;
       case "jpg":
       case "jpeg":
       case "png":
       case "gif":
-        return "🖼️";
+        return <img src="/picture-icon.png" alt="Image" className="w-5 h-5" />;
       case "zip":
       case "rar":
-        return "🗜️";
+        return <img src="/zip-icon.png" alt="Archive" className="w-5 h-5" />;
       default:
         return "📄";
     }
@@ -481,18 +481,66 @@ const Card = ({
     return dayjs(date).format("MMM D, YYYY");
   };
 
-  const handleFileDownload = (file) => {
+  // const handleFileDownload = (file) => {
+  //   if (file.file || file.url) {
+  //     const link = document.createElement("a");
+  //     link.href = file.file || file.url;
+  //     link.download = file.original_name || file.file_name || "download";
+  //     document.body.appendChild(link);
+  //     link.click();
+  //     document.body.removeChild(link);
+  //   } else {
+  //     message.warning("File download not available");
+  //   }
+  // };
+
+  // Card komponenti ichida - handleFileDownload funksiyasini yangilash
+const handleFileDownload = async (file) => {
+  try {
+    // Loading state ni ko'rsatish uchun
+    message.loading({ content: 'Downloading file...', key: 'download', duration: 0 });
+    
     if (file.file || file.url) {
-      const link = document.createElement("a");
-      link.href = file.file || file.url;
-      link.download = file.original_name || file.file_name || "download";
+      // File URL mavjud bo'lsa, to'g'ridan-to'g'ri download qilish
+      const fileUrl = file.file || file.url;
+      const fileName = file.original_name || file.file_name || 'download';
+      
+      // Fetch orqali file ni olish va download qilish
+      const response = await fetch(fileUrl);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const blob = await response.blob();
+      
+      // Blob ni download qilish
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName;
+      
+      // Browser compatibility uchun
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      
+      // Memory cleanup
+      window.URL.revokeObjectURL(downloadUrl);
+      
+      message.success({ content: 'File downloaded successfully!', key: 'download' });
     } else {
-      message.warning("File download not available");
+      throw new Error('File URL not available');
     }
-  };
+  } catch (error) {
+    console.error('Download error:', error);
+    message.error({ 
+      content: `Failed to download file: ${error.message}`, 
+      key: 'download' 
+    });
+  }
+};
+
 
   const getAssigneeInfo = (assignee) => {
     if (!assignee)
@@ -1443,69 +1491,151 @@ const Card = ({
                   </div>
                 </div>
 
-                {/* Files */}
-                <div>
-                  <h4 className="font-semibold text-sm mb-3">Files</h4>
+              
+{/* Files */}
+<div>
+  <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
+    <span>📁</span>
+    Files ({files.length})
+  </h4>
 
-                  <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                    <span>📁</span>
-                    Files ({files.length})
-                  </h4>
+  {filesLoading ? (
+    <div className="flex items-center gap-2">
+      <Spin size="small" />
+      <span className="text-sm text-gray-500">
+        Loading files...
+      </span>
+    </div>
+  ) : files.length > 0 ? (
+    <div className="space-y-2">
+      {files.map((file, index) => (
+        <div
+          key={file.id || index}
+          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border hover:bg-gray-100 transition-colors"
+        >
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {/* File type icon */}
+            <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
+              <span className="text-lg">
+                {getFileIcon(file.file_type || file.file_name)}
+              </span>
+            </div>
 
-                  {filesLoading ? (
-                    <div className="flex items-center gap-2">
-                      <Spin size="small" />
-                      <span className="text-sm text-gray-500">
-                        Loading files...
-                      </span>
-                    </div>
-                  ) : files.length > 0 ? (
-                    <div className="space-y-2">
-                      {files.map((file, index) => (
-                        <div
-                          key={file.id || index}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
-                        >
-                          <div className="flex items-center gap-3">
-                            {/* Fayl tipi ikonkasi */}
-                            <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                              {getFileIcon(file.file_type || file.file_name)}
-                            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {file.original_name || file.file_name || "Unnamed file"}
+              </p>
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <span>
+                  {file.file_size ? formatFileSize(file.file_size) : "Size unknown"}
+                </span>
+                <span>•</span>
+                <span>
+                  {file.created_at ? formatDate(file.created_at) : "Date unknown"}
+                </span>
+                {file.uploaded_by && (
+                  <>
+                    <span>•</span>
+                    <span>by {file.uploaded_by}</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
 
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">
-                                {file.original_name ||
-                                  file.file_name ||
-                                  "Unnamed file"}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {file.file_size
-                                  ? formatFileSize(file.file_size)
-                                  : ""}{" "}
-                                •{" "}
-                                {file.created_at
-                                  ? formatDate(file.created_at)
-                                  : "Unknown date"}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Download button */}
-                          <Button
-                            type="text"
-                            icon={<DownloadOutlined />}
-                            onClick={() => handleFileDownload(file)}
-                            className="text-blue-600 hover:text-blue-800"
-                          />
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 ml-3">
+            {/* Preview button (for images) */}
+            {file.file_type?.startsWith('image/') && (
+              <Button
+                type="text"
+                size="small"
+                icon="👁️"
+                onClick={() => {
+                  // Image preview ni modal da ochish
+                  Modal.info({
+                    title: file.original_name || file.file_name,
+                    content: (
+                      <div className="text-center">
+                        <img 
+                          src={file.file || file.url} 
+                          alt="Preview" 
+                          style={{ maxWidth: '100%', maxHeight: '400px' }}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'block';
+                          }}
+                        />
+                        <div style={{ display: 'none' }} className="text-gray-500">
+                          Preview not available
                         </div>
-                      ))}
+                      </div>
+                    ),
+                    width: 600,
+                    okText: 'Close'
+                  });
+                }}
+                className="text-blue-600 hover:text-blue-800"
+                title="Preview image"
+              />
+            )}
+
+            {/* Download button */}
+            <Button
+              type="text"
+              icon={<DownloadOutlined />}
+              onClick={() => handleFileDownload(file)}
+              className="text-blue-600 hover:text-blue-800"
+              size="small"
+              title="Download file"
+            />
+
+            {/* File info button */}
+            <Button
+              type="text"
+              icon="ℹ️"
+              onClick={() => {
+                Modal.info({
+                  title: 'File Information',
+                  content: (
+                    <div className="space-y-2">
+                      <p><strong>Name:</strong> {file.original_name || file.file_name}</p>
+                      <p><strong>Size:</strong> {file.file_size ? formatFileSize(file.file_size) : 'Unknown'}</p>
+                      <p><strong>Type:</strong> {file.file_type || 'Unknown'}</p>
+                      <p><strong>Uploaded:</strong> {file.created_at ? formatDate(file.created_at) : 'Unknown'}</p>
+                      {file.uploaded_by && <p><strong>Uploaded by:</strong> {file.uploaded_by}</p>}
+                      {file.file && <p><strong>URL:</strong> <a href={file.file} target="_blank" rel="noopener noreferrer" className="text-blue-600">{file.file}</a></p>}
                     </div>
-                  ) : (
-                    <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg text-center">
-                      📄 No files attached to this task
-                    </p>
-                  )}
-                </div>
+                  ),
+                  okText: 'Close'
+                });
+              }}
+              size="small"
+              className="text-gray-600 hover:text-gray-800"
+              title="File details"
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+      <div className="text-4xl mb-2">📄</div>
+      <p className="text-sm text-gray-500 mb-2">No files attached to this task</p>
+      <p className="text-xs text-gray-400">Files will appear here when uploaded</p>
+    </div>
+  )}
+  
+  {/* File upload progress */}
+  {filesLoading && (
+    <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+      <div className="flex items-center gap-2">
+        <Spin size="small" />
+        <span className="text-sm text-blue-700">Loading files...</span>
+      </div>
+    </div>
+  )}
+</div>
 
                 {/* Checklist */}
                 <div>
