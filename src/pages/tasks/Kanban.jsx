@@ -112,32 +112,35 @@ const taskColumns = [
   {
     id: "return_for_fixes",
     title: (
-      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+      <Permission allowedRoles={Object.values(ROLES)}>
         <span className="flex items-center gap-1">Return for Fixes</span>
       </Permission>
     ),
     color: "bg-[#E2C7A9]",
     icon: <img src={rework} alt="" />,
+    allowedRoles: Object.values(ROLES),
   },
   {
     id: "dropped",
     title: (
-      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+      <Permission allowedRoles={Object.values(ROLES)}>
         <span className="flex items-center gap-1">Dropped</span>
       </Permission>
     ),
     color: "bg-[#FFDADA]",
     icon: <img src={dropped} alt="" />,
+    allowedRoles: Object.values(ROLES),
   },
   {
     id: "approved",
     title: (
-      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+      <Permission allowedRoles={Object.values(ROLES)}>
         <span className="flex items-center gap-1">Approved</span>
       </Permission>
     ),
     color: "bg-[#C2FFCF]",
     icon: <img src={approved} alt="" />,
+    allowedRoles: Object.values(ROLES),
   },
 ];
 
@@ -163,44 +166,44 @@ const Board = ({ cards, setCards }) => {
   const [activeColumn, setActiveColumn] = useState(taskColumns[0]?.id || null);
 
   return (
-    <div className="flex flex-col w-full">
-      {/* Column selector */}
-      {/* Bu qism faqat mobil uchun, shuning uchun desktopda ko'rinmaydi */}
+     <div className="flex flex-col w-full">
+      {/* Column selector for mobile */}
       <div className="items-start sm:hidden flex gap-2 overflow-x-auto mb-4 p-2 bg-white rounded-lg shadow-sm border border-gray-200">
         {taskColumns.map((col) => (
-          <button
-            key={col.id}
-            onClick={() => setActiveColumn(col.id)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap
-        ${
-          activeColumn === col.id
-            ? "bg-blue-500 text-white shadow-md"
-            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-        }`}
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-lg">{col.icon}</span>
-              <span>{col.title}</span>
-            </div>
-          </button>
+          <Permission key={col.id} allowedRoles={col.allowedRoles || []}>
+            <button
+              onClick={() => setActiveColumn(col.id)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap
+                ${
+                  activeColumn === col.id
+                    ? "bg-blue-500 text-white shadow-md"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{col.icon}</span>
+                <span>{col.title}</span>
+              </div>
+            </button>
+          </Permission>
         ))}
       </div>
 
       {/* Faqat active column */}
       <div className="flex-1 w-full sm:hidden">
-        <Column
-          key={activeColumn}
-          icon={taskColumns.find((c) => c.id === activeColumn)?.icon}
-          title={taskColumns.find((c) => c.id === activeColumn)?.title}
-          column={activeColumn}
-          backgroundColor={
-            taskColumns.find((c) => c.id === activeColumn)?.color
-          }
-          cards={cards.filter((c) => c.column === activeColumn)}
-          setCards={setCards}
-          onEdit={handleEdit}
-          showHeader={false}
-        />
+        <Permission allowedRoles={taskColumns.find((c) => c.id === activeColumn)?.allowedRoles || []}>
+          <Column
+            key={activeColumn}
+            icon={taskColumns.find((c) => c.id === activeColumn)?.icon}
+            title={taskColumns.find((c) => c.id === activeColumn)?.title}
+            column={activeColumn}
+            backgroundColor={taskColumns.find((c) => c.id === activeColumn)?.color}
+            cards={cards.filter((c) => c.column === activeColumn)}
+            setCards={setCards}
+            onEdit={handleEdit}
+            showHeader={false}
+          />
+        </Permission>
       </div>
 
       {/* Edit Modal */}
@@ -211,19 +214,20 @@ const Board = ({ cards, setCards }) => {
         onUpdate={handleSaveEdit}
       />
 
-      {/* Desktop: barcha columnlarni yonma-yon chiqarish */}
+      {/* Desktop: all columns side by side */}
       <div className="hidden sm:flex items-start gap-4 overflow-x-auto pb-4">
         {taskColumns.map((col) => (
-          <Column
-            key={col.id}
-            icon={col.icon}
-            title={col.title}
-            column={col.id}
-            backgroundColor={col.color}
-            cards={cards.filter((c) => c.column === col.id)}
-            setCards={setCards}
-            onEdit={handleEdit}
-          />
+          <Permission key={col.id} allowedRoles={col.allowedRoles || []}>
+            <Column
+              icon={col.icon}
+              title={col.title}
+              column={col.id}
+              backgroundColor={col.color}
+              cards={cards.filter((c) => c.column === col.id)}
+              setCards={setCards}
+              onEdit={handleEdit}
+            />
+          </Permission>
         ))}
       </div>
     </div>
@@ -339,6 +343,7 @@ const Column = ({
     <div
       className={`w-full sm:min-w-[260px] sm:max-w-[270px] rounded-xl p-4 ${backgroundColor} shadow-sm flex flex-col my-1`}
     >
+      
       {showHeader && (
         <div className="border-b border-gray-300 pb-2 mb-3 z-10 flex items-center gap-2">
           <span>{icon}</span>
@@ -368,8 +373,8 @@ const Column = ({
           />
         ))}
         <DropIndicator beforeId="-1" column={column} />
+        
       </div>
-
       {/* Cards list - Mobile */}
       <div
         onDragOver={handleDragOver}
@@ -388,11 +393,13 @@ const Column = ({
             image={c.image}
             setCards={setCards}
           />
+          
         ))}
         <DropIndicator beforeId="-1" column={column} />
       </div>
-    </div>
-  );
+      
+    </div>  
+);
 };
 const Card = ({
   title,
