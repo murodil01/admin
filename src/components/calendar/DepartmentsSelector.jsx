@@ -202,7 +202,7 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
                   className="sr-only"
                 />
                 {renderAvatar(allDepartment)}
-                <span className="text-sm text-gray-700"></span>
+                <span className="text-sm text-gray-700">All</span>
               </label>
             )}
 
@@ -218,7 +218,7 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
                   className="sr-only"
                 />
                 {renderAvatar(noneDepartment)}
-                <span className="text-sm text-gray-700"></span>
+                <span className="text-sm text-gray-700">None</span>
               </label>
             )}
           </div>
