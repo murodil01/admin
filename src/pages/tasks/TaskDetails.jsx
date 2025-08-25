@@ -1,4 +1,3 @@
-///////////////////////////////////////////////////////////////////////////////TaskDetails.jsx
 import { AiOutlinePaperClip } from "react-icons/ai";
 import { useParams, useNavigate } from "react-router-dom";
 import { FiTrash } from "react-icons/fi";
@@ -29,31 +28,6 @@ import { ROLES } from "../../components/constants/roles";
 
 const { TextArea } = Input;
 
-// Add this function to your taskService.js file
-// const getTaskTags = async () => {
-//   const token = localStorage.getItem("token");
-//   if (!token) {
-//     throw new Error("No authentication token found");
-//   }
-
-//   const response = await fetch('https://prototype-production-2b67.up.railway.app/project/tags/', {
-//     method: 'GET',
-//     headers: {
-//       'accept': 'application/json',
-//       'Authorization': `Bearer ${token}`, // Add Bearer token
-//       'Content-Type': 'application/json',
-//     },
-//   });
-
-//   if (!response.ok) {
-//     if (response.status === 401) {
-//       throw new Error("Authentication failed");
-//     }
-//     throw new Error(`HTTP error! status: ${response.status}`);
-//   }
-
-//   return await response.json();
-// };
 
 const TaskDetails = ({ tagOptionsFromApi = [] }) => {
   const { projectId } = useParams();
@@ -71,7 +45,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
   const [files, setFiles] = useState([]);
   const [checklist, setChecklist] = useState([]);
   const [cards, setCards] = useState([]);
-  const [type, setType] = useState("acknowledged");
+  const [type, setType] = useState("assigned");
   const [selectedAssignee, setSelectedAssignee] = useState(null);
   const [assignees, setAssignees] = useState([]);
   const [loadingAssignees, setLoadingAssignees] = useState(false);
@@ -466,7 +440,6 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                   ]}
                 />
               </div>
-
               <Upload
                 className="w-[100%] md:max-w-[250px]"
                 style={{ width: "100%" }}
@@ -521,7 +494,6 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                 </div>
               )}
             </div>
-
             <div className="mb-6">
               <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
                 Description
@@ -642,7 +614,6 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                 </div>
               )}
             </div>
-
             <div className="flex gap-5  flex-row-reverse ">
               <Button
                 onClick={handleSave}

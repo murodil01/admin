@@ -494,40 +494,6 @@ const Card = ({
     }
   };
 
-  // const getAssigneeName = (assignee) => {
-  //   if (!assignee) return "Not assigned";
-
-  //   // Agar projectUsers massiv bo'lmasa yoki bo'sh bo'lsa
-  //   if (!Array.isArray(projectUsers) || projectUsers.length === 0) {
-  //     if (typeof assignee === "object") {
-  //       if (assignee.first_name && assignee.last_name) {
-  //         return `${assignee.first_name} ${assignee.last_name}`;
-  //       }
-  //       if (assignee.name) {
-  //         return assignee.name;
-  //       }
-  //     }
-  //     return "Unknown";
-  //   }
-
-  //   // Agar assignee object bo'lsa
-  //   if (typeof assignee === "object") {
-  //     if (assignee.first_name && assignee.last_name) {
-  //       return `${assignee.first_name} ${assignee.last_name}`;
-  //     }
-  //     if (assignee.name) {
-  //       return assignee.name;
-  //     }
-  //     return "Unknown";
-  //   }
-
-  //   // Agar assignee ID bo'lsa
-  //   const user = projectUsers.find((u) => u.id === assignee);
-  //   return user ? `${user.first_name} ${user.last_name}` : "Unknown";
-  // };
-
-  // getCurrentUser function
-
   const getAssigneeInfo = (assignee) => {
     if (!assignee)
       return { name: "Not assigned", avatar: null, initials: "NA" };
@@ -1771,7 +1737,7 @@ const Card = ({
                           </span>
                         </div>
                         <p className="text-sm text-gray-700 italic">
-                          "{commentToDelete.message || commentToDelete.text}"
+                          "{commentToDelete.message || commentToDelete.text}" 
                         </p>
                       </div>
                     )}
@@ -1783,34 +1749,7 @@ const Card = ({
               <div className="md:col-span-4 space-y-4 text-sm">
                 <div>
                   <p className="text-gray-400">Assignee by</p>
-                  {/* <div className="flex items-center gap-2 mt-1">
-                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-                      👤
-                    </div>
-
-                    <span>
-                      {(() => {
-                        // Debug ma'lumotlari
-                        console.log("Current taskData:", taskData);
-                        console.log(
-                          "Current selectedAssignee:",
-                          selectedAssignee
-                        );
-                        console.log("Current projectUsers:", projectUsers);
-
-                        // Har xil assignee formatlarini tekshirish
-                        const assignee =
-                          selectedAssignee ||
-                          taskData?.assignee ||
-                          taskData?.assigned_to ||
-                          taskData?.assigned?.[0];
-
-                        console.log("Final assignee:", assignee);
-
-                        return getAssigneeName(assignee);
-                      })()}
-                    </span>
-                  </div> */}
+               
                   <div className="flex items-center gap-2 mt-1">
                     {(() => {
                       const assignee =
@@ -1846,11 +1785,6 @@ const Card = ({
                             <span className="font-medium text-gray-900">
                               {assigneeInfo.name}
                             </span>
-                            {/* {assigneeInfo.email && (
-                              <p className="text-xs text-gray-500">
-                                {assigneeInfo.email}
-                              </p>
-                            )} */}
                           </div>
                         </div>
                       );
@@ -1915,7 +1849,7 @@ const Card = ({
         />
 
         {/* Bottom Row */}
-        <div className="flex items-center justify-between text-xs text-gray-500">
+        <div className="flex items-center justify-between text-xs text-gray-500"  onClick={openViewModal}>  
           {/* Deadline faqat time mavjud bo'lsa ko'rinadi */}
           {time && time !== "No due date" && (
             <div className="flex items-center gap-1 bg-gray-100 rounded p-1">
