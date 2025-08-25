@@ -220,14 +220,16 @@ const Profile = () => {
           {
             label: "Mobile Number",
             name: "phone_number",
-            value: employee.phone_number || "",
-            input: true
+            value: employee.phone_number || "+998",
+            input: true,
+            isLink: true
           },
           {
             label: "Telegram username",
             name: "tg_username",
             value: employee.tg_username || "@",
-            input: true
+            input: true,
+            isLink: true
           },
         ],
       },
@@ -237,7 +239,8 @@ const Profile = () => {
             label: "Email",
             name: "email",
             value: employee.email || "",
-            input: true
+            input: true,
+            isLink: true
           },
           {
             label: "Address",
@@ -484,11 +487,32 @@ const Profile = () => {
                             )
                           ) : (
                             <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg md:rounded-xl px-3 md:px-4 py-1 md:py-2 text-xs md:text-[14px] font-normal text-[#7D8592] h-[40px] md:h-[48px] flex items-center">
-                              {item.isSelect ?
-                                (item.name === 'department'
+                              {item.isLink && item.name === "phone_number" && employee.phone_number ? (
+                                <a href={`tel:${employee.phone_number.replace(/\s/g, '')}`} className="hover:underline">
+                                  {employee.phone_number}
+                                </a>
+                              ) : item.isLink && item.name === "email" && employee.email ? (
+                                <a href={`mailto:${employee.email}`} className="hover:underline">
+                                  {employee.email}
+                                </a>
+                              ) : item.isLink && item.name === "tg_username" && employee.tg_username ? (
+                                <a
+                                  href={`https://t.me/${employee.tg_username.replace(/^@/, "")}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="hover:underline"
+                                >
+                                  {employee.tg_username}
+                                </a>
+                              ) : item.name === "status" && employee.status ? (
+                                  employee.status === "on_leave" ? "On Leave" : employee.status
+                              ) : item.isSelect ? (
+                                item.name === 'department'
                                   ? employee.department?.name || `No ${item.label.toLowerCase()} selected`
-                                  : employee[item.name] || `No ${item.label.toLowerCase()} selected`)
-                                : item.value}
+                                  : employee[item.name] || `No ${item.label.toLowerCase()} selected`
+                              ) : (
+                                item.value
+                              )}
                             </div>
                           )
                         ) : (
