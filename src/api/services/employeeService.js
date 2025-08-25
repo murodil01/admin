@@ -1,13 +1,43 @@
 import api from "../base";
 import endpoints from "../endpoint";
 
-export const getEmployees = async (page = 1) => {
+// Updated getEmployees function to handle filters
+export const getEmployees = async (page = 1, filters = null) => {
     try {
-        const res = await api.get(endpoints.employees.getAll, {
-            params: {
-                page_num: page // Backend 'page' parametrini kutayotgan bo'lishi mumkin
+        const params = {
+            page_num: page
+        };
+
+        // Add filter parameters if they exist
+        if (filters) {
+            if (filters.fullName && filters.fullName.trim()) {
+                params.search = filters.fullName.trim(); // or 'full_name' depending on your backend
             }
+
+            if (filters.phoneNumber && filters.phoneNumber.trim()) {
+                params.phone_number = filters.phoneNumber.trim();
+            }
+
+            if (filters.selectedDepartments && filters.selectedDepartments.length > 0) {
+                // Option 1: If backend accepts comma-separated department IDs
+                params.department_ids = filters.selectedDepartments.join(',');
+
+                // Option 2: If backend accepts multiple department_id parameters
+                // You might need to handle this differently based on your backend
+                // For now, using comma-separated approach
+            }
+
+            if (filters.status && filters.status !== '') {
+                params.status = filters.status;
+            }
+        }
+
+        console.log('Fetching employees with params:', params);
+
+        const res = await api.get(endpoints.employees.getAll, {
+            params: params
         });
+
         return res.data;
     } catch (error) {
         console.error('Xodimlarni olishda xato:', error);
