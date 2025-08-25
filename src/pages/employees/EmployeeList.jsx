@@ -114,14 +114,10 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
 
     // Debug function to check employee ID
     const handleNavigateToProfile = (employeeId) => {
-        console.log('Navigating to profile with ID:', employeeId);
-        console.log('Employee data:', emp);
-        console.log('ID type:', typeof employeeId);
-
         // Validate the ID before navigation
         if (!employeeId || employeeId === null || employeeId === undefined) {
-            console.error('Invalid employee ID:', employeeId);
-            alert('Error: Invalid employee ID');
+            console.error('Invalid member ID:', employeeId);
+            alert('Error: Invalid member ID');
             return;
         }
 

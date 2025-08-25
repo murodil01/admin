@@ -1,52 +1,82 @@
 import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, CalendarDays } from "lucide-react";
-import { getUserProjects } from "../../../../api/services/userProjectsService"; // backend API
+import { getUserProjectsById } from "../../../../api/services/userProjectsService";
 
-// ✅ ProjectCard endi prop qabul qiladi
 const ProjectCard = ({ project }) => {
-  return (
-    <div className="shadow bg-white rounded-[24px] p-[24px] flex flex-col md:flex-row items-start md:items-center gap-6 w-full min-h-[150px]">
-      {/* Project Info */}
-      <div className="flex flex-col gap-3 flex-1">
-        <div className="flex items-center gap-4">
-          <img
-            className="rounded-[14px] w-[48px] h-[48px] object-cover"
-            src={project.image || "https://www.10wallpaper.com/wallpaper/1366x768/1703/Green_tree_alone-2017_High_Quality_Wallpaper_1366x768.jpg"}
-            alt={project.title}
-          />
-          <h3 className="text-[#0A1629] font-bold text-[18px]">{project.title}</h3>
-        </div>
-        <div className="text-[#7D8592] text-[14px] font-semibold flex items-center gap-2">
-          <CalendarDays size={16} />
-            Created {new Date(project.createdAt).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric"
-          })}
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    });
+  };
 
-        </div>
+  // Create initials or use default icon colors
+  const getProjectIcon = (name) => {
+    const colors = ['bg-yellow-400', 'bg-purple-500', 'bg-blue-500', 'bg-green-500', 'bg-red-500', 'bg-indigo-500'];
+    const colorIndex = name.length % colors.length;
+    const initials = name.split(' ').map(word => word[0]).join('').substring(0, 2).toUpperCase();
+
+    return (
+      <div className={`w-12 h-12 rounded-lg ${colors[colorIndex]} flex items-center justify-center text-white font-bold text-sm`}>
+        {initials}
       </div>
+    );
+  };
 
-      {/* Divider */}
-      <div className="hidden md:block mx-6 h-[100px] w-[2px] bg-[#E4E6E8]" />
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between">
+        {/* Left Section - Project Info */}
+        <div className="flex items-center gap-4 flex-1">
+          {project.image ? (
+            <img
+              className="w-12 h-12 rounded-lg object-cover"
+              src={project.image}
+              alt={project.name}
+            />
+          ) : (
+            getProjectIcon(project.name)
+          )}
 
-      {/* Project Data */}
-      <div className="flex flex-col gap-3 flex-1">
-        <h3 className="text-[#0A1629] font-bold text-[18px]">Project Data</h3>
-        <div className="flex items-center gap-5 flex-wrap">
-          <div className="flex flex-col gap-1">
-            <p className="text-[#7D8592] text-[14px] font-semibold">All tasks</p>
-            <p className="text-center">{project.allTasks || 0}</p>
+          <div className="flex-1">
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">
+              {project.name}
+            </h3>
+            <div className="flex items-center gap-2 text-gray-500 text-sm">
+              <CalendarDays size={16} />
+              <span>Created {formatDate(project.created_at)}</span>
+            </div>
           </div>
+        </div>
 
-          <div className="flex flex-col gap-1">
-            <p className="text-[#7D8592] text-[14px] font-semibold">Active tasks</p>
-            <p className="text-center">{project.activeTasks || 0}</p>
-          </div>
+        {/* Right Section - Project Data */}
+        <div className="ml-8">
+          <h4 className="text-sm font-semibold text-gray-900 mb-4">Project Data</h4>
 
-          <div className="flex flex-col gap-1">
-            <p className="text-[#7D8592] text-[14px] font-semibold">Dropped</p>
-            <p className="text-center">{project.dropped_count || 0}</p>
+          <div className="flex items-center gap-8">
+            <div className="text-center">
+              <div className="text-sm text-gray-500 mb-1">All tasks</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {project.all_tasks || 0}
+              </div>
+            </div>
+
+            <div className="text-center">
+              <div className="text-sm text-gray-500 mb-1">Active tasks</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {project.active_tasks || 0}
+              </div>
+            </div>
+
+            <div className="text-center">
+              <div className="text-sm text-gray-500 mb-1">Dropped</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {project.dropped_count || 0}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -57,79 +87,140 @@ const ProjectCard = ({ project }) => {
 const Projects = () => {
   const [projects, setProjects] = useState([]);
   const [page, setPage] = useState(1);
-  const itemsPerPage = 2;
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const itemsPerPage = 7;
+  const { id: userId } = useParams(); // Get userId from URL
+  console.log("User id:", userId);
 
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const data = await getUserProjects();
+        setLoading(true);
+        setError(null);
 
-        // data array bo‘lgani uchun to‘g‘ridan-to‘g‘ri flatMap ishlatamiz
-        const formatted = data.flatMap(user =>
-          (user.projects || []).map(p => ({
-            id: p.id,
-            title: p.name,
-            image: p.image,
-            createdAt: p.created_at,
-            allTasks: p.all_tasks,
-            activeTasks: p.active_tasks,
-            dropped_count: p.dropped_count,
-          }))
-        );
+        if (!userId) {
+          throw new Error("User ID is required");
+        }
 
-        setProjects(formatted);
+        // Use your actual API service
+        const userData = await getUserProjectsById(userId);
+
+        if (userData && userData.projects) {
+          setProjects(userData.projects);
+          setTotalCount(userData.projects.length || 0);
+        } else {
+          console.error("Unexpected API response structure:", userData);
+          setProjects([]);
+          setError("Invalid response from server");
+        }
       } catch (error) {
         console.error("Error fetching projects:", error);
+        setError(error.message || "Failed to fetch projects");
+        setProjects([]);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchProjects();
-  }, []);
+    if (userId) {
+      fetchProjects();
+    } else {
+      setError("No user ID provided");
+      setLoading(false);
+    }
+  }, [userId]);
 
-  const totalPages = Math.ceil(projects.length / itemsPerPage);
-  const visibleProjects = projects.slice(
+  // Client-side pagination
+  const paginatedProjects = projects.slice(
     (page - 1) * itemsPerPage,
     page * itemsPerPage
   );
 
-  return (
-    <div className="space-y-6">
-      {visibleProjects.map((project) => (
-        <ProjectCard key={project.id} project={project} />
-      ))}
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
 
-      {/* Pagination */}
-      <div className="flex justify-center md:justify-end mt-4">
-        <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-full text-sm text-[#7D8592] font-medium shadow-sm">
-          <span>
-            {`${(page - 1) * itemsPerPage + 1}–${Math.min(
-              page * itemsPerPage,
-              projects.length
-            )} of ${projects.length}`}
-          </span>
-
-          <button
-            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-            disabled={page === 1}
-            className={`transition-all ${
-              page === 1 ? "text-gray-300 cursor-not-allowed" : "text-[#0061fe]"
-            }`}
-          >
-            <ArrowLeft />
-          </button>
-
-          <button
-            onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-            disabled={page === totalPages}
-            className={`transition-all ${
-              page === totalPages
-                ? "text-gray-300 cursor-not-allowed"
-                : "text-[#0061fe]"
-            }`}
-          >
-            <ArrowRight />
-          </button>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent"></div>
+            <span className="ml-3 text-gray-600">Loading projects...</span>
+          </div>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center py-12">
+            <div className="text-red-500 text-lg font-semibold mb-2">Error</div>
+            <div className="text-gray-600">{error}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-4xl mx-auto space-y-4">
+        {projects.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CalendarDays className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Projects Found</h3>
+            <p className="text-gray-600">This user doesn't have any projects yet.</p>
+          </div>
+        ) : (
+          <>
+            {/* Projects List */}
+            {paginatedProjects.map((project) => (
+              <ProjectCard key={project.id} project={project} />
+            ))}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-end mt-8">
+                <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200">
+                  <span className="text-sm text-gray-600 font-medium">
+                    {`${(page - 1) * itemsPerPage + 1}–${Math.min(
+                      page * itemsPerPage,
+                      totalCount
+                    )} of ${totalCount}`}
+                  </span>
+
+                  <button
+                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={page === 1}
+                    className={`p-2 rounded-full transition-all ${page === 1
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-blue-600 hover:bg-blue-50"
+                      }`}
+                  >
+                    <ArrowLeft size={16} />
+                  </button>
+
+                  <button
+                    onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={page === totalPages}
+                    className={`p-2 rounded-full transition-all ${page === totalPages
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-blue-600 hover:bg-blue-50"
+                      }`}
+                  >
+                    <ArrowRight size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

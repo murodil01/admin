@@ -130,7 +130,7 @@ const endpoints = {
 
   userProjects: {
     getAll: "user-projects/",
-    getById: (id) => `user-projects/${id}/`,
+    getById: (userId) => `user-projects/${userId}/`,
   },
 
   notes: {

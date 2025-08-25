@@ -325,44 +325,42 @@ const MainProfile = () => {
 
             {/* User Info */}
             <div className="flex flex-col gap-2 sm:text-left w-full">
-              <div className="flex items-center gap-2">
-                {/* First Name */}
-                {isEditing ? (
+              {/* First Name */}
+              {isEditing ? (
+                <div className="flex items-center flex-col gap-2 md:flex-row">
                   <input
                     value={user.first_name}
                     onChange={(e) => handleInputChange("first_name", e.target.value)}
                     className="border py-1 rounded-lg border-gray-300 px-2 overflow-none focus:!shadow-none focus:!outline-none placeholder:text-[14px]"
                     placeholder="Please enter your first name"
                   />
-                ) : (
-                  <h2 className="text-[16px] font-bold md:text-[20px]">{user.first_name}</h2>
-                )}
 
-                {/* Last Name */}
-                {isEditing ? (
                   <input
                     value={user.last_name}
                     onChange={(e) => handleInputChange("last_name", e.target.value)}
                     className="border py-1 rounded-lg border-gray-300 px-2 overflow-none focus:!shadow-none focus:!outline-none placeholder:text-[14px]"
                     placeholder="Please enter your last name"
                   />
-                ) : (
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 justify-start">
+                  <h2 className="text-[16px] font-bold md:text-[20px]">{user.first_name}</h2>
                   <h2 className="text-[16px] font-bold md:text-[20px]">{user.last_name}</h2>
-                )}
-              </div>
+                </div>
+              )}
               <span className="text-gray-500 text-xs sm:text-sm">
                 {user.profession || "No profession"}
               </span>
               <div className="flex flex-wrap gap-2">
-                <Tag color="blue" className="rounded-full text-xs sm:text-sm px-2 sm:px-3">
+                <Tag color="blue" className="rounded-full text-xs sm:text-sm px-2 sm:px-3 capitalize">
                   {user.role}
                 </Tag>
                 {user.level && user.level !== "none" && (
-                  <Tag color="purple" className="rounded-full text-xs sm:text-sm px-2 sm:px-3">
+                  <Tag color="purple" className="rounded-full text-xs sm:text-sm px-2 sm:px-3 capitalize">
                     {user.level}
                   </Tag>
                 )}
-                <Tag color="green" className="rounded-full text-xs sm:text-sm px-2 sm:px-3">
+                <Tag color="green" className="rounded-full text-xs sm:text-sm px-2 sm:px-3 capitalize">
                   {user.status}
                 </Tag>
               </div>
@@ -402,7 +400,7 @@ const MainProfile = () => {
                   <label className="block text-sm text-gray-500 mb-1">Phone Number</label>
                   {isEditing ? (
                     <input
-                      value={user.phone_number}
+                      value={user.phone_number || "+998"}
                       onChange={(e) => handleInputChange("phone_number", e.target.value)}
                       className="w-full border p-3 border-gray-300 rounded-lg bg-gray-50"
                       placeholder="Please enter your phone number"
@@ -421,7 +419,7 @@ const MainProfile = () => {
                   <label className="block text-sm text-gray-500 mb-1">Date of birth</label>
                   {isEditing ? (
                     <DatePicker
-                      className="w-full calendar"
+                      className="w-full calendar h-[49.6px]"
                       value={birthday ? dayjs(birthday) : null}
                       onChange={(date, dateString) => setBirthday(dateString)}
                       format="YYYY-MM-DD"
@@ -457,14 +455,14 @@ const MainProfile = () => {
                   <label className="block text-sm text-gray-500 mb-1">Telegram Username</label>
                   {isEditing ? (
                     <input
-                      value={user.tg_username || ""}
+                      value={user.tg_username || "@"}
                       onChange={(e) => handleInputChange("tg_username", e.target.value)}
                       className="w-full border p-3 border-gray-300 rounded-lg bg-gray-50"
                       placeholder="Please enter your telegram username"
                     />
                   ) : (
                     <input
-                      value={user.tg_username ? `@${user.tg_username}` : "Not provided"}
+                      value={user.tg_username ? `${user.tg_username}` : "Not provided"}
                       readOnly
                       className="w-full border p-3 border-gray-300 rounded-lg bg-gray-50"
                     />
@@ -499,7 +497,7 @@ const MainProfile = () => {
                   {isEditing ? (
                     <div className="flex flex-col gap-3">
                       {/* Current Password - only show when changing password */}
-                      {/* {changePassword && (
+                      {changePassword && (
                         <div className="relative">
                           <input
                             type={showCurrentPassword ? "text" : "password"}
@@ -515,15 +513,16 @@ const MainProfile = () => {
                             {showCurrentPassword ? <EyeTwoTone /> : <EyeInvisibleOutlined />}
                           </span>
                         </div>
-                      )} */}
+                      )}
 
                       {/* New Password */}
                       {changePassword ? (
                         <>
                           <div className="relative">
+                            <label className="block text-sm text-gray-500 mb-1">New Password</label>
                             <input
                               type={showNewPassword ? "text" : "password"}
-                              value={user.password || ""}
+                              value={""}
                               onChange={(e) => handleInputChange("password", e.target.value)}
                               className="w-full border p-3 border-gray-300 rounded-lg bg-gray-50"
                               placeholder="Enter your new password"
@@ -538,6 +537,7 @@ const MainProfile = () => {
 
                           {/* Confirm Password */}
                           <div className="relative">
+                            <label className="block text-sm text-gray-500 mb-1">Confirm Password</label>
                             <input
                               type={showConfirmPassword ? "text" : "password"}
                               value={user.password1 || ""}

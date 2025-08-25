@@ -31,6 +31,7 @@ const Notes = () => {
       try {
         const user = await getCurrentUser();
         setCurrentUser(user);
+        console.log('Current user fetched:', user); // Debug log
       } catch (error) {
         console.error('Error fetching current user:', error);
         toast.error("Error fetching user information");
@@ -41,8 +42,6 @@ const Notes = () => {
   }, []);
 
   // Fetch notes for specific user
-  // Fetch notes for specific user
-  // Fetch notes for specific user
   useEffect(() => {
     const fetchNotes = async () => {
       if (!targetUserId) {
@@ -52,8 +51,10 @@ const Notes = () => {
       }
 
       try {
+        console.log('Fetching notes for user:', targetUserId); // Debug log
         // Fetch notes for specific user
         const response = await getUserNotes(targetUserId);
+        console.log('API Response:', response); // Debug log
 
         if (!response || !Array.isArray(response)) {
           setMessages([]);
@@ -61,29 +62,35 @@ const Notes = () => {
         }
 
         // Format messages
-        const formattedMessages = response.map(note => ({
-          id: note.id || Date.now(),
-          text: note.message || 'No content', // Use message field
-          time: note.created_at
-            ? new Date(note.created_at).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit"
-            })
-            : new Date().toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit"
-            }),
-          date: note.created_at
-            ? new Date(note.created_at).toLocaleDateString()
-            : new Date().toLocaleDateString(),
-          user: {
-            id: note.user || note.user_id,
-            email: note.user_email,
-            avatar: note.author_profile_picture
-          },
-          targetUserId: note.recipient // Use recipient field
-        }));
+        const formattedMessages = response.map(note => {
+          console.log('Processing note:', note); // Debug log for each note
+          
+          return {
+            id: note.id || Date.now(),
+            text: note.message || 'No content', // Use message field
+            time: note.created_at
+              ? new Date(note.created_at).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit"
+              })
+              : new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit"
+              }),
+            date: note.created_at
+              ? new Date(note.created_at).toLocaleDateString()
+              : new Date().toLocaleDateString(),
+            user: {
+              id: note.user || note.user_id || note.author_id,
+              email: note.user_email || note.author_email,
+              avatar: note.author_profile_picture || note.profile_picture || '/default-avatar.png', // Fallback avatar
+              author_full_name: note.author_full_name || note.full_name || 'Unknown User',
+            },
+            targetUserId: note.recipient || targetUserId // Use recipient field
+          };
+        });
 
+        console.log('Formatted messages:', formattedMessages); // Debug log
         setMessages(formattedMessages);
       } catch (error) {
         console.error('Error fetching notes:', error);
@@ -226,16 +233,20 @@ const Notes = () => {
           user: {
             id: currentUser?.id,
             email: currentUser?.email,
-            avatar: currentUser?.profile_picture
+            avatar: currentUser?.profile_picture || '/default-avatar.png', // Fallback avatar
+            author_full_name: currentUser?.full_name || 'You',
           },
           targetUserId: targetUserId
         };
+
+        console.log('Adding optimistic note:', newNoteItem); // Debug log
 
         // Optimistically update UI
         setMessages(prev => [newNoteItem, ...prev]);
 
         // Then make the API call
         const newNote = await createNote(input.trim(), targetUserId);
+        console.log('API returned new note:', newNote); // Debug log
 
         if (newNote) {
           // Replace the temporary note with the real one from server
@@ -252,9 +263,10 @@ const Notes = () => {
                   }),
                   date: new Date(newNote.created_at || new Date()).toLocaleDateString(),
                   user: {
-                    id: newNote.user || currentUser?.id,
-                    email: newNote.user_email || currentUser?.email,
-                    avatar: newNote.profile_picture || currentUser?.profile_picture
+                    id: newNote.user || newNote.user_id || currentUser?.id,
+                    email: newNote.user_email || newNote.author_email || currentUser?.email,
+                    avatar: newNote.author_profile_picture || newNote.profile_picture || currentUser?.profile_picture || '/default-avatar.png',
+                    author_full_name: newNote.author_full_name || newNote.full_name || currentUser?.full_name || 'You',
                   },
                   targetUserId: newNote.recipient || targetUserId
                 }
@@ -295,11 +307,6 @@ const Notes = () => {
       setIsSending(false);
     }
   };
-
-  useEffect(() => {
-    console.log('Current user:', currentUser);
-    console.log('Auth token:', localStorage.getItem('authToken'));
-  }, [currentUser]);
 
   const startEditing = (id, text) => {
     setEditingId(id);
@@ -369,17 +376,27 @@ const Notes = () => {
                 )}
 
                 <div className="flex items-start gap-3 mb-4 group relative">
-                  <img
-                    src={msg.user.avatar}
-                    alt="avatar"
-                    className="w-9 h-9 rounded-full border-2 border-white shadow flex-shrink-0"
-                  />
+                  <div className="w-9 h-9 rounded-full border-2 border-white shadow flex-shrink-0 overflow-hidden bg-gray-200">
+                    <img
+                      src={msg.user.avatar}
+                      alt={`${msg.user.author_full_name || 'User'}'s avatar`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback to a default avatar if image fails to load
+                        e.target.src = '/default-avatar.png';
+                        e.target.onerror = null; // Prevent infinite loop
+                      }}
+                      loading="lazy"
+                    />
+                  </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="bg-[#E4EDFB] rounded-xl px-4 py-3 shadow relative">
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-bold text-[14px] text-[#0A1629] mb-1">Note:</p>
+                          <p className="font-bold text-[14px] text-[#0A1629] mb-1">
+                            {msg.user.author_full_name}
+                          </p>
                           <p className="text-[14px] font-semibold text-[#7D8592] whitespace-pre-line break-words">
                             {msg.text}
                           </p>
@@ -404,7 +421,8 @@ const Notes = () => {
                     {openDropdownId === msg.id && (
                       <div
                         data-dropdown-menu
-                        className="absolute right-4 top-8 mt-1 w-[180px] bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden p-1"
+                        className={`absolute right-4 w-[180px] bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden p-1
+      ${index === 0 ? "bottom-8 mb-1" : "top-8 mt-1"}`}
                       >
                         <button
                           onClick={() => {
@@ -429,6 +447,7 @@ const Notes = () => {
                         </button>
                       </div>
                     )}
+
                   </div>
                 </div>
               </div>

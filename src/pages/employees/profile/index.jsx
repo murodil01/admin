@@ -226,7 +226,7 @@ const Profile = () => {
           {
             label: "Telegram username",
             name: "tg_username",
-            value: employee.tg_username || "",
+            value: employee.tg_username || "@",
             input: true
           },
         ],

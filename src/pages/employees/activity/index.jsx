@@ -92,7 +92,7 @@ const Activity = () => {
               <div className="flex items-center justify-between text-center w-full">
                 <div className="rounded-2xl p-3 border-[#E3EDFA] border-2 w-[80px] h-[80px]">
                   <p className="font-bold text-[26px] text-[#0A1629]">
-                    {user.tasks_in_review}
+                    {user.active_tasks}
                   </p>
                   <h3 className="text-[#91929E] text-[12px] font-[400]">
                     Active
@@ -100,7 +100,7 @@ const Activity = () => {
                 </div>
                 <div className="rounded-2xl p-3 border-[#E3EDFA] border-2 w-[80px] h-[80px]">
                   <p className="font-bold text-[26px] text-[#0A1629]">
-                    {user.active_tasks}
+                    {user.tasks_in_review}
                   </p>
                   <h3 className="text-[#91929E] text-[12px] font-[400]">
                     Review
@@ -111,7 +111,7 @@ const Activity = () => {
                     {user.completed_tasks}
                   </p>
                   <h3 className="text-[#91929E] text-[12px] font-[400]">
-                    Completed
+                    Approved
                   </h3>
                 </div>
               </div>

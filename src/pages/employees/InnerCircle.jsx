@@ -1,9 +1,11 @@
+// Updated InnerCircle.jsx - Replace the existing import and usage
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus } from "lucide-react";
 import EmployeeList from "./EmployeeList";
 import Activity from "./activity";
 import AddEmployeeModal from "./AddEmployeeModal";
+import FilterModal from "./FilterModal"; // Updated import
 import {
     getEmployees,
     createEmployees,
@@ -14,7 +16,6 @@ import { Permission } from "../../components/Permissions";
 import { useAuth } from "../../hooks/useAuth";
 import { ROLES } from "../../components/constants/roles";
 import { message, Pagination, Modal } from "antd";
-import FilterDropdown from "./FilterDropdown";
 
 const InnerCircle = () => {
     const [searchParams] = useSearchParams();
@@ -27,22 +28,38 @@ const InnerCircle = () => {
     );
     const { user, loading: authLoading } = useAuth();
     const [dataLoading, setDataLoading] = useState(true);
-    // Yuklash holatini birlashtirish
     const isLoading = authLoading || dataLoading;
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const navigate = useNavigate();
 
-    const [selectedDepartment, setSelectedDepartment] = useState(null);
+    // Updated filter state to handle multiple filters
+    const [currentFilters, setCurrentFilters] = useState({
+        fullName: '',
+        phoneNumber: '',
+        selectedDepartments: [],
+        status: ''
+    });
 
-    // filter tanlanganda qayta fetch qilish
-    const handleFilter = (deptId) => {
-        setSelectedDepartment(deptId);
-        fetchEmployees(1, deptId);
+    // Enhanced filter handler
+    const handleFilter = (filters) => {
+        setCurrentFilters(filters);
+        fetchEmployees(1, filters);
+    };
+
+    // Clear filters handler
+    const handleClearFilters = () => {
+        const clearedFilters = {
+            fullName: '',
+            phoneNumber: '',
+            selectedDepartments: [],
+            status: ''
+        };
+        setCurrentFilters(clearedFilters);
+        fetchEmployees(1, clearedFilters);
     };
 
     const handleStatusUpdate = (employeeId, newStatus) => {
-        // Update the employee in the local state
         setEmployees(prevEmployees =>
             prevEmployees.map(emp =>
                 emp.id === employeeId
@@ -56,14 +73,16 @@ const InnerCircle = () => {
         fetchEmployees();
     }, []);
 
-    const fetchEmployees = async (page = 1, departmentId = null) => {
+    // Enhanced fetchEmployees function to handle multiple filters
+    const fetchEmployees = async (page = 1, filters = null) => {
         setLoading(true);
         try {
-            const res = await getEmployees(page, departmentId); // service department bo‘yicha filtrlanadi
+            // Pass filters directly to the service
+            const res = await getEmployees(page, filters);
             setEmployees(res.results || []);
             setTotalEmployees(res.count || 0);
         } catch (err) {
-            console.error("Error fetching employees:", err);
+            console.error("Error fetching members:", err);
         } finally {
             setLoading(false);
         }
@@ -71,40 +90,37 @@ const InnerCircle = () => {
 
     useEffect(() => {
         const pageFromUrl = parseInt(searchParams.get("page_num") || "1", 10);
-        fetchEmployees(pageFromUrl);
+        fetchEmployees(pageFromUrl, currentFilters);
     }, [searchParams]);
 
     const handlePageChange = (newPage) => {
         const params = new URLSearchParams(searchParams);
         params.set("page_num", newPage);
         navigate(`?${params.toString()}`, { replace: true });
-        fetchEmployees(newPage);
+        fetchEmployees(newPage, currentFilters);
     };
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedId, setSelectedId] = useState(null);
 
-    // Delete modalni ochish
     const showDeleteModal = (id) => {
         setSelectedId(id);
         setIsDeleteModalOpen(true);
     };
 
-    // Bekor qilish
     const handleCancelDelete = () => {
         setIsDeleteModalOpen(false);
         setSelectedId(null);
     };
 
-    // Tasdiqlash
     const handleConfirmDelete = async () => {
         if (!selectedId) return;
 
         try {
             setLoading(true);
-            await deleteUser(selectedId); // service endpoint chaqiriladi
-            message.success("Employee deleted successfully");
-            fetchEmployees(); // listni yangilash
+            await deleteUser(selectedId);
+            message.success("Member deleted successfully");
+            fetchEmployees(1, currentFilters); // Refresh with current filters
         } catch (err) {
             console.error("Delete error details:", {
                 status: err.response?.status,
@@ -114,7 +130,7 @@ const InnerCircle = () => {
             message.error(
                 err.response?.data?.message ||
                 err.response?.data?.detail ||
-                "Failed to delete employee"
+                "Failed to delete member"
             );
         } finally {
             setLoading(false);
@@ -124,19 +140,14 @@ const InnerCircle = () => {
     };
 
     const handleAddEmployee = async (employeeData) => {
-        console.log("=== Starting handleAddEmployee ===");
-        console.log("Received data:", employeeData);
-
-        // ✅ Prevent multiple submissions
         if (loading) {
             console.log("Already processing, ignoring duplicate call");
             return;
         }
 
         try {
-            setLoading(true); // Prevent duplicate calls
+            setLoading(true);
 
-            // ✅ Server-side validation
             if (employeeData.password !== employeeData.password1) {
                 message.error('Passwords do not match');
                 return;
@@ -152,17 +163,14 @@ const InnerCircle = () => {
                 return;
             }
 
-            // ✅ Build FormData carefully
             const form = new FormData();
 
-            // Required fields
             form.append("first_name", employeeData.first_name);
             form.append("last_name", employeeData.last_name);
             form.append("email", employeeData.email);
             form.append("password", employeeData.password);
             form.append("password1", employeeData.password1);
 
-            // Optional fields - only append if they exist
             if (employeeData.department) {
                 form.append("department_id", employeeData.department);
             }
@@ -191,30 +199,24 @@ const InnerCircle = () => {
                 form.append("birth_date", employeeData.birth_date);
             }
 
-            // ✅ Debug FormData
             console.log("FormData contents:");
             for (let [key, value] of form.entries()) {
                 console.log(`${key}:`, value);
             }
 
-            // ✅ Single API call with proper error handling
-            console.log("Making API call...");
             const response = await createEmployees(form);
             console.log("✅ API Success:", response);
 
-            // ✅ Success actions
-            message.success("Employee added successfully");
+            message.success("Member added successfully");
             setIsAddModalOpen(false);
-            await fetchEmployees(); // Refresh the list
-            console.log("=== handleAddEmployee completed successfully ===");
+            await fetchEmployees(1, currentFilters); // Refresh with current filters
 
         } catch (err) {
             console.error("❌ API Error:", err);
             console.error("Error response:", err.response?.data);
             console.error("Error status:", err.response?.status);
 
-            // ✅ Better error handling
-            let errorMessage = "Failed to add employee";
+            let errorMessage = "Failed to add member";
 
             if (err.response?.status === 400) {
                 if (err.response.data?.email) {
@@ -234,7 +236,6 @@ const InnerCircle = () => {
             }
 
             message.error(errorMessage);
-            console.log("=== handleAddEmployee failed ===");
         } finally {
             setLoading(false);
         }
@@ -293,9 +294,12 @@ const InnerCircle = () => {
                 </div>
 
                 <div className="flex items-center gap-5">
-                    {/* Filter button */}
+                    {/* Updated Filter Component */}
                     <div className="flex items-center gap-3">
-                        <FilterDropdown onFilter={handleFilter} />
+                        <FilterModal
+                            onFilter={handleFilter}
+                            onClearFilters={handleClearFilters}
+                        />
                     </div>
                     <Permission anyOf={[ROLES.EMPLOYEE, ROLES.MANAGER]}>
                         <div className="hidden justify-center lg:justify-end w-[240px]"></div>
@@ -337,7 +341,7 @@ const InnerCircle = () => {
             )}
 
             <Modal
-                title={`Are you sure you want to delete ${employees.first_name} employee?`}
+                title={`Are you sure you want to delete ${employees.first_name} member?`}
                 open={isDeleteModalOpen}
                 onOk={handleConfirmDelete}
                 onCancel={handleCancelDelete}

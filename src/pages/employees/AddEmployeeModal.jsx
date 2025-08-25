@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Paperclip, X } from 'lucide-react';
-import { message, Modal } from 'antd';
+import { message, Modal, DatePicker } from 'antd';
 import avatarImage from '../../assets/default-avatar.png';
 import { getDepartments } from '../../api/services/departmentService';
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { Permission } from "../../components/Permissions";
 import { useAuth } from "../../hooks/useAuth";
 import { ROLES } from "../../components/constants/roles";
+import dayjs from 'dayjs';
 
 const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
     const [formData, setFormData] = useState({
@@ -18,8 +19,8 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
         role: "",
         department: "",
         profession: "",
-        phone_number: "",
-        tg_username: "",
+        phone_number: "+998",
+        tg_username: "@",
         level: "",
         birth_date: "",
         address: "",
@@ -27,13 +28,15 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
 
     const [avatar, setAvatar] = useState(null);
     const [avatarFile, setAvatarFile] = useState(null);
-    const [departments, setDepartments] = useState([]); // Departmentlar uchun state
+    const [departments, setDepartments] = useState([]);
     const [selectedDepartment, setSelectedDepartment] = useState(null);
     const [loadingDepartments, setLoadingDepartments] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [emailValidation, setEmailValidation] = useState({ isValid: true, message: "" });
+    const [passwordValidation, setPasswordValidation] = useState({ isValid: true, message: "" });
+    const [birthday, setBirthday] = useState("1996-05-19");
 
     const { user, isAuthenticated } = useAuth();
 
@@ -44,9 +47,10 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
         { value: 'senior', label: 'Senior' },
         { value: 'expert', label: 'Expert' },
         { value: 'specialist', label: 'Specialist' },
-        { value: '', label: 'None' }
-    ]
+        { value: 'none', label: 'None' }
+    ];
 
+    // Reset form when modal closes
     useEffect(() => {
         if (!visible) {
             setFormData({
@@ -58,8 +62,8 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                 role: "",
                 department: "",
                 profession: "",
-                phone_number: "",
-                tg_username: "",
+                phone_number: "+998",
+                tg_username: "@",
                 level: "",
                 birth_date: "",
                 address: "",
@@ -68,58 +72,57 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
             setAvatarFile(null);
             setSelectedDepartment(null);
             setEmailValidation({ isValid: true, message: "" });
+            setPasswordValidation({ isValid: true, message: "" });
             setIsSubmitting(false);
         }
     }, [visible]);
 
-    // Departmentlarni yuklash
+    // Load departments
     useEffect(() => {
         const fetchDepartments = async () => {
+            if (!visible || departments.length > 0) return;
+
             setLoadingDepartments(true);
             try {
                 const response = await getDepartments();
-                // Check different possible response structures
                 const departmentsData = response.results || response.data || response;
 
                 if (Array.isArray(departmentsData)) {
                     setDepartments(departmentsData);
                 } else {
+                    console.error('Invalid departments data format:', departmentsData);
                     message.error('Failed to load departments - invalid data format');
                 }
             } catch (err) {
+                console.error('Error loading departments:', err);
                 message.error('Failed to load departments');
             } finally {
                 setLoadingDepartments(false);
             }
         };
 
-        if (visible && departments.length === 0) {
-            fetchDepartments();
-        }
+        fetchDepartments();
     }, [visible, departments.length]);
 
-    // Email validation function (you can customize this based on your API)
+    // Email validation function
     const validateEmail = async (email) => {
         if (!email) return { isValid: true, message: "" };
 
-        // Basic email format validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             return { isValid: false, message: "Please enter a valid email address" };
         }
 
-        // You can add API call here to check if email exists
         try {
-            // Example API call (replace with your actual endpoint)
+            // Add your API call here to check if email exists
             // const response = await checkEmailExists(email);
             // if (response.exists) {
             //     return { isValid: false, message: "This email is already registered" };
             // }
-
             return { isValid: true, message: "" };
         } catch (error) {
             console.error('Email validation error:', error);
-            return { isValid: true, message: "" }; // Allow submission if validation fails
+            return { isValid: true, message: "" };
         }
     };
 
@@ -131,7 +134,6 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
             return { isValid: false, message: "Password must be at least 8 characters long" };
         }
 
-        // Add more password rules as needed
         const hasUpperCase = /[A-Z]/.test(password);
         const hasLowerCase = /[a-z]/.test(password);
         const hasNumbers = /\d/.test(password);
@@ -146,9 +148,103 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
         return { isValid: true, message: "" };
     };
 
+    // Phone number validation and formatting
+    const validateAndFormatPhoneNumber = (phoneNumber) => {
+        if (!phoneNumber || phoneNumber === "+998") {
+            return { isValid: true, formatted: "+998", message: "" };
+        }
+
+        // Remove all non-digits except the leading +998
+        let cleaned = phoneNumber.replace(/[^\d]/g, "");
+
+        // Ensure it starts with 998
+        if (!cleaned.startsWith("998")) {
+            return { isValid: false, formatted: phoneNumber, message: "Phone number must start with +998" };
+        }
+
+        // Remove leading 998 to get the rest of the number
+        const restOfNumber = cleaned.substring(3);
+
+        // Validate Uzbek phone number format (should be 9 digits after 998)
+        if (restOfNumber.length !== 9) {
+            return {
+                isValid: false,
+                formatted: phoneNumber,
+                message: "Phone number must be 12 digits total (+998XXXXXXXXX)"
+            };
+        }
+
+        // Check if it starts with valid Uzbek mobile prefixes
+        const validPrefixes = ['20', '33', '50', '55', '61', '62', '65', '66', '67', '69',
+            '70', '71', '72', '73', '74', '75', '76', '77', '78', '79',
+            '87', '88', '90', '91', '93', '94', '95', '97', '98', '99'];
+        const prefix = restOfNumber.substring(0, 2);
+
+        if (!validPrefixes.includes(prefix)) {
+            return {
+                isValid: false,
+                formatted: phoneNumber,
+                message: "Invalid Uzbek mobile number prefix"
+            };
+        }
+
+        return {
+            isValid: true,
+            formatted: `+998${restOfNumber}`,
+            message: ""
+        };
+    };
+
+    // Telegram username validation
+    const validateTelegramUsername = (username) => {
+        if (!username || username === "@") {
+            return { isValid: true, formatted: "@", message: "" };
+        }
+
+        // Ensure it starts with @
+        let formatted = username.startsWith('@') ? username : `@${username}`;
+
+        // Remove @ for validation
+        const usernameWithoutAt = formatted.substring(1);
+
+        // Telegram username rules:
+        // - 5-32 characters
+        // - Can contain a-z, A-Z, 0-9, and underscores
+        // - Must start with a letter
+        // - Cannot end with underscore
+        // - Cannot have two consecutive underscores
+
+        if (usernameWithoutAt.length < 5 || usernameWithoutAt.length > 32) {
+            return {
+                isValid: false,
+                formatted,
+                message: "Telegram username must be 5-32 characters long"
+            };
+        }
+
+        if (!/^[a-zA-Z][a-zA-Z0-9_]*[a-zA-Z0-9]$/.test(usernameWithoutAt)) {
+            return {
+                isValid: false,
+                formatted,
+                message: "Invalid Telegram username format"
+            };
+        }
+
+        if (/__/.test(usernameWithoutAt)) {
+            return {
+                isValid: false,
+                formatted,
+                message: "Telegram username cannot contain consecutive underscores"
+            };
+        }
+
+        return { isValid: true, formatted, message: "" };
+    };
+
     const handleDepartmentChange = (e) => {
         const deptId = e.target.value;
-        const selectedDept = deptId ? departments.find(d => d.id === deptId) : null;
+        const selectedDept = deptId ? departments.find(d => d.id.toString() === deptId) : null;
+
         setFormData(prev => ({
             ...prev,
             department: deptId,
@@ -159,20 +255,56 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
 
-        // Clear email validation when user types
+        if (name === 'phone_number') {
+            // Ensure +998 prefix is always present
+            let formattedValue = value;
+            if (!value.startsWith('+998')) {
+                if (value.startsWith('+')) {
+                    formattedValue = '+998' + value.substring(1);
+                } else if (value.startsWith('998')) {
+                    formattedValue = '+' + value;
+                } else {
+                    formattedValue = '+998' + value.replace(/^\+?998?/, '');
+                }
+            }
+            setFormData(prev => ({ ...prev, [name]: formattedValue }));
+        } else if (name === 'tg_username') {
+            // Ensure @ prefix is always present
+            let formattedValue = value.startsWith('@') ? value : '@' + value;
+            setFormData(prev => ({ ...prev, [name]: formattedValue }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
+
+        // Clear validations when user types
         if (name === 'email') {
             setEmailValidation({ isValid: true, message: "" });
+        } else if (name === 'password') {
+            setPasswordValidation({ isValid: true, message: "" });
         }
     };
 
-    // Email blur validation
+    const handleDateChange = (date, dateString) => {
+        setFormData(prev => ({
+            ...prev,
+            birth_date: dateString
+        }));
+    };
+
     const handleEmailBlur = async (e) => {
         const email = e.target.value;
         if (email) {
             const validation = await validateEmail(email);
             setEmailValidation(validation);
+        }
+    };
+
+    const handlePasswordBlur = (e) => {
+        const password = e.target.value;
+        if (password) {
+            const validation = validatePassword(password);
+            setPasswordValidation(validation);
         }
     };
 
@@ -202,9 +334,25 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
 
         try {
             // Validate required fields
-            if (!formData.first_name || !formData.last_name || !formData.email || !formData.password) {
-                message.error('Please fill in all required fields');
-                return;
+            const requiredFields = {
+                first_name: 'First Name',
+                last_name: 'Last Name',
+                email: 'Email',
+                password: 'Password',
+                role: 'Role',
+                level: 'Level'
+            };
+
+            // Department is required only for non-founder/manager roles
+            if (!['founder', 'manager'].includes(formData.role)) {
+                requiredFields.department = 'Department';
+            }
+
+            for (const [field, label] of Object.entries(requiredFields)) {
+                if (!formData[field] || formData[field].trim() === '') {
+                    message.error(`${label} is required`);
+                    return;
+                }
             }
 
             // Validate email
@@ -216,9 +364,10 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
             }
 
             // Validate password strength
-            const passwordValidation = validatePassword(formData.password);
-            if (!passwordValidation.isValid) {
-                message.error(passwordValidation.message);
+            const passwordValidationResult = validatePassword(formData.password);
+            if (!passwordValidationResult.isValid) {
+                message.error(passwordValidationResult.message);
+                setPasswordValidation(passwordValidationResult);
                 return;
             }
 
@@ -230,53 +379,55 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
 
             // Validate birth date
             if (formData.birth_date) {
-                const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-                if (!dateRegex.test(formData.birth_date)) {
-                    message.error('Please enter birth date in YYYY-MM-DD format');
-                    return;
-                }
-
-                // Check if birth date is not in the future
                 const birthDate = new Date(formData.birth_date);
                 const today = new Date();
-                if (birthDate > today) {
-                    message.error('Birth date cannot be in the future');
+
+                if (isNaN(birthDate.getTime())) {
+                    message.error('Please enter a valid birth date');
+                    return;
+                }
+
+                if (birthDate >= today) {
+                    message.error('Birth date must be in the past');
+                    return;
+                }
+
+                // Check if person is at least 16 years old
+                const sixteenYearsAgo = new Date();
+                sixteenYearsAgo.setFullYear(today.getFullYear() - 16);
+
+                if (birthDate > sixteenYearsAgo) {
+                    message.error('Member must be at least 16 years old');
                     return;
                 }
             }
 
-            // Validate and normalize phone number if provided
-            if (formData.phone_number?.trim()) {
-                const raw = formData.phone_number.trim();
-
-                // Extract only digits from the phone number
-                const digits = raw.replace(/\D/g, ""); // remove all non-digits
-
-                // Check if we have 10-15 digits (international E.164 standard)
-                if (digits.length < 10 || digits.length > 15) {
-                    message.error("Phone number must have 10–15 digits");
+            // Validate and format phone number
+            if (formData.phone_number && formData.phone_number !== '+998') {
+                const phoneValidation = validateAndFormatPhoneNumber(formData.phone_number);
+                if (!phoneValidation.isValid) {
+                    message.error(phoneValidation.message);
                     return;
                 }
-
-                // Normalize: always add '+' prefix with digits only
-                setFormData(prev => ({
-                    ...prev,
-                    phone_number: `+${digits}`
-                }));
+                setFormData(prev => ({ ...prev, phone_number: phoneValidation.formatted }));
             }
 
-            // Validate Telegram username format
-            if (formData.tg_username && !formData.tg_username.startsWith('@')) {
-                setFormData(prev => ({
-                    ...prev,
-                    tg_username: `@${formData.tg_username}`
-                }));
+            // Validate Telegram username
+            if (formData.tg_username && formData.tg_username !== '@') {
+                const tgValidation = validateTelegramUsername(formData.tg_username);
+                if (!tgValidation.isValid) {
+                    message.error(tgValidation.message);
+                    return;
+                }
+                setFormData(prev => ({ ...prev, tg_username: tgValidation.formatted }));
             }
 
             // Prepare submit data
             const submitData = {
                 ...formData,
-                department: selectedDepartment ? selectedDepartment.id : null,
+                department: selectedDepartment ? selectedDepartment.id : formData.department,
+                phone_number: formData.phone_number === '+998' ? '' : formData.phone_number,
+                tg_username: formData.tg_username === '@' ? '' : formData.tg_username,
                 profile_picture: avatarFile
             };
 
@@ -284,17 +435,11 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
 
             // Call parent submit function
             await onSubmit(submitData);
-
-            // Show success message
-            message.success('Employee added successfully!');
-
-            // Close modal after successful submission
             onClose();
 
         } catch (error) {
             console.error('Submit error:', error);
 
-            // Handle specific error types
             if (error.response?.status === 400) {
                 const errorData = error.response.data;
 
@@ -312,14 +457,16 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                 message.error('User with this email already exists');
                 setEmailValidation({ isValid: false, message: "This email is already registered" });
             } else {
-                message.error('Failed to add employee. Please try again.');
+                message.error('Failed to add member. Please try again.');
             }
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    if (!isAuthenticated) return <div>Please login</div>;
+    if (!isAuthenticated) {
+        return <div>Please login</div>;
+    }
 
     return (
         <Modal
@@ -346,7 +493,7 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                                 <input
                                     type="text"
                                     name="first_name"
-                                    className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
+                                    className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 focus:outline-none focus:border-blue-500"
                                     placeholder="First Name"
                                     value={formData.first_name}
                                     onChange={handleChange}
@@ -362,7 +509,7 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                                 <input
                                     type="text"
                                     name="last_name"
-                                    className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1"
+                                    className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 focus:outline-none focus:border-blue-500"
                                     placeholder="Last Name"
                                     value={formData.last_name}
                                     onChange={handleChange}
@@ -379,11 +526,10 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                             <input
                                 type="email"
                                 name="email"
-                                className={`w-full border rounded-[14px] px-3 py-2 mt-1 focus:outline-none ${
-                                    emailValidation.isValid
+                                className={`w-full border rounded-[14px] px-3 py-2 mt-1 focus:outline-none ${emailValidation.isValid
                                         ? 'border-[#DBDBDB] focus:border-blue-500'
                                         : 'border-red-500'
-                                }`}
+                                    }`}
                                 placeholder="Email"
                                 value={formData.email}
                                 onChange={handleChange}
@@ -391,9 +537,11 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                                 required
                                 disabled={isSubmitting}
                             />
+                            {!emailValidation.isValid && (
+                                <p className="text-red-500 text-sm mt-1">{emailValidation.message}</p>
+                            )}
                         </div>
 
-                        {/* Password */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700">
                                 Password *
@@ -402,10 +550,14 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     name="password"
-                                    className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 pr-10 focus:outline-none focus:border-blue-500"
+                                    className={`w-full border rounded-[14px] px-3 py-2 mt-1 pr-10 focus:outline-none ${passwordValidation.isValid
+                                            ? 'border-[#DBDBDB] focus:border-blue-500'
+                                            : 'border-red-500'
+                                        }`}
                                     placeholder="Password"
                                     value={formData.password}
                                     onChange={handleChange}
+                                    onBlur={handlePasswordBlur}
                                     required
                                     disabled={isSubmitting}
                                 />
@@ -418,12 +570,14 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                                     {showPassword ? <FaEyeSlash /> : <FaEye />}
                                 </button>
                             </div>
+                            {!passwordValidation.isValid && (
+                                <p className="text-red-500 text-sm mt-1">{passwordValidation.message}</p>
+                            )}
                         </div>
 
-                        {/* Confirm Password */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700">
-                                Confirm Password
+                                Confirm Password *
                             </label>
                             <div className="relative">
                                 <input
@@ -465,14 +619,13 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                                     <option value="manager">Manager</option>
                                 </Permission>
                                 <option value="heads">Chief Officer</option>
-                                <option value="employee">Employee</option>
+                                <option value="employee">Member</option>
                             </select>
                         </div>
 
-                        {/* Department select komponentini to'g'rilaymiz */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700">
-                                Department *
+                                Department {!['founder', 'manager'].includes(formData.role) && '*'}
                             </label>
                             <select
                                 name="department"
@@ -480,9 +633,14 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                                 onChange={handleDepartmentChange}
                                 className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 focus:outline-none focus:border-blue-500"
                                 disabled={loadingDepartments || isSubmitting}
-                                required
+                                required={!['founder', 'manager'].includes(formData.role)}
                             >
-                                <option value="">Select department</option>
+                                <option value="">
+                                    {['founder', 'manager'].includes(formData.role)
+                                        ? 'Select department (optional)'
+                                        : 'Select department'
+                                    }
+                                </option>
                                 {departments.map(dept => (
                                     <option key={dept.id} value={dept.id}>
                                         {dept.name}
@@ -493,6 +651,7 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                                 <span className="text-sm text-gray-500">Loading departments...</span>
                             )}
                         </div>
+
                         <div>
                             <label className="block text-sm font-medium text-gray-700">
                                 Profession
@@ -501,8 +660,10 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                                 type="text"
                                 name="profession"
                                 className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 focus:outline-none focus:border-blue-500"
+                                placeholder="Enter profession"
                                 value={formData.profession}
                                 onChange={handleChange}
+                                disabled={isSubmitting}
                             />
                         </div>
 
@@ -515,8 +676,10 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                                     type="text"
                                     name="phone_number"
                                     className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 focus:outline-none focus:border-blue-500"
+                                    placeholder="+998XXXXXXXXX"
                                     value={formData.phone_number}
                                     onChange={handleChange}
+                                    disabled={isSubmitting}
                                 />
                             </div>
                             <div className="w-1/2">
@@ -530,6 +693,7 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                                     className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 focus:outline-none focus:border-blue-500"
                                     value={formData.tg_username}
                                     onChange={handleChange}
+                                    disabled={isSubmitting}
                                 />
                             </div>
                         </div>
@@ -547,7 +711,11 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                                         className="w-full h-full object-cover"
                                     />
                                 ) : (
-                                    <img src={avatarImage} alt="Default avatar" className="w-full h-full object-cover" />
+                                    <img
+                                        src={avatarImage}
+                                        alt="Default avatar"
+                                        className="w-full h-full object-cover"
+                                    />
                                 )}
                             </div>
 
@@ -566,24 +734,41 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                                 accept="image/*"
                                 className="hidden"
                                 onChange={handleAvatarUpload}
+                                disabled={isSubmitting}
                             />
                         </div>
 
-                        {/* Date of Birth */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700">
-                                Birth Date
+                                Date of birth
                             </label>
-                            <input
-                                type="date"
-                                name="birth_date"
-                                className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 focus:outline-none focus:border-blue-500"
-                                value={formData.birth_date}
-                                onChange={handleChange}
+                            <DatePicker
+                                className="w-full"
+                                value={formData.birth_date ? dayjs(formData.birth_date) : null}
+                                onChange={handleDateChange}
+                                format="YYYY-MM-DD"
+                                placeholder="Select birth date"
+                                disabled={isSubmitting}
+                                disabledDate={(current) => {
+                                    // Disable future dates
+                                    if (current && current > dayjs().endOf('day')) {
+                                        return true;
+                                    }
+                                    // Disable dates more than 100 years ago
+                                    if (current && current < dayjs().subtract(100, 'year')) {
+                                        return true;
+                                    }
+                                    return false;
+                                }}
+                                style={{
+                                    height: '40px',
+                                    borderRadius: '14px',
+                                    border: '1px solid #DBDBDB',
+                                    marginTop: '4px',
+                                }}
                             />
                         </div>
 
-                        {/* Level */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700">
                                 Level *
@@ -605,32 +790,29 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                             </select>
                         </div>
 
-                        {/* Address */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700">
                                 Address
                             </label>
                             <input
-                                type="text"
                                 name="address"
-                                className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 focus:outline-none focus:border-blue-500"
+                                className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 focus:outline-none focus:border-blue-500 resize-none"
                                 value={formData.address}
                                 onChange={handleChange}
-                                placeholder="Enter your full address"
+                                placeholder="Enter full address"
+                                disabled={isSubmitting}
                             />
                         </div>
 
                         {/* Submit Button */}
-                        <div className="pt-6 flex justify-end col-span-2 w-full">
+                        <div className="pt-6 flex justify-end w-full">
                             <button
-                                type="submet"
-                                disabled={isSubmitting || !emailValidation.isValid}
-                                htmlType="submit"
-                                className={`px-[40px] py-[13px] rounded-[14px] shadow-md text-white font-medium ${
-                                    isSubmitting || !emailValidation.isValid
+                                type="submit"
+                                disabled={isSubmitting || !emailValidation.isValid || !passwordValidation.isValid}
+                                className={`px-[40px] py-[13px] rounded-[14px] shadow-md text-white font-medium ${isSubmitting || !emailValidation.isValid || !passwordValidation.isValid
                                         ? 'bg-gray-400 cursor-not-allowed'
                                         : 'bg-[#0061FE] hover:opacity-90 shadow-blue-300 cursor-pointer'
-                                }`}
+                                    }`}
                             >
                                 {isSubmitting ? 'Saving...' : 'Save Member'}
                             </button>

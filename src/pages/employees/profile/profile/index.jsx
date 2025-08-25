@@ -300,11 +300,20 @@ const Profiles = () => {
       }
     };
 
-    if (employeeId && !isNaN(numericEmployeeId)) {
-      console.log('Starting data fetch for employee ID:', employeeId, 'String:', employeeIdString);
+    // if (employeeId && !isNaN(numericEmployeeId)) {
+    //   console.log('Starting data fetch for employee ID:', employeeId, 'String:', employeeIdString);
+    //   fetchData();
+    // } else {
+    //   console.error('Invalid employee ID:', employeeId);
+    //   message.error("Noto'g'ri foydalanuvchi ID");
+    //   setLoading(false);
+    // }
+
+    if (employeeId && typeof employeeId === "string" && employeeId.trim() !== "") {
+      console.log("Starting data fetch for employee ID:", employeeId);
       fetchData();
     } else {
-      console.error('Invalid employee ID:', employeeId);
+      console.error("Invalid employee ID:", employeeId);
       message.error("Noto'g'ri foydalanuvchi ID");
       setLoading(false);
     }
@@ -339,7 +348,7 @@ const Profiles = () => {
       </div>
 
       <h1 className="font-bold text-[18px] text-[#0061fe] mb-6">
-        Control Data {isNewRecord ? "(New Record)" : "(Existing Record)"}
+        Control Data {isNewRecord}
       </h1>
 
       {saveMessage && (
