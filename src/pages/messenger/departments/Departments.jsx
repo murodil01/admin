@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import api from "../../../api/base"; 
 
+// Loading skeleton
 const DepartmentSkeleton = () => (
   <div className="flex flex-col items-center p-5 bg-white shadow-md rounded-xl animate-pulse">
     <div className="w-full max-w-[300px] h-48 bg-gray-300 rounded-[10px]"></div>
@@ -11,6 +12,7 @@ const DepartmentSkeleton = () => (
   </div>
 );
 
+// Error state
 const ErrorState = ({ onRetry }) => (
   <div className="col-span-full flex flex-col items-center justify-center p-8 bg-red-50 rounded-xl">
     <div className="text-red-500 text-6xl mb-4">⚠️</div>
@@ -30,89 +32,72 @@ const ErrorState = ({ onRetry }) => (
   </div>
 );
 
+// Single department card
 const DepartmentCard = React.memo(({ user }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  const imageUrl = user?.photo || "/placeholder-image.jpg";
-
-  const handleImageLoad = useCallback(() => {
-    setImageLoaded(true);
-  }, []);
-
-  const handleImageError = useCallback(() => {
-    setImageError(true);
-    setImageLoaded(true);
-  }, []);
-
-  if (!user) {
-    return (
-      <div className="flex flex-col items-center p-5 bg-white shadow-md rounded-xl">
-        <div className="text-gray-400 text-4xl mb-2">❓</div>
-        <p className="text-gray-500">No data found</p>
-      </div>
-    );
-  }
+  const imageUrl = imageError ? "/placeholder-image.jpg" : user?.photo;
 
   return (
-    <div className="flex flex-col items-center p-5 bg-white shadow-md rounded-xl hover:shadow-lg transition-all duration-300 text-center max-w-full transform hover:scale-105">
-      <div className="relative w-full">
-        {!imageLoaded && (
-          <div className="absolute inset-0 bg-gray-300 rounded-[10px] animate-pulse"></div>
-        )}
-        <img
-          src={imageError ? "/placeholder-image.jpg" : imageUrl}
-          alt={user.name || "Department photo"}
-          className={`w-full h-full object-contain bg-[#f7f5f2] rounded-[10px] transition-opacity duration-300 ${
-            imageLoaded ? "opacity-100" : "opacity-0"
-          }`}
-          onLoad={handleImageLoad}
-          onError={handleImageError}
-          loading="lazy"
-        />
-      </div>
-      
-      <h3 className="mt-5 text-base sm:text-lg font-semibold text-gray-800 break-words">
-        {user.name || "Unknown department"}
-      </h3>
-      
-      <p className="mt-3 text-xs sm:text-sm text-gray-600 leading-relaxed line-clamp-4 sm:line-clamp-none max-w-[300px] mx-auto">
-        {user.description || "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla ac erat at dui viverra dapibus."}
-      </p>
+  <div className="flex flex-col items-center w-full max-w-[300px] sm:max-w-[320px] md:max-w-[350px] lg:max-w-[300px] p-4 sm:p-5 lg:p-6 bg-white shadow-md rounded-xl hover:shadow-lg transition-all duration-300 text-center transform hover:scale-105 mx-auto">
+  <div className="relative w-full h-[200px] sm:h-[220px] md:h-[240px] lg:h-[250px]">
+    {!imageLoaded && (
+      <div className="absolute inset-0 bg-gray-300 rounded-[10px] animate-pulse"></div>
+    )}
+    <img
+      src={imageUrl || "/placeholder-image.jpg"}
+      alt={user?.name || "Department photo"}
+      className={`w-full h-full object-contain bg-[#f7f5f2] rounded-[10px] transition-opacity duration-300 ${
+        imageLoaded ? "opacity-100" : "opacity-0"
+      }`}
+      onLoad={() => setImageLoaded(true)}
+      onError={() => setImageError(true)}
+      loading="lazy"
+    />
+  </div>
+  
+  <h3 className="mt-4 sm:mt-5 text-sm sm:text-base md:text-lg lg:text-xl font-semibold text-gray-800 break-words leading-tight px-2">
+    {user?.name || "Unknown department"}
+  </h3>
+  
+  <p className="mt-2 sm:mt-3 text-xs sm:text-sm md:text-base text-gray-600 leading-relaxed line-clamp-3 sm:line-clamp-4 md:line-clamp-none max-w-full px-2">
+    {user?.description || "No description available"}
+  </p>
 
-      <div className="w-full flex justify-center mt-4">
-        <a
-          href={user.link || "#"}
-          target={user.link ? "_blank" : "_self"}
-          rel={user.link ? "noopener noreferrer" : ""}
-          className="flex items-center justify-center w-full sm:w-auto gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg shadow-md hover:bg-blue-700 hover:shadow-lg focus:ring-4 focus:ring-blue-200 transition-all duration-300"
-          aria-label={`Go to ${user.name || "Department"} group`}
-          onClick={!user.link ? (e) => e.preventDefault() : undefined}
+  <div className="w-full flex justify-center mt-3 sm:mt-4 px-2">
+    <a
+      href={user?.link || "#"}
+      target={user?.link ? "_blank" : "_self"}
+      rel={user?.link ? "noopener noreferrer" : ""}
+      className="flex items-center justify-center w-full sm:w-full md:w-auto gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-blue-600 text-white text-xs sm:text-sm md:text-base font-medium rounded-lg shadow-md hover:bg-blue-700 hover:shadow-lg focus:ring-4 focus:ring-blue-200 transition-all duration-300 min-h-[40px] sm:min-h-[44px]"
+      aria-label={`Go to ${user?.name || "Department"} group`}
+      onClick={!user?.link ? (e) => e.preventDefault() : undefined}
+    >
+      <span className="truncate">{user?.link ? "Go to group" : "No link available"}</span>
+      {user?.link && (
+        <svg 
+          className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
         >
-          <span>{user.link ? "Go to group" : "No link available"}</span>
-          {user.link && (
-            <svg 
-              className="w-4 h-4" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth="2" 
-                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-              />
-            </svg>
-          )}
-        </a>
-      </div>
-    </div>
+          <path 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            strokeWidth="2" 
+            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+          />
+        </svg>
+      )}
+    </a>
+  </div>
+</div>
   );
 });
+DepartmentCard.displayName = "DepartmentCard";
 
-DepartmentCard.displayName = 'DepartmentCard';
-
+// Departments list
 const Departments = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -122,35 +107,20 @@ const Departments = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const { data } = await api.get("messenger/departments/");
-      
-      if (Array.isArray(data)) {
-        setUsers(data);
-      } else if (data && Array.isArray(data.results)) {
-        setUsers(data.results);
-      } else {
-        setUsers([]);
-      }
+      setUsers(Array.isArray(data) ? data : data?.results || []);
       
     } catch (err) {
-      console.error("Error loading departments:", err);
-      
-      let errorMessage = "An error occurred while fetching data";
-      
-      if (err.response) {
-        if (err.response.status === 404) {
-          errorMessage = "Data not found";
-        } else if (err.response.status >= 500) {
-          errorMessage = "Server error. Please try again later";
-        } else {
-          errorMessage = err.response.data?.message || "Server error";
-        }
-      } else if (err.request) {
-        errorMessage = "Network error. Please check your connection";
-      }
-      
-      setError(errorMessage);
+      setError(
+        err.response?.status === 404
+          ? "Data not found"
+          : err.response?.status >= 500
+          ? "Server error. Please try again later"
+          : err.request
+          ? "Network error. Please check your connection"
+          : "An error occurred while fetching data"
+      );
     } finally {
       setLoading(false);
     }
@@ -196,10 +166,7 @@ const Departments = () => {
   return (
     <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
       {users.map((user, index) => (
-        <DepartmentCard 
-          key={user?.id || `department-${index}`} 
-          user={user} 
-        />
+        <DepartmentCard key={user?.id || index} user={user} />
       ))}
     </section>
   );
