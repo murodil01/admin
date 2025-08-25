@@ -102,17 +102,23 @@ const ChiefOfficers = () => {
 
 // Reusable Officer card
 const OfficerCard = ({ officer, professionsData }) => {
-  const getProfessionInfo = () => {
-    if (officer.profession && professionsData[officer.profession]) {
-      return professionsData[officer.profession];
+const getProfessionInfo = () => {
+  if (officer.profession) {
+    // profession nomini har doim uppercase qilib solishtiramiz
+    const key = officer.profession.toUpperCase();
+
+    if (professionsData[key]) {
+      return professionsData[key];
     }
-    
-    // Aks holda default qiymatlar
-    return {
-      title: officer.profession || "Unknown profession",
-      description: "No description available for this position."
-    };
+  }
+
+  // Agar professionsData'da yo'q bo'lsa
+  return {
+    title: officer.profession || "Unknown profession",
+    description: "No description available for this position."
   };
+};
+
 
   const professionInfo = getProfessionInfo();
 
@@ -121,11 +127,11 @@ const OfficerCard = ({ officer, professionsData }) => {
       <div className="flex flex-col items-center text-center">
         <img
           src={officer.profile_picture || "https://via.placeholder.com/150"}
-          alt={officer.full_name || "Officer"}
+          alt= "Officer"
           className="w-28 h-28 rounded-full object-cover mb-3 border-2 border-gray-200"
         />
         <p className="text-sm text-gray-500 h-5 overflow-hidden">
-          {officer.profession ? `(${officer.profession})` : "Chief Officer"}
+          {officer.profession ? `${officer.profession}` : "Chief Officer"}
         </p>
         
         <p className="text-lg font-bold h-6 overflow-hidden">
