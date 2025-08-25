@@ -2,13 +2,14 @@ import React, { useState, useEffect } from "react";
 import api from "../../../api/base"; // axios instance
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useMemo } from "react";
 
 const ChiefOfficers = () => {
   const [manager, setManager] = useState(null);
   const [heads, setHeads] = useState([]);
 
   // Profession ma'lumotlari
-  const professionsData = {
+  const professionsData = useMemo(()=>({
     GM: {
       title: "General Manager",
       description: "Responsible for overseeing all company operations and strategy.",
@@ -49,7 +50,7 @@ const ChiefOfficers = () => {
       title: "Chief Executive Officer",
       description: "Sets company vision, mission, and strategic direction.",
     },
-  };
+  }),[]);
 
   const fetchUsers = async () => {
     try {
@@ -126,6 +127,7 @@ const getProfessionInfo = () => {
     <div className="flex flex-col justify-between p-4 bg-white rounded-3xl shadow-md hover:shadow-xl transition duration-300 w-full max-w-[320px] mx-auto h-full">
       <div className="flex flex-col items-center text-center">
         <img
+          loading="lazy"
           src={officer.profile_picture || "https://via.placeholder.com/150"}
           alt= "Officer"
           className="w-28 h-28 rounded-full object-cover mb-3 border-2 border-gray-200"
