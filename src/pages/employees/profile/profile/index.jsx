@@ -137,15 +137,20 @@ const Profiles = () => {
       setSaveMessage("");
 
       // Convert PINFL to integer if it exists and is not empty
-      const pinflValue = formData.pinfl && formData.pinfl.trim() !== ''
-        ? parseInt(formData.pinfl, 10)
-        : null;
+      let pinflValue = null;
 
-      // Validate PINFL is a valid number if provided
-      if (formData.pinfl && formData.pinfl.trim() !== '' && isNaN(pinflValue)) {
-        message.error("PINFL must be a valid number");
-        return;
+      if(formData.pinfl !== null && formData.pinfl !== undefined && formData.pinfl !== '') {
+        const parsedPinfl = parseInt(formData.pinfl, 10);
+
+        // Validate PINFL is a valid number
+        if (isNaN(parsedPinfl)) {
+          message.error("PINFL must be a valid number");
+          return;
+        }
+
+        pinflValue = parsedPinfl;
       }
+      // If empty, pinflValue remains null
 
       // ✅ Ensure user_id is always included in formData
       const dataToSave = {
@@ -266,7 +271,7 @@ const Profiles = () => {
               assigned_devices: employeeData.assigned_devices || '',
               access_level: employeeData.access_level || '',
               serial_number: employeeData.serial_number || '',
-              pinfl: employeeData.pinfl || '',
+              pinfl: employeeData.pinfl !== null && employeeData.pinfl !== undefined ? employeeData.pinfl : null, // Ensure null if no value
               passport_picture: employeeData.passport_picture || null,
               passport_picture_url: employeeData.passport_picture || null,
               passport_file_name: employeeData.passport_file_name || null,
@@ -431,14 +436,18 @@ const Profiles = () => {
                 {isEditing ? (
                   <input
                     type="text"
-                    value={formData.pinfl || ""}
-                    onChange={(e) => handleChange("PINFL", e.target.value.replace(/\D/g, ''))}
+                    value={formData.pinfl !== null && formData.pinfl !== undefined ? formData.pinfl : ""}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      // If empty string, set to null, otherwise keep as string (will be converted to number on save)
+                      handleChange("PINFL", value === "" ? null : value);
+                    }}
                     placeholder="45245875495734"
                     className="px-4 border border-[#D8E0F0] h-[48px] rounded-[14px] w-full"
                   />
                 ) : (
                   <div className="px-4 border border-[#D8E0F0] h-[48px] rounded-[14px] w-full flex items-center bg-gray-50">
-                    {formData.pinfl || <span className="text-gray-400">No data</span>}
+                    {formData.pinfl !== null && formData.pinfl !== undefined ? formData.pinfl : <span className="text-gray-400">No data</span>}
                   </div>
                 )}
               </div>
