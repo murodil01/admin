@@ -112,9 +112,9 @@ const taskColumns = [
   {
     id: "return_for_fixes",
     title: (
-      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+      // <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
         <span className="flex items-center gap-1">Return for Fixes</span>
-      </Permission>
+    //  </Permission>
     ),
     color: "bg-[#E2C7A9]",
     icon: <img src={rework} alt="" />,
@@ -122,9 +122,9 @@ const taskColumns = [
   {
     id: "dropped",
     title: (
-      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+      // <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
         <span className="flex items-center gap-1">Dropped</span>
-      </Permission>
+      // </Permission>
     ),
     color: "bg-[#FFDADA]",
     icon: <img src={dropped} alt="" />,
@@ -132,9 +132,9 @@ const taskColumns = [
   {
     id: "approved",
     title: (
-      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+      // <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
         <span className="flex items-center gap-1">Approved</span>
-      </Permission>
+      // </Permission>
     ),
     color: "bg-[#C2FFCF]",
     icon: <img src={approved} alt="" />,

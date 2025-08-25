@@ -7,7 +7,8 @@ const endpoints = {
   },
 
   users: {
-    getAll: "users/",
+    // getAll: "users/",
+    getAll: "get-users-for-projects/",
     me: "users/get_user/",
     getById: (id) => `users/${id}/`,
     update: (id) => `users/${id}/`,

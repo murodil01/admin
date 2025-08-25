@@ -135,8 +135,8 @@ const Projects = () => {
 
       const filtered = allUsers.filter(
         (user) =>
-          user.department?.id &&
-          selectedDepartments.includes(user.department.id)
+          user.department_id &&
+          selectedDepartments.includes(user.department_id)
       );
       setDeptModalFilteredUsers(filtered);
     } else {
@@ -158,8 +158,8 @@ const Projects = () => {
 
       const filtered = allUsers.filter(
         (user) =>
-          user.department?.id &&
-          selectedDepartments.includes(user.department.id)
+          user.department_id &&
+          selectedDepartments.includes(user.department_id)
       );
       setFilteredUsers(filtered);
     } else {
