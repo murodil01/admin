@@ -26,6 +26,8 @@ const endpoints = {
     getTaskFiles: 'project/files/',
     deleteTaskFile: id => `project/files/${id}/`,
     getComments: "project/comments/",
+    updateComments:id=> `project/comments/${id}/`,
+    deleteComments:id=> `project/comments/${id}/`,
     getTaskFilesByTask: (taskId) => `project/task-files/${taskId}`,
     getTaskInstructionsByTask: (taskId) => `project/task-instructions/${taskId}`,
     getTaskCommentsByTask: (taskId) => `project/task-comments/${taskId}`,

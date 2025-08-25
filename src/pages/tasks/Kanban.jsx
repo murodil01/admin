@@ -50,6 +50,8 @@ import {
   // updateProjectUsers,
   // getCommentTask, ///
   createComment, //
+  updateTaskComment,
+  deleteTaskComment,
   createChecklistItem,
   getTaskInstructions,
   createInstruction,
@@ -431,6 +433,15 @@ const Card = ({
   const [cardTotalCount, setCardTotalCount] = useState(0);
   const [commentsCount, setCommentsCount] = useState(0);
 
+  // Comment editing uchun state'lar qo'shish
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingCommentText, setEditingCommentText] = useState("");
+  const [commentDropdownOpen, setCommentDropdownOpen] = useState(null);
+
+  // Delete confirmation modal uchun state
+  const [deleteCommentModalOpen, setDeleteCommentModalOpen] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState(null);
+
   // Helper functions
   const getFileIcon = (fileName) => {
     if (!fileName) return "📄";
@@ -794,6 +805,78 @@ const Card = ({
     } finally {
       setSubmitLoading(false);
     }
+  };
+
+  // Comment edit handler
+  const handleEditComment = (comment) => {
+    setEditingCommentId(comment.id);
+    setEditingCommentText(comment.message || comment.text);
+    setCommentDropdownOpen(null);
+  };
+
+  // Comment update handler
+  const handleUpdateComment = async (commentId) => {
+    if (!editingCommentText.trim()) {
+      message.warning("Comment cannot be empty");
+      return;
+    }
+
+    try {
+      await updateTaskComment(commentId, {
+        message: editingCommentText.trim(),
+      });
+
+      // Comments ro'yxatini yangilash
+      await fetchComments();
+
+      // Edit mode dan chiqish
+      setEditingCommentId(null);
+      setEditingCommentText("");
+
+      message.success("Comment updated successfully");
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      message.error("Failed to update comment");
+    }
+  };
+
+  // Delete comment confirmation
+  const showDeleteCommentModal = (comment) => {
+    setCommentToDelete(comment);
+    setDeleteCommentModalOpen(true);
+    setCommentDropdownOpen(null);
+  };
+
+  // Confirm delete comment
+  const handleConfirmDeleteComment = async () => {
+    if (!commentToDelete) return;
+
+    try {
+      await deleteTaskComment(commentToDelete.id);
+
+      // Comments ro'yxatini yangilash
+      await fetchComments();
+
+      message.success("Comment deleted successfully");
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      message.error("Failed to delete comment");
+    } finally {
+      setDeleteCommentModalOpen(false);
+      setCommentToDelete(null);
+    }
+  };
+
+  // Cancel delete
+  const handleCancelDeleteComment = () => {
+    setDeleteCommentModalOpen(false);
+    setCommentToDelete(null);
+  };
+
+  // Cancel edit
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditingCommentText("");
   };
 
   // Checklist handlers
@@ -1332,22 +1415,22 @@ const Card = ({
           }}
           footer={[
             <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
-            <Button
-              key="edit"
-              onClick={() => {
-                setIsModalOpen(false); // eski modal yopiladi
-                handleEditCard(); // Bu yerda ham yangi funksiya
-              }}
-              style={{
-                borderRadius: "14px",
-                padding: "18px 16px",
-                fontSize: "14px",
-                fontWeight: "bolder",
-              }}
-            >
-              <span className="text-gray-500">Edit</span>{" "}
-              <img src={pencil} className="w-[14px]" alt="pencil" />
-            </Button>
+              <Button
+                key="edit"
+                onClick={() => {
+                  setIsModalOpen(false); // eski modal yopiladi
+                  handleEditCard(); // Bu yerda ham yangi funksiya
+                }}
+                style={{
+                  borderRadius: "14px",
+                  padding: "18px 16px",
+                  fontSize: "14px",
+                  fontWeight: "bolder",
+                }}
+              >
+                <span className="text-gray-500">Edit</span>{" "}
+                <img src={pencil} className="w-[14px]" alt="pencil" />
+              </Button>
             </Permission>,
             <Button
               key="gotit"
@@ -1515,44 +1598,119 @@ const Card = ({
                     {comments.length > 0 ? (
                       comments.map((c) => (
                         <div key={c.id} className="rounded-lg bg-blue-50 mb-3">
-                          <div className="flex items-center gap-3 mb-2">
-                            {/* ✅ YANGILANGAN: User avatar with profile picture */}
-                            <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center text-xs font-semibold">
-                              {c.user_avatar ? (
-                                <img
-                                  src={c.user_avatar}
-                                  alt={c.user_name}
-                                  className="w-full h-full object-cover"
-                                  onError={(e) => {
-                                    // Agar rasm yuklanmasa, initials ko'rsatiladi
-                                    e.target.style.display = "none";
-                                    e.target.nextSibling.style.display = "flex";
-                                  }}
-                                />
-                              ) : null}
-                              <span
-                                className={`${
-                                  c.user_avatar ? "hidden" : "flex"
-                                } w-full h-full items-center justify-center bg-blue-500 text-white text-xs font-semibold`}
-                              >
-                                {c.user_initials}
+                          <div className="flex items-center gap-3 mb-2 justify-between">
+                            <div className="flex items-center gap-3">
+                              {/* User avatar */}
+                              <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center text-xs font-semibold">
+                                {c.user_avatar ? (
+                                  <img
+                                    src={c.user_avatar}
+                                    alt={c.user_name}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.target.style.display = "none";
+                                      e.target.nextSibling.style.display =
+                                        "flex";
+                                    }}
+                                  />
+                                ) : null}
+                                <span
+                                  className={`${
+                                    c.user_avatar ? "hidden" : "flex"
+                                  } w-full h-full items-center justify-center bg-blue-500 text-white text-xs font-semibold`}
+                                >
+                                  {c.user_initials}
+                                </span>
+                              </div>
+
+                              {/* User name */}
+                              <span className="text-sm font-medium">
+                                {c.user_name || "Unknown User"}
                               </span>
+
+                              <p className="text-xs text-gray-500">
+                                {dayjs(c.created_at).format(
+                                  "MMM D, YYYY h:mm A"
+                                )}
+                              </p>
                             </div>
 
-                            {/* ✅ YANGILANGAN: User full name */}
-                            <span className="text-sm font-medium">
-                              {c.user_name || "Unknown User"}
-                            </span>
-
-                            <p className="text-xs text-gray-500 ml-auto">
-                              {dayjs(c.created_at).format("MMM D, YYYY h:mm A")}
-                            </p>
+                            {/* Comment actions dropdown */}
+                            <Dropdown
+                              open={commentDropdownOpen === c.id}
+                              onOpenChange={(open) =>
+                                setCommentDropdownOpen(open ? c.id : null)
+                              }
+                              menu={{
+                                items: [
+                                  {
+                                    key: "edit",
+                                    label: "Edit message",
+                                    onClick: () => handleEditComment(c),
+                                  },
+                                  {
+                                    key: "delete",
+                                    label: "Delete",
+                                    onClick: () => showDeleteCommentModal(c),
+                                  },
+                                ],
+                              }}
+                              trigger={["click"]}
+                              overlayStyle={{ zIndex: 1001 }}
+                            >
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setCommentDropdownOpen(
+                                    commentDropdownOpen === c.id ? null : c.id
+                                  );
+                                }}
+                                className="p-1 rounded hover:bg-gray-200 cursor-pointer"
+                              >
+                                <MoreVertical className="size-3" />
+                              </button>
+                            </Dropdown>
                           </div>
+
                           <div className="ml-11">
                             <div className="bg-white p-3 rounded-lg">
-                              <p className="text-sm text-gray-700">
-                                {c.message || c.text}
-                              </p>
+                              {editingCommentId === c.id ? (
+                                // Edit mode
+                                <div className="space-y-2">
+                                  <Input
+                                    value={editingCommentText}
+                                    onChange={(e) =>
+                                      setEditingCommentText(e.target.value)
+                                    }
+                                    onKeyUp={(e) => {
+                                      if (e.key === "Enter") {
+                                        handleUpdateComment(c.id);
+                                      }
+                                    }}
+                                    autoFocus
+                                    className="text-sm"
+                                  />
+                                  <div className="flex gap-2 pt-2">
+                                    <button
+                                      onClick={() => handleUpdateComment(c.id)}
+                                      className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={handleCancelEdit}
+                                      className="px-3 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                // View mode
+                                <p className="text-sm text-gray-700">
+                                  {c.message || c.text}
+                                </p>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1562,7 +1720,6 @@ const Card = ({
                         No comments yet
                       </p>
                     )}
-
                     {/* Add new comment */}
                     <div className="mt-3 flex gap-2">
                       <input
@@ -1585,6 +1742,41 @@ const Card = ({
                     </div>
                   </div>
                 </div>
+                {/* Delete Comment Confirmation Modal */}
+                <Modal
+                  title="Delete Comment"
+                  open={deleteCommentModalOpen}
+                  onOk={handleConfirmDeleteComment}
+                  onCancel={handleCancelDeleteComment}
+                  okText="Yes, delete"
+                  cancelText="Cancel"
+                  okButtonProps={{ danger: true }}
+                  centered
+                >
+                  <div className="py-4">
+                    <p className="text-gray-700 mb-4">
+                      Are you sure you want to delete this comment? This action
+                      cannot be undone.
+                    </p>
+                    {commentToDelete && (
+                      <div className="bg-gray-50 p-3 rounded-lg border-l-4 border-gray-300">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-sm font-medium text-gray-600">
+                            {commentToDelete.user_name || "Unknown User"}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {dayjs(commentToDelete.created_at).format(
+                              "MMM D, YYYY h:mm A"
+                            )}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-700 italic">
+                          "{commentToDelete.message || commentToDelete.text}"
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </Modal>
               </div>
 
               {/* Right section */}
@@ -2898,7 +3090,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
               </div>
 
               {/* Buttons */}
-              <div className="flex justify-center gap-5 pt-10 md:pt-65">
+              <div className="flex justify-center gap-5 pt-8 md:pt-32">
                 <Button
                   onClick={onClose}
                   disabled={saveLoading || fileUploading}
