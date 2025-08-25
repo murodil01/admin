@@ -40,8 +40,8 @@ export const getControlDataByUserId = async (userId) => {
 
 export const updateControlData = async (userId, data) => {
     let cleanData;
+    const userIdString = String(userId);
     try {
-        const userIdString = String(userId);
         console.log('🔍 SERVICE DEBUG: updateControlData called with:', {
             originalUserId: userId,
             userIdString: userIdString,
