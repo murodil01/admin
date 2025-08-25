@@ -29,32 +29,6 @@ import { ROLES } from "../../components/constants/roles";
 
 const { TextArea } = Input;
 
-// Add this function to your taskService.js file
-// const getTaskTags = async () => {
-//   const token = localStorage.getItem("token");
-//   if (!token) {
-//     throw new Error("No authentication token found");
-//   }
-
-//   const response = await fetch('https://prototype-production-2b67.up.railway.app/project/tags/', {
-//     method: 'GET',
-//     headers: {
-//       'accept': 'application/json',
-//       'Authorization': `Bearer ${token}`, // Add Bearer token
-//       'Content-Type': 'application/json',
-//     },
-//   });
-
-//   if (!response.ok) {
-//     if (response.status === 401) {
-//       throw new Error("Authentication failed");
-//     }
-//     throw new Error(`HTTP error! status: ${response.status}`);
-//   }
-
-//   return await response.json();
-// };
-
 const TaskDetails = ({ tagOptionsFromApi = [] }) => {
   const { projectId } = useParams();
   const navigate = useNavigate();
