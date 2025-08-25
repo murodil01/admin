@@ -1,4 +1,3 @@
-///////////////////////////////////////////////////////////////////////////////TaskDetails.jsx
 import { AiOutlinePaperClip } from "react-icons/ai";
 import { useParams, useNavigate } from "react-router-dom";
 import { FiTrash } from "react-icons/fi";
@@ -29,6 +28,7 @@ import { ROLES } from "../../components/constants/roles";
 
 const { TextArea } = Input;
 
+
 const TaskDetails = ({ tagOptionsFromApi = [] }) => {
   const { projectId } = useParams();
   const navigate = useNavigate();
@@ -45,7 +45,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
   const [files, setFiles] = useState([]);
   const [checklist, setChecklist] = useState([]);
   const [cards, setCards] = useState([]);
-  const [type, setType] = useState("acknowledged");
+  const [type, setType] = useState("assigned");
   const [selectedAssignee, setSelectedAssignee] = useState(null);
   const [assignees, setAssignees] = useState([]);
   const [loadingAssignees, setLoadingAssignees] = useState(false);
@@ -440,7 +440,6 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                   ]}
                 />
               </div>
-
               <Upload
                 className="w-[100%] md:max-w-[250px]"
                 style={{ width: "100%" }}
@@ -495,7 +494,6 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                 </div>
               )}
             </div>
-
             <div className="mb-6">
               <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
                 Description
@@ -616,7 +614,6 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                 </div>
               )}
             </div>
-
             <div className="flex gap-5  flex-row-reverse ">
               <Button
                 onClick={handleSave}
