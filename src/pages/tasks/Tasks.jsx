@@ -861,14 +861,14 @@ const Projects = () => {
           <button
             key="cancel"
             onClick={handleActionClose}
-            className="mr-2 px-4 py-2 border border-gray-300 rounded-[15px] text-gray-700 hover:bg-gray-50"
+            className="mr-2 px-4 py-2 border border-gray-300 rounded-[15px] cursor-pointer text-gray-700 hover:bg-gray-50"
           >
             Cancel
           </button>,
           <button
             key="delete"
             onClick={handleDeleteTask}
-            className="bg-red-500 hover:bg-red-600 text-white rounded-[15px] px-[20px] py-[12px] text-base font-bold transition"
+            className="bg-red-500 hover:bg-red-600 text-white rounded-[15px] px-4 py-2 cursor-pointer text-base font-bold transition"
           >
             Delete
           </button>,
