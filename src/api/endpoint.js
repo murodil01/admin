@@ -124,7 +124,7 @@ const endpoints = {
     getAll: "control-data/",
     getAllEmployees: "control-data/all-employees/",
     getAvailableUsers: "control-data/available-users/",
-    getByUserId: (userId) => `control-data/${userId}/`, // GET /control-data/{user_id}/
+    getByUserId: (userId) => `/control-data/?user_id=${userId}`, // GET /control-data/{user_id}/
     create: "control-data/", // POST /control-data/
     update: (userId) => `control-data/${userId}/`, // PUT /control-data/{user_id}/
     partialUpdate: (userId) => `control-data/${userId}/`, // PATCH /control-data/{user_id}/
