@@ -98,3 +98,8 @@ export const createComment = async (commentData) => {
     throw error;
   }
 };
+
+export const deleteTaskComment = (id) =>
+  api.delete(endpoints.tasks.deleteComments(id));
+  export const updateTaskComment = (id, data) =>
+  api.patch(endpoints.tasks.updateComments(id), data);
