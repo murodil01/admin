@@ -8,41 +8,40 @@ const ChiefOfficers = () => {
   const [manager, setManager] = useState(null);
   const [heads, setHeads] = useState([]);
 
-  // Profession ma'lumotlari
-  const professionsData = useMemo(()=>({
-    GM: {
+  const professionsData = useMemo(() => ({
+    "GM": {
       title: "General Manager",
       description: "Responsible for overseeing all company operations and strategy.",
     },
-    CMO: {
+    "CMO": {
       title: "Chief Marketing Officer",
       description: "Leads marketing strategy, branding, and customer outreach.",
     },
-    CCO: {
+    "CCO": {
       title: "Chief Creative Officer",
       description: "Focuses on innovation and creative direction.",
     },
-    CAO: {
+    "CAO": {
       title: "Chief Academy Officer",
       description: "Responsible for academic programs and training initiatives.",
     },
-    CSO: {
+    "CSO": {
       title: "Chief Sales Officer",
       description: "Drives sales growth and client relationships.",
     },
-    CTO: {
+    "CTO": {
       title: "Chief Technology Officer",
       description: "Manages technology vision, product development, and IT systems.",
     },
-    CFO: {
+    "CFO": {
       title: "Chief Financial Officer",
       description: "Oversees financial planning, risk management, and reporting.",
     },
-    COO: {
+    "COO": {
       title: "Chief Operating Officer",
       description: "Ensures smooth day-to-day company operations.",
     },
-    CHRO: {
+    "CHRO": {
       title: "Chief HR Officer",
       description: "Leads recruitment, employee engagement, and HR strategy.",
     },
@@ -50,7 +49,7 @@ const ChiefOfficers = () => {
       title: "Chief Executive Officer",
       description: "Sets company vision, mission, and strategic direction.",
     },
-  }),[]);
+  }), []);
 
   const fetchUsers = async () => {
     try {
@@ -72,20 +71,16 @@ const ChiefOfficers = () => {
     fetchUsers();
   }, []);
 
-  // OfficerCard komponenti ichida professionsData dan foydalanish uchun prop sifatida berish
   return (
     <main className="flex flex-col gap-6 sm:gap-8 px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 max-w-7xl mx-auto py-6 sm:py-8">
-      {/* Toast container */}
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
 
-      {/* Manager card */}
       {manager && (
         <section className="flex justify-center mb-8">
           <OfficerCard officer={manager} professionsData={professionsData} />
         </section>
       )}
 
-      {/* Heads list */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8">
         {heads.length > 0 ? (
           heads.map((officer) => (
@@ -101,25 +96,32 @@ const ChiefOfficers = () => {
   );
 };
 
-// Reusable Officer card
 const OfficerCard = ({ officer, professionsData }) => {
-const getProfessionInfo = () => {
-  if (officer.profession) {
-    // profession nomini har doim uppercase qilib solishtiramiz
-    const key = officer.profession.toUpperCase();
-
-    if (professionsData[key]) {
-      return professionsData[key];
+  const getProfessionInfo = () => {
+    if (officer.profession) {
+      // To'g'ridan-to'g'ri profession nomi bilan tekshiramiz
+      if (professionsData[officer.profession]) {
+        return professionsData[officer.profession];
+      }
+      
+      // Agar aynan shu nom bilan topilmasa, uppercase qilib ham sinab ko'ramiz
+      const upperKey = officer.profession.toUpperCase();
+      if (professionsData[upperKey]) {
+        return professionsData[upperKey];
+      }
+      
+      // Lowercase qilib ham sinab ko'ramiz
+      const lowerKey = officer.profession.toLowerCase();
+      if (professionsData[lowerKey]) {
+        return professionsData[lowerKey];
+      }
     }
-  }
 
-  // Agar professionsData'da yo'q bo'lsa
-  return {
-    title: officer.profession || "Unknown profession",
-    description: "No description available for this position."
+    return {
+      title: officer.profession || "Unknown profession",
+      description: "No description available for this position."
+    };
   };
-};
-
 
   const professionInfo = getProfessionInfo();
 
@@ -129,7 +131,7 @@ const getProfessionInfo = () => {
         <img
           loading="lazy"
           src={officer.profile_picture || "https://via.placeholder.com/150"}
-          alt= "Officer"
+          alt="Officer"
           className="w-28 h-28 rounded-full object-cover mb-3 border-2 border-gray-200"
         />
         <p className="text-sm text-gray-500 h-5 overflow-hidden">
@@ -142,7 +144,7 @@ const getProfessionInfo = () => {
       </div>
 
       <div className="mt-5">
-        <p className="font-semibold truncate"> Name:{officer.full_name || "Unknown"}</p>
+        <p className="font-semibold truncate">Name: {officer.full_name || "Unknown"}</p>
         <p className="text-gray-600 text-sm">
           Phone: {officer.phone_number || "Not provided"}
         </p>
