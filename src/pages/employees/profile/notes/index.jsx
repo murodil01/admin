@@ -18,6 +18,8 @@ const Notes = () => {
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [isSending, setIsSending] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState(null);
   const bottomRef = useRef(null);
 
   // Get user ID from URL parameters - matches the /profile/:id route structure
@@ -142,25 +144,37 @@ const Notes = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const deleteMessage = async (id) => {
+  // Open delete confirmation modal
+  const confirmDelete = (message) => {
+    setMessageToDelete(message);
+    setShowDeleteModal(true);
+    setOpenDropdownId(null);
+  };
+
+  // Close delete confirmation modal
+  const closeDeleteModal = () => {
+    setShowDeleteModal(false);
+    setMessageToDelete(null);
+  };
+
+  // Execute the delete operation
+  const executeDelete = async () => {
+    if (!messageToDelete) return;
+    
     try {
       // Optimistically remove from UI first
-      setMessages(prev => prev.filter(msg => msg.id !== id));
-      setOpenDropdownId(null);
-
+      setMessages(prev => prev.filter(msg => msg.id !== messageToDelete.id));
+      
       // Then make the API call
-      await deleteNote(id);
-
+      await deleteNote(messageToDelete.id);
+      
       toast.success("Successfully deleted");
     } catch (error) {
       console.error('Delete error:', error);
-
+      
       // If delete fails, add the message back to the UI
-      const deletedMessage = messages.find(msg => msg.id === id);
-      if (deletedMessage) {
-        setMessages(prev => [...prev, deletedMessage]);
-      }
-
+      setMessages(prev => [...prev, messageToDelete]);
+      
       let errorMessage = "Error during deletion";
       if (error.response?.status === 404) {
         errorMessage = "Message not found";
@@ -171,8 +185,10 @@ const Notes = () => {
           ? JSON.stringify(error.response.data)
           : error.response.data;
       }
-
+      
       toast.error(errorMessage);
+    } finally {
+      closeDeleteModal();
     }
   };
 
@@ -347,6 +363,60 @@ const Notes = () => {
 
   return (
     <div className="w-full rounded-[24px] h-screen flex flex-col bg-white relative overflow-hidden">
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div
+            className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl transform transition-all duration-300 animate-scaleIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Confirm Deletion</h3>
+              <button
+                onClick={closeDeleteModal}
+                className="text-gray-500 hover:text-gray-700 transition-colors p-1 rounded-full hover:bg-gray-100 cursor-pointer"
+                aria-label="Close confirmation modal"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this note? This action cannot be undone.
+            </p>
+
+            {messageToDelete && (
+              <div className="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-200">
+                <p className="text-sm text-gray-700 font-medium mb-1">
+                  Note preview:
+                </p>
+                <p className="text-sm text-gray-600 whitespace-pre-line break-words">
+                  {messageToDelete.text.length > 120
+                    ? `${messageToDelete.text.substring(0, 120)}...`
+                    : messageToDelete.text}
+                </p>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={closeDeleteModal}
+                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={executeDelete}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-medium flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-opacity-50 cursor-pointer"
+              >
+                <Trash2 size={16} />
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="sticky top-0 bg-white z-10 p-4 border-b border-gray-200">
         <h2 className="text-xl font-bold text-gray-800">Notes</h2>
@@ -437,7 +507,7 @@ const Notes = () => {
                         </button>
                         <button
                           onClick={() => {
-                            deleteMessage(msg.id);
+                            confirmDelete(msg);
                           }}
                           onMouseDown={(e) => e.stopPropagation()}
                           className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-blue-50 hover:text-red-500 flex items-center gap-2 cursor-pointer rounded-lg"

@@ -62,7 +62,7 @@ export const updateControlData = async (userId, data) => {
             assigned_devices: data.assigned_devices || "",
             access_level: data.access_level || "",
             serial_number: data.serial_number || "",
-            pinfl: data.pinfl ? String(data.pinfl) : "", // Keep as string
+            pinfl: data.pinfl !== undefined ? data.pinfl : null, // Ensure null if undefined
         };
 
         console.log("Updating control data with ID:", userIdString);
@@ -131,7 +131,7 @@ export const createControlDataForUser = async (userId, data) => {
             assigned_devices: data.assigned_devices || "",
             access_level: data.access_level || "",
             serial_number: data.serial_number || "",
-            pinfl: data.pinfl ? String(data.pinfl) : "", // Keep as string
+            pinfl: data.pinfl !== undefined ? data.pinfl : null, // Ensure null if undefined
         };
 
         console.log("Creating control data for user:", userIdString);

@@ -1,11 +1,11 @@
-// Updated InnerCircle.jsx - Replace the existing import and usage
+// Fixed InnerCircle.jsx - Ensures pagination and filters persist after refresh
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus } from "lucide-react";
 import EmployeeList from "./EmployeeList";
 import Activity from "./activity";
 import AddEmployeeModal from "./AddEmployeeModal";
-import FilterModal from "./FilterModal"; // Updated import
+import FilterModal from "./FilterModal";
 import {
     getEmployees,
     createEmployees,
@@ -18,7 +18,7 @@ import { ROLES } from "../../components/constants/roles";
 import { message, Pagination, Modal } from "antd";
 
 const InnerCircle = () => {
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const itemsPerPage = 12;
     const [employees, setEmployees] = useState([]);
     const [totalEmployees, setTotalEmployees] = useState(0);
@@ -33,17 +33,61 @@ const InnerCircle = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const navigate = useNavigate();
 
-    // Updated filter state to handle multiple filters
-    const [currentFilters, setCurrentFilters] = useState({
-        fullName: '',
-        phoneNumber: '',
-        selectedDepartments: [],
-        status: ''
-    });
+    // Initialize filters from URL parameters or localStorage
+    const initializeFilters = () => {
+        const urlFilters = {
+            fullName: searchParams.get('fullName') || '',
+            phoneNumber: searchParams.get('phoneNumber') || '',
+            selectedDepartments: searchParams.get('departments') ?
+                searchParams.get('departments').split(',').filter(Boolean) : [],
+            status: searchParams.get('status') || ''
+        };
+
+        // If no URL filters, try to get from localStorage
+        if (!searchParams.get('fullName') && !searchParams.get('phoneNumber') &&
+            !searchParams.get('departments') && !searchParams.get('status')) {
+            const savedFilters = localStorage.getItem('innerCircleFilters');
+            if (savedFilters) {
+                try {
+                    return { ...urlFilters, ...JSON.parse(savedFilters) };
+                } catch (e) {
+                    console.warn('Error parsing saved filters:', e);
+                }
+            }
+        }
+
+        return urlFilters;
+    };
+
+    const [currentFilters, setCurrentFilters] = useState(initializeFilters());
+
+    // Update URL parameters when filters change
+    const updateUrlParams = (page, filters) => {
+        const params = new URLSearchParams();
+
+        // Always set page
+        params.set("page_num", page.toString());
+
+        // Set filter parameters
+        if (filters.fullName) params.set("fullName", filters.fullName);
+        if (filters.phoneNumber) params.set("phoneNumber", filters.phoneNumber);
+        if (filters.selectedDepartments.length > 0) {
+            params.set("departments", filters.selectedDepartments.join(','));
+        }
+        if (filters.status) params.set("status", filters.status);
+
+        // Update URL without causing navigation
+        setSearchParams(params, { replace: true });
+
+        // Save filters to localStorage
+        localStorage.setItem('innerCircleFilters', JSON.stringify(filters));
+    };
 
     // Enhanced filter handler
     const handleFilter = (filters) => {
         setCurrentFilters(filters);
+        const currentPage = parseInt(searchParams.get("page_num") || "1", 10);
+        updateUrlParams(1, filters); // Reset to page 1 when filtering
         fetchEmployees(1, filters);
     };
 
@@ -56,7 +100,11 @@ const InnerCircle = () => {
             status: ''
         };
         setCurrentFilters(clearedFilters);
+        updateUrlParams(1, clearedFilters);
         fetchEmployees(1, clearedFilters);
+
+        // Clear from localStorage
+        localStorage.removeItem('innerCircleFilters');
     };
 
     const handleStatusUpdate = (employeeId, newStatus) => {
@@ -69,36 +117,62 @@ const InnerCircle = () => {
         );
     };
 
-    useEffect(() => {
-        fetchEmployees();
-    }, []);
-
     // Enhanced fetchEmployees function to handle multiple filters
-    const fetchEmployees = async (page = 1, filters = null) => {
+    const fetchEmployees = async (page = 1, filters = null, updateUrl = true) => {
+        const filtersToUse = filters || currentFilters;
         setLoading(true);
+
         try {
-            // Pass filters directly to the service
-            const res = await getEmployees(page, filters);
+            console.log('Fetching employees with:', { page, filters: filtersToUse });
+            const res = await getEmployees(page, filtersToUse);
             setEmployees(res.results || []);
             setTotalEmployees(res.count || 0);
+
+            // Only update URL params when explicitly requested (not on initial load)
+            if (updateUrl) {
+                updateUrlParams(page, filtersToUse);
+            }
         } catch (err) {
             console.error("Error fetching members:", err);
+            message.error("Failed to fetch members");
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        const pageFromUrl = parseInt(searchParams.get("page_num") || "1", 10);
-        fetchEmployees(pageFromUrl, currentFilters);
-    }, [searchParams]);
-
+    // Handle page changes
     const handlePageChange = (newPage) => {
-        const params = new URLSearchParams(searchParams);
-        params.set("page_num", newPage);
-        navigate(`?${params.toString()}`, { replace: true });
+        updateUrlParams(newPage, currentFilters);
         fetchEmployees(newPage, currentFilters);
     };
+
+    // Initialize data on component mount
+    useEffect(() => {
+        if (!authLoading) {
+            const pageFromUrl = parseInt(searchParams.get("page_num") || "1", 10);
+            fetchEmployees(pageFromUrl, currentFilters, false).finally(() => setDataLoading(false)); // Don't update URL on initial load
+        }
+    }, [authLoading]); // Only depend on authLoading
+
+    // Handle URL parameter changes (back/forward navigation)
+    useEffect(() => {
+        const pageFromUrl = parseInt(searchParams.get("page_num") || "1", 10);
+        const urlFilters = {
+            fullName: searchParams.get('fullName') || '',
+            phoneNumber: searchParams.get('phoneNumber') || '',
+            selectedDepartments: searchParams.get('departments') ?
+                searchParams.get('departments').split(',').filter(Boolean) : [],
+            status: searchParams.get('status') || ''
+        };
+
+        // Only fetch if the URL parameters are different from current state
+        const filtersChanged = JSON.stringify(urlFilters) !== JSON.stringify(currentFilters);
+
+        if (filtersChanged) {
+            setCurrentFilters(urlFilters);
+            fetchEmployees(pageFromUrl, urlFilters, false); // Don't update URL when reading from URL
+        }
+    }, [searchParams.toString()]); // Listen to URL changes
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedId, setSelectedId] = useState(null);
@@ -120,7 +194,10 @@ const InnerCircle = () => {
             setLoading(true);
             await deleteUser(selectedId);
             message.success("Member deleted successfully");
-            fetchEmployees(1, currentFilters); // Refresh with current filters
+
+            // Stay on current page with current filters
+            const currentPage = parseInt(searchParams.get("page_num") || "1", 10);
+            await fetchEmployees(currentPage, currentFilters, false); // Don't update URL after delete
         } catch (err) {
             console.error("Delete error details:", {
                 status: err.response?.status,
@@ -209,7 +286,10 @@ const InnerCircle = () => {
 
             message.success("Member added successfully");
             setIsAddModalOpen(false);
-            await fetchEmployees(1, currentFilters); // Refresh with current filters
+
+            // Refresh current page with current filters
+            const currentPage = parseInt(searchParams.get("page_num") || "1", 10);
+            await fetchEmployees(currentPage, currentFilters, false); // Don't update URL after adding employee
 
         } catch (err) {
             console.error("❌ API Error:", err);
@@ -246,12 +326,6 @@ const InnerCircle = () => {
         localStorage.setItem("innerCircleTab", tab);
     };
 
-    useEffect(() => {
-        if (!authLoading) {
-            fetchEmployees().finally(() => setDataLoading(false));
-        }
-    }, [authLoading]);
-
     if (isLoading) {
         return <div className="flex justify-center items-center h-[100vh]">Loading...</div>;
     }
@@ -268,7 +342,7 @@ const InnerCircle = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mt-6 mb-6 gap-4">
                 <h1 className="text-[#1F2937] font-bold text-2xl sm:text-3xl xl:text-4xl text-center md:text-left">
-                    Inner Circle ({employees.length})
+                    Inner Circle ({totalEmployees})
                 </h1>
 
                 {/* Tabs */}
@@ -276,8 +350,8 @@ const InnerCircle = () => {
                     <button
                         onClick={() => handleTabClick("list")}
                         className={`py-2 sm:py-[9px] text-sm sm:text-base font-bold w-1/2 transition-all duration-200 rounded-full cursor-pointer ${activeTab === "list"
-                                ? "bg-[#0061fe] text-white"
-                                : "bg-[#DBDBDB] text-[#1F2937]"
+                            ? "bg-[#0061fe] text-white"
+                            : "bg-[#DBDBDB] text-[#1F2937]"
                             }`}
                     >
                         List
@@ -285,8 +359,8 @@ const InnerCircle = () => {
                     <button
                         onClick={() => handleTabClick("activity")}
                         className={`py-2 sm:py-[9px] text-sm sm:text-base font-bold w-1/2 transition-all duration-200 rounded-full cursor-pointer ${activeTab === "activity"
-                                ? "bg-[#0061fe] text-white"
-                                : "bg-[#DBDBDB] text-[#1F2937]"
+                            ? "bg-[#0061fe] text-white"
+                            : "bg-[#DBDBDB] text-[#1F2937]"
                             }`}
                     >
                         Activity
@@ -299,6 +373,7 @@ const InnerCircle = () => {
                         <FilterModal
                             onFilter={handleFilter}
                             onClearFilters={handleClearFilters}
+                            currentFilters={currentFilters} // Pass current filters to modal
                         />
                     </div>
                     <Permission anyOf={[ROLES.EMPLOYEE, ROLES.MANAGER]}>
@@ -341,7 +416,7 @@ const InnerCircle = () => {
             )}
 
             <Modal
-                title={`Are you sure you want to delete ${employees.first_name} member?`}
+                title={`Are you sure you want to delete this member?`}
                 open={isDeleteModalOpen}
                 onOk={handleConfirmDelete}
                 onCancel={handleCancelDelete}
@@ -362,9 +437,9 @@ const InnerCircle = () => {
             />
 
             {/* Pagination */}
-            <div className="mt-6 flex justify-center">
+            <div className="flex justify-center my-10">
                 <Pagination
-                    current={parseInt(searchParams.get("page_num") || 1)}
+                    current={parseInt(searchParams.get("page_num") || "1", 10)}
                     total={totalEmployees}
                     pageSize={itemsPerPage}
                     onChange={handlePageChange}

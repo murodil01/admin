@@ -13,6 +13,7 @@ import {
   updateProject,
   deleteProject,
 } from "../../api/services/projectService";
+import { getDepartments } from "../../api/services/departmentService";
 import { FaArchive } from "react-icons/fa";
 import { getUsers } from "../../api/services/userService";
 import { useSidebar } from "../../context";
@@ -20,8 +21,6 @@ import { Permission } from "../../components/Permissions";
 import { useAuth } from "../../hooks/useAuth";
 import { ROLES } from "../../components/constants/roles";
 
-// ✅ Import o'rniga assets papkasidan import qiling
-import allDepartmentsIcon from '/M2.png'; // TUZATILDI: to'g'ri yo'l
 
 const Projects = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -36,7 +35,7 @@ const Projects = () => {
   const { collapsed } = useSidebar();
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [deadline, setDeadline] = useState("");
-
+  const allDepartmentsIcon = '/public/M2.png';
   const { user, loading: authLoading } = useAuth(); 
   const [dataLoading, setDataLoading] = useState(true);
   const isLoading = authLoading || dataLoading;
@@ -55,7 +54,6 @@ const Projects = () => {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [allDepartmentsSelected, setAllDepartmentsSelected] = useState(false);
   const [totalDepartmentsCount, setTotalDepartmentsCount] = useState(0);
-
   const [deptModalFilteredUsers, setDeptModalFilteredUsers] = useState([]);
 
   const filteredUsersBySearch = useMemo(() => {
@@ -83,6 +81,22 @@ const Projects = () => {
 
   const [loading, setLoading] = useState(true);
   
+  useEffect(() => {
+  const fetchTotalDepartments = async () => {
+    try {
+      const response = await getDepartments();
+      setTotalDepartmentsCount(response.length);
+      console.log('Total departments from API:', response.length);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      // Fallback - hardcoded qiymat
+      setTotalDepartmentsCount(4);
+    }
+  };
+  
+  fetchTotalDepartments();
+}, []);
+
   useEffect(() => {
     loadProjects();
     loadUsers();
@@ -972,30 +986,63 @@ const Projects = () => {
           
 
 {project.departments?.length > 0 ? (
-  <div className="flex items-center">
+  <div className="flex items-center -space-x-2">
     {(() => {
       const totalDepts = project.departments.length;
       
-      // ASOSIY MANTIQ: Agar project'dagi departmentlar soni umumiy departmentlar soniga teng bo'lsa
-      const isAllDepartments = allDepartments.length > 0 && totalDepts >= allDepartments.length;
+      // 🔍 DEBUG: Ma'lumotlarni tekshirish
+      console.log('🔍 DEBUG INFO:');
+      console.log('project.departments:', project.departments);
+      console.log('allDepartments:', allDepartments);
+      console.log('totalDepts:', totalDepts);
+      console.log('totalDepartmentsCount:', totalDepartmentsCount);
+      
+      // Network'dan kelgan departments ma'lumotlariga asoslanib mantiq
+      let isAllDepartments = false;
+      
+      // Agar allDepartments mavjud bo'lsa (modal ochilgan)
+      if (allDepartments && allDepartments.length > 0) {
+        const isAllSelected = totalDepts === allDepartments.length;
+        console.log('Modal ochilgan - allDepartments mavjud');
+        console.log('totalDepts:', totalDepts, 'allDepartments.length:', allDepartments.length);
+        console.log('isAllSelected:', isAllSelected);
+        
+        isAllDepartments = isAllSelected;
+      } else {
+        // Agar allDepartments yo'q bo'lsa, API dan olingan son bilan solishtirish
+        const isAllByCount = totalDepts === totalDepartmentsCount && totalDepartmentsCount > 0;
+        
+        // Project obyektida maxsus flag bormi?
+        const hasAllFlag = project.isAllDepartments === true || 
+                          project.allSelected === true ||
+                          project.selectAll === true;
+        
+        console.log('Modal yopiq - allDepartments yo\'q');
+        console.log('totalDepts:', totalDepts, 'totalDepartmentsCount:', totalDepartmentsCount);
+        console.log('isAllByCount:', isAllByCount);
+        console.log('hasAllFlag:', hasAllFlag);
+        
+        isAllDepartments = isAllByCount || hasAllFlag;
+      }
+      
+      console.log('FINAL isAllDepartments:', isAllDepartments);
       
       if (isAllDepartments) {
         // Barcha departmentlar tanlangan - M ikonkasini ko'rsatish
         return (
-          <div className="flex items-center">
-            <div className="relative w-[25px] flex items-center">
-              <img
-                src="/public/M2.png" 
-                alt="All Departments"
-                className="w-7 h-7 border-2 border-white rounded-full object-cover hover:opacity-80 transition cursor-pointer shadow-sm"
-                onError={(e) => {
-                  const fallbackDiv = document.createElement('div');
-                  fallbackDiv.className = 'w-7 h-7 border-2 border-white rounded-full bg-blue-500 flex items-center justify-center shadow-sm';
-                  fallbackDiv.innerHTML = '<span class="text-xs font-bold text-white">M</span>';
-                  e.target.parentNode.replaceChild(fallbackDiv, e.target);
-                }}
-              />
-            </div>
+          <div className="relative">
+            <img
+              src={allDepartmentsIcon}
+              alt="All Departments"
+              className="w-7 h-7 rounded-full border-2 border-white shadow-sm object-cover"
+              onError={(e) => {
+                console.log('Image load failed, using fallback');
+                const fallbackDiv = document.createElement('div');
+                fallbackDiv.className = 'w-7 h-7 border-2 border-white rounded-full bg-blue-500 flex items-center justify-center shadow-sm text-white font-bold text-sm';
+                fallbackDiv.innerHTML = 'M';
+                e.target.parentNode.replaceChild(fallbackDiv, e.target);
+              }}
+            />
           </div>
         );
       } else {
@@ -1012,7 +1059,6 @@ const Projects = () => {
                 className="relative w-[25px] flex items-center"
                 style={{
                   marginLeft: index > 0 ? '-8px' : '0',
-                  zIndex: maxVisible - index
                 }}
               >
                 {dept.photo ? (
@@ -1049,7 +1095,7 @@ const Projects = () => {
     })()}
   </div>
 ) : (
-  <span className="text-gray-400 text-xs">-</span>
+  <span className="text-gray-400">-</span>
 )}
                 </div>
                 <button
@@ -1315,6 +1361,7 @@ const Projects = () => {
               onChange={(ids) => setSelectedDepartments(ids)}
               onDataLoaded={(data) => setAllDepartments(data)}
             />
+            
           </div>
 
           {/* Users ro'yxati - Department modal ichida */}
