@@ -140,7 +140,7 @@ const Profiles = () => {
       let pinflValue = null;
 
       if(formData.pinfl !== null && formData.pinfl !== undefined && formData.pinfl !== '') {
-        const parsedPinfl = parseInt(formData.pinfl, 10);
+        const parsedPinfl = parseInt(formData.pinfl, 14);
 
         // Validate PINFL is a valid number
         if (isNaN(parsedPinfl)) {
@@ -337,7 +337,18 @@ const Profiles = () => {
   }, [employeeId, employeeIdString, numericEmployeeId]);
 
   if (loading && !formData.id && !isNewRecord) {
-    return <Spin size="large" className="flex justify-center mt-10" />;
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent"></div>
+            <span className="ml-3 text-gray-600 text-sm sm:text-base">
+              Loading control data...
+            </span>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const hasData = !isNewRecord && formData.id;
