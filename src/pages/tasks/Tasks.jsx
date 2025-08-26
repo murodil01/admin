@@ -843,11 +843,11 @@ const Projects = () => {
       case "delete":
         return (
           <div className="p-1">
-            <p className="text-sm text-center text-gray-600">
+            <p className="text-sm  text-gray-600">
               Are you sure you want to delete "
               <strong>{selectedTask.name}</strong>"?
             </p>
-            <p className="text-sm text-center text-red-500 mt-2">
+            <p className="text-sm  text-red-500 mt-2">
               This action is permanent and cannot be undone.
             </p>
           </div>
@@ -1397,7 +1397,7 @@ const Projects = () => {
                   </div>
                   <button
                     onClick={handleSelectAllUsers}
-                    className="h-[39px]   flex-1 px-9 cursor-pointer flex items-center justify-center rounded-xl text-white bg-[#1677FF] whitespace-nowrap"
+                    className="h-[39px]   flex-1 px-9 cursor-pointer flex items-center justify-center rounded-xl max-sm:mt-2 max-sm:py-1 text-white bg-[#1677FF] whitespace-nowrap "
                   >
                     {deptModalFilteredUsers.every(user => selectedUsers.includes(user.id))
                       ? "Deselect All Users"
