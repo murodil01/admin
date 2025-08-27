@@ -154,15 +154,15 @@ const Profile = () => {
       setEmployee(updatedEmployee);
 
       setIsEditing(false);
-      setSaveMessage("✅ Ma'lumotlar muvaffaqiyatli saqlandi");
+      setSaveMessage("✅ Successfully saved");
       setTimeout(() => setSaveMessage(""), 3000);
     } catch (err) {
       console.error("Save error:", err);
       const errorMessage = err.response?.data?.detail ||
         err.response?.data?.message ||
         err.message ||
-        "Noma'lum xatolik";
-      setSaveMessage(`❌ Saqlashda xatolik: ${errorMessage}`);
+        "Unknown error";
+      setSaveMessage(`❌ Error during saving: ${errorMessage}`);
     }
   };
 

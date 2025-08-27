@@ -475,18 +475,6 @@ const Notes = () => {
     setInput("");
   };
 
-  // Show message if no target user is selected
-  if (!targetUserId) {
-    return (
-      <div className="w-full rounded-[24px] h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center text-gray-500">
-          <Clock size={48} className="mb-4" />
-          <p>Please select a user to view notes</p>
-        </div>
-      </div>
-    );
-  }
-
   if (loading) {
     return (
       <div className="w-full rounded-[24px] h-screen flex items-center justify-center bg-white">
@@ -656,9 +644,9 @@ const Notes = () => {
                           )}
                         </div>
                       </div>
-                      
+
                       {/* Mobile time display */}
-                      <div className="sm:hidden mt-1">
+                      <div className="sm:hidden mt-1 flex justify-end">
                         <span className="text-xs text-gray-500">
                           {msg.time}
                         </span>
@@ -694,7 +682,6 @@ const Notes = () => {
                         </button>
                       </div>
                     )}
-
                   </div>
                 </div>
               </div>
@@ -725,17 +712,16 @@ const Notes = () => {
           </div>
 
           {/* Input Area */}
-          <div className="space-y-3">
-            <div className="relative">
+          <div className="flex items-center gap-3 w-full py-3 sm:py-4">
+            {/* Input */}
+            <div className="relative flex-1">
               <textarea
-                rows={2}
-                placeholder={editingId ? "Edit your note here..." : "What would you like to note down?"}
+                placeholder={editingId ? "Edit your note..." : "Type a note ..."}
                 value={input}
                 onChange={(e) => {
                   setInput(e.target.value);
-                  // Auto-resize textarea
-                  e.target.style.height = 'auto';
-                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                  e.target.style.height = "auto";
+                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
@@ -743,66 +729,48 @@ const Notes = () => {
                     sendMessage();
                   }
                 }}
-                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-[#D8E0F0] rounded-[12px] outline-none resize-none placeholder:text-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200 min-h-[60px] sm:min-h-[80px] max-h-[100px] sm:max-h-[120px] text-sm sm:text-base"
+                rows={1}
                 disabled={isSending}
-                style={{ height: 'auto' }}
+                className="w-full h-11 px-4 py-3 text-sm sm:text-base rounded-lg border border-gray-300
+                        focus:border-blue-500 focus:ring-2 focus:ring-blue-100 resize-none outline-none
+                        placeholder-gray-400 leading-none flex items-center"
+                style={{ minHeight: "44px", maxHeight: "120px" }}
               />
-
-              {/* Character count */}
-              <div className="absolute bottom-2 right-2 text-xs text-gray-400">
-                {input.length}
-              </div>
             </div>
 
-            {/* Action buttons */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 order-2 sm:order-1">
-                {editingId && (
-                  <span className="text-xs sm:text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full w-fit">
-                    Editing mode
-                  </span>
-                )}
-                <span className="text-xs text-gray-500">
-                  Press Enter to send, Shift+Enter for new line
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 order-1 sm:order-2">
-                {editingId && (
-                  <button
-                    onClick={cancelEdit}
-                    className="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-[10px] transition-colors text-sm font-medium text-center"
-                    disabled={isSending}
-                  >
-                    Cancel
-                  </button>
-                )}
-
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2">
+              {editingId && (
                 <button
-                  onClick={sendMessage}
-                  className={`flex-1 sm:flex-none px-4 sm:px-6 py-2 rounded-[10px] transition-all duration-200 text-sm font-medium flex items-center justify-center gap-2 ${input.trim() && !isSending
-                    ? editingId
-                      ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl'
-                      : 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl'
-                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                  disabled={isSending || !input.trim()}
+                  onClick={cancelEdit}
+                  disabled={isSending}
+                  className="px-3 h-11 flex items-center justify-center rounded-lg
+                            border border-gray-300 text-gray-600 hover:bg-gray-100
+                            transition-all text-sm font-medium"
                 >
-                  {isSending ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span className="hidden sm:inline">Sending...</span>
-                      <span className="sm:hidden">...</span>
-                    </>
-                  ) : (
-                    <>
-                      <SendHorizontal size={16} />
-                      <span className="hidden sm:inline">{editingId ? "Update Note" : "Send Note"}</span>
-                      <span className="sm:hidden">{editingId ? "Update" : "Send"}</span>
-                    </>
-                  )}
+                  Cancel
                 </button>
-              </div>
+              )}
+
+              <button
+                onClick={sendMessage}
+                disabled={isSending || !input.trim()}
+                className={`flex items-center justify-center gap-2 px-4 h-11 rounded-lg
+                  font-medium text-sm transition-all shadow-sm ${input.trim() && !isSending
+                    ? "bg-blue-500 hover:bg-blue-600 text-white shadow-md"
+                    : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  }`}
+              >
+                {isSending ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span className="hidden sm:inline">Sending...</span>
+                    <span className="sm:hidden">...</span>
+                  </>
+                ) : (
+                  <SendHorizontal size={16} />
+                )}
+              </button>
             </div>
           </div>
         </div>

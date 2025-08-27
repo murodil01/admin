@@ -21,7 +21,6 @@ const Profiles = () => {
   const [isNewRecord, setIsNewRecord] = useState(false);
   const uploadSuccessShown = useRef(false);
 
-  // ✅ label -> backend field mapping
   const fields = {
     "Acceptance Reason": "accept_reason",
     "Expertise Level": "expertise_level",
@@ -150,7 +149,6 @@ const Profiles = () => {
 
         pinflValue = parsedPinfl;
       }
-      // If empty, pinflValue remains null
 
       // ✅ Ensure user_id is always included in formData
       const dataToSave = {
@@ -207,7 +205,7 @@ const Profiles = () => {
     const fetchData = async () => {
       const initEmptyForm = () => {
         setFormData({
-          user_id: employeeIdString, // Set the user_id when initializing
+          user_id: employeeIdString,
           accept_reason: '',
           expertise_level: '',
           strengths: '',
@@ -250,7 +248,7 @@ const Profiles = () => {
           if (employeeData) {
             setFormData({
               id: employeeData.id,
-              user_id: employeeData.user_id || employeeIdString, // Ensure user_id is set
+              user_id: employeeData.user_id || employeeIdString,
               accept_reason: employeeData.accept_reason || '',
               expertise_level: employeeData.expertise_level || '',
               strengths: employeeData.strengths || '',
@@ -262,7 +260,7 @@ const Profiles = () => {
               assigned_devices: employeeData.assigned_devices || '',
               access_level: employeeData.access_level || '',
               serial_number: employeeData.serial_number || '',
-              pinfl: employeeData.pinfl !== null && employeeData.pinfl !== undefined ? employeeData.pinfl : null, // Ensure null if no value
+              pinfl: employeeData.pinfl !== null && employeeData.pinfl !== undefined ? employeeData.pinfl : null,
               passport_picture: employeeData.passport_picture || null,
               passport_picture_url: employeeData.passport_picture || null,
               passport_file_name: employeeData.passport_file_name || null,
@@ -296,7 +294,7 @@ const Profiles = () => {
         if (err.response?.status === 404) {
           initEmptyForm();
         } else {
-          const errorMessage = err.response?.data?.message || err.message || "Ma'lumotlarni yuklashda xatolik";
+          const errorMessage = err.response?.data?.message || err.message || "Error fetching data";
           message.error(errorMessage);
           initEmptyForm();
         }
@@ -305,20 +303,11 @@ const Profiles = () => {
       }
     };
 
-    // if (employeeId && !isNaN(numericEmployeeId)) {
-    //   console.log('Starting data fetch for employee ID:', employeeId, 'String:', employeeIdString);
-    //   fetchData();
-    // } else {
-    //   console.error('Invalid employee ID:', employeeId);
-    //   message.error("Noto'g'ri foydalanuvchi ID");
-    //   setLoading(false);
-    // }
-
     if (employeeId && typeof employeeId === "string" && employeeId.trim() !== "") {
       fetchData();
     } else {
       console.error("Invalid employee ID:", employeeId);
-      message.error("Noto'g'ri foydalanuvchi ID");
+      message.error("Invalid employee ID");
       setLoading(false);
     }
   }, [employeeId, employeeIdString, numericEmployeeId]);

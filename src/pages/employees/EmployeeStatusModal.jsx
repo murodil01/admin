@@ -8,19 +8,19 @@ const EmployeeStatusModal = ({ employeeId, currentStatus, visible, onClose, onSu
 
     const handleSave = async () => {
         if (!status) {
-            message.warning('Iltimos, statusni tanlang');
+            message.warning('Please, select a status');
             return;
         }
 
         setLoading(true);
         try {
             await updateEmployeeStatus(employeeId, status);
-            message.success('Status muvaffaqiyatli yangilandi');
+            message.success('Status updated successfully');
             onSuccess(status);
             onClose();
         } catch (error) {
-            console.error('Status yangilashda xato:', error);
-            message.error('Status yangilashda xatolik yuz berdi');
+            console.error('Error during updating status', error);
+            message.error('Error during updating status');
         } finally {
             setLoading(false);
         }
