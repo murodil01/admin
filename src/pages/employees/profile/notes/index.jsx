@@ -5,7 +5,7 @@ import {
   createNote,
   updateNote,
   deleteNote,
-  getUserNotes,
+  getNotesAll, // Changed from getUserNotes to getNotesAll
   getCurrentUser,
 } from "../../../../api/services/notesService";
 import { toast } from 'react-toastify';
@@ -13,6 +13,7 @@ import { toast } from 'react-toastify';
 const Notes = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
+  const [filteredMessages, setFilteredMessages] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [openDropdownId, setOpenDropdownId] = useState(null);
@@ -25,7 +26,87 @@ const Notes = () => {
   // Get user ID from URL parameters - matches the /profile/:id route structure
   const { id: targetUserId } = useParams();
 
-  console.log('Notes component - Target User ID:', targetUserId); // Debug log
+  // Role hierarchy definition
+  const ROLES = {
+    FOUNDER: 'founder',
+    MANAGER: 'manager',
+    EMPLOYEE: 'employee' // Add other roles as needed
+  };
+
+  // Role hierarchy levels (higher number = higher authority)
+  const ROLE_LEVELS = {
+    [ROLES.FOUNDER]: 3,
+    [ROLES.MANAGER]: 2,
+    [ROLES.EMPLOYEE]: 1
+  };
+
+  // Function to check if current user can see a note based on role-based access control
+  const canViewNote = (note, currentUserRole, currentUserId, targetUserId) => {
+    if (!note || !note.user) return false;
+
+    const noteAuthorRole = note.user.role || ROLES.EMPLOYEE;
+    const noteAuthorId = note.user.id;
+    const noteRecipientId = note.targetUserId || note.recipient;
+
+    // First check: Note must be written TO the target user we're viewing
+    if (noteRecipientId != targetUserId) { // Use != for loose comparison
+      return false;
+    }
+
+    // Rule 1: If current user is FOUNDER - can see ALL notes (regardless of author)
+    if (currentUserRole === ROLES.FOUNDER) {
+      return true;
+    }
+
+    // Rule 2: If current user is MANAGER - can only see his own notes (regardless of recipient)
+    if (currentUserRole === ROLES.MANAGER) {
+      if (noteAuthorId == currentUserId) { // Use == for loose comparison
+        return true;
+      }
+      return false;
+    }
+
+    // Rule 3: If current user is EMPLOYEE or other role - can only see notes written BY founders and managers TO them
+    if (targetUserId == currentUserId) { // Employee can only see notes TO themselves
+      if (noteAuthorRole === ROLES.FOUNDER || noteAuthorRole === ROLES.MANAGER) {
+        return true;
+      }
+    }
+
+    // Employee cannot see notes written to other users, or notes from other employees
+    return false;
+  };
+
+  // Function to check if current user can edit/delete a note
+  const canModifyNote = (note, currentUserRole, currentUserId) => {
+    if (!note || !note.user) return false;
+
+    // User can modify their own notes
+    if (note.user.id === currentUserId) return true;
+
+    // Founders can modify any note they can see
+    if (currentUserRole === ROLES.FOUNDER) return true;
+
+    // Managers can modify notes from employees under them
+    if (currentUserRole === ROLES.MANAGER && note.user.role === ROLES.EMPLOYEE) {
+      return true;
+    }
+
+    return false;
+  };
+
+  // Filter messages based on role-based access control
+  const filterMessagesByRole = (allMessages, currentUserRole, currentUserId, targetUserId) => {
+    if (!currentUserRole || !currentUserId || !targetUserId) {
+      return [];
+    }
+
+    const filtered = allMessages.filter(message =>
+      canViewNote(message, currentUserRole, currentUserId, targetUserId)
+    );
+
+    return filtered;
+  };
 
   // Get current user info on component mount
   useEffect(() => {
@@ -33,7 +114,6 @@ const Notes = () => {
       try {
         const user = await getCurrentUser();
         setCurrentUser(user);
-        console.log('Current user fetched:', user); // Debug log
       } catch (error) {
         console.error('Error fetching current user:', error);
         toast.error("Error fetching user information");
@@ -48,28 +128,27 @@ const Notes = () => {
     const fetchNotes = async () => {
       if (!targetUserId) {
         setMessages([]);
+        setFilteredMessages([]);
         setLoading(false);
         return;
       }
 
       try {
-        console.log('Fetching notes for user:', targetUserId); // Debug log
-        // Fetch notes for specific user
-        const response = await getUserNotes(targetUserId);
-        console.log('API Response:', response); // Debug log
+        // Fetch ALL notes from the system
+        const response = await getNotesAll();
 
         if (!response || !Array.isArray(response)) {
           setMessages([]);
+          setFilteredMessages([]);
           return;
         }
 
-        // Format messages
-        const formattedMessages = response.map(note => {
-          console.log('Processing note:', note); // Debug log for each note
-          
+        // Format ALL messages first
+        const allFormattedMessages = response.map(note => {
+
           return {
             id: note.id || Date.now(),
-            text: note.message || 'No content', // Use message field
+            text: note.message || 'No content',
             time: note.created_at
               ? new Date(note.created_at).toLocaleTimeString([], {
                 hour: "2-digit",
@@ -83,28 +162,56 @@ const Notes = () => {
               ? new Date(note.created_at).toLocaleDateString()
               : new Date().toLocaleDateString(),
             user: {
-              id: note.user || note.user_id || note.author_id,
+              id: note.author || note.user_id || note.author_id,
               email: note.user_email || note.author_email,
-              avatar: note.author_profile_picture || note.profile_picture || '/default-avatar.png', // Fallback avatar
+              avatar: note.author_profile_picture || note.profile_picture || '/default-avatar.png',
               author_full_name: note.author_full_name || note.full_name || 'Unknown User',
+              role: note.author_role || note.user_role || ROLES.EMPLOYEE,
             },
-            targetUserId: note.recipient || targetUserId // Use recipient field
+            targetUserId: note.recipient || note.target_user_id,
+            recipient: note.recipient || note.target_user_id
           };
         });
 
-        console.log('Formatted messages:', formattedMessages); // Debug log
-        setMessages(formattedMessages);
+        // Filter messages to only show notes written TO the target user
+        const notesForTargetUser = allFormattedMessages.filter(note => {
+          const noteRecipient = note.targetUserId || note.recipient;
+          const isForTargetUser = noteRecipient == targetUserId; // Use == for loose comparison
+          return isForTargetUser;
+        });
+
+        setMessages(notesForTargetUser);
+
+        // Apply role-based filtering if current user is available
+        if (currentUser && currentUser.role && currentUser.id) {
+          const filtered = filterMessagesByRole(notesForTargetUser, currentUser.role, currentUser.id, targetUserId);
+          setFilteredMessages(filtered);
+        } else {
+          setFilteredMessages([]);
+        }
+
       } catch (error) {
         console.error('Error fetching notes:', error);
         toast.error("Error during fetching messages");
         setMessages([]);
+        setFilteredMessages([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchNotes();
-  }, [targetUserId]);
+  }, [targetUserId, currentUser]);
+
+  // Re-filter messages when currentUser changes
+  useEffect(() => {
+    if (currentUser && currentUser.role && currentUser.id && targetUserId && messages.length > 0) {
+      const filtered = filterMessagesByRole(messages, currentUser.role, currentUser.id, targetUserId);
+      setFilteredMessages(filtered);
+    } else if (currentUser) {
+      setFilteredMessages([]);
+    }
+  }, [messages, currentUser, targetUserId]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -138,7 +245,7 @@ const Notes = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [filteredMessages]);
 
   const scrollToBottom = () => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -146,6 +253,12 @@ const Notes = () => {
 
   // Open delete confirmation modal
   const confirmDelete = (message) => {
+    // Check if user can modify this note
+    if (!canModifyNote(message, currentUser?.role, currentUser?.id)) {
+      toast.error("You don't have permission to delete this note");
+      return;
+    }
+
     setMessageToDelete(message);
     setShowDeleteModal(true);
     setOpenDropdownId(null);
@@ -160,21 +273,25 @@ const Notes = () => {
   // Execute the delete operation
   const executeDelete = async () => {
     if (!messageToDelete) return;
-    
+
     try {
       // Optimistically remove from UI first
+      setFilteredMessages(prev => prev.filter(msg => msg.id !== messageToDelete.id));
       setMessages(prev => prev.filter(msg => msg.id !== messageToDelete.id));
-      
+
       // Then make the API call
       await deleteNote(messageToDelete.id);
-      
+
       toast.success("Successfully deleted");
     } catch (error) {
       console.error('Delete error:', error);
-      
+
       // If delete fails, add the message back to the UI
       setMessages(prev => [...prev, messageToDelete]);
-      
+      if (canViewNote(messageToDelete, currentUser?.role, currentUser?.id, targetUserId)) {
+        setFilteredMessages(prev => [...prev, messageToDelete]);
+      }
+
       let errorMessage = "Error during deletion";
       if (error.response?.status === 404) {
         errorMessage = "Message not found";
@@ -185,7 +302,7 @@ const Notes = () => {
           ? JSON.stringify(error.response.data)
           : error.response.data;
       }
-      
+
       toast.error(errorMessage);
     } finally {
       closeDeleteModal();
@@ -210,25 +327,34 @@ const Notes = () => {
 
     try {
       if (editingId) {
-        // Edit mode
+        // Edit mode - check permissions
+        const messageToEdit = filteredMessages.find(msg => msg.id === editingId);
+        if (!canModifyNote(messageToEdit, currentUser?.role, currentUser?.id)) {
+          toast.error("You don't have permission to edit this note");
+          setEditingId(null);
+          setInput("");
+          return;
+        }
+
         const updatedNote = await updateNote(editingId, input.trim());
 
         if (updatedNote) {
-          setMessages(prev =>
-            prev.map(msg =>
-              msg.id === editingId
-                ? {
-                  ...msg,
-                  text: updatedNote.message || input.trim(),
-                  time: new Date().toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                  }),
-                  date: new Date().toLocaleDateString()
-                }
-                : msg
-            )
-          );
+          // Update in both arrays
+          const updateMessage = (msg) => msg.id === editingId
+            ? {
+              ...msg,
+              text: updatedNote.message || input.trim(),
+              time: new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit"
+              }),
+              date: new Date().toLocaleDateString()
+            }
+            : msg;
+
+          setMessages(prev => prev.map(updateMessage));
+          setFilteredMessages(prev => prev.map(updateMessage));
+
           toast.success("Successfully updated");
         } else {
           toast.warning("Couldn't update");
@@ -236,8 +362,7 @@ const Notes = () => {
         setEditingId(null);
       } else {
         // Create new note mode - OPTIMISTIC UPDATE
-        // First add the note to UI immediately
-        tempId = Date.now(); // Temporary ID for optimistic update
+        tempId = Date.now();
         const newNoteItem = {
           id: tempId,
           text: input.trim(),
@@ -249,50 +374,54 @@ const Notes = () => {
           user: {
             id: currentUser?.id,
             email: currentUser?.email,
-            avatar: currentUser?.profile_picture || '/default-avatar.png', // Fallback avatar
+            avatar: currentUser?.profile_picture || '/default-avatar.png',
             author_full_name: currentUser?.full_name || 'You',
+            role: currentUser?.role || ROLES.EMPLOYEE,
           },
           targetUserId: targetUserId
         };
 
-        console.log('Adding optimistic note:', newNoteItem); // Debug log
-
-        // Optimistically update UI
+        // Add to both arrays
         setMessages(prev => [newNoteItem, ...prev]);
+        // Only add to filtered messages if current user can see the note
+        if (canViewNote(newNoteItem, currentUser?.role, currentUser?.id, targetUserId)) {
+          setFilteredMessages(prev => [newNoteItem, ...prev]);
+        }
 
         // Then make the API call
         const newNote = await createNote(input.trim(), targetUserId);
-        console.log('API returned new note:', newNote); // Debug log
 
         if (newNote) {
           // Replace the temporary note with the real one from server
-          setMessages(prev =>
-            prev.map(msg =>
-              msg.id === tempId
-                ? {
-                  ...msg,
-                  id: newNote.id,
-                  text: newNote.message || input.trim(),
-                  time: new Date(newNote.created_at || new Date()).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                  }),
-                  date: new Date(newNote.created_at || new Date()).toLocaleDateString(),
-                  user: {
-                    id: newNote.user || newNote.user_id || currentUser?.id,
-                    email: newNote.user_email || newNote.author_email || currentUser?.email,
-                    avatar: newNote.author_profile_picture || newNote.profile_picture || currentUser?.profile_picture || '/default-avatar.png',
-                    author_full_name: newNote.author_full_name || newNote.full_name || currentUser?.full_name || 'You',
-                  },
-                  targetUserId: newNote.recipient || targetUserId
-                }
-                : msg
-            )
-          );
+          const updateWithRealNote = (msg) => msg.id === tempId
+            ? {
+              ...msg,
+              id: newNote.id,
+              text: newNote.message || input.trim(),
+              time: new Date(newNote.created_at || new Date()).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit"
+              }),
+              date: new Date(newNote.created_at || new Date()).toLocaleDateString(),
+              user: {
+                id: newNote.user || newNote.user_id || currentUser?.id,
+                email: newNote.user_email || newNote.author_email || currentUser?.email,
+                avatar: newNote.author_profile_picture || newNote.profile_picture || currentUser?.profile_picture || '/default-avatar.png',
+                author_full_name: newNote.author_full_name || newNote.full_name || currentUser?.full_name || 'You',
+                role: newNote.author_role || newNote.user_role || currentUser?.role || ROLES.EMPLOYEE,
+              },
+              targetUserId: newNote.recipient || targetUserId
+            }
+            : msg;
+
+          setMessages(prev => prev.map(updateWithRealNote));
+          setFilteredMessages(prev => prev.map(updateWithRealNote));
+
           toast.success("Successfully added");
         } else {
           // If API call fails, remove the optimistic update
           setMessages(prev => prev.filter(msg => msg.id !== tempId));
+          setFilteredMessages(prev => prev.filter(msg => msg.id !== tempId));
           toast.warning("Couldn't add");
         }
       }
@@ -305,6 +434,7 @@ const Notes = () => {
       // Remove the optimistic update on error (only for create mode)
       if (!editingId && tempId) {
         setMessages(prev => prev.filter(msg => msg.id !== tempId));
+        setFilteredMessages(prev => prev.filter(msg => msg.id !== tempId));
       }
 
       let errorMessage = "Error sending message";
@@ -325,6 +455,13 @@ const Notes = () => {
   };
 
   const startEditing = (id, text) => {
+    // Check permissions before allowing edit
+    const messageToEdit = filteredMessages.find(msg => msg.id === id);
+    if (!canModifyNote(messageToEdit, currentUser?.role, currentUser?.id)) {
+      toast.error("You don't have permission to edit this note");
+      return;
+    }
+
     setEditingId(id);
     setInput(text);
     setOpenDropdownId(null);
@@ -419,21 +556,44 @@ const Notes = () => {
 
       {/* Header */}
       <div className="sticky top-0 bg-white z-10 p-4 border-b border-gray-200">
-        <h2 className="text-xl font-bold text-gray-800">Notes</h2>
-        <p className="text-sm text-gray-500">{messages.length} messages</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800">Notes</h2>
+            <p className="text-sm text-gray-500">
+              {filteredMessages.length} visible messages
+              {currentUser?.role && (
+                <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full capitalize">
+                  {currentUser.role}
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Message List */}
+      {/* Message List - Now using filteredMessages instead of messages */}
       <div className="flex-1 overflow-y-auto px-4 py-2 flex flex-col-reverse">
-        {messages.length === 0 ? (
+        {filteredMessages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-gray-400">
             <Clock size={48} className="mb-4" />
-            <p>No notes for this user</p>
+            <p>
+              {messages.length === 0
+                ? "No notes for this user"
+                : "No notes visible to your role"}
+            </p>
+            {messages.length > 0 && filteredMessages.length === 0 && (
+              <p className="text-xs text-gray-400 mt-2">
+                Some notes exist but are not visible due to role restrictions
+              </p>
+            )}
           </div>
         ) : (
-          messages.map((msg, index) => {
+          filteredMessages.map((msg, index) => {
             const showDate = index === 0 ||
-              msg.date !== messages[index - 1].date;
+              msg.date !== filteredMessages[index - 1].date;
+
+            // Check if user can modify this specific note
+            const canModify = canModifyNote(msg, currentUser?.role, currentUser?.id);
 
             return (
               <div key={msg.id}>
@@ -452,9 +612,8 @@ const Notes = () => {
                       alt={`${msg.user.author_full_name || 'User'}'s avatar`}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        // Fallback to a default avatar if image fails to load
                         e.target.src = '/default-avatar.png';
-                        e.target.onerror = null; // Prevent infinite loop
+                        e.target.onerror = null;
                       }}
                       loading="lazy"
                     />
@@ -464,9 +623,16 @@ const Notes = () => {
                     <div className="bg-[#E4EDFB] rounded-xl px-4 py-3 shadow relative">
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-bold text-[14px] text-[#0A1629] mb-1">
-                            {msg.user.author_full_name}
-                          </p>
+                          <div className="flex items-center gap-2 mb-1">
+                            <p className="font-bold text-[14px] text-[#0A1629]">
+                              {msg.user.author_full_name}
+                            </p>
+                            {msg.user.role && (
+                              <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full capitalize">
+                                {msg.user.role}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-[14px] font-semibold text-[#7D8592] whitespace-pre-line break-words">
                             {msg.text}
                           </p>
@@ -477,18 +643,20 @@ const Notes = () => {
                             {msg.time}
                           </span>
 
-                          <button
-                            data-dropdown-button
-                            onClick={() => setOpenDropdownId(prev => prev === msg.id ? null : msg.id)}
-                            className="p-1 rounded-full cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <MoreVertical size={16} className="text-gray-500" />
-                          </button>
+                          {canModify && (
+                            <button
+                              data-dropdown-button
+                              onClick={() => setOpenDropdownId(prev => prev === msg.id ? null : msg.id)}
+                              className="p-1 rounded-full cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <MoreVertical size={16} className="text-gray-500" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
 
-                    {openDropdownId === msg.id && (
+                    {openDropdownId === msg.id && canModify && (
                       <div
                         data-dropdown-menu
                         className={`absolute right-4 w-[180px] bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden p-1
