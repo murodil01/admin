@@ -431,8 +431,6 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                 profile_picture: avatarFile
             };
 
-            console.log("Submitting data to parent:", submitData);
-
             // Call parent submit function
             await onSubmit(submitData);
             onClose();

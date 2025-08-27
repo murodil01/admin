@@ -73,9 +73,7 @@ const Profile = () => {
 
     const fetchEmployee = async () => {
       try {
-        console.log('Fetching employee with ID:', id); // Debug log
         const data = await getEmployeeById(id);
-        console.log('Employee data received:', data); // Debug log
 
         let departmentObj = null;
         if (typeof data.department === "number") {
@@ -142,11 +140,6 @@ const Profile = () => {
       // Add profile picture if it's a File
       if (employee.profile_picture instanceof File) {
         formData.append('profile_picture', employee.profile_picture);
-      }
-
-      // Log form data for debugging
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
       }
 
       // API call to update employee

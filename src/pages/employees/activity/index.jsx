@@ -47,10 +47,6 @@ const Activity = () => {
 
     // Ma'lumotlarni yangilash
     fetchActivities(newPage);
-
-    // 4. Debug uchun console.log
-    console.log('Navigating to:', params.toString());
-    console.log('URL updated to:', `?page_num=${newPage}`);
   };
 
   if (loading) return <p className="text-center">Yuklanmoqda...</p>;
