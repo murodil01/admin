@@ -5,21 +5,9 @@ export const getControlDataByUserId = async (userId) => {
     try {
         // Ensure userId is a string
         const userIdString = String(userId);
-        console.log('🔍 SERVICE DEBUG: getControlDataByUserId called with:', {
-            originalUserId: userId,
-            userIdString: userIdString,
-            type: typeof userId
-        });
 
         // Use the correct endpoint based on Swagger - /control-data/{user_id}/
         const response = await api.get(endpoints.controlData.getByUserId(userIdString));
-
-        console.log('API Response:', {
-            status: response.status,
-            data: response.data,
-            headers: response.headers,
-            url: endpoints.controlData.getByUserId(userIdString)
-        });
 
         if (!response.data) {
             throw new Error('API dan ma\'lumot qaytmadi');
@@ -42,12 +30,6 @@ export const updateControlData = async (userId, data) => {
     let cleanData;
     const userIdString = String(userId);
     try {
-        console.log('🔍 SERVICE DEBUG: updateControlData called with:', {
-            originalUserId: userId,
-            userIdString: userIdString,
-            type: typeof userId
-        });
-
         // Clean data object - INCLUDE user_id for updates
         cleanData = {
             user_id: userIdString, // ✅ Add user_id to the request body
@@ -64,9 +46,6 @@ export const updateControlData = async (userId, data) => {
             serial_number: data.serial_number || "",
             pinfl: data.pinfl !== undefined ? data.pinfl : null, // Ensure null if undefined
         };
-
-        console.log("Updating control data with ID:", userIdString);
-        console.log("Data being sent:", cleanData);
 
         if (data.passport_picture instanceof File) {
             const formData = new FormData();
@@ -86,14 +65,12 @@ export const updateControlData = async (userId, data) => {
                 formData
                 // Don't set Content-Type header - let browser set it with boundary
             );
-            console.log("Update successful:", response.data);
             return response.data;
         }
 
         // Regular update without file using PUT method
         const response = await api.put(endpoints.controlData.update(userIdString), cleanData);
 
-        console.log("Update successful:", response.data);
         return response.data;
     } catch (error) {
         console.error('Update error:', {
@@ -111,11 +88,6 @@ export const createControlDataForUser = async (userId, data) => {
     try {
         // Ensure userId is a string
         const userIdString = String(userId);
-        console.log('🔍 SERVICE DEBUG: createControlDataForUser called with:', {
-            originalUserId: userId,
-            userIdString: userIdString,
-            type: typeof userId
-        });
 
         // Clean data for creation - INCLUDE user_id
         cleanData = {
@@ -134,9 +106,6 @@ export const createControlDataForUser = async (userId, data) => {
             pinfl: data.pinfl !== undefined ? data.pinfl : null, // Ensure null if undefined
         };
 
-        console.log("Creating control data for user:", userIdString);
-        console.log("Clean data being sent:", cleanData);
-
         // Check if we have a file to upload
         if (data.passport_picture instanceof File) {
             const formData = new FormData();
@@ -153,13 +122,11 @@ export const createControlDataForUser = async (userId, data) => {
 
             // Create with file using FormData
             const response = await api.post(endpoints.controlData.create, formData);
-            console.log('CREATE with file response:', response.data);
             return response.data;
         }
 
         // Regular creation without file
         const response = await api.post(endpoints.controlData.create, cleanData);
-        console.log('CREATE response:', response.data);
         return response.data;
     } catch (error) {
         console.error('Error creating control data:', {
@@ -175,12 +142,6 @@ export const uploadControlDataFile = async (userId, file) => {
     try {
         // Ensure userId is a string
         const userIdString = String(userId);
-        console.log('🔍 SERVICE DEBUG: uploadControlDataFile called with:', {
-            originalUserId: userId,
-            userIdString: userIdString,
-            type: typeof userId,
-            fileName: file.name
-        });
 
         const formData = new FormData();
         formData.append('passport_picture', file);

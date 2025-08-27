@@ -502,9 +502,9 @@ const Notes = () => {
     <div className="w-full rounded-[24px] h-screen flex flex-col bg-white relative overflow-hidden">
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
           <div
-            className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl transform transition-all duration-300 animate-scaleIn"
+            className="bg-white rounded-xl max-w-md w-full mx-4 p-4 sm:p-6 shadow-2xl transform transition-all duration-300 animate-scaleIn"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
@@ -518,12 +518,12 @@ const Notes = () => {
               </button>
             </div>
 
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-6 text-sm sm:text-base">
               Are you sure you want to delete this note? This action cannot be undone.
             </p>
 
             {messageToDelete && (
-              <div className="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-200">
+              <div className="bg-gray-50 p-3 sm:p-4 rounded-lg mb-6 border border-gray-200">
                 <p className="text-sm text-gray-700 font-medium mb-1">
                   Note preview:
                 </p>
@@ -535,16 +535,16 @@ const Notes = () => {
               </div>
             )}
 
-            <div className="flex justify-end gap-3">
+            <div className="flex flex-col sm:flex-row justify-end gap-3">
               <button
                 onClick={closeDeleteModal}
-                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50 cursor-pointer"
+                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-opacity-50 cursor-pointer order-2 sm:order-1"
               >
                 Cancel
               </button>
               <button
                 onClick={executeDelete}
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-medium flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-opacity-50 cursor-pointer"
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-opacity-50 cursor-pointer order-1 sm:order-2"
               >
                 <Trash2 size={16} />
                 Delete
@@ -555,34 +555,36 @@ const Notes = () => {
       )}
 
       {/* Header */}
-      <div className="sticky top-0 bg-white z-10 p-4 border-b border-gray-200">
+      <div className="sticky top-0 bg-white z-10 p-3 sm:p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">Notes</h2>
-            <p className="text-sm text-gray-500">
-              {filteredMessages.length} visible messages
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800">Notes</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+              <p className="text-xs sm:text-sm text-gray-500">
+                {filteredMessages.length} visible messages
+              </p>
               {currentUser?.role && (
-                <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full capitalize">
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full capitalize w-fit">
                   {currentUser.role}
                 </span>
               )}
-            </p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Message List - Now using filteredMessages instead of messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-2 flex flex-col-reverse">
+      {/* Message List */}
+      <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-2 flex flex-col-reverse">
         {filteredMessages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-gray-400">
+          <div className="h-full flex flex-col items-center justify-center text-gray-400 px-4">
             <Clock size={48} className="mb-4" />
-            <p>
+            <p className="text-center text-sm sm:text-base">
               {messages.length === 0
                 ? "No notes for this user"
                 : "No notes visible to your role"}
             </p>
             {messages.length > 0 && filteredMessages.length === 0 && (
-              <p className="text-xs text-gray-400 mt-2">
+              <p className="text-xs text-gray-400 mt-2 text-center">
                 Some notes exist but are not visible due to role restrictions
               </p>
             )}
@@ -598,15 +600,15 @@ const Notes = () => {
             return (
               <div key={msg.id}>
                 {showDate && (
-                  <div className="text-center my-4">
+                  <div className="text-center my-3 sm:my-4">
                     <span className="bg-gray-100 px-3 py-1 rounded-full text-xs text-gray-500">
                       {msg.date}
                     </span>
                   </div>
                 )}
 
-                <div className="flex items-start gap-3 mb-4 group relative">
-                  <div className="w-9 h-9 rounded-full border-2 border-white shadow flex-shrink-0 overflow-hidden bg-gray-200">
+                <div className="flex items-start gap-2 sm:gap-3 mb-3 sm:mb-4 group relative">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full border-2 border-white shadow flex-shrink-0 overflow-hidden bg-gray-200">
                     <img
                       src={msg.user.avatar}
                       alt={`${msg.user.author_full_name || 'User'}'s avatar`}
@@ -620,26 +622,26 @@ const Notes = () => {
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="bg-[#E4EDFB] rounded-xl px-4 py-3 shadow relative">
+                    <div className="bg-[#E4EDFB] rounded-xl px-3 sm:px-4 py-2 sm:py-3 shadow relative">
                       <div className="flex justify-between items-start">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-bold text-[14px] text-[#0A1629]">
+                        <div className="flex-1 min-w-0 pr-2">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <p className="font-bold text-sm text-[#0A1629] truncate">
                               {msg.user.author_full_name}
                             </p>
                             {msg.user.role && (
-                              <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full capitalize">
+                              <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full capitalize flex-shrink-0">
                                 {msg.user.role}
                               </span>
                             )}
                           </div>
-                          <p className="text-[14px] font-semibold text-[#7D8592] whitespace-pre-line break-words">
+                          <p className="text-sm font-semibold text-[#7D8592] whitespace-pre-line break-words">
                             {msg.text}
                           </p>
                         </div>
 
-                        <div className="flex items-center gap-1">
-                          <span className="text-[10px] text-gray-500">
+                        <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                          <span className="text-xs text-gray-500 hidden sm:inline">
                             {msg.time}
                           </span>
 
@@ -647,19 +649,26 @@ const Notes = () => {
                             <button
                               data-dropdown-button
                               onClick={() => setOpenDropdownId(prev => prev === msg.id ? null : msg.id)}
-                              className="p-1 rounded-full cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="p-1 rounded-full cursor-pointer opacity-70 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                             >
                               <MoreVertical size={16} className="text-gray-500" />
                             </button>
                           )}
                         </div>
                       </div>
+                      
+                      {/* Mobile time display */}
+                      <div className="sm:hidden mt-1">
+                        <span className="text-xs text-gray-500">
+                          {msg.time}
+                        </span>
+                      </div>
                     </div>
 
                     {openDropdownId === msg.id && canModify && (
                       <div
                         data-dropdown-menu
-                        className={`absolute right-4 w-[180px] bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden p-1
+                        className={`absolute right-2 sm:right-4 w-[160px] sm:w-[180px] bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden p-1
       ${index === 0 ? "bottom-8 mb-1" : "top-8 mt-1"}`}
                       >
                         <button
@@ -668,7 +677,7 @@ const Notes = () => {
                             setOpenDropdownId(null);
                           }}
                           onMouseDown={(e) => e.stopPropagation()}
-                          className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-blue-50 flex items-center gap-2 cursor-pointer hover:text-blue-500 rounded-lg"
+                          className="w-full px-3 sm:px-4 py-2 text-sm text-left text-gray-700 hover:bg-blue-50 flex items-center gap-2 cursor-pointer hover:text-blue-500 rounded-lg"
                         >
                           <Edit size={16} />
                           <span>Edit message</span>
@@ -678,7 +687,7 @@ const Notes = () => {
                             confirmDelete(msg);
                           }}
                           onMouseDown={(e) => e.stopPropagation()}
-                          className="w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-blue-50 hover:text-red-500 flex items-center gap-2 cursor-pointer rounded-lg"
+                          className="w-full px-3 sm:px-4 py-2 text-sm text-left text-gray-700 hover:bg-blue-50 hover:text-red-500 flex items-center gap-2 cursor-pointer rounded-lg"
                         >
                           <Trash2 size={16} />
                           <span>Delete</span>
@@ -697,16 +706,16 @@ const Notes = () => {
 
       {/* Write Note Section */}
       <div className="sticky bottom-0 left-0 right-0 bg-white border-t border-gray-200">
-        <div className="p-4">
+        <div className="p-3 sm:p-4">
           {/* Header for writing section */}
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-lg font-semibold text-gray-800">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800">
               {editingId ? "Edit Note" : "Write a New Note"}
             </h3>
             {editingId && (
               <button
                 onClick={cancelEdit}
-                className="text-gray-500 hover:text-red-500 transition-colors"
+                className="text-gray-500 hover:text-red-500 transition-colors p-1"
                 title="Cancel editing"
                 disabled={isSending}
               >
@@ -719,7 +728,7 @@ const Notes = () => {
           <div className="space-y-3">
             <div className="relative">
               <textarea
-                rows={3}
+                rows={2}
                 placeholder={editingId ? "Edit your note here..." : "What would you like to note down?"}
                 value={input}
                 onChange={(e) => {
@@ -734,22 +743,22 @@ const Notes = () => {
                     sendMessage();
                   }
                 }}
-                className="w-full px-4 py-3 border border-[#D8E0F0] rounded-[12px] outline-none resize-none placeholder:text-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200 min-h-[80px] max-h-[120px]"
+                className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-[#D8E0F0] rounded-[12px] outline-none resize-none placeholder:text-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200 min-h-[60px] sm:min-h-[80px] max-h-[100px] sm:max-h-[120px] text-sm sm:text-base"
                 disabled={isSending}
                 style={{ height: 'auto' }}
               />
 
               {/* Character count */}
               <div className="absolute bottom-2 right-2 text-xs text-gray-400">
-                {input.length} characters
+                {input.length}
               </div>
             </div>
 
             {/* Action buttons */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 order-2 sm:order-1">
                 {editingId && (
-                  <span className="text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                  <span className="text-xs sm:text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full w-fit">
                     Editing mode
                   </span>
                 )}
@@ -758,11 +767,11 @@ const Notes = () => {
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 order-1 sm:order-2">
                 {editingId && (
                   <button
                     onClick={cancelEdit}
-                    className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-[10px] transition-colors text-sm font-medium"
+                    className="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-[10px] transition-colors text-sm font-medium text-center"
                     disabled={isSending}
                   >
                     Cancel
@@ -771,7 +780,7 @@ const Notes = () => {
 
                 <button
                   onClick={sendMessage}
-                  className={`px-6 py-2 rounded-[10px] transition-all duration-200 text-sm font-medium flex items-center gap-2 ${input.trim() && !isSending
+                  className={`flex-1 sm:flex-none px-4 sm:px-6 py-2 rounded-[10px] transition-all duration-200 text-sm font-medium flex items-center justify-center gap-2 ${input.trim() && !isSending
                     ? editingId
                       ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl'
                       : 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl'
@@ -782,12 +791,14 @@ const Notes = () => {
                   {isSending ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Sending...</span>
+                      <span className="hidden sm:inline">Sending...</span>
+                      <span className="sm:hidden">...</span>
                     </>
                   ) : (
                     <>
                       <SendHorizontal size={16} />
-                      <span>{editingId ? "Update Note" : "Send Note"}</span>
+                      <span className="hidden sm:inline">{editingId ? "Update Note" : "Send Note"}</span>
+                      <span className="sm:hidden">{editingId ? "Update" : "Send"}</span>
                     </>
                   )}
                 </button>

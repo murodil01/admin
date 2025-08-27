@@ -163,12 +163,10 @@ const Profiles = () => {
 
       if (!isNewRecord && formData.id) {
         // Update existing record using userId (not control data ID)
-        console.log("Updating existing record with ID:", employeeIdString);
         response = await updateControlData(employeeIdString, dataToSave);
         message.success("Data updated successfully");
       } else {
         // Create new record
-        console.log("Creating new record for user:", employeeIdString);
         response = await createControlDataForUser(employeeIdString, dataToSave);
 
         // Update local state with the new record info
@@ -208,7 +206,6 @@ const Profiles = () => {
   useEffect(() => {
     const fetchData = async () => {
       const initEmptyForm = () => {
-        console.log('Initializing empty form for user_id:', employeeIdString);
         setFormData({
           user_id: employeeIdString, // Set the user_id when initializing
           accept_reason: '',
@@ -233,17 +230,13 @@ const Profiles = () => {
 
       try {
         setLoading(true);
-        console.log('Fetching control data for user_id:', employeeIdString);
         const response = await getControlDataByUserId(employeeIdString);
-
-        console.log('Fetched data:', response);
 
         // Check if we have data
         if (response) {
           let employeeData = null;
 
           if (Array.isArray(response)) {
-            console.log('Response is array, length:', response.length);
             // Find the correct data in array
             employeeData = response.find(item => {
               const itemUserId = String(item?.user_info?.id || item?.user_id || '');
@@ -251,12 +244,10 @@ const Profiles = () => {
             });
           } else if (response.id || response.user_id) {
             // Single object response
-            console.log('Response is single object');
             employeeData = response;
           }
 
           if (employeeData) {
-            console.log('Found employee data:', employeeData);
             setFormData({
               id: employeeData.id,
               user_id: employeeData.user_id || employeeIdString, // Ensure user_id is set
@@ -288,11 +279,9 @@ const Profiles = () => {
               }]);
             }
           } else {
-            console.log('No data found for employee:', employeeIdString);
             initEmptyForm();
           }
         } else {
-          console.log('No data returned for employee:', employeeIdString);
           initEmptyForm();
         }
       } catch (err) {
@@ -305,7 +294,6 @@ const Profiles = () => {
 
         // Check if it's a 404 error (user not found) vs other errors
         if (err.response?.status === 404) {
-          console.log('Control data not found for user, initializing empty form');
           initEmptyForm();
         } else {
           const errorMessage = err.response?.data?.message || err.message || "Ma'lumotlarni yuklashda xatolik";
@@ -327,7 +315,6 @@ const Profiles = () => {
     // }
 
     if (employeeId && typeof employeeId === "string" && employeeId.trim() !== "") {
-      console.log("Starting data fetch for employee ID:", employeeId);
       fetchData();
     } else {
       console.error("Invalid employee ID:", employeeId);

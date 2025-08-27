@@ -77,8 +77,6 @@ const MainProfile = () => {
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        console.log("Token payload:", payload);
-        console.log("User role in token:", payload.role);
       } catch (error) {
         console.error("Token decode error:", error);
       }
@@ -92,7 +90,6 @@ const MainProfile = () => {
       try {
         setLoading(true);
         const data = await getMyProfile();
-        console.log("Profile data received:", data);
 
         setUser({
           ...data,
