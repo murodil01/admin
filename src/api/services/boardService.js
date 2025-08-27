@@ -15,6 +15,8 @@ export const createBoard = (name, boardId) => {
   });
 };
 
+export const getBoardsAll = () => api.get(endpoints.boards.getStatus);
+
 // edit qilish
 export const updateBoard = (id, data) =>
   api.patch(endpoints.boards.update(id), data);

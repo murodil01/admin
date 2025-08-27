@@ -7,7 +7,7 @@ const endpoints = {
   },
 
   users: {
-    // getAll: "users/",
+    getAllusers: "users/",
     getAll: "get-users-for-projects/",
     me: "users/get_user/",
     getById: (id) => `users/${id}/`,
@@ -60,6 +60,7 @@ const endpoints = {
   },
 
   boards: {
+    getStatus: "board/status/",
     getAll: "board/list/",
     create: "board/list/",
     getById: (id) => `board/board/${id}/`,    // board detail/list uchun
