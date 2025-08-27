@@ -12,9 +12,52 @@ import {
   updateLeads,
   createLeads,
 } from "../../../api/services/leadsService";
+import { getusersAll } from "../../../api/services/userService";
+import { getBoardsAll } from "../../../api/services/boardService"; 
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Select, Avatar } from "antd";
+
+// Helper function to get absolute image URL
+const getAbsoluteImageUrl = (picture) => {
+  if (!picture) return null;
+  
+  // Get the URL string
+  const url = typeof picture === "string" ? picture : picture?.url;
+  if (!url) return null;
+  
+  // If it's already a full URL, return as is
+  if (url.startsWith("http")) {
+    return url;
+  }
+  
+  return `https://prototype-production-2b67.up.railway.app${url.startsWith("/") ? "" : "/"}${url}`;
+};
+
+const calculateRemainingTime = (startDateStr, endDateStr) => {
+  if (!endDateStr || !startDateStr) return "No timeline";
+  
+  const now = new Date();
+  const start = new Date(startDateStr);
+  const end = new Date(endDateStr);
+  
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return "Invalid date";
+  if (end < start) return "Invalid timeline";
+  
+  const effectiveStart = now > start ? now : start;
+  const diffMs = end - effectiveStart;
+  
+  if (diffMs < 0) {
+    const absDiffMs = Math.abs(diffMs);
+    const days = Math.floor(absDiffMs / 86400000);
+    const hours = Math.floor((absDiffMs % 86400000) / 3600000);
+    return `${days} days, ${hours} h`;
+  }
+  
+  const days = Math.floor(diffMs / 86400000);
+  const hours = Math.floor((diffMs % 86400000) / 3600000);
+  return `${days} days ${hours} h`;
+};
 
 const LinkDropdown = ({ value, onChange, onSave, onCancel }) => {
   const linkOptions = [
@@ -54,6 +97,296 @@ const LinkDropdown = ({ value, onChange, onSave, onCancel }) => {
   );
 };
 
+// Owner Dropdown Component
+const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
+  const [userOptions, setUserOptions] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
+
+useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await getusersAll();
+
+        if (res.data && Array.isArray(res.data)) {
+          
+          setUserOptions(res.data.map(user => ({
+            id: user.id,
+            name: user.fullname || `${user.first_name} ${user.last_name}` || "Unknown User",
+            email: user.email,
+            profile_picture: getAbsoluteImageUrl(user.profile_picture)
+          })));
+        }
+      } catch (err) {
+        console.error("Failed to fetch users:", err);
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  const handleChange = async (selectedUserId) => {
+    const selectedUser = userOptions.find(u => u.id === selectedUserId);
+    
+   
+    const personDetail = {
+      id: selectedUser.id,
+      fullname: selectedUser.name, 
+      profile_picture: selectedUser.profile_picture
+    };
+    
+    onChange(personDetail);
+    
+    // Update on server - person_detail field ni yangilaymiz
+    try {
+      await updateLeads(taskId, { person: selectedUserId });
+    } catch (err) {
+      console.error("Failed to update owner:", err);
+    }
+    
+    setIsOpen(false);
+    onSave();
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 w-full hover:bg-gray-50 p-1 rounded transition-colors"
+      >
+        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 overflow-hidden">
+          {currentOwner?.profile_picture ? (
+            <img 
+              src={getAbsoluteImageUrl(currentOwner.profile_picture)} 
+              alt={currentOwner.fullname} 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            currentOwner?.fullname
+              ?.split(" ")
+              .map((n) => n[0])
+              .join("") || "?"
+          )}
+        </div>
+        <span className="text-gray-700 truncate flex-1 text-left">
+          {currentOwner?.fullname || "Unknown Person"}
+        </span>
+        <ChevronDown className="w-4 h-4 text-gray-400" />
+      </button>
+      
+      {isOpen && (
+        <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[1000] min-w-[200px] max-h-60 overflow-y-auto">
+          {userOptions.map((user) => (
+            <button
+              key={user.id}
+              onClick={() => handleChange(user.id)}
+              className="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-2 text-sm transition-colors"
+            >
+              <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 overflow-hidden">
+                {user.profile_picture ? (
+                  <img 
+                    src={user.profile_picture} 
+                    alt={user.name} 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  user.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                )}
+              </div>
+              <div className="flex-1 truncate">
+                <div className="font-medium">{user.name}</div>
+                {user.email && (
+                  <div className="text-xs text-gray-500">{user.email}</div>
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Status Dropdown Component
+const StatusDropdown = ({ value, onChange, taskId }) => {
+  const [statusOptions, setStatusOptions] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
+
+ useEffect(() => {
+    const fetchStatuses = async () => {
+      try {
+        const allStatuses = [];
+        
+        // First, get statuses from leads
+        try {
+          const leadsRes = await getLeads();
+          if (leadsRes.data && Array.isArray(leadsRes.data)) {
+            leadsRes.data.forEach(lead => {
+              if (lead.status && lead.status.name && lead.status.id) {
+                // Check if status already exists to avoid duplicates
+                if (!allStatuses.find(s => s.id === lead.status.id)) {
+                  allStatuses.push({
+                    id: lead.status.id,
+                    name: lead.status.name,
+                    icon: getStatusIcon(lead.status.name),
+                    lightBg: getStatusLightBg(lead.status.name),
+                    textColor: getStatusTextColor(lead.status.name)
+                  });
+                }
+              }
+            });
+          }
+        } catch (leadsErr) {
+          console.error("Error fetching statuses from leads:", leadsErr);
+        }
+       try {
+          const boardsRes = await getBoardsAll();
+          console.log("📊 Boards API response:", boardsRes);
+          
+          if (boardsRes.data && Array.isArray(boardsRes.data)) {
+            boardsRes.data.forEach(board => {
+              // Check if board has statuses array
+              if (board.statuses && Array.isArray(board.statuses)) {
+                board.statuses.forEach(status => {
+                  if (!allStatuses.find(s => s.id === status.id)) {
+                    allStatuses.push({
+                      id: status.id,
+                      name: status.name,
+                      color: status.color || "#6b7280",
+                      icon: getStatusIcon(status.name),
+                      lightBg: getStatusLightBg(status.name),
+                      textColor: getStatusTextColor(status.name)
+                    });
+                  }
+                });
+              } 
+              // If boards themselves are statuses (based on your API response)
+              else if (board.id && board.name) {
+                if (!allStatuses.find(s => s.id === board.id)) {
+                  allStatuses.push({
+                    id: board.id,
+                    name: board.name,
+                    color: board.color || "#6b7280",
+                    icon: getStatusIcon(board.name),
+                    lightBg: getStatusLightBg(board.name),
+                    textColor: getStatusTextColor(board.name)
+                  });
+                }
+              }
+            });
+          }
+        } catch (boardsErr) {
+          console.error("Error fetching statuses from boards:", boardsErr);
+        }
+        
+        // Set the combined status options
+        setStatusOptions(allStatuses);
+        console.log("📊 Final combined status options:", allStatuses);
+        
+      } catch (err) {
+        console.error("Failed to fetch statuses:", err);
+        
+        // Fallback to default statuses if API calls fail
+        const fallbackStatuses = [
+          { id: 'default-1', name: 'Not Started', icon: XCircle, lightBg: 'bg-gray-50', textColor: 'text-gray-700' },
+          { id: 'default-2', name: 'Working on it', icon: Circle, lightBg: 'bg-yellow-50', textColor: 'text-yellow-700' },
+          { id: 'default-3', name: 'Stuck', icon: AlertCircle, lightBg: 'bg-red-50', textColor: 'text-red-700' },
+          { id: 'default-4', name: 'Done', icon: CheckCircle2, lightBg: 'bg-green-50', textColor: 'text-green-700' }
+        ];
+        setStatusOptions(fallbackStatuses);
+      }
+    };
+    
+    fetchStatuses();
+  }, []);
+
+  const getStatusIcon = (statusName) => {
+    if (!statusName) return Circle;
+    const name = statusName.toLowerCase();
+    if (name.includes("done") || name.includes("complete") || name.includes("finished")) return CheckCircle2;
+    if (name.includes("working") || name.includes("progress") || name.includes("doing")) return Circle;
+    if (name.includes("stuck") || name.includes("blocked") || name.includes("issue")) return AlertCircle;
+    if (name.includes("not started") || name.includes("todo") || name.includes("pending")) return XCircle;
+    return Circle;
+  };
+
+  const getStatusLightBg = (statusName) => {
+    if (!statusName) return "bg-gray-50";
+    const name = statusName.toLowerCase();
+    if (name.includes("done") || name.includes("complete") || name.includes("finished")) return "bg-green-50";
+    if (name.includes("working") || name.includes("progress") || name.includes("doing")) return "bg-yellow-50";
+    if (name.includes("stuck") || name.includes("blocked") || name.includes("issue")) return "bg-red-50";
+    if (name.includes("not started") || name.includes("todo") || name.includes("pending")) return "bg-gray-50";
+    return "bg-blue-50";
+  };
+
+  const getStatusTextColor = (statusName) => {
+    if (!statusName) return "text-gray-500";
+    const name = statusName.toLowerCase();
+    if (name.includes("done") || name.includes("complete") || name.includes("finished")) return "text-green-700";
+    if (name.includes("working") || name.includes("progress") || name.includes("doing")) return "text-yellow-700";
+    if (name.includes("stuck") || name.includes("blocked") || name.includes("issue")) return "text-red-700";
+    if (name.includes("not started") || name.includes("todo") || name.includes("pending")) return "text-gray-700";
+    return "text-blue-700";
+  };
+
+  const handleChange = async (selectedStatusId) => {
+    const selectedStatus = statusOptions.find(s => s.id === selectedStatusId);
+    onChange(selectedStatus);
+    
+    // Update on server
+    try {
+      await updateLeads(taskId, { status: selectedStatus });
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    }
+    
+    setIsOpen(false);
+  };
+
+  const currentStatus = statusOptions.find(s => s.name === value) || {
+    name: value || "No Status",
+    icon: Circle,
+    lightBg: "bg-gray-50",
+    textColor: "text-gray-500"
+  };
+
+  const StatusIcon = currentStatus.icon;
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`inline-flex items-center gap-3 px-2 py-1 rounded-full ${currentStatus.lightBg} ${currentStatus.textColor} text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer`}
+      >
+        <StatusIcon className="w-4 h-4" />
+        {currentStatus.name}
+        <ChevronDown className="w-3 h-3" />
+      </button>
+      
+      {isOpen && (
+        <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[1000] min-w-[160px] max-h-60 overflow-y-auto">
+          {statusOptions.map((status) => {
+            const OptionIcon = status.icon;
+            return (
+              <button
+                key={status.id}
+                onClick={() => handleChange(status.id)}
+                className={`w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-2 ${status.textColor} text-sm transition-colors`}
+              >
+                <OptionIcon className="w-4 h-4" />
+                {status.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      
+    </div>
+  );
+};
+
 const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
   const [personOptions, setPersonOptions] = useState([]);
 
@@ -66,24 +399,7 @@ const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
           .map((lead) => ({
             id: lead.person_detail.id,
             name: lead.person_detail.fullname || "Unnamed Person",
-            img: (() => {
-              const picture = lead.person_detail.profile_picture;
-
-              if (!picture) return null;
-
-              // Get the URL string
-              const url = typeof picture === "string" ? picture : picture?.url;
-
-              if (!url) return null;
-
-              // If it's already a full URL, return as is
-              if (url.startsWith("http://") || url.startsWith("https://")) {
-                return url;
-              }
-
-              // Prepend base URL for relative paths
-              return `https://prototype-production-2b67.up.railway.app${url}`;
-            })(),
+            img: getAbsoluteImageUrl(lead.person_detail.profile_picture),
           }));
         setPersonOptions(options);
       } catch (err) {
@@ -97,17 +413,17 @@ const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
     const selectedPerson =
       personOptions.find((p) => p.id === selectedId) || null;
 
-    onChange(selectedPerson); // localItems ga to‘liq obyekt
+    onChange(selectedPerson);
 
     if (groupId && leadId) {
       try {
-        await updateLeads(groupId, leadId, { person_detail: selectedPerson });
+        await updateLeads(groupId, leadId, { person_detail: selectedId });
       } catch (err) {
         console.error("Failed to update person_detail:", err);
       }
     }
 
-    onSave(); // editingni yakunlash
+    onSave();
   };
 
   return (
@@ -150,6 +466,7 @@ const Table = () => {
   const [statusOptions, setStatusOptions] = useState([]);
   const [isAddingLead, setIsAddingLead] = useState(false);
   const [newLeadTitle, setNewLeadTitle] = useState("");
+  const [editingTimelineId, setEditingTimelineId] = useState(null);
 
   const statusConfig = {
     Done: {
@@ -184,11 +501,18 @@ const Table = () => {
     },
   };
 
+  const fieldMap = {
+    task: "name",
+    progress: "potential_value",
+    // Add more if needed
+  };
+
   const convertApiLeadsToTasks = (leads) => {
     return leads.map((lead, index) => ({
       id: lead.id,
       task: lead.name || `Lead ${index + 1}`,
       person: lead.person_detail?.fullname || "Unknown Person",
+      profile_picture: getAbsoluteImageUrl(lead.person_detail?.profile_picture),
       status: lead.status?.name || lead.status || "No Status",
       priority:
         lead.potential_value > 50
@@ -196,11 +520,14 @@ const Table = () => {
           : lead.potential_value > 20
           ? "Medium"
           : "Low",
-      deadline: lead.last_interaction || "2025-08-30",
+      timeline_start: lead.timeline_start,
+      timeline_end: lead.timeline_end,
       progress: lead.potential_value || 0,
       team: lead.link || "General",
       phone: lead.phone || "",
       notes: lead.notes || "",
+      // Owner sifatida person_detail ni ishlatamiz
+      owner: lead.person_detail || null,
       source: "api",
     }));
   };
@@ -342,7 +669,7 @@ const Table = () => {
     try {
       setApiLeads(
         apiLeads.map((lead) =>
-          lead.id === taskId ? { ...lead, status: { name: newStatus } } : lead
+          lead.id === taskId ? { ...lead, status: newStatus } : lead
         )
       );
       await updateLeads(taskId, { status: newStatus });
@@ -351,6 +678,14 @@ const Table = () => {
     } catch (error) {
       console.error("❌ Error updating status:", error);
     }
+  };
+
+  const handleOwnerChange = (taskId, newOwner) => {
+    setApiLeads(
+      apiLeads.map((lead) =>
+        lead.id === taskId ? { ...lead, person_detail: newOwner } : lead
+      )
+    );
   };
 
   const handleSort = (key) => {
@@ -395,12 +730,27 @@ const Table = () => {
     }
   };
 
-  const handleChange = (id, field, value) => {
+  const handleChange = (id, uiField, value) => {
+    const apiField = fieldMap[uiField] || uiField;
     setApiLeads((prevLeads) =>
       prevLeads.map((lead) =>
-        lead.id === id ? { ...lead, [field]: value } : lead
+        lead.id === id ? { ...lead, [apiField]: value } : lead
       )
     );
+  };
+
+  const handleSave = async (id, uiField) => {
+    const lead = apiLeads.find((l) => l.id === id);
+    if (!lead) return;
+
+    const apiField = fieldMap[uiField] || uiField;
+    const data = { [apiField]: lead[apiField] };
+    try {
+      await updateLeads(id, data);
+      console.log(`✅ Updated ${apiField} on server`);
+    } catch (err) {
+      console.error(`❌ Error updating ${apiField}:`, err);
+    }
   };
 
   const handleAddLead = async (e) => {
@@ -482,7 +832,7 @@ const Table = () => {
                   </th>
                   <th
                     className="text-left p-4 border-r border-gray-200 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
-                    onClick={() => handleSort("person")}
+                    onClick={() => handleSort("phone")}
                   >
                     <div className="flex justify-center items-center gap-2">
                       Phone Number
@@ -563,6 +913,7 @@ const Table = () => {
                           onChange={(e) =>
                             handleChange(task.id, "task", e.target.value)
                           }
+                          onBlur={() => handleSave(task.id, "task")}
                           className="font-medium text-gray-900 hover:text-blue-600 cursor-text transition-colors truncate pr-2 border-none outline-none bg-transparent w-full text-center"
                         />
                       </td>
@@ -575,77 +926,30 @@ const Table = () => {
                             onChange={(e) =>
                               handleChange(task.id, "phone", e.target.value)
                             }
+                            onBlur={() => handleSave(task.id, "phone")}
                             className="hover:text-blue-600 transition-colors border-none outline-none bg-transparent text-center"
                           />
                         </div>
                       </td>
                       <td className="p-4 border-r border-gray-200">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
-                            {task.person
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </div>
-                          <span className="text-gray-700 truncate">
-                            {task.person}
-                          </span>
-                        </div>
+                        <OwnerDropdown
+                          currentOwner={task.owner}
+                          onChange={(newOwner) => handleOwnerChange(task.id, newOwner)}
+                          onSave={() => {}}
+                          taskId={task.id}
+                        />
                       </td>
                       <td className="p-4 border-r border-gray-200">
                         <span className="flex justify-center px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm">
                           {task.team}
                         </span>
                       </td>
-                      <td
-                        className={`p-4 border-r border-gray-200 ${
-                          openStatusDropdown === task.id
-                            ? "relative z-[100] bg-transparent"
-                            : ""
-                        }`}
-                      >
-                        <div className="relative status-dropdown-container">
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setOpenStatusDropdown(
-                                openStatusDropdown === task.id ? null : task.id
-                              );
-                            }}
-                            className={`inline-flex items-center gap-3 px-2 py-1 rounded-full ${
-                              statusConfig[task.status]?.lightBg || "bg-gray-50"
-                            } ${
-                              statusConfig[task.status]?.textColor ||
-                              "text-gray-500"
-                            } text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer`}
-                          >
-                            <StatusIcon className="w-4 h-4" />
-                            {task.status}
-                            <ChevronDown className="w-3 h-3" />
-                          </button>
-                          {openStatusDropdown === task.id && (
-                            <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[1000] min-w-[160px]">
-                              {statusOptions.map((option) => {
-                                const OptionIcon = option.icon;
-                                return (
-                                  <button
-                                    key={option.id || option.value}
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleStatusChange(task.id, option.value);
-                                    }}
-                                    className={`w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-2 ${option.textColor} text-sm transition-colors z-[1001]`}
-                                  >
-                                    <OptionIcon className="w-4 h-4" />
-                                    {option.value}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
+                      <td className="p-4 border-r border-gray-200">
+                        <StatusDropdown
+                          value={task.status}
+                          onChange={(newStatus) => handleStatusChange(task.id, newStatus)}
+                          taskId={task.id}
+                        />
                       </td>
                       <td className="p-4 border-r flex justify-center border-gray-200">
                         <input
@@ -654,6 +958,7 @@ const Table = () => {
                           onChange={(e) =>
                             handleChange(task.id, "progress", e.target.value)
                           }
+                          onBlur={() => handleSave(task.id, "progress")}
                           className="px-3 py-1 rounded-full text-sm font-medium text-center border-none outline-none bg-transparent w-20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       </td>
@@ -666,22 +971,33 @@ const Table = () => {
                             onChange={(e) =>
                               handleChange(task.id, "notes", e.target.value)
                             }
+                            onBlur={() => handleSave(task.id, "notes")}
                             className="text-[16px] text-gray-500 mt-1 truncate text-center border-none outline-none bg-transparent w-full"
                           />
                         </div>
                       </td>
                       <td className="p-4 border-r border-gray-200">
                         <div className="flex justify-center items-center gap-2">
-                          <ReactDatePicker
-                            selected={
-                              task.deadline ? new Date(task.deadline) : null
-                            }
-                            onChange={(date) =>
-                              handleChange(task.id, "deadline", date)
-                            }
-                            placeholderText="Timeline"
-                            className="text-sm font-medium text-gray-700 border-none outline-none text-center"
-                          />
+                          {editingTimelineId === task.id ? (
+                            <ReactDatePicker
+                              selected={task.timeline_end ? new Date(task.timeline_end) : null}
+                              onChange={(date) => {
+                                const dateStr = date ? date.toISOString().split("T")[0] : null;
+                                handleChange(task.id, "timeline_end", dateStr);
+                                handleSave(task.id, "timeline_end");
+                                setEditingTimelineId(null);
+                              }}
+                              placeholderText="Select end date"
+                              className="text-sm font-medium text-gray-700 border-none outline-none text-center"
+                            />
+                          ) : (
+                            <span 
+                              onClick={() => setEditingTimelineId(task.id)}
+                              className="text-sm font-medium text-gray-700 cursor-pointer"
+                            >
+                              {calculateRemainingTime(task.timeline_start, task.timeline_end)}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="p-4 border-r border-gray-200"></td>

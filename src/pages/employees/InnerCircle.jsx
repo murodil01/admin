@@ -1,4 +1,3 @@
-// Fixed InnerCircle.jsx - Ensures pagination and filters persist after refresh
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Plus } from "lucide-react";
