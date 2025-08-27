@@ -12,7 +12,7 @@ import {
   updateLeads,
   createLeads,
 } from "../../../api/services/leadsService";
-import { getusersAll } from "../../../api/services/userService";
+import { getMSalesUsers, getusersAll } from "../../../api/services/userService";
 import { getBoardsAll } from "../../../api/services/boardService"; 
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -105,7 +105,7 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
 useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await getusersAll();
+        const res = await getMSalesUsers();
 
         if (res.data && Array.isArray(res.data)) {
           
@@ -366,7 +366,7 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
       </button>
       
       {isOpen && (
-        <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[1000] min-w-[160px] max-h-60 overflow-y-auto">
+        <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[] min-w-[160px] max-h-60 overflow-y-auto">
           {statusOptions.map((status) => {
             const OptionIcon = status.icon;
             return (
@@ -931,8 +931,8 @@ const Table = () => {
                           />
                         </div>
                       </td>
-                      <td className="p-4 border-r border-gray-200">
-                        <OwnerDropdown
+                      <td className="p-4 border-r border-gray-200 ">
+                      <OwnerDropdown
                           currentOwner={task.owner}
                           onChange={(newOwner) => handleOwnerChange(task.id, newOwner)}
                           onSave={() => {}}
@@ -992,7 +992,7 @@ const Table = () => {
                             />
                           ) : (
                             <span 
-                              onClick={() => setEditingTimelineId(task.id)}
+                              // onClick={() => setEditingTimelineId(task.id)}
                               className="text-sm font-medium text-gray-700 cursor-pointer"
                             >
                               {calculateRemainingTime(task.timeline_start, task.timeline_end)}
@@ -1053,7 +1053,7 @@ const Table = () => {
                         ?
                       </div>
                       <span className="text-gray-400 truncate">
-                        Unknown Person
+                        {/* Unknown Person */}
                       </span>
                     </div>
                   </td>

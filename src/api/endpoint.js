@@ -8,6 +8,7 @@ const endpoints = {
 
   users: {
     getAllusers: "users/",
+    getSalesUsers:"users/department/m-sale/",
     getAll: "get-users-for-projects/",
     me: "users/get_user/",
     getById: (id) => `users/${id}/`,
