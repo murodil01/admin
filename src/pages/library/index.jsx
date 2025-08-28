@@ -6,25 +6,32 @@ import { toast } from "react-toastify";
 import { Permission } from "../../components/Permissions";
 import { useAuth } from "../../hooks/useAuth";
 import { ROLES } from "../../components/constants/roles";
+import { ChevronDown } from "lucide-react";
 
-const CreateCategoryModal = ({ isOpen, onClose, onSave, initialData, loading }) => {
-  const [categoryName, setCategoryName] = useState('');
+const CreateCategoryModal = ({
+  isOpen,
+  onClose,
+  onSave,
+  initialData,
+  loading,
+}) => {
+  const [categoryName, setCategoryName] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [visibility, setVisibility] = useState('public');
+  const [visibility, setVisibility] = useState("public");
   const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (initialData) {
-      setCategoryName(initialData.name || '');
+      setCategoryName(initialData.name || "");
       setImagePreview(initialData.image || null);
-      setVisibility(initialData.view_options || 'public');
+      setVisibility(initialData.view_options || "public");
       setSelectedImage(null);
     } else {
-      setCategoryName('');
+      setCategoryName("");
       setSelectedImage(null);
       setImagePreview(null);
-      setVisibility('public');
+      setVisibility("public");
     }
   }, [initialData, isOpen]);
 
@@ -52,40 +59,56 @@ const CreateCategoryModal = ({ isOpen, onClose, onSave, initialData, loading }) 
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
         <div className="flex justify-between p-5 border-b">
           <h2 className="text-lg font-semibold">
-            {initialData ? 'Edit Category' : 'Create Category'}
+            {initialData ? "Edit Category" : "Create Category"}
           </h2>
-          <button onClick={onClose} disabled={loading} className="text-gray-400 hover:text-gray-600">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="text-gray-400 hover:text-gray-600"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Category Name</label>
+            <label className="block text-sm font-medium mb-1">
+              Category Name
+            </label>
             <input
               required
               type="text"
               value={categoryName}
               onChange={(e) => setCategoryName(e.target.value)}
               disabled={loading}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              className="w-full px-3 border border-gray-700 py-2 rounded-lg focus:border-none focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               placeholder="Enter category name"
             />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Visibility</label>
-            <select
-              value={visibility}
-              onChange={(e) => setVisibility(e.target.value)}
-              disabled={loading}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              <option value="public">Public</option>
-              <option value="private">Private</option>
-              <option value="chosen">Chosen</option>
-            </select>
+            <div className="relative">
+              <select
+                value={visibility}
+                onChange={(e) => setVisibility(e.target.value)}
+                disabled={loading}
+                className="w-full px-2 pr-8 py-2 border border-gray-700 rounded-lg focus:border-none focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 appearance-none"
+              >
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+                <option value="chosen">Chosen</option>
+              </select>
+
+              {/* Ikon */}
+              <div className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2">
+                <ChevronDown className="w-5 h-5 text-gray-500" />
+              </div>
+            </div>
           </div>
+
           <div>
-            <label className="block text-sm font-medium mb-1">Category Image</label>
+            <label className="block text-sm font-medium mb-1">
+              Category Image
+            </label>
             {!imagePreview ? (
               <button
                 type="button"
@@ -126,7 +149,7 @@ const CreateCategoryModal = ({ isOpen, onClose, onSave, initialData, loading }) 
             className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-            {initialData ? 'Update Category' : 'Add Category'}
+            {initialData ? "Update Category" : "Add Category"}
           </button>
         </form>
       </div>
@@ -152,7 +175,12 @@ const LibraryPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [menuId, setMenuId] = useState(null);
-  const [loading, setLoading] = useState({ fetch: true, create: false, edit: false, delete: false });
+  const [loading, setLoading] = useState({
+    fetch: true,
+    create: false,
+    edit: false,
+    delete: false,
+  });
   const [editCategory, setEditCategory] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
@@ -192,12 +220,14 @@ const LibraryPage = () => {
       if (data.file) formData.append("image", data.file);
       formData.append("view_options", data.visibility);
       const res = await api.post("/library/categories/", formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { "Content-Type": "multipart/form-data" },
       });
       setCategories((prev) => [res.data, ...prev]);
       toast.success("Category created successfully!");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to create category.");
+      toast.error(
+        error.response?.data?.message || "Failed to create category."
+      );
     } finally {
       setLoading((prev) => ({ ...prev, create: false }));
       setIsModalOpen(false);
@@ -216,12 +246,16 @@ const LibraryPage = () => {
       formData.append("view_options", data.visibility);
       if (data.file) formData.append("image", data.file);
       const res = await api.patch(`/library/categories/${id}/`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { "Content-Type": "multipart/form-data" },
       });
-      setCategories((prev) => prev.map((cat) => (cat.id === id ? res.data : cat)));
+      setCategories((prev) =>
+        prev.map((cat) => (cat.id === id ? res.data : cat))
+      );
       toast.success("Category updated successfully!");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update category.");
+      toast.error(
+        error.response?.data?.message || "Failed to update category."
+      );
     } finally {
       setLoading((prev) => ({ ...prev, edit: false }));
       setIsModalOpen(false);
@@ -234,7 +268,9 @@ const LibraryPage = () => {
     setLoading((prev) => ({ ...prev, delete: true }));
     try {
       await api.delete(`/library/categories/${deleteId}/`);
-      setCategories((prev) => prev.filter((category) => category.id !== deleteId));
+      setCategories((prev) =>
+        prev.filter((category) => category.id !== deleteId)
+      );
       toast.success("Category deleted successfully!");
     } catch (error) {
       toast.error("Failed to delete category.");
@@ -254,7 +290,9 @@ const LibraryPage = () => {
             <div className="h-10 bg-gray-200 rounded w-28 animate-pulse"></div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {[...Array(8)].map((_, index) => <CategoryCardSkeleton key={index} />)}
+            {[...Array(8)].map((_, index) => (
+              <CategoryCardSkeleton key={index} />
+            ))}
           </div>
         </div>
       </main>
@@ -262,7 +300,7 @@ const LibraryPage = () => {
   }
 
   return (
-    <main className="min-h-screen p-4">
+    <main className="min-h-screen py-7">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 pb-3">
           <h1 className="text-xl sm:text-2xl font-semibold">Library</h1>
@@ -270,9 +308,13 @@ const LibraryPage = () => {
             <button
               onClick={() => setIsModalOpen(true)}
               disabled={loading.create}
-              className="flex items-center justify-center w-full sm:w-auto px-3 py-2 sm:px-4 sm:py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 gap-2 text-sm sm:text-base"
+              className="flex items-center justify-center w-full sm:w-auto px-5 py-2 sm:px-6 sm:py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 gap-2 text-sm sm:text-base"
             >
-              {loading.create ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              {loading.create ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4" />
+              )}
               Add Category
             </button>
           </Permission>
@@ -292,16 +334,25 @@ const LibraryPage = () => {
                 className=" rounded-2xl p-4 shadow-sm hover:shadow-md hover:scale-[1.01] transition-all bg-white flex flex-col relative"
                 role="button"
                 tabIndex={0}
-                onKeyDown={(e) => e.key === "Enter" && navigate(`/category/${category.id}`)}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && navigate(`/category/${category.id}`)
+                }
               >
-                <div className="flex items-center justify-between mb-3" data-card-menu>
-                  <h2 className="text-base font-medium truncate">{category.name}</h2>
+                <div
+                  className="flex items-center justify-between mb-3"
+                  data-card-menu
+                >
+                  <h2 className="text-base font-medium truncate">
+                    {category.name}
+                  </h2>
                   <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
                     <div className="relative">
                       <MoreVertical
                         onClick={(e) => {
                           e.stopPropagation();
-                          setMenuId(menuId === category.id ? null : category.id);
+                          setMenuId(
+                            menuId === category.id ? null : category.id
+                          );
                         }}
                         className="text-gray-500 hover:text-gray-700"
                       />
@@ -370,14 +421,20 @@ const LibraryPage = () => {
           setIsModalOpen(false);
           setEditCategory(null);
         }}
-        onSave={(data) => editCategory ? handleEditCategory(editCategory.id, data) : handleCreateCategory(data)}
+        onSave={(data) =>
+          editCategory
+            ? handleEditCategory(editCategory.id, data)
+            : handleCreateCategory(data)
+        }
         initialData={editCategory}
         loading={editCategory ? loading.edit : loading.create}
       />
       {confirmOpen && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-xl p-5 max-w-sm w-full">
-            <h3 className="text-base font-medium mb-4">Confirm category deletion?</h3>
+            <h3 className="text-base font-medium mb-4">
+              Confirm category deletion?
+            </h3>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setConfirmOpen(false)}

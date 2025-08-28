@@ -134,7 +134,7 @@ const MainProfile = () => {
     setBirthday(originalBirthday); // Restore original birthday
     setIsEditing(false);
     setChangePassword(false);
-    
+
     // Clear any password fields that might have been added during editing
     setUser(prev => ({
       ...originalUser,
@@ -179,16 +179,20 @@ const MainProfile = () => {
         updateData.profile_picture = user.profile_picture;
       }
 
-      const updatedUser = await updateMyProfile(updateData);
+      await updateMyProfile(updateData);
+
+      // Ma'lumotlarni qayta oling
+      const freshUserData = await getMyProfile();
 
       const updatedUserWithPreview = {
-        ...updatedUser,
-        profile_picture_preview: updatedUser.profile_picture || user.profile_picture_preview || null,
+        ...freshUserData,
+        profile_picture_preview: freshUserData.profile_picture || null,
       };
 
       setUser(updatedUserWithPreview);
-      setOriginalUser({ ...updatedUserWithPreview }); // Update original data after successful save
-      setOriginalBirthday(birthday); // Update original birthday after successful save
+      setOriginalUser({ ...updatedUserWithPreview });
+      setOriginalBirthday(freshUserData.birth_date || "");
+      setBirthday(freshUserData.birth_date || "");
       setIsEditing(false);
       setChangePassword(false);
       message.success("Profile updated successfully");
@@ -555,7 +559,7 @@ const MainProfile = () => {
                             />
                             <span
                               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500"
+                              className="absolute right-3 top-4/7 cursor-pointer text-gray-500 flex items-center"
                             >
                               {showConfirmPassword ? <EyeTwoTone /> : <EyeInvisibleOutlined />}
                             </span>
