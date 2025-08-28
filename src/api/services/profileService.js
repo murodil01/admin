@@ -2,8 +2,7 @@
 import api from "../base";
 import endpoints from "../endpoint";
 
-// const API_BASE = api.defaults.baseURL;
-const API_BASE = "https://prototype-production-2b67.up.railway.app";
+const API_BASE = api.defaults.baseURL.replace(/\/$/, '');
 
 // Login qilingan user profilini olish
 export const getMyProfile = async () => {
@@ -14,7 +13,10 @@ export const getMyProfile = async () => {
         let data = res.data;
 
         if (data.profile_picture) {
-            data.profile_picture = `${API_BASE}${data.profile_picture}`;
+            const profilePicturePath = data.profile_picture.startsWith('/')
+                ? data.profile_picture
+                : `/${data.profile_picture}`;
+            data.profile_picture = `${API_BASE}${profilePicturePath}`;
         }
         return data;
     } catch (error) {
