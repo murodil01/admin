@@ -381,3 +381,20 @@ input:focus {
 select:focus {
   outline: none;
 }
+
+/* .status-dropdown-container {
+  position: relative; 
+
+}
+*/
+
+/* .status-dropdown-container,
+.owner-dropdown-container,  
+.timeline-cell-container {
+  position: relative;
+}
+
+tbody, tr {
+  overflow: visible !important;
+  position: relative !important;
+} */

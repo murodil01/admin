@@ -17,7 +17,7 @@ import {
 import { getMSalesUsers, getusersAll } from "../../../api/services/userService";
 import { getBoardsAll } from "../../../api/services/boardService"; 
 import { Select, Avatar } from "antd";
-
+import { getMe } from "../../../api/services/authService";
 // Helper function to get absolute image URL
 const getAbsoluteImageUrl = (picture) => {
   if (!picture) return null;
@@ -88,7 +88,7 @@ const TimelineRangePicker = ({ task, onSave, isOpen, onToggle }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="absolute top-full mt-1 left-1/2 transform -translate-x-1/2 z-[1001] bg-white border border-gray-300 rounded-lg shadow-2xl p-4 min-w-[320px]">
+    <div className="absolute top-full mt-1 left-1/2 transform -translate-x-1/2 z-[10000] bg-white border border-gray-300 rounded-lg shadow-2xl p-4 min-w-[320px]">
       <div className="space-y-4">
         <div className="text-sm font-semibold text-gray-700 text-center">
           Select Timeline Range
@@ -218,24 +218,88 @@ const TimelineCell = ({ task, onTimelineUpdate }) => {
 const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
   const [userOptions, setUserOptions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
+        // Try to get current user first
+        let myData = null;
+        try {
+          const meRes = await getMe();
+          console.log("Current user response:", meRes);
+          
+          if (meRes.data) {
+            myData = {
+              id: meRes.data.id,
+              name: meRes.data.first_name || `${meRes.data.first_name || ''} ${meRes.data.last_name || ''}`.trim() || "Me",
+              email: meRes.data.email,
+              profile_picture: getAbsoluteImageUrl(meRes.data.profile_picture),
+              isCurrentUser: true
+            };
+            setCurrentUser(myData);
+            console.log("Current user data:", myData);
+          }
+        } catch (meErr) {
+          console.warn("Failed to fetch current user, using fallback:", meErr);
+          // If getMe fails, we'll try to identify current user from MSales users list
+          // This is a fallback approach
+        }
+
+        // Fetch all MSales users
         const res = await getMSalesUsers();
+        console.log("MSales users response:", res);
 
         if (res.data && Array.isArray(res.data)) {
-          setUserOptions(res.data.map(user => ({
-            id: user.id,
-            name: user.fullname || `${user.first_name} ${user.last_name}` || "Unknown User",
-            email: user.email,
-            profile_picture: getAbsoluteImageUrl(user.profile_picture)
-          })));
+          // If we couldn't get current user from getMe, try to find them in MSales users
+          if (!myData) {
+            // This is a simple fallback - you might want to implement a better way
+            // to identify the current user (e.g., from localStorage, context, etc.)
+            const firstUser = res.data[0];
+            if (firstUser) {
+              myData = {
+                id: firstUser.id,
+                name: firstUser.fullname || `${firstUser.first_name || ''} ${firstUser.last_name || ''}`.trim() || "Me",
+                email: firstUser.email,
+                profile_picture: getAbsoluteImageUrl(firstUser.profile_picture),
+                isCurrentUser: true
+              };
+              setCurrentUser(myData);
+            }
+          }
+          
+          const otherUsers = res.data
+            .filter(user => {
+              // Filter out current user if we have it
+              const isDifferentUser = user.id !== myData?.id;
+              console.log(`Filtering user ${user.id} (${user.fullname}): ${isDifferentUser}`);
+              return isDifferentUser;
+            })
+            .map(user => ({
+              id: user.id,
+              name: user.fullname || `${user.first_name || ''} ${user.last_name || ''}`.trim() || "Unknown User",
+              email: user.email,
+              profile_picture: getAbsoluteImageUrl(user.profile_picture),
+              isCurrentUser: false
+            }));
+
+          // Current user first, then others
+          const allUsers = myData ? [myData, ...otherUsers] : otherUsers;
+          setUserOptions(allUsers);
+          console.log("Final user options:", allUsers);
+        } else {
+          console.warn("No users data received or invalid format");
         }
       } catch (err) {
         console.error("Failed to fetch users:", err);
+        
+        // Fallback - if API fails, at least show current user if we have it
+        if (currentUser) {
+          setUserOptions([currentUser]);
+        }
       }
     };
+    
     fetchUsers();
   }, []);
 
@@ -260,34 +324,45 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
     onSave();
   };
 
+    const renderOwnerAvatar = (owner) => {
+    if (owner?.profile_picture) {
+      return (
+        <img 
+          src={getAbsoluteImageUrl(owner.profile_picture)} 
+          alt={owner.fullname} 
+          className="w-full h-full object-cover"
+        />
+      );
+    } else {
+      // Default user icon
+      return (
+        <svg 
+          className="w-5 h-5 text-white" 
+          fill="currentColor" 
+          viewBox="0 0 20 20"
+        >
+          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+        </svg>
+      );
+    }
+  };
+
   return (
     <div className="relative">
-      <button
+       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 w-full hover:bg-gray-50 p-1 rounded transition-colors"
       >
         <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 overflow-hidden">
-          {currentOwner?.profile_picture ? (
-            <img 
-              src={getAbsoluteImageUrl(currentOwner.profile_picture)} 
-              alt={currentOwner.fullname} 
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            currentOwner?.fullname
-              ?.split(" ")
-              .map((n) => n[0])
-              .join("") || "?"
-          )}
+          {renderOwnerAvatar(currentOwner)}
         </div>
         <span className="text-gray-700 truncate flex-1 text-left">
-          {currentOwner?.fullname || "Unknown Person"}
+          {currentOwner?.fullname || "No Owner"}
         </span>
         <ChevronDown className="w-4 h-4 text-gray-400" />
       </button>
-      
-      {isOpen && (
-        <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[1000] min-w-[200px] max-h-60 overflow-y-auto">
+       {isOpen && (
+        <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[100000] min-w-[200px] max-h-60 overflow-y-auto">
           {userOptions.map((user) => (
             <button
               key={user.id}
@@ -302,14 +377,19 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  user.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
+                  <svg 
+                    className="w-4 h-4 text-white" 
+                    fill="currentColor" 
+                    viewBox="0 0 20 20"
+                  >
+                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                  </svg>
                 )}
               </div>
               <div className="flex-1 truncate">
-                <div className="font-medium">{user.name}</div>
+                <div className="font-medium">
+                  {user.isCurrentUser ? `${user.name} (Me)` : user.name}
+                </div>
                 {user.email && (
                   <div className="text-xs text-gray-500">{user.email}</div>
                 )}
@@ -317,6 +397,12 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
             </button>
           ))}
         </div>
+      )}
+       {isOpen && (
+        <div 
+          className="fixed inset-0 z-[99999]" 
+          onClick={() => setIsOpen(false)}
+        />
       )}
     </div>
   );
@@ -474,7 +560,7 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
       </button>
       
       {isOpen && (
-        <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[1001] min-w-[160px] max-h-60 overflow-y-auto">
+        <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[10000] min-w-[200px] max-h-60 overflow-y-auto">
           {statusOptions.map((status) => {
             const OptionIcon = status.icon;
             return (
@@ -1047,7 +1133,7 @@ const Table = () => {
                           />
                         </div>
                       </td>
-                      <td className="p-4 border-r border-gray-200 ">
+                      <td className=" p-4 border-r border-gray-200 relative">
                       <OwnerDropdown
                           currentOwner={task.owner}
                           onChange={(newOwner) => handleOwnerChange(task.id, newOwner)}
@@ -1060,8 +1146,9 @@ const Table = () => {
                           {task.team}
                         </span>
                       </td>
-                      <td className="p-4 border-r border-gray-200">
+                      <td className="  p-4 border-r border-gray-200 relative">
                         <StatusDropdown
+                          className="status-dropdown-container relative"
                           value={task.status}
                           onChange={(newStatus) => handleStatusChange(task.id, newStatus)}
                           taskId={task.id}
@@ -1199,16 +1286,7 @@ const Table = () => {
       </div>
 
       <style>{`
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
+        @keyframes slideIn {      
 
         .custom-scrollbar::-webkit-scrollbar {
           height: 8px;
@@ -1237,10 +1315,7 @@ const Table = () => {
           z-index: 1;
         }
 
-        tbody tr.relative.z-50 {
-          position: relative !important;
-          z-index: 50 !important;
-        }
+       
 
         .status-dropdown-container > div {
           position: absolute !important;
