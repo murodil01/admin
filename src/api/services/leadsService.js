@@ -85,3 +85,7 @@ export const deleteLeads = (groupId, leadId) => {
   }
   return api.delete(url);
 };
+
+export const createAllStatus = (boardId, data) => {
+  return api.patch(endpoints.status.createStatus(boardId), data);
+}
