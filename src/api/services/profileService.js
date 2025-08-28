@@ -2,7 +2,8 @@
 import api from "../base";
 import endpoints from "../endpoint";
 
-const API_BASE = "https://prototype-production-2b67.up.railway.app"; // sizning backend host
+// const API_BASE = api.defaults.baseURL;
+const API_BASE = "https://prototype-production-2b67.up.railway.app";
 
 // Login qilingan user profilini olish
 export const getMyProfile = async () => {
@@ -12,7 +13,7 @@ export const getMyProfile = async () => {
         const res = await api.get(url);
         let data = res.data;
 
-        if (data.profile_picture && data.profile_picture.startsWith("/")) {
+        if (data.profile_picture) {
             data.profile_picture = `${API_BASE}${data.profile_picture}`;
         }
         return data;

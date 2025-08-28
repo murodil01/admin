@@ -134,7 +134,7 @@ const MainProfile = () => {
     setBirthday(originalBirthday); // Restore original birthday
     setIsEditing(false);
     setChangePassword(false);
-    
+
     // Clear any password fields that might have been added during editing
     setUser(prev => ({
       ...originalUser,

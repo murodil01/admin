@@ -28,7 +28,7 @@ export const updateStatus = async (statusId, data) => {
     }
     const url = endpoints.board?.updateStatus
       ? endpoints.board.updateStatus(statusId)
-      : `board/status/${statusId}/`; 
+      : `board/status/${statusId}/`;
 
     console.log("🔄 Updating status:", url, data);
 
@@ -85,3 +85,7 @@ export const deleteLeads = (groupId, leadId) => {
   }
   return api.delete(url);
 };
+
+export const createAllStatus = (boardId, data) => {
+  return api.patch(endpoints.status.createStatus(boardId), data);
+}
