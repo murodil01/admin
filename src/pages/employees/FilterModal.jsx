@@ -168,104 +168,144 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters }) => {
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-6">
                         {/* Departments Filter */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-semibold text-gray-800 mb-3">
                                 Departments
                             </label>
-                            <div className="space-y-2 max-h-40 overflow-y-auto">
+                            <div className={`space-y-2 transition-all duration-300 ease-in-out ${showAllDepartments ? 'max-h-60' : 'max-h-40'} overflow-y-auto`}>
                                 {visibleDepartments.map((dept, index) => {
                                     const deptIndex = index + 1; // start from 1
                                     const isSelected = filters.selectedDepartments.includes(deptIndex);
                                     return (
                                         <label
                                             key={dept.id}
-                                            className="flex items-center space-x-2 cursor-pointer p-1.5 hover:bg-gray-50 rounded transition-colors text-sm"
+                                            className={`flex items-center space-x-3 cursor-pointer p-3 rounded-lg transition-all duration-200 border ${isSelected
+                                                    ? 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+                                                    : 'hover:bg-gray-50 border-transparent hover:border-gray-200'
+                                                }`}
                                         >
                                             <input
                                                 type="checkbox"
                                                 checked={isSelected}
                                                 onChange={() => handleDepartmentToggle(deptIndex)}
-                                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                                             />
-                                            <div className="flex items-center space-x-2">
+                                            <div className="flex items-center space-x-3 flex-1">
                                                 <img
                                                     src={dept.photo}
                                                     alt={dept.name}
-                                                    className="w-[30px] h-[30px] rounded-full shadow-lg object-cover"
+                                                    className="w-8 h-8 rounded-full shadow-md object-cover ring-2 ring-white"
                                                     onError={(e) => {
                                                         e.target.src = '/default-department.png';
                                                     }}
                                                 />
-                                                <span className="text-gray-700">{dept.name}</span>
+                                                <span className={`font-medium ${isSelected ? 'text-blue-700' : 'text-gray-700'}`}>
+                                                    {dept.name}
+                                                </span>
                                             </div>
                                         </label>
                                     );
                                 })}
                             </div>
+
+                            {/* Show More/Less Button - Improved Design */}
                             {departments.length > 3 && (
-                                <button
-                                    className="text-blue-500 text-xs mt-1 hover:text-blue-600 flex items-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 py-0.5"
-                                    onClick={() => setShowAllDepartments(!showAllDepartments)}
-                                    aria-expanded={showAllDepartments}
-                                >
-                                    {showAllDepartments ? 'Show less' : `View more (${departments.length - 3})`}
-                                    <svg className={`w-3 h-3 ml-1 transition-transform ${showAllDepartments ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </button>
+                                <div className="mt-4 flex justify-center">
+                                    <button
+                                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full border border-blue-200 transition-all duration-200 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                                        onClick={() => setShowAllDepartments(!showAllDepartments)}
+                                        aria-expanded={showAllDepartments}
+                                    >
+                                        {showAllDepartments ? (
+                                            <>
+                                                <span>Show Less</span>
+                                                <svg className="w-4 h-4 transition-transform duration-200 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span>Show {departments.length - 3} More</span>
+                                                <svg className="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                             )}
                         </div>
 
-                        {/* Roles Filter */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {/* Roles Filter - Also improved */}
+                        {/* <div>
+                            <label className="block text-sm font-semibold text-gray-800 mb-3">
                                 Roles
                             </label>
-                            <div className="space-y-2 max-h-40 overflow-y-auto">
+                            <div className="space-y-2">
                                 {visibleRoles.map((role) => {
                                     const isSelected = filters.selectedRoles.includes(role.value);
                                     return (
                                         <label
                                             key={role.value}
-                                            className="flex items-center space-x-2 cursor-pointer p-1.5 hover:bg-gray-50 rounded transition-colors text-sm"
+                                            className={`flex items-center space-x-3 cursor-pointer p-3 rounded-lg transition-all duration-200 border ${isSelected
+                                                    ? 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+                                                    : 'hover:bg-gray-50 border-transparent hover:border-gray-200'
+                                                }`}
                                         >
                                             <input
                                                 type="checkbox"
                                                 checked={isSelected}
                                                 onChange={() => handleRoleToggle(role.value)}
-                                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                                             />
-                                            <span className="text-gray-700">{role.label}</span>
+                                            <span className={`font-medium ${isSelected ? 'text-blue-700' : 'text-gray-700'}`}>
+                                                {role.label}
+                                            </span>
                                         </label>
                                     );
                                 })}
-                            </div>
-                            {roleOptions.length > 3 && (
-                                <button
-                                    className="text-blue-500 text-xs mt-1 hover:text-blue-600 flex items-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 py-0.5"
-                                    onClick={() => setShowAllRoles(!showAllRoles)}
-                                    aria-expanded={showAllRoles}
-                                >
-                                    {showAllRoles ? 'Show less' : `View more (${roleOptions.length - 3})`}
-                                    <svg className={`w-3 h-3 ml-1 transition-transform ${showAllRoles ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </button>
+                            </div> */}
+
+                            {/* Show More/Less for Roles */}
+                            {/* {roleOptions.length > 3 && (
+                                <div className="mt-4 flex justify-center">
+                                    <button
+                                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full border border-blue-200 transition-all duration-200 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                                        onClick={() => setShowAllRoles(!showAllRoles)}
+                                        aria-expanded={showAllRoles}
+                                    >
+                                        {showAllRoles ? (
+                                            <>
+                                                <span>Show Less</span>
+                                                <svg className="w-4 h-4 transition-transform duration-200 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span>Show {roleOptions.length - 3} More</span>
+                                                <svg className="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                             )}
-                        </div>
+                        </div> */}
 
                         {/* Status Filter */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-semibold text-gray-800 mb-3">
                                 Status
                             </label>
                             <div className="relative">
                                 <select
                                     value={filters.status}
                                     onChange={(e) => handleStatusChange(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-sm appearance-none cursor-pointer"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-sm appearance-none cursor-pointer font-medium text-gray-700"
                                 >
                                     {statusOptions.map(option => (
                                         <option key={option.value} value={option.value}>
@@ -273,8 +313,8 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters }) => {
                                         </option>
                                     ))}
                                 </select>
-                                <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </div>
@@ -284,20 +324,20 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters }) => {
 
                     {/* Footer */}
                     <div className="border-t border-gray-200 p-4 space-y-3 sticky bottom-0 bg-white">
-                        <div className="flex space-x-2">
+                        <div className="flex space-x-3">
                             {hasActiveFilters() && (
                                 <button
                                     onClick={clearAllFilters}
-                                    className="flex-1 py-2 px-3 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 font-medium transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="flex-1 py-3 px-4 text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 font-semibold transition-all duration-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-500"
                                 >
                                     Clear All
                                 </button>
                             )}
                             <button
                                 onClick={applyFilters}
-                                className="flex-1 p-3 rounded-lg font-medium transition-colors text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-600 text-white hover:bg-blue-500"
+                                className="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-200 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl"
                             >
-                                Save Filters ({getActiveFilterCount()})
+                                Apply Filters ({getActiveFilterCount()})
                             </button>
                         </div>
                     </div>
@@ -313,8 +353,8 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters }) => {
                 <button
                     onClick={() => setIsModalOpen(true)}
                     className={`p-3 bg-white rounded-lg shadow-md flex items-center gap-1.5 transition-all duration-200 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasActiveFilters()
-                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                            : 'border-gray-300 text-gray-700'
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-300 text-gray-700'
                         }`}
                     aria-label={`Open filters ${hasActiveFilters() ? `(${getActiveFilterCount()} active)` : ''}`}
                 >
