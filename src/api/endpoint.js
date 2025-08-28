@@ -63,6 +63,7 @@ const endpoints = {
     getStatus: "board/status/",
     getAll: "board/list/",
     create: "board/list/",
+    createStatus: (id) => `board/status/${id}/`,
     getById: (id) => `board/board/${id}/`,    // board detail/list uchun
     update: (id) => `board/board/${id}/`,
     delete: (id) => `board/board/${id}/`,
@@ -80,6 +81,7 @@ const endpoints = {
     getAll: "board/leads/",
     create: "board/leads/",
     getById: (id) => `board/leads/${id}/`,
+    // createStatus: (id) => `board/leads/${id}/`,
     update: (groupId, leadId) => `board/leads/${leadId}/?group=${groupId}`,
     delete: (groupId, leadId) => `board/leads/${leadId}/?group=${groupId}`,
   },

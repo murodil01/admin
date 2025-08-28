@@ -17,6 +17,10 @@ export const createBoard = (name, boardId) => {
 
 export const getBoardsAll = () => api.get(endpoints.boards.getStatus);
 
+// edit status
+
+export const createStatusAll = (id, data) => api.patch(endpoints.boards.createStatus(id), data);
+
 // edit qilish
 export const updateBoard = (id, data) =>
   api.patch(endpoints.boards.update(id), data);

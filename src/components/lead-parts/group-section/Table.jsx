@@ -13,7 +13,9 @@ import {
   createLeads,
 } from "../../../api/services/leadsService";
 import { getusersAll } from "../../../api/services/userService";
-import { getBoardsAll } from "../../../api/services/boardService"; 
+import { getBoardsAll,createStatusAll } from "../../../api/services/boardService";
+import { getDepartments } from "../../../api/services/departmentService"; 
+import { createAllStatus } from "../../../api/services/leadsService";
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Select, Avatar } from "antd";
@@ -72,7 +74,9 @@ const LinkDropdown = ({ value, onChange, onSave, onCancel }) => {
     onChange(e.target.value);
     onSave();
   };
+  
 
+  
   return (
     <select
       value={value || ""}
@@ -665,20 +669,21 @@ const Table = () => {
     setDragOverItem(null);
   };
 
-  const handleStatusChange = async (taskId, newStatus) => {
-    try {
-      setApiLeads(
-        apiLeads.map((lead) =>
-          lead.id === taskId ? { ...lead, status: newStatus } : lead
-        )
-      );
-      await updateLeads(taskId, { status: newStatus });
-      console.log("✅ Status updated on server");
-      setOpenStatusDropdown(null);
-    } catch (error) {
-      console.error("❌ Error updating status:", error);
-    }
-  };
+ const handleStatusChange = async (taskId, newStatus) => {
+  try {
+    setApiLeads(
+      apiLeads.map((lead) =>
+        lead.id === taskId ? { ...lead, status: newStatus } : lead
+      )
+    );
+    // PATCH status using createStatusAll
+    await createAllStatus(newStatus.id); // newStatus.id is the status ID to patch
+    console.log("✅ Status updated on server via createStatusAll");
+    setOpenStatusDropdown(null);
+  } catch (error) {
+    console.error("❌ Error updating status:", error);
+  }
+};
 
   const handleOwnerChange = (taskId, newOwner) => {
     setApiLeads(
