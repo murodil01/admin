@@ -61,6 +61,7 @@ const endpoints = {
   },
 
   boards: {
+    addNewLead:"board/leads",
     getStatus: "board/status/",
     getAll: "board/list/",
     create: "board/list/",
