@@ -12,13 +12,12 @@ import {
   updateLeads,
   createLeads,
 } from "../../../api/services/leadsService";
-import { getMSalesUsers, getusersAll } from "../../../api/services/userService";
+import { getMSalesUsers } from "../../../api/services/userService";
 import { getBoardsAll } from "../../../api/services/boardService"; 
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Select, Avatar } from "antd";
 
-// Helper function to get absolute image URL
 const getAbsoluteImageUrl = (picture) => {
   if (!picture) return null;
   
@@ -800,6 +799,7 @@ const Table = () => {
                 <col className="w-40" />
                 <col className="w-15" />
               </colgroup>
+
               <thead>
                 <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                   <th className="p-2 sticky left-0 bg-gradient-to-r from-gray-50 to-gray-100 z-20"></th>
@@ -867,6 +867,7 @@ const Table = () => {
                   </th>
                 </tr>
               </thead>
+
               <tbody>
                 {filteredTasks.map((task, index) => {
                   const StatusIcon = statusConfig[task.status]?.icon || Circle;
@@ -1100,6 +1101,7 @@ const Table = () => {
                   <td className="p-4 border-r border-gray-200"></td>
                 </tr>
               </tbody>
+              
             </table>
           </div>
         </div>
