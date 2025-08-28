@@ -59,10 +59,13 @@ import {
   updateInstruction,
   deleteInstruction,
   deleteChecklistItem,
-  getTaskFilesByTask, // ✅ YANGI
-  getTaskInstructionsByTask, // ✅ YANGI
+  getTaskFilesByTask,
+  getTaskInstructionsByTask,
   getTaskCommentsByTask,
 } from "../../api/services/taskService";
+import { ArrowBigUpDashIcon } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { ChevronUp } from "lucide-react";
 
 const NotionKanban = ({ cards, setCards, assignees, getAssigneeName }) => {
   return (
@@ -83,42 +86,38 @@ const taskColumns = [
     id: "assigned",
     title: "Assigned",
     color: "bg-[#DCE8FF]",
-    icon: <img src={assigned} alt="" />,
+    icon: <img src={assigned} alt="assigned" />,
   },
   {
     id: "acknowledged",
     title: "Acknowledged",
     color: "bg-[#D5F6D7]",
-    icon: <img src={acknowledged} alt="" />,
+    icon: <img src={acknowledged} alt="acknowledged" />,
   },
   {
     id: "in_progress",
     title: "In Progress",
     color: "bg-[#FAF6E1]",
-    icon: <img src={inProgress} alt="" />,
+    icon: <img src={inProgress} alt="inProgress" />,
   },
   {
     id: "completed",
     title: "Completed",
     color: "bg-[#F4EBF9]",
-    icon: <img src={completedIcon} alt="" />,
+    icon: <img src={completedIcon} alt="completedIcon" />,
   },
   {
     id: "in_review",
     title: "In Review",
     color: "bg-[#FFF0E0]",
-    icon: <img src={inReview} alt="" />,
+    icon: <img src={inReview} alt="inReview" />,
   },
   {
     id: "return_for_fixes",
     title: (
-
       <Permission allowedRoles={Object.values(ROLES)}>
-
-  
-
         <span className="flex items-center gap-1">Return for Fixes</span>
-     </Permission>
+      </Permission>
     ),
     color: "bg-[#E2C7A9]",
     icon: <img src={rework} alt="" />,
@@ -127,11 +126,7 @@ const taskColumns = [
   {
     id: "dropped",
     title: (
-
       <Permission allowedRoles={Object.values(ROLES)}>
-
-     
-
         <span className="flex items-center gap-1">Dropped</span>
       </Permission>
     ),
@@ -142,19 +137,20 @@ const taskColumns = [
   {
     id: "approved",
     title: (
-
       <Permission allowedRoles={Object.values(ROLES)}>
-
-    
-
         <span className="flex items-center gap-1">Approved</span>
-       </Permission>
+      </Permission>
     ),
     color: "bg-[#C2FFCF]",
     icon: <img src={approved} alt="" />,
     allowedRoles: Object.values(ROLES),
   },
 ];
+
+const getStatusTitle = (statusId) => {
+  const column = taskColumns.find((col) => col.id === statusId);
+  return column ? column.title : statusId || "N/A";
+};
 
 const Board = ({ cards, setCards }) => {
   // const [hasChecked, setHasChecked] = useState(false);
@@ -178,7 +174,7 @@ const Board = ({ cards, setCards }) => {
   const [activeColumn, setActiveColumn] = useState(taskColumns[0]?.id || null);
 
   return (
-     <div className="flex flex-col w-full">
+    <div className="flex flex-col w-full">
       {/* Column selector for mobile */}
       <div className="items-start sm:hidden flex gap-2 overflow-x-auto mb-4 p-2 bg-white rounded-lg shadow-sm border border-gray-200">
         {taskColumns.map((col) => (
@@ -203,13 +199,19 @@ const Board = ({ cards, setCards }) => {
 
       {/* Faqat active column */}
       <div className="flex-1 w-full sm:hidden">
-        <Permission allowedRoles={taskColumns.find((c) => c.id === activeColumn)?.allowedRoles || []}>
+        <Permission
+          allowedRoles={
+            taskColumns.find((c) => c.id === activeColumn)?.allowedRoles || []
+          }
+        >
           <Column
             key={activeColumn}
             icon={taskColumns.find((c) => c.id === activeColumn)?.icon}
             title={taskColumns.find((c) => c.id === activeColumn)?.title}
             column={activeColumn}
-            backgroundColor={taskColumns.find((c) => c.id === activeColumn)?.color}
+            backgroundColor={
+              taskColumns.find((c) => c.id === activeColumn)?.color
+            }
             cards={cards.filter((c) => c.column === activeColumn)}
             setCards={setCards}
             onEdit={handleEdit}
@@ -355,7 +357,6 @@ const Column = ({
     <div
       className={`w-full sm:min-w-[260px] sm:max-w-[270px] rounded-xl p-4 ${backgroundColor} shadow-sm flex flex-col my-1`}
     >
-      
       {showHeader && (
         <div className="border-b border-gray-300 pb-2 mb-3 z-10 flex items-center gap-2">
           <span>{icon}</span>
@@ -385,7 +386,6 @@ const Column = ({
           />
         ))}
         <DropIndicator beforeId="-1" column={column} />
-        
       </div>
       {/* Cards list - Mobile */}
       <div
@@ -405,13 +405,11 @@ const Column = ({
             image={c.image}
             setCards={setCards}
           />
-          
         ))}
         <DropIndicator beforeId="-1" column={column} />
       </div>
-      
-    </div>  
-);
+    </div>
+  );
 };
 const Card = ({
   title,
@@ -461,27 +459,30 @@ const Card = ({
   const [deleteCommentModalOpen, setDeleteCommentModalOpen] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState(null);
 
+  const [showAllChecklist, setShowAllChecklist] = useState(false);
+  const [showAllFiles, setShowAllFiles] = useState(false);
+
   // Helper functions
   const getFileIcon = (fileName) => {
     if (!fileName) return "📄";
     const extension = fileName.split(".").pop()?.toLowerCase();
     switch (extension) {
       case "pdf":
-        return "📄";
+        return <img src="/pdf-icon.png" alt="PDF" className="w-5 h-5" />;
       case "doc":
       case "docx":
-        return "📝";
+        return <img src="/docx_icon.png" alt="Word" className="w-5 h-5" />;
       case "xls":
       case "xlsx":
-        return "📊";
+        return <img src="/excel-icon.png" alt="Excel" className="w-5 h-5" />;
       case "jpg":
       case "jpeg":
       case "png":
       case "gif":
-        return "🖼️";
+        return <img src="/picture-icon.png" alt="Image" className="w-5 h-5" />;
       case "zip":
       case "rar":
-        return "🗜️";
+        return <img src="/zip-icon.png" alt="Archive" className="w-5 h-5" />;
       default:
         return "📄";
     }
@@ -500,16 +501,70 @@ const Card = ({
     return dayjs(date).format("MMM D, YYYY");
   };
 
-  const handleFileDownload = (file) => {
-    if (file.file || file.url) {
-      const link = document.createElement("a");
-      link.href = file.file || file.url;
-      link.download = file.original_name || file.file_name || "download";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      message.warning("File download not available");
+  // const handleFileDownload = (file) => {
+  //   if (file.file || file.url) {
+  //     const link = document.createElement("a");
+  //     link.href = file.file || file.url;
+  //     link.download = file.original_name || file.file_name || "download";
+  //     document.body.appendChild(link);
+  //     link.click();
+  //     document.body.removeChild(link);
+  //   } else {
+  //     message.warning("File download not available");
+  //   }
+  // };
+
+  // Card komponenti ichida - handleFileDownload funksiyasini yangilash
+  const handleFileDownload = async (file) => {
+    try {
+      // Loading state ni ko'rsatish uchun
+      message.loading({
+        content: "Downloading file...",
+        key: "download",
+        duration: 0,
+      });
+
+      if (file.file || file.url) {
+        // File URL mavjud bo'lsa, to'g'ridan-to'g'ri download qilish
+        const fileUrl = file.file || file.url;
+        const fileName = file.original_name || file.file_name || "download";
+
+        // Fetch orqali file ni olish va download qilish
+        const response = await fetch(fileUrl);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+
+        // Blob ni download qilish
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = fileName;
+
+        // Browser compatibility uchun
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Memory cleanup
+        window.URL.revokeObjectURL(downloadUrl);
+
+        message.success({
+          content: "File downloaded successfully!",
+          key: "download",
+        });
+      } else {
+        throw new Error("File URL not available");
+      }
+    } catch (error) {
+      console.error("Download error:", error);
+      message.error({
+        content: `Failed to download file: ${error.message}`,
+        key: "download",
+      });
     }
   };
 
@@ -771,6 +826,17 @@ const Card = ({
       console.log("📥 createComment response:", response);
 
       setNewComment("");
+      // DOM da textarea ni topib height ni reset qilish
+      setTimeout(() => {
+        const textarea = document.querySelector(
+          'textarea[placeholder="Add a comment"]'
+        );
+        if (textarea) {
+          textarea.style.height = "40px";
+          textarea.dispatchEvent(new Event("input", { bubbles: true })); // onInput ni trigger qilish
+        }
+      }, 10);
+
       await fetchComments();
       message.success("Comment added successfully");
     } catch (error) {
@@ -1388,7 +1454,18 @@ const Card = ({
         </button>
 
         <Modal
-          title={taskData ? taskData.name : `Task Details`}
+          title={
+            <div
+              style={{
+                fontSize: "32px",
+                fontWeight: "bold",
+                padding: "5px 0",
+                textTransform: "capitalize",
+              }}
+            >
+              {taskData ? taskData.name : `Task Details`}
+            </div>
+          }
           open={isModalOpen}
           onOk={() => setIsModalOpen(false)}
           onCancel={() => setIsModalOpen(false)}
@@ -1442,30 +1519,29 @@ const Card = ({
               <div className="md:col-span-6 space-y-6">
                 {/* Top section */}
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="w-full sm:w-[140px] h-[140px] bg-gray-200 flex items-center justify-center rounded">
+                  <div className="w-full max-w-5/6 sm:w-[140px] sm:h-[140px] bg-gray-200 flex items-center justify-center rounded-xl">
                     <span role="img" aria-label="image" className="text-4xl">
                       {taskData?.task_image ? (
                         <img
                           src={taskData.task_image}
-                          alt=""
+                          alt="task image"
                           onError={(e) =>
                             (e.currentTarget.style.display = "none")
                           }
+                          className="rounded-xl"
                         />
                       ) : (
                         <span>🖼️</span>
                       )}
                     </span>
                   </div>
-                  <div className="flex-1 text-sm text-gray-700 leading-6">
+                  <div className="flex-1 text-sm text-gray-700 leading-6 whitespace-pre-wrap">
                     {taskData.description || "No description available"}
                   </div>
                 </div>
 
                 {/* Files */}
                 <div>
-                  <h4 className="font-semibold text-sm mb-3">Files</h4>
-
                   <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
                     <span>📁</span>
                     Files ({files.length})
@@ -1479,50 +1555,219 @@ const Card = ({
                       </span>
                     </div>
                   ) : files.length > 0 ? (
-                    <div className="space-y-2">
-                      {files.map((file, index) => (
-                        <div
-                          key={file.id || index}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
-                        >
-                          <div className="flex items-center gap-3">
-                            {/* Fayl tipi ikonkasi */}
-                            <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                              {getFileIcon(file.file_type || file.file_name)}
-                            </div>
+                    <div className="space-y-2 max-w-sm">
+                      {/* Files list */}
+                      <div
+                        className={`space-y-2 overflow-hidden transition-all duration-300 ${
+                          showAllFiles ? "max-h-none" : "max-h-80"
+                        }`}
+                      >
+                        {(showAllFiles ? files : files.slice(0, 4)).map(
+                          (file, index) => (
+                            <div
+                              key={file.id || index}
+                              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border hover:bg-gray-100 transition-colors"
+                            >
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                {/* File type icon */}
+                                <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
+                                  <span className="text-lg">
+                                    {getFileIcon(
+                                      file.file_type || file.file_name
+                                    )}
+                                  </span>
+                                </div>
 
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">
-                                {file.original_name ||
-                                  file.file_name ||
-                                  "Unnamed file"}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {file.file_size
-                                  ? formatFileSize(file.file_size)
-                                  : ""}{" "}
-                                •{" "}
-                                {file.created_at
-                                  ? formatDate(file.created_at)
-                                  : "Unknown date"}
-                              </p>
-                            </div>
-                          </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-medium text-gray-900 truncate">
+                                    {file.original_name ||
+                                      file.file_name ||
+                                      "Unnamed file"}
+                                  </p>
+                                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                                    <span>
+                                      {file.file_size
+                                        ? formatFileSize(file.file_size)
+                                        : "Size unknown"}
+                                    </span>
+                                    <span>•</span>
+                                    <span>
+                                      {file.created_at
+                                        ? formatDate(file.created_at)
+                                        : "Date unknown"}
+                                    </span>
+                                    {file.uploaded_by && (
+                                      <>
+                                        <span>•</span>
+                                        <span>by {file.uploaded_by}</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
 
-                          {/* Download button */}
-                          <Button
-                            type="text"
-                            icon={<DownloadOutlined />}
-                            onClick={() => handleFileDownload(file)}
-                            className="text-blue-600 hover:text-blue-800"
-                          />
+                              {/* Action buttons */}
+                              <div className="flex items-center gap-2 ml-3">
+                                {/* Preview button (for images) */}
+                                {file.file_type?.startsWith("image/") && (
+                                  <Button
+                                    type="text"
+                                    size="small"
+                                    icon="👁️"
+                                    onClick={() => {
+                                      // Image preview ni modal da ochish
+                                      Modal.info({
+                                        title:
+                                          file.original_name || file.file_name,
+                                        content: (
+                                          <div className="text-center">
+                                            <img
+                                              src={file.file || file.url}
+                                              alt="Preview"
+                                              style={{
+                                                maxWidth: "100%",
+                                                maxHeight: "400px",
+                                              }}
+                                              onError={(e) => {
+                                                e.target.style.display = "none";
+                                                e.target.nextSibling.style.display =
+                                                  "block";
+                                              }}
+                                            />
+                                            <div
+                                              style={{ display: "none" }}
+                                              className="text-gray-500"
+                                            >
+                                              Preview not available
+                                            </div>
+                                          </div>
+                                        ),
+                                        width: 600,
+                                        okText: "Close",
+                                      });
+                                    }}
+                                    className="text-blue-600 hover:text-blue-800"
+                                    title="Preview image"
+                                  />
+                                )}
+
+                                {/* Download button */}
+                                <Button
+                                  type="text"
+                                  icon={<DownloadOutlined />}
+                                  onClick={() => handleFileDownload(file)}
+                                  className="text-blue-600 hover:text-blue-800"
+                                  size="small"
+                                  title="Download file"
+                                />
+
+                                {/* File info button */}
+                                <Button
+                                  type="text"
+                                  icon="ℹ️"
+                                  onClick={() => {
+                                    Modal.info({
+                                      title: "File Information",
+                                      content: (
+                                        <div className="space-y-2">
+                                          <p>
+                                            <strong>Name:</strong>{" "}
+                                            {file.original_name ||
+                                              file.file_name}
+                                          </p>
+                                          <p>
+                                            <strong>Size:</strong>{" "}
+                                            {file.file_size
+                                              ? formatFileSize(file.file_size)
+                                              : "Unknown"}
+                                          </p>
+                                          <p>
+                                            <strong>Type:</strong>{" "}
+                                            {file.file_type || "Unknown"}
+                                          </p>
+                                          <p>
+                                            <strong>Uploaded:</strong>{" "}
+                                            {file.created_at
+                                              ? formatDate(file.created_at)
+                                              : "Unknown"}
+                                          </p>
+                                          {file.uploaded_by && (
+                                            <p>
+                                              <strong>Uploaded by:</strong>{" "}
+                                              {file.uploaded_by}
+                                            </p>
+                                          )}
+                                          {file.file && (
+                                            <p>
+                                              <strong>URL:</strong>{" "}
+                                              <a
+                                                href={file.file}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-600"
+                                              >
+                                                {file.file}
+                                              </a>
+                                            </p>
+                                          )}
+                                        </div>
+                                      ),
+                                      okText: "Close",
+                                    });
+                                  }}
+                                  size="small"
+                                  className="text-gray-600 hover:text-gray-800"
+                                  title="File details"
+                                />
+                              </div>
+                            </div>
+                          )
+                        )}
+                      </div>
+
+                      {/* Show More/Less button */}
+                      {files.length > 4 && (
+                        <div className="mt-3">
+                          <button
+                            onClick={() => setShowAllFiles(!showAllFiles)}
+                            className="w-full py-2 px-3 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-200 transition-colors flex items-center justify-center gap-2 text-sm text-gray-600 hover:text-gray-800"
+                          >
+                            <span>
+                              {showAllFiles
+                                ? `Show Less`
+                                : `Show ${files.length - 4} More Files`}
+                            </span>
+                            {showAllFiles ? (
+                              <ChevronUp className="w-4 h-4" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4" />
+                            )}
+                          </button>
                         </div>
-                      ))}
+                      )}
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg text-center">
-                      📄 No files attached to this task
-                    </p>
+                    <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                      <div className="text-4xl mb-2">📄</div>
+                      <p className="text-sm text-gray-500 mb-2">
+                        No files attached to this task
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        Files will appear here when uploaded
+                      </p>
+                    </div>
+                  )}
+
+                  {/* File upload progress */}
+                  {filesLoading && (
+                    <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center gap-2">
+                        <Spin size="small" />
+                        <span className="text-sm text-blue-700">
+                          Loading files...
+                        </span>
+                      </div>
+                    </div>
                   )}
                 </div>
 
@@ -1533,43 +1778,76 @@ const Card = ({
                       <img
                         src={checkList}
                         alt="checklist"
-                        className="w-4 h-4"
+                        className="w-4 h-4 bg-blue-600"
                       />
                       Check list ({checklistItems.length})
                     </h4>
-                    <span className="text-xs text-gray-500">Show</span>
+                    {checklistItems.length > 4 && (
+                      <button
+                        onClick={() => setShowAllChecklist(!showAllChecklist)}
+                        className="text-xs text-blue-500 hover:text-blue-700 cursor-pointer font-medium transition-colors duration-200 flex items-center gap-1"
+                      >
+                        {showAllChecklist ? "Hide" : "Show"}
+                        <span
+                          className={`transform text-sm transition-transform duration-200 ${
+                            showAllChecklist ? "rotate-180" : ""
+                          }`}
+                        >
+                          <ArrowBigUpDashIcon />
+                        </span>
+                      </button>
+                    )}
                   </div>
 
                   {checklistItems && checklistItems.length > 0 ? (
                     <div className="space-y-2">
-                      {checklistItems.map((item, index) => (
-                        <div
-                          key={item.id || index}
-                          className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded"
-                        >
-                          <Checkbox
-                            checked={item.completed}
-                            onChange={(e) =>
-                              handleUpdateChecklistItem(
-                                item.id,
-                                e.target.checked
-                              )
-                            }
-                          />
-                          <span
-                            className={`text-sm flex-1 ${
-                              item.completed
-                                ? "line-through text-gray-500"
-                                : "text-gray-900"
-                            }`}
+                      <div
+                        className={`space-y-2 transition-all duration-300 ${
+                          showAllChecklist
+                            ? "max-h-96 overflow-y-auto"
+                            : "max-h-none"
+                        }`}
+                      >
+                        {(showAllChecklist
+                          ? checklistItems
+                          : checklistItems.slice(0, 4)
+                        ).map((item, index) => (
+                          <div
+                            key={item.id || index}
+                            className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded transition-colors duration-150"
                           >
-                            {item.title ||
-                              item.name ||
-                              item.description ||
-                              `Item ${index + 1}`}
+                            <Checkbox
+                              checked={item.completed || item.status}
+                              onChange={(e) =>
+                                handleUpdateChecklistItem(
+                                  item.id,
+                                  e.target.checked
+                                )
+                              }
+                            />
+                            <span
+                              className={`text-sm flex-1 ${
+                                item.completed || item.status
+                                  ? "line-through text-gray-500"
+                                  : "text-gray-900"
+                              }`}
+                            >
+                              {item.title ||
+                                item.name ||
+                                item.description ||
+                                `Item ${index + 1}`}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {!showAllChecklist && checklistItems.length > 4 && (
+                        <div className="text-center pt-2 border-t border-gray-100">
+                          <span className="text-xs text-gray-400">
+                            ... and {checklistItems.length - 4} more items
                           </span>
                         </div>
-                      ))}
+                      )}
                     </div>
                   ) : (
                     <p className="text-sm text-gray-500">No checklist items</p>
@@ -1580,155 +1858,192 @@ const Card = ({
                 <div>
                   <h4 className="font-semibold text-sm mb-3">Comments</h4>
                   <div className="p-4 bg-blue-50 rounded-xl">
-                    {comments.length > 0 ? (
-                      comments.map((c) => (
-                        <div key={c.id} className="rounded-lg bg-blue-50 mb-3">
-                          <div className="flex items-center gap-3 mb-2 justify-between">
-                            <div className="flex items-center gap-3">
-                              {/* User avatar */}
-                              <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center text-xs font-semibold">
-                                {c.user_avatar ? (
-                                  <img
-                                    src={c.user_avatar}
-                                    alt={c.user_name}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      e.target.style.display = "none";
-                                      e.target.nextSibling.style.display =
-                                        "flex";
-                                    }}
-                                  />
-                                ) : null}
-                                <span
-                                  className={`${
-                                    c.user_avatar ? "hidden" : "flex"
-                                  } w-full h-full items-center justify-center bg-blue-500 text-white text-xs font-semibold`}
-                                >
-                                  {c.user_initials}
+                    <div className=" max-h-96 overflow-y-auto">
+                      {comments.length > 0 ? (
+                        comments.map((c) => (
+                          <div
+                            key={c.id}
+                            className="rounded-lg bg-blue-50 mb-3"
+                          >
+                            <div className="flex items-center gap-3 mb-2 justify-between">
+                              <div className="flex items-center gap-3">
+                                {/* User avatar */}
+                                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center text-xs font-semibold">
+                                  {c.user_avatar ? (
+                                    <img
+                                      src={c.user_avatar}
+                                      alt={c.user_name}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        e.target.style.display = "none";
+                                        e.target.nextSibling.style.display =
+                                          "flex";
+                                      }}
+                                    />
+                                  ) : null}
+                                  <span
+                                    className={`${
+                                      c.user_avatar ? "hidden" : "flex"
+                                    } w-full h-full items-center justify-center bg-blue-500 text-white text-xs font-semibold`}
+                                  >
+                                    {c.user_initials}
+                                  </span>
+                                </div>
+
+                                {/* User name */}
+                                <span className="text-sm font-medium">
+                                  {c.user_name || "Unknown User"}
                                 </span>
+
+                                <p className="text-xs text-gray-500">
+                                  {dayjs(c.created_at).format(
+                                    "MMM D, YYYY h:mm A"
+                                  )}
+                                </p>
                               </div>
 
-                              {/* User name */}
-                              <span className="text-sm font-medium">
-                                {c.user_name || "Unknown User"}
-                              </span>
-
-                              <p className="text-xs text-gray-500">
-                                {dayjs(c.created_at).format(
-                                  "MMM D, YYYY h:mm A"
-                                )}
-                              </p>
-                            </div>
-
-                            {/* Comment actions dropdown */}
-                            <Dropdown
-                              open={commentDropdownOpen === c.id}
-                              onOpenChange={(open) =>
-                                setCommentDropdownOpen(open ? c.id : null)
-                              }
-                              menu={{
-                                items: [
-                                  {
-                                    key: "edit",
-                                    label: "Edit message",
-                                    onClick: () => handleEditComment(c),
-                                  },
-                                  {
-                                    key: "delete",
-                                    label: "Delete",
-                                    onClick: () => showDeleteCommentModal(c),
-                                  },
-                                ],
-                              }}
-                              trigger={["click"]}
-                              overlayStyle={{ zIndex: 1001 }}
-                            >
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setCommentDropdownOpen(
-                                    commentDropdownOpen === c.id ? null : c.id
-                                  );
+                              {/* Comment actions dropdown */}
+                              <Dropdown
+                                open={commentDropdownOpen === c.id}
+                                onOpenChange={(open) =>
+                                  setCommentDropdownOpen(open ? c.id : null)
+                                }
+                                menu={{
+                                  items: [
+                                    {
+                                      key: "edit",
+                                      label: "Edit message",
+                                      onClick: () => handleEditComment(c),
+                                    },
+                                    {
+                                      key: "delete",
+                                      label: "Delete",
+                                      onClick: () => showDeleteCommentModal(c),
+                                    },
+                                  ],
                                 }}
-                                className="p-1 rounded hover:bg-gray-200 cursor-pointer"
+                                trigger={["click"]}
+                                overlayStyle={{ zIndex: 1001 }}
                               >
-                                <MoreVertical className="size-3" />
-                              </button>
-                            </Dropdown>
-                          </div>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCommentDropdownOpen(
+                                      commentDropdownOpen === c.id ? null : c.id
+                                    );
+                                  }}
+                                  className="p-1 rounded hover:bg-gray-200 cursor-pointer"
+                                >
+                                  <MoreVertical className="size-3" />
+                                </button>
+                              </Dropdown>
+                            </div>
 
-                          <div className="ml-11">
-                            <div className="bg-white p-3 rounded-lg">
-                              {editingCommentId === c.id ? (
-                                // Edit mode
-                                <div className="space-y-2">
-                                  <Input
-                                    value={editingCommentText}
-                                    onChange={(e) =>
-                                      setEditingCommentText(e.target.value)
-                                    }
-                                    onKeyUp={(e) => {
-                                      if (e.key === "Enter") {
-                                        handleUpdateComment(c.id);
+                            <div className="ml-11">
+                              <div className="bg-white p-3 rounded-lg">
+                                {editingCommentId === c.id ? (
+                                  // Edit mode
+                                  <div className="space-y-2">
+                                    <textarea
+                                      value={editingCommentText}
+                                      onChange={(e) =>
+                                        setEditingCommentText(e.target.value)
                                       }
-                                    }}
-                                    autoFocus
-                                    className="text-sm"
-                                  />
-                                  <div className="flex gap-2 pt-2">
-                                    <button
-                                      onClick={() => handleUpdateComment(c.id)}
-                                      className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
-                                    >
-                                      Save
-                                    </button>
-                                    <button
-                                      onClick={handleCancelEdit}
-                                      className="px-3 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600"
-                                    >
-                                      Cancel
-                                    </button>
+                                      onInput={(e) => {
+                                        if (e.target.value === "") {
+                                          e.target.style.height = "40px"; // Bo'sh bo'lsa minimal height
+                                        } else {
+                                          e.target.style.height = "auto";
+                                          e.target.style.height =
+                                            Math.min(
+                                              e.target.scrollHeight,
+                                              140
+                                            ) + "px";
+                                        }
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter" && !e.shiftKey) {
+                                          e.preventDefault();
+                                          handleUpdateComment(c.id);
+                                        }
+                                      }}
+                                      className="flex-1 border w-full border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none resize-none"
+                                      style={{
+                                        minHeight: "40px",
+                                        maxHeight: "140px",
+                                      }}
+                                      // rows={1}
+                                    />
+                                    <div className="flex gap-2 pt-2">
+                                      <button
+                                        onClick={() =>
+                                          handleUpdateComment(c.id)
+                                        }
+                                        className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
+                                      >
+                                        Save
+                                      </button>
+                                      <button
+                                        onClick={handleCancelEdit}
+                                        className="px-3 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
                                   </div>
-                                </div>
-                              ) : (
-                                // View mode
-                                <p className="text-sm text-gray-700">
-                                  {c.message || c.text}
-                                </p>
-                              )}
+                                ) : (
+                                  // View mode
+                                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                    {c.message || c.text}
+                                  </p>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-gray-500 mb-3">
-                        No comments yet
-                      </p>
-                    )}
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500 mb-3">
+                          No comments yet
+                        </p>
+                      )}
+                    </div>
                     {/* Add new comment */}
-                    <div className="mt-3 flex gap-2">
-                      <input
-                        type="text"
+                    <div className="mt-3 flex gap-2 items-end">
+                      <textarea
                         placeholder="Add a comment"
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
-                        onKeyPress={(e) =>
-                          e.key === "Enter" && handleAddComment()
-                        } // Enter bosilganda ham yuborish
-                        className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none"
+                        onInput={(e) => {
+                          if (e.target.value === "") {
+                            e.target.style.height = "40px"; // Bo'sh bo'lsa minimal height
+                          } else {
+                            e.target.style.height = "auto";
+                            e.target.style.height =
+                              Math.min(e.target.scrollHeight, 140) + "px";
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleAddComment();
+                          }
+                        }}
+                        className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none resize-none"
+                        style={{ minHeight: "40px", maxHeight: "140px" }}
+                        rows={1}
                       />
                       <button
                         onClick={handleAddComment}
                         disabled={submitLoading}
-                        className="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600 disabled:opacity-50"
+                        className="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600 disabled:opacity-50 mb-0.5"
                       >
                         {submitLoading ? "..." : "➤"}
                       </button>
                     </div>
                   </div>
                 </div>
-                  {/* Delete Comment Confirmation Modal */}
-           <Modal
+                {/* Delete Comment Confirmation Modal */}
+                <Modal
                   title="Delete Comment"
                   open={deleteCommentModalOpen}
                   onOk={handleConfirmDeleteComment}
@@ -1756,7 +2071,7 @@ const Card = ({
                           </span>
                         </div>
                         <p className="text-sm text-gray-700 italic">
-                          "{commentToDelete.message || commentToDelete.text}" 
+                          "{commentToDelete.message || commentToDelete.text}"
                         </p>
                       </div>
                     )}
@@ -1768,7 +2083,7 @@ const Card = ({
               <div className="md:col-span-4 space-y-4 text-sm">
                 <div>
                   <p className="text-gray-400">Assignee by</p>
-               
+
                   <div className="flex items-center gap-2 mt-1">
                     {(() => {
                       const assignee =
@@ -1827,7 +2142,7 @@ const Card = ({
 
                 <div>
                   <p className="text-gray-400">Status</p>
-                  <p className="mt-1">{taskData.tasks_type || "N/A"}</p>
+                  <p className="mt-1">{getStatusTitle(taskData.tasks_type)}</p>
                 </div>
 
                 <div>
@@ -1868,7 +2183,10 @@ const Card = ({
         />
 
         {/* Bottom Row */}
-        <div className="flex items-center justify-between text-xs text-gray-500"  onClick={openViewModal}>  
+        <div
+          className="flex items-center justify-between text-xs text-gray-500"
+          onClick={openViewModal}
+        >
           {/* Deadline faqat time mavjud bo'lsa ko'rinadi */}
           {time && time !== "No due date" && (
             <div className="flex items-center gap-1 bg-gray-100 rounded p-1">
@@ -2608,7 +2926,8 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       console.log(`${newItems.length} ta yangi checklist item saqlandi`);
     } catch (error) {
       console.error("Checklist saqlashda xatolik:", error);
-      message.error("Ba'zi checklist elementlari saqlanmadi");
+      // message.error("Ba'zi checklist elementlari saqlanmadi");
+      message.error(`Failed to add instructions: ${error}`);
     }
   };
 

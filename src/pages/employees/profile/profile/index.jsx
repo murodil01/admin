@@ -21,7 +21,6 @@ const Profiles = () => {
   const [isNewRecord, setIsNewRecord] = useState(false);
   const uploadSuccessShown = useRef(false);
 
-  // ✅ label -> backend field mapping
   const fields = {
     "Acceptance Reason": "accept_reason",
     "Expertise Level": "expertise_level",
@@ -136,9 +135,25 @@ const Profiles = () => {
       setLoading(true);
       setSaveMessage("");
 
+      // Convert PINFL to integer if it exists and is not empty
+      let pinflValue = null;
+
+      if(formData.pinfl !== null && formData.pinfl !== undefined && formData.pinfl !== '') {
+        const parsedPinfl = parseInt(formData.pinfl, 14);
+
+        // Validate PINFL is a valid number
+        if (isNaN(parsedPinfl)) {
+          message.error("PINFL must be a valid number");
+          return;
+        }
+
+        pinflValue = parsedPinfl;
+      }
+
       // ✅ Ensure user_id is always included in formData
       const dataToSave = {
         ...formData,
+        pinfl: pinflValue, // Use the converted integer value
         user_id: employeeIdString // Always include user_id
       };
 
@@ -146,12 +161,10 @@ const Profiles = () => {
 
       if (!isNewRecord && formData.id) {
         // Update existing record using userId (not control data ID)
-        console.log("Updating existing record with ID:", employeeIdString);
         response = await updateControlData(employeeIdString, dataToSave);
         message.success("Data updated successfully");
       } else {
         // Create new record
-        console.log("Creating new record for user:", employeeIdString);
         response = await createControlDataForUser(employeeIdString, dataToSave);
 
         // Update local state with the new record info
@@ -191,9 +204,8 @@ const Profiles = () => {
   useEffect(() => {
     const fetchData = async () => {
       const initEmptyForm = () => {
-        console.log('Initializing empty form for user_id:', employeeIdString);
         setFormData({
-          user_id: employeeIdString, // Set the user_id when initializing
+          user_id: employeeIdString,
           accept_reason: '',
           expertise_level: '',
           strengths: '',
@@ -205,7 +217,7 @@ const Profiles = () => {
           assigned_devices: '',
           access_level: '',
           serial_number: '',
-          pinfl: '',
+          pinfl: null,
           passport_picture: null,
           passport_picture_url: null,
           passport_file_name: null,
@@ -216,17 +228,13 @@ const Profiles = () => {
 
       try {
         setLoading(true);
-        console.log('Fetching control data for user_id:', employeeIdString);
         const response = await getControlDataByUserId(employeeIdString);
-
-        console.log('Fetched data:', response);
 
         // Check if we have data
         if (response) {
           let employeeData = null;
 
           if (Array.isArray(response)) {
-            console.log('Response is array, length:', response.length);
             // Find the correct data in array
             employeeData = response.find(item => {
               const itemUserId = String(item?.user_info?.id || item?.user_id || '');
@@ -234,15 +242,13 @@ const Profiles = () => {
             });
           } else if (response.id || response.user_id) {
             // Single object response
-            console.log('Response is single object');
             employeeData = response;
           }
 
           if (employeeData) {
-            console.log('Found employee data:', employeeData);
             setFormData({
               id: employeeData.id,
-              user_id: employeeData.user_id || employeeIdString, // Ensure user_id is set
+              user_id: employeeData.user_id || employeeIdString,
               accept_reason: employeeData.accept_reason || '',
               expertise_level: employeeData.expertise_level || '',
               strengths: employeeData.strengths || '',
@@ -254,7 +260,7 @@ const Profiles = () => {
               assigned_devices: employeeData.assigned_devices || '',
               access_level: employeeData.access_level || '',
               serial_number: employeeData.serial_number || '',
-              pinfl: employeeData.pinfl ? String(employeeData.pinfl) : '',
+              pinfl: employeeData.pinfl !== null && employeeData.pinfl !== undefined ? employeeData.pinfl : null,
               passport_picture: employeeData.passport_picture || null,
               passport_picture_url: employeeData.passport_picture || null,
               passport_file_name: employeeData.passport_file_name || null,
@@ -271,11 +277,9 @@ const Profiles = () => {
               }]);
             }
           } else {
-            console.log('No data found for employee:', employeeIdString);
             initEmptyForm();
           }
         } else {
-          console.log('No data returned for employee:', employeeIdString);
           initEmptyForm();
         }
       } catch (err) {
@@ -288,10 +292,9 @@ const Profiles = () => {
 
         // Check if it's a 404 error (user not found) vs other errors
         if (err.response?.status === 404) {
-          console.log('Control data not found for user, initializing empty form');
           initEmptyForm();
         } else {
-          const errorMessage = err.response?.data?.message || err.message || "Ma'lumotlarni yuklashda xatolik";
+          const errorMessage = err.response?.data?.message || err.message || "Error fetching data";
           message.error(errorMessage);
           initEmptyForm();
         }
@@ -300,27 +303,28 @@ const Profiles = () => {
       }
     };
 
-    // if (employeeId && !isNaN(numericEmployeeId)) {
-    //   console.log('Starting data fetch for employee ID:', employeeId, 'String:', employeeIdString);
-    //   fetchData();
-    // } else {
-    //   console.error('Invalid employee ID:', employeeId);
-    //   message.error("Noto'g'ri foydalanuvchi ID");
-    //   setLoading(false);
-    // }
-
     if (employeeId && typeof employeeId === "string" && employeeId.trim() !== "") {
-      console.log("Starting data fetch for employee ID:", employeeId);
       fetchData();
     } else {
       console.error("Invalid employee ID:", employeeId);
-      message.error("Noto'g'ri foydalanuvchi ID");
+      message.error("Invalid employee ID");
       setLoading(false);
     }
   }, [employeeId, employeeIdString, numericEmployeeId]);
 
   if (loading && !formData.id && !isNewRecord) {
-    return <Spin size="large" className="flex justify-center mt-10" />;
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent"></div>
+            <span className="ml-3 text-gray-600 text-sm sm:text-base">
+              Loading control data...
+            </span>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const hasData = !isNewRecord && formData.id;
@@ -419,14 +423,18 @@ const Profiles = () => {
                 {isEditing ? (
                   <input
                     type="text"
-                    value={formData.pinfl || ""}
-                    onChange={(e) => handleChange("PINFL", e.target.value)}
+                    value={formData.pinfl !== null && formData.pinfl !== undefined ? formData.pinfl : ""}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      // If empty string, set to null, otherwise keep as string (will be converted to number on save)
+                      handleChange("PINFL", value === "" ? null : value);
+                    }}
                     placeholder="45245875495734"
                     className="px-4 border border-[#D8E0F0] h-[48px] rounded-[14px] w-full"
                   />
                 ) : (
                   <div className="px-4 border border-[#D8E0F0] h-[48px] rounded-[14px] w-full flex items-center bg-gray-50">
-                    {formData.pinfl || <span className="text-gray-400">No data</span>}
+                    {formData.pinfl !== null && formData.pinfl !== undefined ? formData.pinfl : <span className="text-gray-400">No data</span>}
                   </div>
                 )}
               </div>
@@ -533,7 +541,7 @@ const Profiles = () => {
                       assigned_devices: '',
                       access_level: '',
                       serial_number: '',
-                      pinfl: '',
+                      pinfl: null,
                       passport_picture: null,
                       passport_picture_url: null,
                       passport_file_name: null,

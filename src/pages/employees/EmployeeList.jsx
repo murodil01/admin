@@ -30,9 +30,6 @@ const EmployeeList = ({ employees, onDelete, onStatusUpdate }) => {
         const spaceAbove = buttonRect.top - tableRect.top;
         const dropdownheight = 120;
 
-        console.log(spaceAbove);
-        console.log(spaceBelow);
-
         const position = spaceBelow < dropdownheight && spaceAbove > spaceBelow ? "top" : "bottom";
 
         let adjustPosition = position;
@@ -123,7 +120,6 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
 
         // Convert to string if it's a number
         const validId = String(employeeId);
-        console.log('Converting to profile URL:', `/profile/${validId}`);
 
         navigate(`/profile/${validId}`);
     };
@@ -131,7 +127,12 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
     return (
         <div className="bg-white border border-gray-200 rounded-lg shadow hover:shadow-md transition p-4 grid grid-cols-1 gap-3 lg:grid-cols-17 lg:items-center">
             {/* Mobile View - Top Section */}
-            <div className="flex justify-between items-center lg:hidden">
+            <div
+                onClick={(e) => {
+                        e.stopPropagation();
+                        setIsMobileModalOpen(true);
+                    }}
+                className="flex justify-between items-center lg:hidden">
                 <div className="flex items-center gap-3">
                     <img
                         src={emp.profile_picture}

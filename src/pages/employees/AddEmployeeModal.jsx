@@ -36,7 +36,6 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [emailValidation, setEmailValidation] = useState({ isValid: true, message: "" });
     const [passwordValidation, setPasswordValidation] = useState({ isValid: true, message: "" });
-    const [birthday, setBirthday] = useState("1996-05-19");
 
     const { user, isAuthenticated } = useAuth();
 
@@ -430,8 +429,6 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                 tg_username: formData.tg_username === '@' ? '' : formData.tg_username,
                 profile_picture: avatarFile
             };
-
-            console.log("Submitting data to parent:", submitData);
 
             // Call parent submit function
             await onSubmit(submitData);

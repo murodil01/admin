@@ -47,13 +47,9 @@ const Activity = () => {
 
     // Ma'lumotlarni yangilash
     fetchActivities(newPage);
-
-    // 4. Debug uchun console.log
-    console.log('Navigating to:', params.toString());
-    console.log('URL updated to:', `?page_num=${newPage}`);
   };
 
-  if (loading) return <p className="text-center">Yuklanmoqda...</p>;
+  if (loading) return <p className="text-center">Loading...</p>;
   if (error) return <p className="text-red-500 text-center">{error}</p>;
 
   return (
@@ -78,7 +74,7 @@ const Activity = () => {
                 {user.profession}
               </p>
               <span
-                className={`font-semibold text-[12px] text-[#7D8592] px-2 py-[2px] rounded-lg 
+                className={`font-semibold text-[12px] text-[#7D8592] px-2 py-[2px] rounded-lg
     ${user.level === "none" ? "bg-[#E3EDFA]" : "bg-white"}`}
               >
                 {user.level === "none" ? "\u00A0" : user.level}

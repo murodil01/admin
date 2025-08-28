@@ -33,7 +33,9 @@ import TokenExpiredScreen from "../../components/TokenExpiredScreen";
 
 const MainProfile = () => {
   const [user, setUser] = useState(null);
+  const [originalUser, setOriginalUser] = useState(null); // Store original values
   const [birthday, setBirthday] = useState("");
+  const [originalBirthday, setOriginalBirthday] = useState(""); // Store original birthday
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -77,8 +79,6 @@ const MainProfile = () => {
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        console.log("Token payload:", payload);
-        console.log("User role in token:", payload.role);
       } catch (error) {
         console.error("Token decode error:", error);
       }
@@ -92,16 +92,19 @@ const MainProfile = () => {
       try {
         setLoading(true);
         const data = await getMyProfile();
-        console.log("Profile data received:", data);
 
-        setUser({
+        const userWithPreview = {
           ...data,
           profile_picture_preview: data.profile_picture || null,
-        });
+        };
+
+        setUser(userWithPreview);
+        setOriginalUser({ ...userWithPreview }); // Store original data
         setBirthday(data.birth_date || "");
+        setOriginalBirthday(data.birth_date || ""); // Store original birthday
       } catch (error) {
-        console.error("Full error object:", error); // Add detailed error logging
-        console.error("Error response:", error.response); // Check the actual response
+        console.error("Full error object:", error);
+        console.error("Error response:", error.response);
 
         if (!checkTokenExpiration(error)) {
           message.error(`Error fetching user data: ${error.message || 'Unknown error'}`);
@@ -116,6 +119,28 @@ const MainProfile = () => {
 
   const handleInputChange = (field, value) => {
     setUser((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Function to start editing - backup current data
+  const startEditing = () => {
+    setOriginalUser({ ...user }); // Backup current user data
+    setOriginalBirthday(birthday); // Backup current birthday
+    setIsEditing(true);
+  };
+
+  // Function to cancel editing - restore original data
+  const cancelEditing = () => {
+    setUser({ ...originalUser }); // Restore original user data
+    setBirthday(originalBirthday); // Restore original birthday
+    setIsEditing(false);
+    setChangePassword(false);
+    
+    // Clear any password fields that might have been added during editing
+    setUser(prev => ({
+      ...originalUser,
+      password: undefined,
+      password1: undefined
+    }));
   };
 
   const handleSave = async () => {
@@ -156,10 +181,14 @@ const MainProfile = () => {
 
       const updatedUser = await updateMyProfile(updateData);
 
-      setUser({
+      const updatedUserWithPreview = {
         ...updatedUser,
         profile_picture_preview: updatedUser.profile_picture || user.profile_picture_preview || null,
-      });
+      };
+
+      setUser(updatedUserWithPreview);
+      setOriginalUser({ ...updatedUserWithPreview }); // Update original data after successful save
+      setOriginalBirthday(birthday); // Update original birthday after successful save
       setIsEditing(false);
       setChangePassword(false);
       message.success("Profile updated successfully");
@@ -224,7 +253,6 @@ const MainProfile = () => {
   }, [navigate]);
 
   if (tokenExpired) {
-
     return (
       <div className="p-6 max-w-3xl mx-auto">
         <Card className="text-center py-10">
@@ -273,7 +301,7 @@ const MainProfile = () => {
             <div className="absolute -top-4 right-0">
               {/* 📱 Mobile: faqat icon */}
               <button
-                onClick={() => setIsEditing(true)}
+                onClick={startEditing} // Changed from setIsEditing(true)
                 className="md:hidden p-2 rounded-md shadow-md hover:shadow-lg bg-[#0048FF] text-white flex items-center justify-center"
               >
                 <FiEdit3 size={18} />
@@ -281,7 +309,7 @@ const MainProfile = () => {
 
               {/* 💻 Desktop: icon + text */}
               <button
-                onClick={() => setIsEditing(true)}
+                onClick={startEditing} // Changed from setIsEditing(true)
                 className="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg shadow-md hover:shadow-lg bg-[#0048FF] text-white cursor-pointer"
               >
                 <FiEdit3 size={18} /> Edit Profile
@@ -495,34 +523,14 @@ const MainProfile = () => {
                   <label className="block text-sm text-gray-500 mb-1">Password</label>
 
                   {isEditing ? (
-                    <div className="flex flex-col gap-3">
-                      {/* Current Password - only show when changing password */}
-                      {changePassword && (
-                        <div className="relative">
-                          <input
-                            type={showCurrentPassword ? "text" : "password"}
-                            value={user.password || ""}
-                            onChange={(e) => handleInputChange("password", e.target.value)}
-                            className="w-full border p-3 border-gray-300 rounded-lg bg-gray-50"
-                            placeholder="Enter your current password"
-                          />
-                          <span
-                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500"
-                          >
-                            {showCurrentPassword ? <EyeTwoTone /> : <EyeInvisibleOutlined />}
-                          </span>
-                        </div>
-                      )}
-
+                    <div className="flex flex-col gap-4">
                       {/* New Password */}
                       {changePassword ? (
                         <>
                           <div className="relative">
-                            <label className="block text-sm text-gray-500 mb-1">New Password</label>
                             <input
                               type={showNewPassword ? "text" : "password"}
-                              value={""}
+                              value={user.password || ""}
                               onChange={(e) => handleInputChange("password", e.target.value)}
                               className="w-full border p-3 border-gray-300 rounded-lg bg-gray-50"
                               placeholder="Enter your new password"
@@ -537,7 +545,7 @@ const MainProfile = () => {
 
                           {/* Confirm Password */}
                           <div className="relative">
-                            <label className="block text-sm text-gray-500 mb-1">Confirm Password</label>
+                            <label className="block text-sm text-gray-500 mb-1">Confirm password</label>
                             <input
                               type={showConfirmPassword ? "text" : "password"}
                               value={user.password1 || ""}
@@ -562,8 +570,8 @@ const MainProfile = () => {
                           <div className="relative">
                             <input
                               type={showCurrentPassword ? "text" : "password"}
-                              value={user.password || ""}
-                              onChange={(e) => handleInputChange("password", e.target.value)}
+                              value="••••••••"
+                              readOnly
                               className="w-full border p-3 border-gray-300 rounded-lg bg-gray-50"
                             />
                             <span
@@ -612,10 +620,7 @@ const MainProfile = () => {
             </button>
             <button
               icon={<CloseOutlined />}
-              onClick={() => {
-                setIsEditing(false);
-                setChangePassword(false);
-              }}
+              onClick={cancelEditing} // Changed from inline function
               disabled={updating}
               className="bg-[#EFEFEF] max-w-[155px] w-full py-3 text-[#313131] hover:opacity-90 rounded-lg shadow-md shadow-gray-200"
             >
