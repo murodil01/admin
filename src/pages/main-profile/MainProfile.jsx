@@ -179,16 +179,20 @@ const MainProfile = () => {
         updateData.profile_picture = user.profile_picture;
       }
 
-      const updatedUser = await updateMyProfile(updateData);
+      await updateMyProfile(updateData);
+
+      // Ma'lumotlarni qayta oling
+      const freshUserData = await getMyProfile();
 
       const updatedUserWithPreview = {
-        ...updatedUser,
-        profile_picture_preview: updatedUser.profile_picture || user.profile_picture_preview || null,
+        ...freshUserData,
+        profile_picture_preview: freshUserData.profile_picture || null,
       };
 
       setUser(updatedUserWithPreview);
-      setOriginalUser({ ...updatedUserWithPreview }); // Update original data after successful save
-      setOriginalBirthday(birthday); // Update original birthday after successful save
+      setOriginalUser({ ...updatedUserWithPreview });
+      setOriginalBirthday(freshUserData.birth_date || "");
+      setBirthday(freshUserData.birth_date || "");
       setIsEditing(false);
       setChangePassword(false);
       message.success("Profile updated successfully");

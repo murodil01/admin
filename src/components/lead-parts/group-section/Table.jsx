@@ -7,6 +7,8 @@ import {
   XCircle,
   GripVertical,
 } from "lucide-react";
+import ReactDatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 import {
   getLeads,
   updateLeads,
@@ -14,8 +16,6 @@ import {
 } from "../../../api/services/leadsService";
 import { getMSalesUsers, getusersAll } from "../../../api/services/userService";
 import { getBoardsAll } from "../../../api/services/boardService"; 
-import ReactDatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import { Select, Avatar } from "antd";
 
 // Helper function to get absolute image URL
@@ -51,49 +51,166 @@ const calculateRemainingTime = (startDateStr, endDateStr) => {
     const absDiffMs = Math.abs(diffMs);
     const days = Math.floor(absDiffMs / 86400000);
     const hours = Math.floor((absDiffMs % 86400000) / 3600000);
-    return `${days} days, ${hours} h`;
+    return `${days} days, ${hours} h overdue`;
   }
   
   const days = Math.floor(diffMs / 86400000);
   const hours = Math.floor((diffMs % 86400000) / 3600000);
-  return `${days} days ${hours} h`;
+  return `${days} days ${hours} h remaining`;
 };
 
-const LinkDropdown = ({ value, onChange, onSave, onCancel }) => {
-  const linkOptions = [
-    { value: "", label: "Select Link Type" },
-    { value: "ad", label: "Ad" },
-    { value: "outreach", label: "Outreach" },
-    { value: "referral", label: "Referral" },
-    { value: "event", label: "Event" },
-  ];
+// Timeline Range Picker Component
+const TimelineRangePicker = ({ task, onSave, isOpen, onToggle }) => {
+  const [startDate, setStartDate] = useState(
+    task.timeline_start ? new Date(task.timeline_start) : null
+  );
+  const [endDate, setEndDate] = useState(
+    task.timeline_end ? new Date(task.timeline_end) : null
+  );
 
-  const handleChange = (e) => {
-    onChange(e.target.value);
-    onSave();
+  const handleSave = () => {
+    const startDateStr = startDate ? startDate.toISOString().split("T")[0] : null;
+    const endDateStr = endDate ? endDate.toISOString().split("T")[0] : null;
+    
+    onSave(task.id, {
+      timeline_start: startDateStr,
+      timeline_end: endDateStr
+    });
+    onToggle();
+  };
+
+  const handleCancel = () => {
+    setStartDate(task.timeline_start ? new Date(task.timeline_start) : null);
+    setEndDate(task.timeline_end ? new Date(task.timeline_end) : null);
+    onToggle();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="absolute top-full mt-1 left-1/2 transform -translate-x-1/2 z-[1001] bg-white border border-gray-300 rounded-lg shadow-2xl p-4 min-w-[320px]">
+      <div className="space-y-4">
+        <div className="text-sm font-semibold text-gray-700 text-center">
+          Select Timeline Range
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Start Date
+            </label>
+            <ReactDatePicker
+              selected={startDate}
+              onChange={(date) => setStartDate(date)}
+              selectsStart
+              startDate={startDate}
+              endDate={endDate}
+              placeholderText="Start date"
+              className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              dateFormat="yyyy-MM-dd"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              End Date
+            </label>
+            <ReactDatePicker
+              selected={endDate}
+              onChange={(date) => setEndDate(date)}
+              selectsEnd
+              startDate={startDate}
+              endDate={endDate}
+              minDate={startDate}
+              placeholderText="End date"
+              className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              dateFormat="yyyy-MM-dd"
+            />
+          </div>
+        </div>
+        
+        {startDate && endDate && (
+          <div className="text-center py-2 px-3 bg-blue-50 rounded-md">
+            <div className="text-xs text-gray-600">Timeline:</div>
+            <div className="text-sm font-medium text-blue-700">
+              {calculateRemainingTime(
+                startDate.toISOString().split("T")[0],
+                endDate.toISOString().split("T")[0]
+              )}
+            </div>
+          </div>
+        )}
+        
+        <div className="flex justify-end gap-2 pt-2 border-t border-gray-200">
+          <button
+            onClick={handleCancel}
+            className="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+            disabled={!startDate || !endDate}
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Timeline Cell Component
+const TimelineCell = ({ task, onTimelineUpdate }) => {
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+
+  const handleSave = async (taskId, timelineData) => {
+    try {
+      // Update local state
+      onTimelineUpdate(taskId, timelineData);
+      
+      // Update on server
+      await updateLeads(taskId, timelineData);
+      console.log("✅ Timeline updated on server");
+      
+      setIsPickerOpen(false);
+    } catch (error) {
+      console.error("❌ Error updating timeline:", error);
+    }
+  };
+
+  const togglePicker = () => {
+    setIsPickerOpen(!isPickerOpen);
   };
 
   return (
-    <select
-      value={value || ""}
-      onChange={handleChange}
-      onBlur={onSave}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") onSave();
-        if (e.key === "Escape") onCancel();
-      }}
-      className="w-full h-full text-center focus:outline-none border-none appearance-none bg-transparent"
-    >
-      {linkOptions.map((option) => (
-        <option
-          key={option.value}
-          value={option.value}
-          className="bg-white text-black"
+    <td className="p-4 border-r border-gray-200 relative">
+      <div className="flex justify-center items-center gap-2">
+        <span 
+          onClick={togglePicker}
+          className="text-sm font-medium text-gray-700 cursor-pointer hover:text-blue-600 hover:underline transition-colors px-2 py-1 rounded hover:bg-blue-50"
+          title="Click to edit timeline"
         >
-          {option.label}
-        </option>
-      ))}
-    </select>
+          {calculateRemainingTime(task.timeline_start, task.timeline_end)}
+        </span>
+        
+        <TimelineRangePicker
+          task={task}
+          onSave={handleSave}
+          isOpen={isPickerOpen}
+          onToggle={togglePicker}
+        />
+      </div>
+      
+      {/* Backdrop to close picker when clicking outside */}
+      {isPickerOpen && (
+        <div 
+          className="fixed inset-0 z-[1000]" 
+          onClick={togglePicker}
+        />
+      )}
+    </td>
   );
 };
 
@@ -102,13 +219,12 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
   const [userOptions, setUserOptions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
 
-useEffect(() => {
+  useEffect(() => {
     const fetchUsers = async () => {
       try {
         const res = await getMSalesUsers();
 
         if (res.data && Array.isArray(res.data)) {
-          
           setUserOptions(res.data.map(user => ({
             id: user.id,
             name: user.fullname || `${user.first_name} ${user.last_name}` || "Unknown User",
@@ -126,7 +242,6 @@ useEffect(() => {
   const handleChange = async (selectedUserId) => {
     const selectedUser = userOptions.find(u => u.id === selectedUserId);
     
-   
     const personDetail = {
       id: selectedUser.id,
       fullname: selectedUser.name, 
@@ -135,7 +250,6 @@ useEffect(() => {
     
     onChange(personDetail);
     
-    // Update on server - person_detail field ni yangilaymiz
     try {
       await updateLeads(taskId, { person: selectedUserId });
     } catch (err) {
@@ -213,18 +327,16 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
   const [statusOptions, setStatusOptions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
 
- useEffect(() => {
+  useEffect(() => {
     const fetchStatuses = async () => {
       try {
         const allStatuses = [];
         
-        // First, get statuses from leads
         try {
           const leadsRes = await getLeads();
           if (leadsRes.data && Array.isArray(leadsRes.data)) {
             leadsRes.data.forEach(lead => {
               if (lead.status && lead.status.name && lead.status.id) {
-                // Check if status already exists to avoid duplicates
                 if (!allStatuses.find(s => s.id === lead.status.id)) {
                   allStatuses.push({
                     id: lead.status.id,
@@ -240,13 +352,13 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
         } catch (leadsErr) {
           console.error("Error fetching statuses from leads:", leadsErr);
         }
-       try {
+        
+        try {
           const boardsRes = await getBoardsAll();
           console.log("📊 Boards API response:", boardsRes);
           
           if (boardsRes.data && Array.isArray(boardsRes.data)) {
             boardsRes.data.forEach(board => {
-              // Check if board has statuses array
               if (board.statuses && Array.isArray(board.statuses)) {
                 board.statuses.forEach(status => {
                   if (!allStatuses.find(s => s.id === status.id)) {
@@ -261,7 +373,6 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
                   }
                 });
               } 
-              // If boards themselves are statuses (based on your API response)
               else if (board.id && board.name) {
                 if (!allStatuses.find(s => s.id === board.id)) {
                   allStatuses.push({
@@ -280,14 +391,12 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
           console.error("Error fetching statuses from boards:", boardsErr);
         }
         
-        // Set the combined status options
         setStatusOptions(allStatuses);
         console.log("📊 Final combined status options:", allStatuses);
         
       } catch (err) {
         console.error("Failed to fetch statuses:", err);
         
-        // Fallback to default statuses if API calls fail
         const fallbackStatuses = [
           { id: 'default-1', name: 'Not Started', icon: XCircle, lightBg: 'bg-gray-50', textColor: 'text-gray-700' },
           { id: 'default-2', name: 'Working on it', icon: Circle, lightBg: 'bg-yellow-50', textColor: 'text-yellow-700' },
@@ -335,7 +444,6 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
     const selectedStatus = statusOptions.find(s => s.id === selectedStatusId);
     onChange(selectedStatus);
     
-    // Update on server
     try {
       await updateLeads(taskId, { status: selectedStatus });
     } catch (err) {
@@ -366,7 +474,7 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
       </button>
       
       {isOpen && (
-        <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[] min-w-[160px] max-h-60 overflow-y-auto">
+        <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[1001] min-w-[160px] max-h-60 overflow-y-auto">
           {statusOptions.map((status) => {
             const OptionIcon = status.icon;
             return (
@@ -382,7 +490,6 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
           })}
         </div>
       )}
-      
     </div>
   );
 };
@@ -466,7 +573,6 @@ const Table = () => {
   const [statusOptions, setStatusOptions] = useState([]);
   const [isAddingLead, setIsAddingLead] = useState(false);
   const [newLeadTitle, setNewLeadTitle] = useState("");
-  const [editingTimelineId, setEditingTimelineId] = useState(null);
 
   const statusConfig = {
     Done: {
@@ -504,7 +610,6 @@ const Table = () => {
   const fieldMap = {
     task: "name",
     progress: "potential_value",
-    // Add more if needed
   };
 
   const convertApiLeadsToTasks = (leads) => {
@@ -526,10 +631,20 @@ const Table = () => {
       team: lead.link || "General",
       phone: lead.phone || "",
       notes: lead.notes || "",
-      // Owner sifatida person_detail ni ishlatamiz
       owner: lead.person_detail || null,
       source: "api",
     }));
+  };
+
+  // Timeline update handler
+  const handleTimelineUpdate = (taskId, timelineData) => {
+    setApiLeads(prevLeads => 
+      prevLeads.map(lead => 
+        lead.id === taskId 
+          ? { ...lead, ...timelineData }
+          : lead
+      )
+    );
   };
 
   const loadLeadsFromAPI = async (groupId = null) => {
@@ -672,6 +787,7 @@ const Table = () => {
           lead.id === taskId ? { ...lead, status: newStatus } : lead
         )
       );
+      
       await updateLeads(taskId, { status: newStatus });
       console.log("✅ Status updated on server");
       setOpenStatusDropdown(null);
@@ -976,30 +1092,10 @@ const Table = () => {
                           />
                         </div>
                       </td>
-                      <td className="p-4 border-r border-gray-200">
-                        <div className="flex justify-center items-center gap-2">
-                          {editingTimelineId === task.id ? (
-                            <ReactDatePicker
-                              selected={task.timeline_end ? new Date(task.timeline_end) : null}
-                              onChange={(date) => {
-                                const dateStr = date ? date.toISOString().split("T")[0] : null;
-                                handleChange(task.id, "timeline_end", dateStr);
-                                handleSave(task.id, "timeline_end");
-                                setEditingTimelineId(null);
-                              }}
-                              placeholderText="Select end date"
-                              className="text-sm font-medium text-gray-700 border-none outline-none text-center"
-                            />
-                          ) : (
-                            <span 
-                              // onClick={() => setEditingTimelineId(task.id)}
-                              className="text-sm font-medium text-gray-700 cursor-pointer"
-                            >
-                              {calculateRemainingTime(task.timeline_start, task.timeline_end)}
-                            </span>
-                          )}
-                        </div>
-                      </td>
+                      <TimelineCell
+                        task={task}
+                        onTimelineUpdate={handleTimelineUpdate}
+                      />
                       <td className="p-4 border-r border-gray-200"></td>
                     </tr>
                   );
@@ -1089,12 +1185,9 @@ const Table = () => {
                   </td>
                   <td className="p-4 border-r border-gray-200">
                     <div className="flex justify-center items-center gap-2">
-                      <ReactDatePicker
-                        selected={null}
-                        placeholderText="Timeline"
-                        disabled
-                        className="text-sm font-medium text-gray-400 border-none outline-none text-center"
-                      />
+                      <span className="text-sm font-medium text-gray-400">
+                        No timeline
+                      </span>
                     </div>
                   </td>
                   <td className="p-4 border-r border-gray-200"></td>
