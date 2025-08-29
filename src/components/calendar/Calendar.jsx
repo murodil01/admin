@@ -108,7 +108,7 @@ Calendar.propTypes = {
   currentDate: PropTypes.instanceOf(Date).isRequired,
   events: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.string.isRequired,
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
       title: PropTypes.string.isRequired,
       date: PropTypes.oneOfType([
         PropTypes.string,
@@ -116,18 +116,22 @@ Calendar.propTypes = {
       ]).isRequired,
       description: PropTypes.string,
       image: PropTypes.oneOfType([
-        PropTypes.string,
-        PropTypes.object, // for File
+        PropTypes.string, // URL from API
+        PropTypes.object, // File object from form
       ]),
-      department: PropTypes.shape({
-        id: PropTypes.string,
-        name: PropTypes.string,
-        icon: PropTypes.string,
-        color: PropTypes.string,
-      }),
+      department: PropTypes.arrayOf( // Changed to array to match API
+        PropTypes.shape({
+          id: PropTypes.string,
+          name: PropTypes.string,
+          avatar: PropTypes.string, // This matches your current usage
+        })
+      ),
       link: PropTypes.string,
       notification: PropTypes.string,
       viewOption: PropTypes.string,
+      canEdit: PropTypes.bool, // New from API
+      canDelete: PropTypes.bool, // New from API
+      createdBy: PropTypes.string, // New from API
     })
   ).isRequired,
   onEventClick: PropTypes.func.isRequired,

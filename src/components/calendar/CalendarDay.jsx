@@ -55,8 +55,8 @@ const CalendarDay = ({
     ))}
   </div>
 )} */}
-      {Array.isArray(currentEvent?.department) &&
-        currentEvent.department.length > 0 && (
+      {Array.isArray(currentEvent?.departments) &&
+        currentEvent.departments.length > 0 && (
           <div className="absolute top-2 right-2 flex -space-x-2">
             {currentEvent.department.map((dept, index) => (
               <div
@@ -153,21 +153,24 @@ CalendarDay.propTypes = {
   date: PropTypes.instanceOf(Date).isRequired,
   events: PropTypes.arrayOf(
     PropTypes.shape({
-      id: PropTypes.string.isRequired,
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
       title: PropTypes.string.isRequired,
       date: PropTypes.oneOfType([PropTypes.instanceOf(Date), PropTypes.string])
         .isRequired,
       description: PropTypes.string,
       image: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
-      department: PropTypes.shape({
-        id: PropTypes.string,
-        name: PropTypes.string,
-        icon: PropTypes.string,
-        color: PropTypes.string,
-      }),
+      department: PropTypes.arrayOf( // Changed to array
+        PropTypes.shape({
+          id: PropTypes.string,
+          name: PropTypes.string,
+          avatar: PropTypes.string, // Note: API has no avatar field, you might need to map this
+        })
+      ),
       link: PropTypes.string,
       notification: PropTypes.string,
       viewOption: PropTypes.string,
+      canEdit: PropTypes.bool,
+      canDelete: PropTypes.bool,
     })
   ).isRequired,
   currentEventIndex: PropTypes.number.isRequired,
@@ -175,6 +178,6 @@ CalendarDay.propTypes = {
   onNavigateEvent: PropTypes.func.isRequired,
   isToday: PropTypes.bool,
   isCurrentMonth: PropTypes.bool,
-};
+};  
 
 export default CalendarDay;
