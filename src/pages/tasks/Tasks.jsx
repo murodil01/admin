@@ -1157,7 +1157,7 @@ const Projects = () => {
         ]}
         title={
           <div className="text-[22px] font-bold text-[#0A1629] mb-10">
-            Add Task
+            Add Project
           </div>
         }
         width={500}
