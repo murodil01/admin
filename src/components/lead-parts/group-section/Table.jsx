@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   ChevronDown,
   CheckCircle2,
@@ -12,90 +13,179 @@ import {
   updateLeads,
   createLeads,
 } from "../../../api/services/leadsService";
-import { getMSalesUsers, getusersAll } from "../../../api/services/userService";
-import { getBoardsAll } from "../../../api/services/boardService";
-import ReactDatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+import { getMSalesUsers } from "../../../api/services/userService";
+import { getBoardsAll } from "../../../api/services/boardService"; 
 import { Select, Avatar } from "antd";
+import api from "../../../api/base"; // Import the configured Axios instance
 
 // Helper function to get absolute image URL
 const getAbsoluteImageUrl = (picture) => {
   if (!picture) return null;
-
-  // Get the URL string
   const url = typeof picture === "string" ? picture : picture?.url;
   if (!url) return null;
-
-  // If it's already a full URL, return as is
-  if (url.startsWith("http")) {
-    return url;
-  }
-
-  return `https://prototype-production-2b67.up.railway.app${
-    url.startsWith("/") ? "" : "/"
-  }${url}`;
+  if (url.startsWith("http")) return url;
+  return `https://prototype-production-2b67.up.railway.app${url.startsWith("/") ? "" : "/"}${url}`;
 };
 
+// Calculate remaining time for timeline
 const calculateRemainingTime = (startDateStr, endDateStr) => {
   if (!endDateStr || !startDateStr) return "No timeline";
-
   const now = new Date();
   const start = new Date(startDateStr);
   const end = new Date(endDateStr);
-
   if (isNaN(start.getTime()) || isNaN(end.getTime())) return "Invalid date";
   if (end < start) return "Invalid timeline";
-
   const effectiveStart = now > start ? now : start;
   const diffMs = end - effectiveStart;
-
   if (diffMs < 0) {
     const absDiffMs = Math.abs(diffMs);
     const days = Math.floor(absDiffMs / 86400000);
     const hours = Math.floor((absDiffMs % 86400000) / 3600000);
     return `${days} days, ${hours} h`;
   }
-
   const days = Math.floor(diffMs / 86400000);
   const hours = Math.floor((diffMs % 86400000) / 3600000);
   return `${days} days ${hours} h`;
 };
 
-const LinkDropdown = ({ value, onChange, onSave, onCancel }) => {
-  const linkOptions = [
-    { value: "", label: "Select Link Type" },
-    { value: "ad", label: "Ad" },
-    { value: "outreach", label: "Outreach" },
-    { value: "referral", label: "Referral" },
-    { value: "event", label: "Event" },
-  ];
+// Timeline Range Picker Component
+const TimelineRangePicker = ({ task, onSave, isOpen, onToggle }) => {
+  const [startDate, setStartDate] = useState(
+    task.timeline_start ? new Date(task.timeline_start) : null
+  );
+  const [endDate, setEndDate] = useState(
+    task.timeline_end ? new Date(task.timeline_end) : null
+  );
+
+  const handleSave = () => {
+    const startDateStr = startDate ? startDate.toISOString().split("T")[0] : null;
+    const endDateStr = endDate ? endDate.toISOString().split("T")[0] : null;
+    onSave(task.id, {
+      timeline_start: startDateStr,
+      timeline_end: endDateStr,
+    });
+    onToggle();
+  };
 
   const handleChange = (e) => {
     onChange(e.target.value);
     onSave();
   };
 
+  return createPortal(
+    <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[10000] bg-white border border-gray-300 rounded-lg shadow-2xl p-4 min-w-[320px]">
+      <div className="space-y-4">
+        <div className="text-sm font-semibold text-gray-700 text-center">
+          Select Timeline Range
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Start Date
+            </label>
+            <ReactDatePicker
+              selected={startDate}
+              onChange={(date) => setStartDate(date)}
+              selectsStart
+              startDate={startDate}
+              endDate={endDate}
+              placeholderText="Start date"
+              className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              dateFormat="yyyy-MM-dd"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              End Date
+            </label>
+            <ReactDatePicker
+              selected={endDate}
+              onChange={(date) => setEndDate(date)}
+              selectsEnd
+              startDate={startDate}
+              endDate={endDate}
+              minDate={startDate}
+              placeholderText="End date"
+              className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              dateFormat="yyyy-MM-dd"
+            />
+          </div>
+        </div>
+        {startDate && endDate && startDate instanceof Date && endDate instanceof Date && (
+          <div className="text-center py-2 px-3 bg-blue-50 rounded-md">
+            <div className="text-xs text-gray-600">Timeline:</div>
+            <div className="text-sm font-medium text-blue-700">
+              {calculateRemainingTime(
+                startDate.toISOString().split("T")[0],
+                endDate.toISOString().split("T")[0]
+              )}
+            </div>
+          </div>
+        )}
+        <div className="flex justify-end gap-2 pt-2 border-t border-gray-200">
+          <button
+            onClick={handleCancel}
+            className="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+            disabled={!startDate || !endDate}
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+// Timeline Cell Component
+const TimelineCell = ({ task, onTimelineUpdate }) => {
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+
+  const handleSave = async (taskId, timelineData) => {
+    try {
+      onTimelineUpdate(taskId, timelineData);
+      await updateLeads(taskId, timelineData);
+      console.log("✅ Timeline updated on server");
+      setIsPickerOpen(false);
+    } catch (error) {
+      console.error("❌ Error updating timeline:", error);
+    }
+  };
+
+  const togglePicker = () => {
+    setIsPickerOpen(!isPickerOpen);
+  };
+
   return (
-    <select
-      value={value || ""}
-      onChange={handleChange}
-      onBlur={onSave}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") onSave();
-        if (e.key === "Escape") onCancel();
-      }}
-      className="w-full h-full text-center focus:outline-none border-none appearance-none bg-transparent"
-    >
-      {linkOptions.map((option) => (
-        <option
-          key={option.value}
-          value={option.value}
-          className="bg-white text-black"
+    <td className="p-4 border-r border-gray-200 relative">
+      <div className="flex justify-center items-center gap-2">
+        <span
+          onClick={togglePicker}
+          className="text-sm font-medium text-gray-700 cursor-pointer hover:text-blue-600 hover:underline transition-colors px-2 py-1 rounded hover:bg-blue-50"
+          title="Click to edit timeline"
         >
-          {option.label}
-        </option>
-      ))}
-    </select>
+          {calculateRemainingTime(task.timeline_start, task.timeline_end)}
+        </span>
+        <TimelineRangePicker
+          task={task}
+          onSave={handleSave}
+          isOpen={isPickerOpen}
+          onToggle={togglePicker}
+        />
+      </div>
+      {isPickerOpen && (
+        <div
+          className="fixed inset-0 z-[9999]"
+          onClick={togglePicker}
+        />
+      )}
+    </td>
   );
 };
 
@@ -103,15 +193,52 @@ const LinkDropdown = ({ value, onChange, onSave, onCancel }) => {
 const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
   const [userOptions, setUserOptions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
+  const [userMe, setUserMe] = useState(null); // Changed to single object
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
+        // Fetch current user
+        let myData = null;
+        try {
+          const meRes = await api.get("/me/"); // Use configured api instance
+          console.log("Current user response:", meRes);
+          if (meRes.data) {
+            myData = {
+              id: meRes.data.id,
+              name: meRes.data.first_name || `${meRes.data.first_name || ''} ${meRes.data.last_name || ''}`.trim() || "Me",
+              email: meRes.data.email,
+              profile_picture: getAbsoluteImageUrl(meRes.data.profile_picture),
+              isCurrentUser: true,
+            };
+            setUserMe(myData);
+            console.log("Current user data:", myData);
+          }
+        } catch (meErr) {
+          console.warn("Failed to fetch current user:", meErr);
+        }
+
+        // Fetch all MSales users
         const res = await getMSalesUsers();
 
         if (res.data && Array.isArray(res.data)) {
-          setUserOptions(
-            res.data.map((user) => ({
+          if (!myData) {
+            const firstUser = res.data[0];
+            if (firstUser) {
+              myData = {
+                id: firstUser.id,
+                name: firstUser.fullname || `${firstUser.first_name || ''} ${firstUser.last_name || ''}`.trim() || "Me",
+                email: firstUser.email,
+                profile_picture: getAbsoluteImageUrl(firstUser.profile_picture),
+                isCurrentUser: true,
+              };
+              setUserMe(myData);
+            }
+          }
+
+          const otherUsers = res.data
+            .filter(user => user.id !== myData?.id)
+            .map(user => ({
               id: user.id,
               name:
                 user.fullname ||
@@ -119,40 +246,72 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
                 "Unknown User",
               email: user.email,
               profile_picture: getAbsoluteImageUrl(user.profile_picture),
-            }))
-          );
+              isCurrentUser: false,
+            }));
+
+          // Prioritize current user at the top
+          const allUsers = myData ? [myData, ...otherUsers] : otherUsers;
+          setUserOptions(allUsers);
+          console.log("Final user options:", allUsers);
+        } else {
+          console.warn("No users data received or invalid format");
         }
       } catch (err) {
         console.error("Failed to fetch users:", err);
+        if (userMe) {
+          setUserOptions([userMe]);
+        }
       }
     };
     fetchUsers();
   }, []);
 
   const handleChange = async (selectedUserId) => {
-    const selectedUser = userOptions.find((u) => u.id === selectedUserId);
-
+    const selectedUser = userOptions.find(u => u.id === selectedUserId);
     const personDetail = {
       id: selectedUser.id,
       fullname: selectedUser.name,
       profile_picture: selectedUser.profile_picture,
     };
-
     onChange(personDetail);
-
-    // Update on server - person_detail field ni yangilaymiz
     try {
       await updateLeads(taskId, { person: selectedUserId });
     } catch (err) {
       console.error("Failed to update owner:", err);
     }
-
     setIsOpen(false);
     onSave();
   };
 
+  const renderOwnerAvatar = (owner) => {
+    if (owner?.profile_picture) {
+      return (
+        <img
+          src={getAbsoluteImageUrl(owner.profile_picture)}
+          alt={owner.fullname}
+          className="w-full h-full object-cover"
+        />
+      );
+    }
+    return (
+      <svg
+        className="w-5 h-5 text-white"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+      >
+        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+      </svg>
+    );
+  };
+
   return (
     <div className="relative">
+      {/* Removed userMe.map since userMe is a single object */}
+      {userMe && (
+        <div className="hidden">
+          <div>{userMe.first_name}</div> {/* Hidden for now, adjust as needed */}
+        </div>
+      )}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 w-full hover:bg-gray-50 p-1 rounded transition-colors"
@@ -176,9 +335,8 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
         </span>
         <ChevronDown className="w-4 h-4 text-gray-400" />
       </button>
-
       {isOpen && (
-        <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[1000] min-w-[200px] max-h-60 overflow-y-auto">
+        <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[100000] min-w-[200px] max-h-60 overflow-y-auto">
           {userOptions.map((user) => (
             <button
               key={user.id}
@@ -193,10 +351,13 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  user.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")
+                  <svg
+                    className="w-4 h-4 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                  </svg>
                 )}
               </div>
               <div className="flex-1 truncate">
@@ -208,6 +369,12 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
             </button>
           ))}
         </div>
+      )}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-[99999]"
+          onClick={() => setIsOpen(false)}
+        />
       )}
     </div>
   );
@@ -222,8 +389,6 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
     const fetchStatuses = async () => {
       try {
         const allStatuses = [];
-
-        // First, get statuses from leads
         try {
           const leadsRes = await getLeads();
           if (leadsRes.data && Array.isArray(leadsRes.data)) {
@@ -248,7 +413,6 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
         try {
           const boardsRes = await getBoardsAll();
           console.log("📊 Boards API response:", boardsRes);
-
           if (boardsRes.data && Array.isArray(boardsRes.data)) {
             boardsRes.data.forEach((board) => {
               // Check if board has statuses array
@@ -265,10 +429,8 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
                     });
                   }
                 });
-              }
-              // If boards themselves are statuses (based on your API response)
-              else if (board.id && board.name) {
-                if (!allStatuses.find((s) => s.id === board.id)) {
+              } else if (board.id && board.name) {
+                if (!allStatuses.find(s => s.id === board.id)) {
                   allStatuses.push({
                     id: board.id,
                     name: board.name,
@@ -284,48 +446,19 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
         } catch (boardsErr) {
           console.error("Error fetching statuses from boards:", boardsErr);
         }
-
-        // Set the combined status options
         setStatusOptions(allStatuses);
         console.log("📊 Final combined status options:", allStatuses);
       } catch (err) {
         console.error("Failed to fetch statuses:", err);
-
-        // Fallback to default statuses if API calls fail
         const fallbackStatuses = [
-          {
-            id: "default-1",
-            name: "Not Started",
-            icon: XCircle,
-            lightBg: "bg-gray-50",
-            textColor: "text-gray-700",
-          },
-          {
-            id: "default-2",
-            name: "Working on it",
-            icon: Circle,
-            lightBg: "bg-yellow-50",
-            textColor: "text-yellow-700",
-          },
-          {
-            id: "default-3",
-            name: "Stuck",
-            icon: AlertCircle,
-            lightBg: "bg-red-50",
-            textColor: "text-red-700",
-          },
-          {
-            id: "default-4",
-            name: "Done",
-            icon: CheckCircle2,
-            lightBg: "bg-green-50",
-            textColor: "text-green-700",
-          },
+          { id: 'default-1', name: 'Not Started', icon: XCircle, lightBg: 'bg-gray-50', textColor: 'text-gray-700' },
+          { id: 'default-2', name: 'Working on it', icon: Circle, lightBg: 'bg-yellow-50', textColor: 'text-yellow-700' },
+          { id: 'default-3', name: 'Stuck', icon: AlertCircle, lightBg: 'bg-red-50', textColor: 'text-red-700' },
+          { id: 'default-4', name: 'Done', icon: CheckCircle2, lightBg: 'bg-green-50', textColor: 'text-green-700' },
         ];
         setStatusOptions(fallbackStatuses);
       }
     };
-
     fetchStatuses();
   }, []);
 
@@ -422,14 +555,11 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
   const handleChange = async (selectedStatusId) => {
     const selectedStatus = statusOptions.find((s) => s.id === selectedStatusId);
     onChange(selectedStatus);
-
-    // Update on server
     try {
       await updateLeads(taskId, { status: selectedStatus });
     } catch (err) {
       console.error("Failed to update status:", err);
     }
-
     setIsOpen(false);
   };
 
@@ -452,7 +582,6 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
         {currentStatus.name}
         <ChevronDown className="w-3 h-3" />
       </button>
-
       {isOpen && (
         <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[] min-w-[160px] max-h-60 overflow-y-auto">
           {statusOptions.map((status) => {
@@ -474,6 +603,7 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
   );
 };
 
+// Person Dropdown Component
 const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
   const [personOptions, setPersonOptions] = useState([]);
 
@@ -497,11 +627,8 @@ const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
   }, []);
 
   const handleChange = async (selectedId) => {
-    const selectedPerson =
-      personOptions.find((p) => p.id === selectedId) || null;
-
+    const selectedPerson = personOptions.find((p) => p.id === selectedId) || null;
     onChange(selectedPerson);
-
     if (groupId && leadId) {
       try {
         await updateLeads(groupId, leadId, { person_detail: selectedId });
@@ -509,7 +636,6 @@ const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
         console.error("Failed to update person_detail:", err);
       }
     }
-
     onSave();
   };
 
@@ -540,6 +666,219 @@ const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
   );
 };
 
+// Add Lead Modal Component
+// Add Lead Modal Component
+const AddLeadModal = ({ isOpen, onClose, onCreate, groups, statusOptions, users }) => {
+  if (!isOpen) return null;
+
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    link: "",
+    person: "",
+    notes: "",
+    status: "",
+    group: "",
+    order: 9223372036854776000,
+    potential_value: 9223372036854776000,
+    timeline_start: "2025-08-29",
+    timeline_end: "2025-08-29",
+  });
+
+  const [errors, setErrors] = useState({}); // State for error messages
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    validateField(name, value); // Validate on change
+  };
+
+  const handleSelectChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    validateField(field, value); // Validate on change
+  };
+
+  const handleDateChange = (field, date) => {
+    const dateStr = date ? date.toISOString().split("T")[0] : null;
+    setFormData((prev) => ({ ...prev, [field]: dateStr }));
+    validateField(field, dateStr); // Validate if needed (dates are optional)
+  };
+
+  // Validation function for individual fields
+  const validateField = (field, value) => {
+    let error = "";
+    if (["name", "person", "status", "group"].includes(field) && !value) {
+      error = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+    }
+    setErrors((prev) => ({ ...prev, [field]: error }));
+  };
+
+  // Check if form is valid (all required fields filled and no errors)
+  const isFormValid = () => {
+    return formData.name && formData.person && formData.status && formData.group && Object.values(errors).every((err) => !err);
+  };
+
+  const handleSubmit = async () => {
+    // Validate all required fields before submit
+    validateField("name", formData.name);
+    validateField("person", formData.person);
+    validateField("status", formData.status);
+    validateField("group", formData.group);
+
+    if (!isFormValid()) {
+      console.warn("Form validation failed: Required fields missing"); // Log instead of alert
+      return; // Prevent submission
+    }
+
+    try {
+      await onCreate(formData);
+      onClose();
+    } catch (err) {
+      console.error("Error creating lead:", err);
+    }
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 flex items-center justify-center z-[10000] bg-black bg-opacity-50">
+      <div className="bg-white rounded-lg shadow-2xl p-6 min-w-[400px] max-h-[80vh] overflow-y-auto">
+        <h2 className="text-lg font-bold mb-4">Add New Lead</h2>
+        <div className="space-y-4">
+          <div>
+            <input
+              type="text"
+              name="name"
+              placeholder="Name *"
+              value={formData.name}
+              onChange={handleInputChange}
+              className={`w-full p-2 border rounded-md ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
+            />
+            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+          </div>
+          {/* <input
+            type="tel"
+            name="phone"
+            placeholder="Phone"
+            value={formData.phone}
+            onChange={handleInputChange}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          /> */}
+          {/* <input
+            type="text"
+            name="link"
+            placeholder="Link"
+            value={formData.link}
+            onChange={handleInputChange}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          /> */}
+          <div>
+            {/* <Select
+              placeholder="Person *"
+              value={formData.person || undefined}
+              onChange={(value) => handleSelectChange("person", value)}
+              style={{ width: "100%" }}
+              className={errors.person ? 'border-red-500' : ''}
+            >
+              {users.map((user) => (
+                <Select.Option key={user.id} value={user.id}>
+                  {user.fullname || `${user.first_name || ""} ${user.last_name || ""}`.trim() || "Unknown User"}
+                </Select.Option>
+              ))}
+            </Select> */}
+            {errors.person && <p className="text-red-500 text-xs mt-1">{errors.person}</p>}
+          </div>
+          {/* <input
+            type="text"
+            name="notes"
+            placeholder="Notes"
+            value={formData.notes}
+            onChange={handleInputChange}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          /> */}
+          {/* <div>
+            <Select
+              placeholder="Status *"
+              value={formData.status || undefined}
+              onChange={(value) => handleSelectChange("status", value)}
+              style={{ width: "100%" }}
+              className={errors.status ? 'border-red-500' : ''}
+            >
+              {statusOptions.map((status) => (
+                <Select.Option key={status.id} value={status.id}>
+                  {status.name}
+                </Select.Option>
+              ))}
+            </Select>
+            {errors.status && <p className="text-red-500 text-xs mt-1">{errors.status}</p>}
+          </div> */}
+          <div>
+            <Select
+              placeholder="Group *"
+              value={formData.group || undefined}
+              onChange={(value) => handleSelectChange("group", value)}
+              style={{ width: "100%" }}
+              className={errors.group ? 'border-red-500' : ''}
+            >
+              {groups.map((group) => (
+                <Select.Option key={group.id} value={group.id}>
+                  {group.name}
+                </Select.Option>
+              ))}
+            </Select>
+            {errors.group && <p className="text-red-500 text-xs mt-1">{errors.group}</p>}
+          </div>
+          <input
+            type="number"
+            name="order"
+            placeholder="Order"
+            value={formData.order}
+            onChange={handleInputChange}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          />
+          <input
+            type="number"
+            name="potential_value"
+            placeholder="Potential Value"
+            value={formData.potential_value}
+            onChange={handleInputChange}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          />
+          <ReactDatePicker
+            selected={formData.timeline_start ? new Date(formData.timeline_start) : null}
+            onChange={(date) => handleDateChange("timeline_start", date)}
+            placeholderText="Timeline Start"
+            className="w-full p-2 border border-gray-300 rounded-md"
+            dateFormat="yyyy-MM-dd"
+          />
+          <ReactDatePicker
+            selected={formData.timeline_end ? new Date(formData.timeline_end) : null}
+            onChange={(date) => handleDateChange("timeline_end", date)}
+            placeholderText="Timeline End"
+            className="w-full p-2 border border-gray-300 rounded-md"
+            dateFormat="yyyy-MM-dd"
+          />
+        </div>
+        <div className="flex justify-end gap-2 mt-4">
+          <button
+            onClick={onClose}
+            className="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+            disabled={!isFormValid()} // Disable if form is invalid
+          >
+            Create
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+// Table Component
 const Table = () => {
   const [hoveredRow, setHoveredRow] = useState(null);
   const [selectedRows, setSelectedRows] = useState([]);
@@ -551,9 +890,9 @@ const Table = () => {
   const [apiLeads, setApiLeads] = useState([]);
   const [loading, setLoading] = useState(false);
   const [statusOptions, setStatusOptions] = useState([]);
-  const [isAddingLead, setIsAddingLead] = useState(false);
-  const [newLeadTitle, setNewLeadTitle] = useState("");
-  const [editingTimelineId, setEditingTimelineId] = useState(null);
+  const [groups, setGroups] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const statusConfig = {
     Done: {
@@ -619,35 +958,25 @@ const Table = () => {
     }));
   };
 
+  const handleTimelineUpdate = (taskId, timelineData) => {
+    setApiLeads(prevLeads =>
+      prevLeads.map(lead =>
+        lead.id === taskId
+          ? { ...lead, ...timelineData }
+          : lead
+      )
+    );
+  };
+
   const loadLeadsFromAPI = async (groupId = null) => {
     try {
       setLoading(true);
       console.log("🔍 Loading leads from API...");
       const response = await getLeads(groupId);
       console.log("✅ API Response:", response);
-
       if (response.data && Array.isArray(response.data)) {
         setApiLeads(response.data);
         console.log(`📊 Loaded ${response.data.length} leads from API`);
-
-        const apiStatusOptions = response.data
-          .filter((lead) => lead.status && lead.status.name)
-          .map((lead) => ({
-            id: lead.status.id,
-            value: lead.status.name,
-            icon: getStatusIcon(lead.status.name),
-            lightBg: getStatusLightBg(lead.status.name),
-            textColor: getStatusTextColor(lead.status.name),
-          }))
-          .filter(
-            (status, index, self) =>
-              self.findIndex((s) => s.value === status.value) === index
-          );
-
-        if (apiStatusOptions.length > 0) {
-          console.log("📊 Status options from API:", apiStatusOptions);
-          setStatusOptions([...statusOptions, ...apiStatusOptions]);
-        }
       }
     } catch (error) {
       console.error("❌ Error loading leads:", {
@@ -674,10 +1003,8 @@ const Table = () => {
   const getStatusLightBg = (statusName) => {
     if (!statusName) return "bg-gray-50";
     const name = statusName.toLowerCase();
-    if (name.includes("done") || name.includes("complete"))
-      return "bg-green-50";
-    if (name.includes("working") || name.includes("progress"))
-      return "bg-yellow-50";
+    if (name.includes("done") || name.includes("complete")) return "bg-green-50";
+    if (name.includes("working") || name.includes("progress")) return "bg-yellow-50";
     if (name.includes("stuck") || name.includes("blocked")) return "bg-red-50";
     return "bg-gray-50";
   };
@@ -685,17 +1012,77 @@ const Table = () => {
   const getStatusTextColor = (statusName) => {
     if (!statusName) return "text-gray-500";
     const name = statusName.toLowerCase();
-    if (name.includes("done") || name.includes("complete"))
-      return "text-green-700";
-    if (name.includes("working") || name.includes("progress"))
-      return "text-yellow-700";
-    if (name.includes("stuck") || name.includes("blocked"))
-      return "text-red-700";
+    if (name.includes("done") || name.includes("complete")) return "text-green-700";
+    if (name.includes("working") || name.includes("progress")) return "text-yellow-700";
+    if (name.includes("stuck") || name.includes("blocked")) return "text-red-700";
     return "text-gray-700";
   };
 
   useEffect(() => {
-    loadLeadsFromAPI();
+    const fetchData = async () => {
+      try {
+        // Fetch groups (boards)
+        const boardsRes = await getBoardsAll();
+        setGroups(boardsRes.data || []);
+
+        // Fetch users
+        const usersRes = await getMSalesUsers();
+        setUsers(usersRes.data || []);
+
+        // Fetch full statuses
+        const allStatuses = [];
+        try {
+          const leadsRes = await getLeads();
+          leadsRes.data.forEach(lead => {
+            if (lead.status && lead.status.name && lead.status.id) {
+              if (!allStatuses.find(s => s.id === lead.status.id)) {
+                allStatuses.push({
+                  id: lead.status.id,
+                  name: lead.status.name,
+                  icon: getStatusIcon(lead.status.name),
+                  lightBg: getStatusLightBg(lead.status.name),
+                  textColor: getStatusTextColor(lead.status.name),
+                });
+              }
+            }
+          });
+        } catch (leadsErr) {
+          console.error("Error fetching statuses from leads:", leadsErr);
+        }
+        boardsRes.data.forEach(board => {
+          if (board.statuses && Array.isArray(board.statuses)) {
+            board.statuses.forEach(status => {
+              if (!allStatuses.find(s => s.id === status.id)) {
+                allStatuses.push({
+                  id: status.id,
+                  name: status.name,
+                  color: status.color || "#6b7280",
+                  icon: getStatusIcon(status.name),
+                  lightBg: getStatusLightBg(status.name),
+                  textColor: getStatusTextColor(status.name),
+                });
+              }
+            });
+          } else if (board.id && board.name) {
+            if (!allStatuses.find(s => s.id === board.id)) {
+              allStatuses.push({
+                id: board.id,
+                name: board.name,
+                color: board.color || "#6b7280",
+                icon: getStatusIcon(board.name),
+                lightBg: getStatusLightBg(board.name),
+                textColor: getStatusTextColor(board.name),
+              });
+            }
+          }
+        });
+        setStatusOptions(allStatuses);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+      }
+      loadLeadsFromAPI();
+    };
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -704,11 +1091,9 @@ const Table = () => {
         setOpenStatusDropdown(null);
       }
     };
-
     if (openStatusDropdown !== null) {
       document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [openStatusDropdown]);
 
@@ -733,7 +1118,6 @@ const Table = () => {
   const handleDrop = (e, dropIndex) => {
     e.preventDefault();
     if (draggedItem === null) return;
-
     const draggedTask = filteredTasks[draggedItem];
     const newTasks = [...displayTasks];
     const originalDraggedIndex = displayTasks.findIndex(
@@ -743,10 +1127,8 @@ const Table = () => {
     const originalDropIndex = displayTasks.findIndex(
       (t) => t.id === dropTask.id
     );
-
     const [removed] = newTasks.splice(originalDraggedIndex, 1);
     newTasks.splice(originalDropIndex, 0, removed);
-
     setApiLeads(newTasks);
     setDraggedItem(null);
     setDragOverItem(null);
@@ -829,7 +1211,6 @@ const Table = () => {
   const handleSave = async (id, uiField) => {
     const lead = apiLeads.find((l) => l.id === id);
     if (!lead) return;
-
     const apiField = fieldMap[uiField] || uiField;
     const data = { [apiField]: lead[apiField] };
     try {
@@ -840,73 +1221,18 @@ const Table = () => {
     }
   };
 
-  const handleAddLead = async (e) => {
-    if (e.key !== "Enter" || !newLeadTitle.trim()) return;
-
-    try {
-      setLoading(true);
-      const newLead = {
-        name: newLeadTitle,
-        status: { name: "Not Started" },
-        person_detail: { fullname: "Unknown Person" },
-        potential_value: 0,
-        last_interaction: new Date().toISOString().split("T")[0],
-        link: "General",
-        phone: "",
-        notes: "",
-      };
-
-      await createLeads(newLead);
-      console.log("✅ New lead created");
-      await loadLeadsFromAPI();
-      setNewLeadTitle("");
-      setIsAddingLead(false);
-    } catch (error) {
-      console.error("❌ Error creating lead:", error);
-    } finally {
-      setLoading(false);
+ const handleCreateLead = async (data) => {
+  try {
+    await createLeads(data);
+    console.log("✅ New lead created");
+    await loadLeadsFromAPI();
+  } catch (error) {
+    console.error("❌ Error creating lead:", error);
+    if (error.response) {
+      console.error("Server response:", error.response.data); // Add this
     }
-  };
-
-  // Table.jsx ichida
-  // const handleAddLead = async (e) => {
-  //   if (e.key === "Enter" && newLeadTitle.trim()) {
-  //     try {
-  //       const res = await fetch(
-  //         "https://prototype-production-2b67.up.railway.app/board/leads/",
-  //         {
-  //           method: "POST",
-  //           headers: {
-  //             "Content-Type": "application/json",
-  //           },
-  //           body: JSON.stringify({
-  //             group: groupId, // ✅ Har doim group ID birinchi bo‘lib qo‘yiladi
-  //             name: newLeadTitle, // foydalanuvchi inputdan kiritgan title
-  //             phone: "",
-  //             link: "",
-  //             person: null,
-  //             notes: "",
-  //             status: null,
-  //             order: 0,
-  //             potential_value: 0,
-  //             timeline_start: new Date(),
-  //             timeline_end: new Date(),
-  //           }),
-  //         }
-  //       );
-
-  //       const data = await res.json();
-  //       console.log("Lead yaratildi:", data);
-
-  //       // yangi leadni filteredTasks massiviga qo‘shib qo‘yish
-  //       setFilteredTasks((prev) => [...prev, data]);
-  //       setNewLeadTitle("");
-  //       setIsAddingLead(false);
-  //     } catch (err) {
-  //       console.error("Xatolik:", err);
-  //     }
-  //   }
-  // };
+  }
+};
 
   return (
     <div className="h-auto md:min-w-[95%]">
@@ -1011,11 +1337,6 @@ const Table = () => {
                       onMouseLeave={() => setHoveredRow(null)}
                       onDragOver={(e) => handleDragOver(e, index)}
                       onDrop={(e) => handleDrop(e, index)}
-                      style={{
-                        animation: `slideIn 0.3s ease-out ${
-                          index * 0.05
-                        }s both`,
-                      }}
                     >
                       <td
                         className="p-2 cursor-move sticky left-0 bg-white z-10"
@@ -1058,7 +1379,7 @@ const Table = () => {
                           />
                         </div>
                       </td>
-                      <td className="p-4 border-r border-gray-200 ">
+                      <td className="p-4 border-r border-gray-200 relative">
                         <OwnerDropdown
                           currentOwner={task.owner}
                           onChange={(newOwner) =>
@@ -1073,7 +1394,7 @@ const Table = () => {
                           {task.team}
                         </span>
                       </td>
-                      <td className="p-4 border-r border-gray-200">
+                      <td className="p-4 border-r border-gray-200 relative">
                         <StatusDropdown
                           value={task.status}
                           onChange={(newStatus) =>
@@ -1154,27 +1475,12 @@ const Table = () => {
                     />
                   </td>
                   <td className="p-4 sticky left-[88px] bg-white z-10 border-r border-gray-100">
-                    {isAddingLead ? (
-                      <input
-                        type="text"
-                        value={newLeadTitle}
-                        onChange={(e) => setNewLeadTitle(e.target.value)}
-                        onKeyPress={handleAddLead} // ✅ shu joy POST qiladi
-                        placeholder="Enter lead title"
-                        className="font-medium text-gray-900 hover:text-blue-600 cursor-text transition-colors truncate pr-2 border-none outline-none bg-transparent w-full text-center"
-                        autoFocus
-                        onBlur={() => {
-                          if (!newLeadTitle.trim()) setIsAddingLead(false);
-                        }}
-                      />
-                    ) : (
-                      <button
-                        onClick={() => setIsAddingLead(true)}
-                        className="font-medium text-gray-700 transition-colors w-full text-center"
-                      >
-                        + Add new lead
-                      </button>
-                    )}
+                    <button
+                      onClick={() => setIsAddModalOpen(true)}
+                      className="font-medium text-gray-700 transition-colors w-full text-center"
+                    >
+                      + Add new lead
+                    </button>
                   </td>
                   <td className="p-4 border-r border-gray-200">
                     <div className="flex justify-center items-center gap-2 text-gray-600">
@@ -1192,9 +1498,7 @@ const Table = () => {
                       <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
                         ?
                       </div>
-                      <span className="text-gray-400 truncate">
-                        {/* Unknown Person */}
-                      </span>
+                      <span className="text-gray-400 truncate"></span>
                     </div>
                   </td>
                   <td className="p-4 border-r border-gray-200">
@@ -1245,51 +1549,38 @@ const Table = () => {
         </div>
       </div>
 
-      <style>{`
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
+      <AddLeadModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onCreate={handleCreateLead}
+        groups={groups}
+        statusOptions={statusOptions}
+        users={users}
+      />
 
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           height: 8px;
         }
-
         .custom-scrollbar::-webkit-scrollbar-track {
           background: #f1f1f1;
           border-radius: 10px;
         }
-
         .custom-scrollbar::-webkit-scrollbar-thumb {
           background: #888;
           border-radius: 10px;
         }
-
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: #555;
         }
-
         .status-dropdown-container {
           position: relative;
         }
-
         .overflow-x-auto {
           position: relative;
           z-index: 1;
         }
-
-        tbody tr.relative.z-50 {
-          position: relative !important;
-          z-index: 50 !important;
-        }
-
-        .status-dropdown-container > div {git 
+        .status-dropdown-container > div {
           position: absolute !important;
           z-index: 1000 !important;
         }
