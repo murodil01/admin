@@ -337,7 +337,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
                     //     ? selectedDepartments[0] // 1 ta bo‘lsa object sifatida
                     //     : selectedDepartments, // ko‘p bo‘lsa array sifatida
 
-                    department: selectedDepartments,
+                    departments: selectedDepartments,
 
                   }));
                 }}

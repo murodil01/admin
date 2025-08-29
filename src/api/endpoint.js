@@ -17,6 +17,11 @@ const endpoints = {
     updateProfile: (id) => `users/${id}/update_profile/`,
   },
 
+  calendar: {
+    all: "calendars/event/",
+    eventById: (id) => `calendars/event/${id}/`,
+  },
+
   tasks: {
     getAll: 'project/tasks/',
     create: 'project/tasks/',
