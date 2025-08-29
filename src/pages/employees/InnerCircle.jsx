@@ -1,6 +1,5 @@
-// Fixed InnerCircle.jsx - Ensures pagination and filters persist after refresh
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Plus } from "lucide-react";
 import EmployeeList from "./EmployeeList";
 import Activity from "./activity";
@@ -11,6 +10,7 @@ import {
     createEmployees,
 } from "../../api/services/employeeService";
 import { deleteUser } from "../../api/services/userService";
+import { getDepartments } from "../../api/services/departmentService";
 
 import { Permission } from "../../components/Permissions";
 import { useAuth } from "../../hooks/useAuth";
@@ -30,32 +30,21 @@ const InnerCircle = () => {
     const [dataLoading, setDataLoading] = useState(true);
     const isLoading = authLoading || dataLoading;
 
+    const [departments, setDepartments] = useState([]);
+
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const navigate = useNavigate();
+    // const navigate = useNavigate();
 
     // Initialize filters from URL parameters or localStorage
     const initializeFilters = () => {
         const urlFilters = {
-            fullName: searchParams.get('fullName') || '',
-            phoneNumber: searchParams.get('phoneNumber') || '',
-            selectedDepartments: searchParams.get('departments') ?
-                searchParams.get('departments').split(',').filter(Boolean) : [],
+            selectedRoles: searchParams.get('role') ?
+                searchParams.get('role').split(',').filter(Boolean) : [],
+            selectedDepartments: searchParams.get('departments')
+                ? searchParams.get('departments').split(',').map(n => parseInt(n, 10)).filter(Boolean)
+                : [],
             status: searchParams.get('status') || ''
         };
-
-        // If no URL filters, try to get from localStorage
-        if (!searchParams.get('fullName') && !searchParams.get('phoneNumber') &&
-            !searchParams.get('departments') && !searchParams.get('status')) {
-            const savedFilters = localStorage.getItem('innerCircleFilters');
-            if (savedFilters) {
-                try {
-                    return { ...urlFilters, ...JSON.parse(savedFilters) };
-                } catch (e) {
-                    console.warn('Error parsing saved filters:', e);
-                }
-            }
-        }
-
         return urlFilters;
     };
 
@@ -67,12 +56,11 @@ const InnerCircle = () => {
 
         // Always set page
         params.set("page_num", page.toString());
-
-        // Set filter parameters
-        if (filters.fullName) params.set("fullName", filters.fullName);
-        if (filters.phoneNumber) params.set("phoneNumber", filters.phoneNumber);
         if (filters.selectedDepartments.length > 0) {
             params.set("departments", filters.selectedDepartments.join(','));
+        }
+        if (filters.selectedRoles.length > 0) {
+            params.set("role", filters.selectedRoles.join(','));
         }
         if (filters.status) params.set("status", filters.status);
 
@@ -86,7 +74,7 @@ const InnerCircle = () => {
     // Enhanced filter handler
     const handleFilter = (filters) => {
         setCurrentFilters(filters);
-        const currentPage = parseInt(searchParams.get("page_num") || "1", 10);
+        // const currentPage = parseInt(searchParams.get("page_num") || "1", 10);
         updateUrlParams(1, filters); // Reset to page 1 when filtering
         fetchEmployees(1, filters);
     };
@@ -94,8 +82,7 @@ const InnerCircle = () => {
     // Clear filters handler
     const handleClearFilters = () => {
         const clearedFilters = {
-            fullName: '',
-            phoneNumber: '',
+            selectedRoles: [],
             selectedDepartments: [],
             status: ''
         };
@@ -117,14 +104,28 @@ const InnerCircle = () => {
         );
     };
 
+    // Fetch departments first
+    useEffect(() => {
+        const fetchDepartments = async () => {
+            try {
+                const deptData = await getDepartments();
+                setDepartments(deptData);
+            } catch (error) {
+                console.error("Error fetching departments:", error);
+            }
+        };
+        fetchDepartments();
+    }, []);
+
     // Enhanced fetchEmployees function to handle multiple filters
     const fetchEmployees = async (page = 1, filters = null, updateUrl = true) => {
         const filtersToUse = filters || currentFilters;
         setLoading(true);
 
         try {
-            console.log('Fetching employees with:', { page, filters: filtersToUse });
-            const res = await getEmployees(page, filtersToUse);
+
+            const res = await getEmployees(page, filtersToUse, departments);
+
             setEmployees(res.results || []);
             setTotalEmployees(res.count || 0);
 
@@ -133,7 +134,7 @@ const InnerCircle = () => {
                 updateUrlParams(page, filtersToUse);
             }
         } catch (err) {
-            console.error("Error fetching members:", err);
+            console.error("❌ Error fetching members:", err);
             message.error("Failed to fetch members");
         } finally {
             setLoading(false);
@@ -158,10 +159,11 @@ const InnerCircle = () => {
     useEffect(() => {
         const pageFromUrl = parseInt(searchParams.get("page_num") || "1", 10);
         const urlFilters = {
-            fullName: searchParams.get('fullName') || '',
-            phoneNumber: searchParams.get('phoneNumber') || '',
-            selectedDepartments: searchParams.get('departments') ?
-                searchParams.get('departments').split(',').filter(Boolean) : [],
+            selectedRoles: searchParams.get('role') ?
+                searchParams.get('role').split(',').filter(Boolean) : [],
+            selectedDepartments: searchParams.get('departments')
+                ? searchParams.get('departments').split(',').map(n => parseInt(n, 10)).filter(Boolean)
+                : [],
             status: searchParams.get('status') || ''
         };
 
@@ -218,7 +220,7 @@ const InnerCircle = () => {
 
     const handleAddEmployee = async (employeeData) => {
         if (loading) {
-            console.log("Already processing, ignoring duplicate call");
+            message.error("Already processing, ignoring duplicate call");
             return;
         }
 
@@ -276,13 +278,7 @@ const InnerCircle = () => {
                 form.append("birth_date", employeeData.birth_date);
             }
 
-            console.log("FormData contents:");
-            for (let [key, value] of form.entries()) {
-                console.log(`${key}:`, value);
-            }
-
             const response = await createEmployees(form);
-            console.log("✅ API Success:", response);
 
             message.success("Member added successfully");
             setIsAddModalOpen(false);

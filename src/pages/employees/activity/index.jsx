@@ -10,50 +10,41 @@ const Activity = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchActivities();
-  }, []);
+  // Get current page from URL
+  const currentPage = parseInt(searchParams.get('page_num') || '1', 10);
 
   const fetchActivities = async (page = 1) => {
     setLoading(true);
+    setError(null);
     try {
       const res = await getActivities(page);
-
-      // Faqat joriy sahifadagi ma'lumotlarni saqlang
       setActivity(res.results || []);
-      // Umumiy sonni backenddan oling
       setTotalActivities(res.count || 0);
     } catch (err) {
-      console.error("Error fetching employees:", err);
+      console.error("Error fetching activities:", err);
+      setError("Failed to load activities. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  // Only fetch when searchParams change
   useEffect(() => {
-    const pageFromUrl = parseInt(searchParams.get('page_num') || '1', 10);
-    fetchActivities(pageFromUrl);
-  }, [searchParams]);
+    fetchActivities(currentPage);
+  }, [currentPage]);
 
   const handlePageChange = (newPage) => {
-    // 1. Joriy search parametrlarini saqlab qolish
+    // Only update URL - the useEffect will handle fetching
     const params = new URLSearchParams(searchParams);
-
-    // 2. Yangi sahifa parametrini o'rnatish
     params.set('page_num', newPage);
-
-    // 3. Navigate funksiyasi bilan URLni yangilash
     navigate(`?${params.toString()}`, { replace: true });
-
-    // Ma'lumotlarni yangilash
-    fetchActivities(newPage);
-
-    // 4. Debug uchun console.log
-    console.log('Navigating to:', params.toString());
-    console.log('URL updated to:', `?page_num=${newPage}`);
   };
 
-  if (loading) return <p className="text-center">Yuklanmoqda...</p>;
+  // Calculate pagination info
+  const itemsPerPage = 20; // Adjust based on your API
+  const totalPages = Math.ceil(totalActivities / itemsPerPage);
+
+  if (loading) return <p className="text-center">Loading...</p>;
   if (error) return <p className="text-red-500 text-center">{error}</p>;
 
   return (
@@ -78,7 +69,7 @@ const Activity = () => {
                 {user.profession}
               </p>
               <span
-                className={`font-semibold text-[12px] text-[#7D8592] px-2 py-[2px] rounded-lg 
+                className={`font-semibold text-[12px] text-[#7D8592] px-2 py-[2px] rounded-lg
     ${user.level === "none" ? "bg-[#E3EDFA]" : "bg-white"}`}
               >
                 {user.level === "none" ? "\u00A0" : user.level}
@@ -119,6 +110,31 @@ const Activity = () => {
           </div>
         ))}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-6">
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage <= 1}
+            className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+
+          <span className="px-4 py-2">
+            Page {currentPage} of {totalPages}
+          </span>
+
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage >= totalPages}
+            className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };

@@ -30,9 +30,6 @@ const EmployeeList = ({ employees, onDelete, onStatusUpdate }) => {
         const spaceAbove = buttonRect.top - tableRect.top;
         const dropdownheight = 120;
 
-        console.log(spaceAbove);
-        console.log(spaceBelow);
-
         const position = spaceBelow < dropdownheight && spaceAbove > spaceBelow ? "top" : "bottom";
 
         let adjustPosition = position;
@@ -123,7 +120,6 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
 
         // Convert to string if it's a number
         const validId = String(employeeId);
-        console.log('Converting to profile URL:', `/profile/${validId}`);
 
         navigate(`/profile/${validId}`);
     };

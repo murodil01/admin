@@ -5,25 +5,31 @@ import { AiOutlineClose } from "react-icons/ai";
 import { createPortal } from "react-dom";
 import { getDepartments } from "../../api/services/departmentService";
 
-const FilterModal = ({ onFilter, onClearFilters }) => {
+const FilterModal = ({ onFilter, onClearFilters, currentFilters }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [departments, setDepartments] = useState([]);
     const [filters, setFilters] = useState({
-        fullName: '',
-        phoneNumber: '',
         selectedDepartments: [],
+        selectedRoles: [],
         status: ''
     });
-    const [inputErrors, setInputErrors] = useState({
-        fullName: false,
-        phoneNumber: false
-    });
-    const [matchCount, setMatchCount] = useState(0);
     const [showAllDepartments, setShowAllDepartments] = useState(false);
+    const [showAllRoles, setShowAllRoles] = useState(false);
 
     const visibleDepartments = showAllDepartments
         ? departments
         : departments.slice(0, 3);
+
+    // Role options
+    const roleOptions = [
+        { value: 'manager', label: 'Manager' },
+        { value: 'heads', label: 'Chief Officer' },
+        { value: 'employee', label: 'Member' },
+    ];
+
+    const visibleRoles = showAllRoles
+        ? roleOptions
+        : roleOptions.slice(0, 3);
 
     const statusOptions = [
         { value: '', label: 'All Statuses' },
@@ -34,11 +40,21 @@ const FilterModal = ({ onFilter, onClearFilters }) => {
         { value: 'on_leave', label: 'On Leave' }
     ];
 
+    // Initialize filters from props when modal opens
+    useEffect(() => {
+        if (isModalOpen && currentFilters) {
+            setFilters({
+                selectedDepartments: currentFilters.selectedDepartments || [],
+                selectedRoles: currentFilters.selectedRoles || [],
+                status: currentFilters.status || ''
+            });
+        }
+    }, [isModalOpen, currentFilters]);
+
     useEffect(() => {
         const fetchDepartments = async () => {
             try {
                 const res = await getDepartments();
-                // Normalize the API response to ensure consistent structure
                 let departmentList = [];
 
                 if (Array.isArray(res)) {
@@ -49,11 +65,10 @@ const FilterModal = ({ onFilter, onClearFilters }) => {
                     departmentList = res.results;
                 }
 
-                // Ensure each department has id, name, and photo properties
                 const normalizedDepartments = departmentList.map(dept => ({
                     id: dept.id || dept.value || Math.random().toString(36).substr(2, 9),
                     name: dept.name || 'Unnamed Department',
-                    photo: dept.photo || '/default-department.png' // Fallback image
+                    photo: dept.photo || '/default-department.png'
                 }));
 
                 setDepartments(normalizedDepartments);
@@ -75,63 +90,55 @@ const FilterModal = ({ onFilter, onClearFilters }) => {
         }
     }, [isModalOpen]);
 
-    const handleInputChange = useCallback((field, value) => {
-        // Clear error if validation passes
-        if (inputErrors[field]) {
-            setInputErrors(prev => ({ ...prev, [field]: false }));
-        }
-
+    const handleDepartmentToggle = useCallback((deptIndex) => {
         setFilters(prev => ({
             ...prev,
-            [field]: value
+            selectedDepartments: prev.selectedDepartments.includes(deptIndex)
+                ? prev.selectedDepartments.filter(i => i !== deptIndex)
+                : [...prev.selectedDepartments, deptIndex]
         }));
-    }, [inputErrors]);
+    }, []);
 
-    const handleDepartmentToggle = useCallback((deptId) => {
+    const handleRoleToggle = useCallback((roleValue) => {
         setFilters(prev => ({
             ...prev,
-            selectedDepartments: prev.selectedDepartments.includes(deptId)
-                ? prev.selectedDepartments.filter(id => id !== deptId)
-                : [...prev.selectedDepartments, deptId]
+            selectedRoles: prev.selectedRoles.includes(roleValue)
+                ? prev.selectedRoles.filter(role => role !== roleValue)
+                : [...prev.selectedRoles, roleValue]
+        }));
+    }, []);
+
+    const handleStatusChange = useCallback((value) => {
+        setFilters(prev => ({
+            ...prev,
+            status: value
         }));
     }, []);
 
     const applyFilters = () => {
-        // Don't apply if there are validation errors
-        if (inputErrors.fullName || inputErrors.phoneNumber) {
-            return;
-        }
-
         onFilter?.(filters);
         setIsModalOpen(false);
-        // Calculate match count (this would typically come from your API response)
-        setMatchCount(0); // You'll update this based on your actual filtering logic
     };
 
     const clearAllFilters = () => {
         const clearedFilters = {
-            fullName: '',
-            phoneNumber: '',
             selectedDepartments: [],
+            selectedRoles: [],
             status: ''
         };
         setFilters(clearedFilters);
-        setInputErrors({ fullName: false, phoneNumber: false });
         onClearFilters?.();
-        setMatchCount(0);
     };
 
     const hasActiveFilters = () => {
-        return filters.fullName ||
-            filters.phoneNumber ||
-            filters.selectedDepartments.length > 0 ||
+        return filters.selectedDepartments.length > 0 ||
+            filters.selectedRoles.length > 0 ||
             filters.status;
     };
 
     const getActiveFilterCount = () => {
-        return (filters.fullName ? 1 : 0) +
-            (filters.phoneNumber ? 1 : 0) +
-            filters.selectedDepartments.length +
+        return filters.selectedDepartments.length +
+            filters.selectedRoles.length +
             (filters.status ? 1 : 0);
     };
 
@@ -147,7 +154,7 @@ const FilterModal = ({ onFilter, onClearFilters }) => {
                 />
 
                 {/* Modal Content */}
-                <div className="relative bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-hidden shadow-xl flex flex-col p-4">
+                <div className="relative bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-hidden shadow-xl flex flex-col">
                     {/* Header */}
                     <div className="flex items-center justify-between p-4 border-b border-gray-200 sticky top-0 bg-white z-10">
                         <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
@@ -161,65 +168,144 @@ const FilterModal = ({ onFilter, onClearFilters }) => {
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-6">
                         {/* Departments Filter */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-sm font-semibold text-gray-800 mb-3">
                                 Departments
                             </label>
-                            <div className="space-y-2 max-h-40 overflow-y-auto">
-                                {visibleDepartments.map((dept) => {
-                                    const isSelected = filters.selectedDepartments.includes(dept.id);
+                            <div className={`space-y-2 transition-all duration-300 ease-in-out ${showAllDepartments ? 'max-h-60' : 'max-h-40'} overflow-y-auto`}>
+                                {visibleDepartments.map((dept, index) => {
+                                    const deptIndex = index + 1; // start from 1
+                                    const isSelected = filters.selectedDepartments.includes(deptIndex);
                                     return (
                                         <label
                                             key={dept.id}
-                                            className="flex items-center space-x-2 cursor-pointer p-1.5 hover:bg-gray-50 rounded transition-colors text-sm"
+                                            className={`flex items-center space-x-3 cursor-pointer p-3 rounded-lg transition-all duration-200 border ${isSelected
+                                                    ? 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+                                                    : 'hover:bg-gray-50 border-transparent hover:border-gray-200'
+                                                }`}
                                         >
                                             <input
                                                 type="checkbox"
                                                 checked={isSelected}
-                                                onChange={() => handleDepartmentToggle(dept.id)}
-                                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                onChange={() => handleDepartmentToggle(deptIndex)}
+                                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                                             />
-                                            <div className="flex items-center space-x-2">
+                                            <div className="flex items-center space-x-3 flex-1">
                                                 <img
                                                     src={dept.photo}
                                                     alt={dept.name}
-                                                    className="w-[30px] h-[30px] rounded-full shadow-lg object-cover"
+                                                    className="w-8 h-8 rounded-full shadow-md object-cover ring-2 ring-white"
                                                     onError={(e) => {
                                                         e.target.src = '/default-department.png';
                                                     }}
                                                 />
-                                                <span className="text-gray-700">{dept.name}</span>
+                                                <span className={`font-medium ${isSelected ? 'text-blue-700' : 'text-gray-700'}`}>
+                                                    {dept.name}
+                                                </span>
                                             </div>
                                         </label>
                                     );
                                 })}
                             </div>
+
+                            {/* Show More/Less Button - Improved Design */}
                             {departments.length > 3 && (
-                                <button
-                                    className="text-blue-500 text-xs mt-1 hover:text-blue-600 flex items-center focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1 py-0.5"
-                                    onClick={() => setShowAllDepartments(!showAllDepartments)}
-                                    aria-expanded={showAllDepartments}
-                                >
-                                    {showAllDepartments ? 'Show less' : `View more (${departments.length - 3})`}
-                                    <svg className={`w-3 h-3 ml-1 transition-transform ${showAllDepartments ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                </button>
+                                <div className="mt-4 flex justify-center">
+                                    <button
+                                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full border border-blue-200 transition-all duration-200 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                                        onClick={() => setShowAllDepartments(!showAllDepartments)}
+                                        aria-expanded={showAllDepartments}
+                                    >
+                                        {showAllDepartments ? (
+                                            <>
+                                                <span>Show Less</span>
+                                                <svg className="w-4 h-4 transition-transform duration-200 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span>Show {departments.length - 3} More</span>
+                                                <svg className="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                             )}
                         </div>
 
+                        {/* Roles Filter - Also improved */}
+                        {/* <div>
+                            <label className="block text-sm font-semibold text-gray-800 mb-3">
+                                Roles
+                            </label>
+                            <div className="space-y-2">
+                                {visibleRoles.map((role) => {
+                                    const isSelected = filters.selectedRoles.includes(role.value);
+                                    return (
+                                        <label
+                                            key={role.value}
+                                            className={`flex items-center space-x-3 cursor-pointer p-3 rounded-lg transition-all duration-200 border ${isSelected
+                                                    ? 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+                                                    : 'hover:bg-gray-50 border-transparent hover:border-gray-200'
+                                                }`}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={isSelected}
+                                                onChange={() => handleRoleToggle(role.value)}
+                                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                                            />
+                                            <span className={`font-medium ${isSelected ? 'text-blue-700' : 'text-gray-700'}`}>
+                                                {role.label}
+                                            </span>
+                                        </label>
+                                    );
+                                })}
+                            </div> */}
+
+                            {/* Show More/Less for Roles */}
+                            {/* {roleOptions.length > 3 && (
+                                <div className="mt-4 flex justify-center">
+                                    <button
+                                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full border border-blue-200 transition-all duration-200 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                                        onClick={() => setShowAllRoles(!showAllRoles)}
+                                        aria-expanded={showAllRoles}
+                                    >
+                                        {showAllRoles ? (
+                                            <>
+                                                <span>Show Less</span>
+                                                <svg className="w-4 h-4 transition-transform duration-200 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span>Show {roleOptions.length - 3} More</span>
+                                                <svg className="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                </svg>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            )}
+                        </div> */}
+
                         {/* Status Filter */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-semibold text-gray-800 mb-3">
                                 Status
                             </label>
                             <div className="relative">
                                 <select
                                     value={filters.status}
-                                    onChange={(e) => handleInputChange('status', e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-sm appearance-none cursor-pointer"
+                                    onChange={(e) => handleStatusChange(e.target.value)}
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-sm appearance-none cursor-pointer font-medium text-gray-700"
                                 >
                                     {statusOptions.map(option => (
                                         <option key={option.value} value={option.value}>
@@ -227,8 +313,8 @@ const FilterModal = ({ onFilter, onClearFilters }) => {
                                         </option>
                                     ))}
                                 </select>
-                                <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </div>
@@ -238,24 +324,20 @@ const FilterModal = ({ onFilter, onClearFilters }) => {
 
                     {/* Footer */}
                     <div className="border-t border-gray-200 p-4 space-y-3 sticky bottom-0 bg-white">
-                        <div className="flex space-x-2">
+                        <div className="flex space-x-3">
                             {hasActiveFilters() && (
                                 <button
                                     onClick={clearAllFilters}
-                                    className="flex-1 py-2 px-3 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 font-medium transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    className="flex-1 py-3 px-4 text-gray-700 border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 font-semibold transition-all duration-200 text-sm focus:outline-none focus:ring-2 focus:ring-gray-500"
                                 >
                                     Clear All
                                 </button>
                             )}
                             <button
                                 onClick={applyFilters}
-                                disabled={inputErrors.fullName || inputErrors.phoneNumber}
-                                className={`flex-1 p-3 rounded-lg font-medium transition-colors text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${inputErrors.fullName || inputErrors.phoneNumber
-                                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                        : 'bg-blue-600 text-white hover:bg-blue-500'
-                                    }`}
+                                className="flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-200 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl"
                             >
-                                Save Filters ({getActiveFilterCount()})
+                                Apply Filters ({getActiveFilterCount()})
                             </button>
                         </div>
                     </div>
@@ -271,8 +353,8 @@ const FilterModal = ({ onFilter, onClearFilters }) => {
                 <button
                     onClick={() => setIsModalOpen(true)}
                     className={`p-3 bg-white rounded-lg shadow-md flex items-center gap-1.5 transition-all duration-200 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasActiveFilters()
-                            ? 'border-blue-500 bg-blue-50 text-blue-700'
-                            : 'border-gray-300 text-gray-700'
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-300 text-gray-700'
                         }`}
                     aria-label={`Open filters ${hasActiveFilters() ? `(${getActiveFilterCount()} active)` : ''}`}
                 >

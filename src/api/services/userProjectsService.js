@@ -8,6 +8,5 @@ export const getUserProjects = async (params = {}) => {
 
 export const getUserProjectsById = async (userId, params = {}) => {
     const res = await api.get(endpoints.userProjects.getById(userId), { params });
-    console.log("Projects:", res);;
     return res.data;
 };
