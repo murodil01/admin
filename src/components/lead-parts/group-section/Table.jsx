@@ -599,7 +599,6 @@ const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
 };
 
 // Add Lead Modal Component
-// Add Lead Modal Component
 const AddLeadModal = ({ isOpen, onClose, onCreate, groups, statusOptions, users }) => {
   if (!isOpen) return null;
 
@@ -617,51 +616,20 @@ const AddLeadModal = ({ isOpen, onClose, onCreate, groups, statusOptions, users 
     timeline_end: "2025-08-29",
   });
 
-  const [errors, setErrors] = useState({}); // State for error messages
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    validateField(name, value); // Validate on change
   };
 
   const handleSelectChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    validateField(field, value); // Validate on change
   };
 
   const handleDateChange = (field, date) => {
-    const dateStr = date ? date.toISOString().split("T")[0] : null;
-    setFormData((prev) => ({ ...prev, [field]: dateStr }));
-    validateField(field, dateStr); // Validate if needed (dates are optional)
-  };
-
-  // Validation function for individual fields
-  const validateField = (field, value) => {
-    let error = "";
-    if (["name", "person", "status", "group"].includes(field) && !value) {
-      error = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
-    }
-    setErrors((prev) => ({ ...prev, [field]: error }));
-  };
-
-  // Check if form is valid (all required fields filled and no errors)
-  const isFormValid = () => {
-    return formData.name && formData.person && formData.status && formData.group && Object.values(errors).every((err) => !err);
+    setFormData((prev) => ({ ...prev, [field]: date ? date.toISOString().split("T")[0] : null }));
   };
 
   const handleSubmit = async () => {
-    // Validate all required fields before submit
-    validateField("name", formData.name);
-    validateField("person", formData.person);
-    validateField("status", formData.status);
-    validateField("group", formData.group);
-
-    if (!isFormValid()) {
-      console.warn("Form validation failed: Required fields missing"); // Log instead of alert
-      return; // Prevent submission
-    }
-
     try {
       await onCreate(formData);
       onClose();
@@ -675,89 +643,74 @@ const AddLeadModal = ({ isOpen, onClose, onCreate, groups, statusOptions, users 
       <div className="bg-white rounded-lg shadow-2xl p-6 min-w-[400px] max-h-[80vh] overflow-y-auto">
         <h2 className="text-lg font-bold mb-4">Add New Lead</h2>
         <div className="space-y-4">
-          <div>
-            <input
-              type="text"
-              name="name"
-              placeholder="Name *"
-              value={formData.name}
-              onChange={handleInputChange}
-              className={`w-full p-2 border rounded-md ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
-            />
-            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
-          </div>
-          {/* <input
+          <input
+            type="text"
+            name="name"
+            placeholder="Name"
+            value={formData.name}
+            onChange={handleInputChange}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          />
+          <input
             type="tel"
             name="phone"
             placeholder="Phone"
             value={formData.phone}
             onChange={handleInputChange}
             className="w-full p-2 border border-gray-300 rounded-md"
-          /> */}
-          {/* <input
+          />
+          <input
             type="text"
             name="link"
             placeholder="Link"
             value={formData.link}
             onChange={handleInputChange}
             className="w-full p-2 border border-gray-300 rounded-md"
-          /> */}
-          <div>
-            {/* <Select
-              placeholder="Person *"
-              value={formData.person || undefined}
-              onChange={(value) => handleSelectChange("person", value)}
-              style={{ width: "100%" }}
-              className={errors.person ? 'border-red-500' : ''}
-            >
-              {users.map((user) => (
-                <Select.Option key={user.id} value={user.id}>
-                  {user.fullname || `${user.first_name || ""} ${user.last_name || ""}`.trim() || "Unknown User"}
-                </Select.Option>
-              ))}
-            </Select> */}
-            {errors.person && <p className="text-red-500 text-xs mt-1">{errors.person}</p>}
-          </div>
-          {/* <input
+          />
+          <Select
+            placeholder="Person"
+            value={formData.person || undefined}
+            onChange={(value) => handleSelectChange("person", value)}
+            style={{ width: "100%" }}
+          >
+            {users.map((user) => (
+              <Select.Option key={user.id} value={user.id}>
+                {user.fullname || `${user.first_name || ""} ${user.last_name || ""}`.trim() || "Unknown User"}
+              </Select.Option>
+            ))}
+          </Select>
+          <input
             type="text"
             name="notes"
             placeholder="Notes"
             value={formData.notes}
             onChange={handleInputChange}
             className="w-full p-2 border border-gray-300 rounded-md"
-          /> */}
-          {/* <div>
-            <Select
-              placeholder="Status *"
-              value={formData.status || undefined}
-              onChange={(value) => handleSelectChange("status", value)}
-              style={{ width: "100%" }}
-              className={errors.status ? 'border-red-500' : ''}
-            >
-              {statusOptions.map((status) => (
-                <Select.Option key={status.id} value={status.id}>
-                  {status.name}
-                </Select.Option>
-              ))}
-            </Select>
-            {errors.status && <p className="text-red-500 text-xs mt-1">{errors.status}</p>}
-          </div> */}
-          <div>
-            <Select
-              placeholder="Group *"
-              value={formData.group || undefined}
-              onChange={(value) => handleSelectChange("group", value)}
-              style={{ width: "100%" }}
-              className={errors.group ? 'border-red-500' : ''}
-            >
-              {groups.map((group) => (
-                <Select.Option key={group.id} value={group.id}>
-                  {group.name}
-                </Select.Option>
-              ))}
-            </Select>
-            {errors.group && <p className="text-red-500 text-xs mt-1">{errors.group}</p>}
-          </div>
+          />
+          <Select
+            placeholder="Status"
+            value={formData.status || undefined}
+            onChange={(value) => handleSelectChange("status", value)}
+            style={{ width: "100%" }}
+          >
+            {statusOptions.map((status) => (
+              <Select.Option key={status.id} value={status.id}>
+                {status.name}
+              </Select.Option>
+            ))}
+          </Select>
+          <Select
+            placeholder="Group"
+            value={formData.group || undefined}
+            onChange={(value) => handleSelectChange("group", value)}
+            style={{ width: "100%" }}
+          >
+            {groups.map((group) => (
+              <Select.Option key={group.id} value={group.id}>
+                {group.name}
+              </Select.Option>
+            ))}
+          </Select>
           <input
             type="number"
             name="order"
@@ -799,7 +752,6 @@ const AddLeadModal = ({ isOpen, onClose, onCreate, groups, statusOptions, users 
           <button
             onClick={handleSubmit}
             className="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
-            disabled={!isFormValid()} // Disable if form is invalid
           >
             Create
           </button>
