@@ -7,210 +7,95 @@ import {
   XCircle,
   GripVertical,
 } from "lucide-react";
-import ReactDatePicker from 'react-datepicker';
-import "react-datepicker/dist/react-datepicker.css";
 import {
   getLeads,
   updateLeads,
   createLeads,
 } from "../../../api/services/leadsService";
 import { getMSalesUsers, getusersAll } from "../../../api/services/userService";
-import { getBoardsAll } from "../../../api/services/boardService"; 
+import { getBoardsAll } from "../../../api/services/boardService";
+import ReactDatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import { Select, Avatar } from "antd";
-import { getMe } from "../../../api/services/authService";
+
 // Helper function to get absolute image URL
 const getAbsoluteImageUrl = (picture) => {
   if (!picture) return null;
-  
+
   // Get the URL string
   const url = typeof picture === "string" ? picture : picture?.url;
   if (!url) return null;
-  
+
   // If it's already a full URL, return as is
   if (url.startsWith("http")) {
     return url;
   }
-  
-  return `https://prototype-production-2b67.up.railway.app${url.startsWith("/") ? "" : "/"}${url}`;
+
+  return `https://prototype-production-2b67.up.railway.app${
+    url.startsWith("/") ? "" : "/"
+  }${url}`;
 };
 
 const calculateRemainingTime = (startDateStr, endDateStr) => {
   if (!endDateStr || !startDateStr) return "No timeline";
-  
+
   const now = new Date();
   const start = new Date(startDateStr);
   const end = new Date(endDateStr);
-  
+
   if (isNaN(start.getTime()) || isNaN(end.getTime())) return "Invalid date";
   if (end < start) return "Invalid timeline";
-  
+
   const effectiveStart = now > start ? now : start;
   const diffMs = end - effectiveStart;
-  
+
   if (diffMs < 0) {
     const absDiffMs = Math.abs(diffMs);
     const days = Math.floor(absDiffMs / 86400000);
     const hours = Math.floor((absDiffMs % 86400000) / 3600000);
-    return `${days} days, ${hours} h overdue`;
+    return `${days} days, ${hours} h`;
   }
-  
+
   const days = Math.floor(diffMs / 86400000);
   const hours = Math.floor((diffMs % 86400000) / 3600000);
-  return `${days} days ${hours} h remaining`;
+  return `${days} days ${hours} h`;
 };
 
-// Timeline Range Picker Component
-const TimelineRangePicker = ({ task, onSave, isOpen, onToggle }) => {
-  const [startDate, setStartDate] = useState(
-    task.timeline_start ? new Date(task.timeline_start) : null
-  );
-  const [endDate, setEndDate] = useState(
-    task.timeline_end ? new Date(task.timeline_end) : null
-  );
+const LinkDropdown = ({ value, onChange, onSave, onCancel }) => {
+  const linkOptions = [
+    { value: "", label: "Select Link Type" },
+    { value: "ad", label: "Ad" },
+    { value: "outreach", label: "Outreach" },
+    { value: "referral", label: "Referral" },
+    { value: "event", label: "Event" },
+  ];
 
-  const handleSave = () => {
-    const startDateStr = startDate ? startDate.toISOString().split("T")[0] : null;
-    const endDateStr = endDate ? endDate.toISOString().split("T")[0] : null;
-    
-    onSave(task.id, {
-      timeline_start: startDateStr,
-      timeline_end: endDateStr
-    });
-    onToggle();
-  };
-
-  const handleCancel = () => {
-    setStartDate(task.timeline_start ? new Date(task.timeline_start) : null);
-    setEndDate(task.timeline_end ? new Date(task.timeline_end) : null);
-    onToggle();
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="absolute top-full mt-1 left-1/2 transform -translate-x-1/2 z-[10000] bg-white border border-gray-300 rounded-lg shadow-2xl p-4 min-w-[320px]">
-      <div className="space-y-4">
-        <div className="text-sm font-semibold text-gray-700 text-center">
-          Select Timeline Range
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Start Date
-            </label>
-            <ReactDatePicker
-              selected={startDate}
-              onChange={(date) => setStartDate(date)}
-              selectsStart
-              startDate={startDate}
-              endDate={endDate}
-              placeholderText="Start date"
-              className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              dateFormat="yyyy-MM-dd"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              End Date
-            </label>
-            <ReactDatePicker
-              selected={endDate}
-              onChange={(date) => setEndDate(date)}
-              selectsEnd
-              startDate={startDate}
-              endDate={endDate}
-              minDate={startDate}
-              placeholderText="End date"
-              className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              dateFormat="yyyy-MM-dd"
-            />
-          </div>
-        </div>
-        
-        {startDate && endDate && (
-          <div className="text-center py-2 px-3 bg-blue-50 rounded-md">
-            <div className="text-xs text-gray-600">Timeline:</div>
-            <div className="text-sm font-medium text-blue-700">
-              {calculateRemainingTime(
-                startDate.toISOString().split("T")[0],
-                endDate.toISOString().split("T")[0]
-              )}
-            </div>
-          </div>
-        )}
-        
-        <div className="flex justify-end gap-2 pt-2 border-t border-gray-200">
-          <button
-            onClick={handleCancel}
-            className="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            className="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
-            disabled={!startDate || !endDate}
-          >
-            Save
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Timeline Cell Component
-const TimelineCell = ({ task, onTimelineUpdate }) => {
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
-
-  const handleSave = async (taskId, timelineData) => {
-    try {
-      // Update local state
-      onTimelineUpdate(taskId, timelineData);
-      
-      // Update on server
-      await updateLeads(taskId, timelineData);
-      console.log("✅ Timeline updated on server");
-      
-      setIsPickerOpen(false);
-    } catch (error) {
-      console.error("❌ Error updating timeline:", error);
-    }
-  };
-
-  const togglePicker = () => {
-    setIsPickerOpen(!isPickerOpen);
+  const handleChange = (e) => {
+    onChange(e.target.value);
+    onSave();
   };
 
   return (
-    <td className="p-4 border-r border-gray-200 relative">
-      <div className="flex justify-center items-center gap-2">
-        <span 
-          onClick={togglePicker}
-          className="text-sm font-medium text-gray-700 cursor-pointer hover:text-blue-600 hover:underline transition-colors px-2 py-1 rounded hover:bg-blue-50"
-          title="Click to edit timeline"
+    <select
+      value={value || ""}
+      onChange={handleChange}
+      onBlur={onSave}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") onSave();
+        if (e.key === "Escape") onCancel();
+      }}
+      className="w-full h-full text-center focus:outline-none border-none appearance-none bg-transparent"
+    >
+      {linkOptions.map((option) => (
+        <option
+          key={option.value}
+          value={option.value}
+          className="bg-white text-black"
         >
-          {calculateRemainingTime(task.timeline_start, task.timeline_end)}
-        </span>
-        
-        <TimelineRangePicker
-          task={task}
-          onSave={handleSave}
-          isOpen={isPickerOpen}
-          onToggle={togglePicker}
-        />
-      </div>
-      
-      {/* Backdrop to close picker when clicking outside */}
-      {isPickerOpen && (
-        <div 
-          className="fixed inset-0 z-[1000]" 
-          onClick={togglePicker}
-        />
-      )}
-    </td>
+          {option.label}
+        </option>
+      ))}
+    </select>
   );
 };
 
@@ -218,151 +103,82 @@ const TimelineCell = ({ task, onTimelineUpdate }) => {
 const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
   const [userOptions, setUserOptions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        // Try to get current user first
-        let myData = null;
-        try {
-          const meRes = await getMe();
-          console.log("Current user response:", meRes);
-          
-          if (meRes.data) {
-            myData = {
-              id: meRes.data.id,
-              name: meRes.data.first_name || `${meRes.data.first_name || ''} ${meRes.data.last_name || ''}`.trim() || "Me",
-              email: meRes.data.email,
-              profile_picture: getAbsoluteImageUrl(meRes.data.profile_picture),
-              isCurrentUser: true
-            };
-            setCurrentUser(myData);
-            console.log("Current user data:", myData);
-          }
-        } catch (meErr) {
-          console.warn("Failed to fetch current user, using fallback:", meErr);
-          // If getMe fails, we'll try to identify current user from MSales users list
-          // This is a fallback approach
-        }
-
-        // Fetch all MSales users
         const res = await getMSalesUsers();
-        console.log("MSales users response:", res);
 
         if (res.data && Array.isArray(res.data)) {
-          // If we couldn't get current user from getMe, try to find them in MSales users
-          if (!myData) {
-            // This is a simple fallback - you might want to implement a better way
-            // to identify the current user (e.g., from localStorage, context, etc.)
-            const firstUser = res.data[0];
-            if (firstUser) {
-              myData = {
-                id: firstUser.id,
-                name: firstUser.fullname || `${firstUser.first_name || ''} ${firstUser.last_name || ''}`.trim() || "Me",
-                email: firstUser.email,
-                profile_picture: getAbsoluteImageUrl(firstUser.profile_picture),
-                isCurrentUser: true
-              };
-              setCurrentUser(myData);
-            }
-          }
-          
-          const otherUsers = res.data
-            .filter(user => {
-              // Filter out current user if we have it
-              const isDifferentUser = user.id !== myData?.id;
-              console.log(`Filtering user ${user.id} (${user.fullname}): ${isDifferentUser}`);
-              return isDifferentUser;
-            })
-            .map(user => ({
+          setUserOptions(
+            res.data.map((user) => ({
               id: user.id,
-              name: user.fullname || `${user.first_name || ''} ${user.last_name || ''}`.trim() || "Unknown User",
+              name:
+                user.fullname ||
+                `${user.first_name} ${user.last_name}` ||
+                "Unknown User",
               email: user.email,
               profile_picture: getAbsoluteImageUrl(user.profile_picture),
-              isCurrentUser: false
-            }));
-
-          // Current user first, then others
-          const allUsers = myData ? [myData, ...otherUsers] : otherUsers;
-          setUserOptions(allUsers);
-          console.log("Final user options:", allUsers);
-        } else {
-          console.warn("No users data received or invalid format");
+            }))
+          );
         }
       } catch (err) {
         console.error("Failed to fetch users:", err);
-        
-        // Fallback - if API fails, at least show current user if we have it
-        if (currentUser) {
-          setUserOptions([currentUser]);
-        }
       }
     };
-    
     fetchUsers();
   }, []);
 
   const handleChange = async (selectedUserId) => {
-    const selectedUser = userOptions.find(u => u.id === selectedUserId);
-    
+    const selectedUser = userOptions.find((u) => u.id === selectedUserId);
+
     const personDetail = {
       id: selectedUser.id,
-      fullname: selectedUser.name, 
-      profile_picture: selectedUser.profile_picture
+      fullname: selectedUser.name,
+      profile_picture: selectedUser.profile_picture,
     };
-    
+
     onChange(personDetail);
-    
+
+    // Update on server - person_detail field ni yangilaymiz
     try {
       await updateLeads(taskId, { person: selectedUserId });
     } catch (err) {
       console.error("Failed to update owner:", err);
     }
-    
+
     setIsOpen(false);
     onSave();
   };
 
-    const renderOwnerAvatar = (owner) => {
-    if (owner?.profile_picture) {
-      return (
-        <img 
-          src={getAbsoluteImageUrl(owner.profile_picture)} 
-          alt={owner.fullname} 
-          className="w-full h-full object-cover"
-        />
-      );
-    } else {
-      // Default user icon
-      return (
-        <svg 
-          className="w-5 h-5 text-white" 
-          fill="currentColor" 
-          viewBox="0 0 20 20"
-        >
-          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-        </svg>
-      );
-    }
-  };
-
   return (
     <div className="relative">
-       <button
+      <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 w-full hover:bg-gray-50 p-1 rounded transition-colors"
       >
         <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 overflow-hidden">
-          {renderOwnerAvatar(currentOwner)}
+          {currentOwner?.profile_picture ? (
+            <img
+              src={getAbsoluteImageUrl(currentOwner.profile_picture)}
+              alt={currentOwner.fullname}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            currentOwner?.fullname
+              ?.split(" ")
+              .map((n) => n[0])
+              .join("") || "?"
+          )}
         </div>
         <span className="text-gray-700 truncate flex-1 text-left">
-          {currentOwner?.fullname || "No Owner"}
+          {currentOwner?.fullname || "Unknown Person"}
         </span>
         <ChevronDown className="w-4 h-4 text-gray-400" />
       </button>
-       {isOpen && (
-        <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[100000] min-w-[200px] max-h-60 overflow-y-auto">
+
+      {isOpen && (
+        <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[1000] min-w-[200px] max-h-60 overflow-y-auto">
           {userOptions.map((user) => (
             <button
               key={user.id}
@@ -371,25 +187,20 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
             >
               <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 overflow-hidden">
                 {user.profile_picture ? (
-                  <img 
-                    src={user.profile_picture} 
-                    alt={user.name} 
+                  <img
+                    src={user.profile_picture}
+                    alt={user.name}
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <svg 
-                    className="w-4 h-4 text-white" 
-                    fill="currentColor" 
-                    viewBox="0 0 20 20"
-                  >
-                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                  </svg>
+                  user.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
                 )}
               </div>
               <div className="flex-1 truncate">
-                <div className="font-medium">
-                  {user.isCurrentUser ? `${user.name} (Me)` : user.name}
-                </div>
+                <div className="font-medium">{user.name}</div>
                 {user.email && (
                   <div className="text-xs text-gray-500">{user.email}</div>
                 )}
@@ -397,12 +208,6 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
             </button>
           ))}
         </div>
-      )}
-       {isOpen && (
-        <div 
-          className="fixed inset-0 z-[99999]" 
-          onClick={() => setIsOpen(false)}
-        />
       )}
     </div>
   );
@@ -417,19 +222,21 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
     const fetchStatuses = async () => {
       try {
         const allStatuses = [];
-        
+
+        // First, get statuses from leads
         try {
           const leadsRes = await getLeads();
           if (leadsRes.data && Array.isArray(leadsRes.data)) {
-            leadsRes.data.forEach(lead => {
+            leadsRes.data.forEach((lead) => {
               if (lead.status && lead.status.name && lead.status.id) {
-                if (!allStatuses.find(s => s.id === lead.status.id)) {
+                // Check if status already exists to avoid duplicates
+                if (!allStatuses.find((s) => s.id === lead.status.id)) {
                   allStatuses.push({
                     id: lead.status.id,
                     name: lead.status.name,
                     icon: getStatusIcon(lead.status.name),
                     lightBg: getStatusLightBg(lead.status.name),
-                    textColor: getStatusTextColor(lead.status.name)
+                    textColor: getStatusTextColor(lead.status.name),
                   });
                 }
               }
@@ -438,36 +245,37 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
         } catch (leadsErr) {
           console.error("Error fetching statuses from leads:", leadsErr);
         }
-        
         try {
           const boardsRes = await getBoardsAll();
           console.log("📊 Boards API response:", boardsRes);
-          
+
           if (boardsRes.data && Array.isArray(boardsRes.data)) {
-            boardsRes.data.forEach(board => {
+            boardsRes.data.forEach((board) => {
+              // Check if board has statuses array
               if (board.statuses && Array.isArray(board.statuses)) {
-                board.statuses.forEach(status => {
-                  if (!allStatuses.find(s => s.id === status.id)) {
+                board.statuses.forEach((status) => {
+                  if (!allStatuses.find((s) => s.id === status.id)) {
                     allStatuses.push({
                       id: status.id,
                       name: status.name,
                       color: status.color || "#6b7280",
                       icon: getStatusIcon(status.name),
                       lightBg: getStatusLightBg(status.name),
-                      textColor: getStatusTextColor(status.name)
+                      textColor: getStatusTextColor(status.name),
                     });
                   }
                 });
-              } 
+              }
+              // If boards themselves are statuses (based on your API response)
               else if (board.id && board.name) {
-                if (!allStatuses.find(s => s.id === board.id)) {
+                if (!allStatuses.find((s) => s.id === board.id)) {
                   allStatuses.push({
                     id: board.id,
                     name: board.name,
                     color: board.color || "#6b7280",
                     icon: getStatusIcon(board.name),
                     lightBg: getStatusLightBg(board.name),
-                    textColor: getStatusTextColor(board.name)
+                    textColor: getStatusTextColor(board.name),
                   });
                 }
               }
@@ -476,74 +284,160 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
         } catch (boardsErr) {
           console.error("Error fetching statuses from boards:", boardsErr);
         }
-        
+
+        // Set the combined status options
         setStatusOptions(allStatuses);
         console.log("📊 Final combined status options:", allStatuses);
-        
       } catch (err) {
         console.error("Failed to fetch statuses:", err);
-        
+
+        // Fallback to default statuses if API calls fail
         const fallbackStatuses = [
-          { id: 'default-1', name: 'Not Started', icon: XCircle, lightBg: 'bg-gray-50', textColor: 'text-gray-700' },
-          { id: 'default-2', name: 'Working on it', icon: Circle, lightBg: 'bg-yellow-50', textColor: 'text-yellow-700' },
-          { id: 'default-3', name: 'Stuck', icon: AlertCircle, lightBg: 'bg-red-50', textColor: 'text-red-700' },
-          { id: 'default-4', name: 'Done', icon: CheckCircle2, lightBg: 'bg-green-50', textColor: 'text-green-700' }
+          {
+            id: "default-1",
+            name: "Not Started",
+            icon: XCircle,
+            lightBg: "bg-gray-50",
+            textColor: "text-gray-700",
+          },
+          {
+            id: "default-2",
+            name: "Working on it",
+            icon: Circle,
+            lightBg: "bg-yellow-50",
+            textColor: "text-yellow-700",
+          },
+          {
+            id: "default-3",
+            name: "Stuck",
+            icon: AlertCircle,
+            lightBg: "bg-red-50",
+            textColor: "text-red-700",
+          },
+          {
+            id: "default-4",
+            name: "Done",
+            icon: CheckCircle2,
+            lightBg: "bg-green-50",
+            textColor: "text-green-700",
+          },
         ];
         setStatusOptions(fallbackStatuses);
       }
     };
-    
+
     fetchStatuses();
   }, []);
 
   const getStatusIcon = (statusName) => {
     if (!statusName) return Circle;
     const name = statusName.toLowerCase();
-    if (name.includes("done") || name.includes("complete") || name.includes("finished")) return CheckCircle2;
-    if (name.includes("working") || name.includes("progress") || name.includes("doing")) return Circle;
-    if (name.includes("stuck") || name.includes("blocked") || name.includes("issue")) return AlertCircle;
-    if (name.includes("not started") || name.includes("todo") || name.includes("pending")) return XCircle;
+    if (
+      name.includes("done") ||
+      name.includes("complete") ||
+      name.includes("finished")
+    )
+      return CheckCircle2;
+    if (
+      name.includes("working") ||
+      name.includes("progress") ||
+      name.includes("doing")
+    )
+      return Circle;
+    if (
+      name.includes("stuck") ||
+      name.includes("blocked") ||
+      name.includes("issue")
+    )
+      return AlertCircle;
+    if (
+      name.includes("not started") ||
+      name.includes("todo") ||
+      name.includes("pending")
+    )
+      return XCircle;
     return Circle;
   };
 
   const getStatusLightBg = (statusName) => {
     if (!statusName) return "bg-gray-50";
     const name = statusName.toLowerCase();
-    if (name.includes("done") || name.includes("complete") || name.includes("finished")) return "bg-green-50";
-    if (name.includes("working") || name.includes("progress") || name.includes("doing")) return "bg-yellow-50";
-    if (name.includes("stuck") || name.includes("blocked") || name.includes("issue")) return "bg-red-50";
-    if (name.includes("not started") || name.includes("todo") || name.includes("pending")) return "bg-gray-50";
+    if (
+      name.includes("done") ||
+      name.includes("complete") ||
+      name.includes("finished")
+    )
+      return "bg-green-50";
+    if (
+      name.includes("working") ||
+      name.includes("progress") ||
+      name.includes("doing")
+    )
+      return "bg-yellow-50";
+    if (
+      name.includes("stuck") ||
+      name.includes("blocked") ||
+      name.includes("issue")
+    )
+      return "bg-red-50";
+    if (
+      name.includes("not started") ||
+      name.includes("todo") ||
+      name.includes("pending")
+    )
+      return "bg-gray-50";
     return "bg-blue-50";
   };
 
   const getStatusTextColor = (statusName) => {
     if (!statusName) return "text-gray-500";
     const name = statusName.toLowerCase();
-    if (name.includes("done") || name.includes("complete") || name.includes("finished")) return "text-green-700";
-    if (name.includes("working") || name.includes("progress") || name.includes("doing")) return "text-yellow-700";
-    if (name.includes("stuck") || name.includes("blocked") || name.includes("issue")) return "text-red-700";
-    if (name.includes("not started") || name.includes("todo") || name.includes("pending")) return "text-gray-700";
+    if (
+      name.includes("done") ||
+      name.includes("complete") ||
+      name.includes("finished")
+    )
+      return "text-green-700";
+    if (
+      name.includes("working") ||
+      name.includes("progress") ||
+      name.includes("doing")
+    )
+      return "text-yellow-700";
+    if (
+      name.includes("stuck") ||
+      name.includes("blocked") ||
+      name.includes("issue")
+    )
+      return "text-red-700";
+    if (
+      name.includes("not started") ||
+      name.includes("todo") ||
+      name.includes("pending")
+    )
+      return "text-gray-700";
     return "text-blue-700";
   };
 
   const handleChange = async (selectedStatusId) => {
-    const selectedStatus = statusOptions.find(s => s.id === selectedStatusId);
+    const selectedStatus = statusOptions.find((s) => s.id === selectedStatusId);
     onChange(selectedStatus);
-    
+
+    // Update on server
     try {
       await updateLeads(taskId, { status: selectedStatus });
     } catch (err) {
       console.error("Failed to update status:", err);
     }
-    
+
     setIsOpen(false);
   };
 
-  const currentStatus = statusOptions.find(s => s.name === value) || {
+  const currentStatus = statusOptions.find((s) => s.name === value) || {
     name: value || "No Status",
     icon: Circle,
     lightBg: "bg-gray-50",
-    textColor: "text-gray-500"
+    textColor: "text-gray-500",
   };
 
   const StatusIcon = currentStatus.icon;
@@ -558,9 +452,9 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
         {currentStatus.name}
         <ChevronDown className="w-3 h-3" />
       </button>
-      
+
       {isOpen && (
-        <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[10000] min-w-[200px] max-h-60 overflow-y-auto">
+        <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[] min-w-[160px] max-h-60 overflow-y-auto">
           {statusOptions.map((status) => {
             const OptionIcon = status.icon;
             return (
@@ -659,6 +553,7 @@ const Table = () => {
   const [statusOptions, setStatusOptions] = useState([]);
   const [isAddingLead, setIsAddingLead] = useState(false);
   const [newLeadTitle, setNewLeadTitle] = useState("");
+  const [editingTimelineId, setEditingTimelineId] = useState(null);
 
   const statusConfig = {
     Done: {
@@ -696,6 +591,7 @@ const Table = () => {
   const fieldMap = {
     task: "name",
     progress: "potential_value",
+    // Add more if needed
   };
 
   const convertApiLeadsToTasks = (leads) => {
@@ -717,20 +613,10 @@ const Table = () => {
       team: lead.link || "General",
       phone: lead.phone || "",
       notes: lead.notes || "",
+      // Owner sifatida person_detail ni ishlatamiz
       owner: lead.person_detail || null,
       source: "api",
     }));
-  };
-
-  // Timeline update handler
-  const handleTimelineUpdate = (taskId, timelineData) => {
-    setApiLeads(prevLeads => 
-      prevLeads.map(lead => 
-        lead.id === taskId 
-          ? { ...lead, ...timelineData }
-          : lead
-      )
-    );
   };
 
   const loadLeadsFromAPI = async (groupId = null) => {
@@ -873,7 +759,6 @@ const Table = () => {
           lead.id === taskId ? { ...lead, status: newStatus } : lead
         )
       );
-      
       await updateLeads(taskId, { status: newStatus });
       console.log("✅ Status updated on server");
       setOpenStatusDropdown(null);
@@ -982,6 +867,46 @@ const Table = () => {
       setLoading(false);
     }
   };
+
+  // Table.jsx ichida
+  // const handleAddLead = async (e) => {
+  //   if (e.key === "Enter" && newLeadTitle.trim()) {
+  //     try {
+  //       const res = await fetch(
+  //         "https://prototype-production-2b67.up.railway.app/board/leads/",
+  //         {
+  //           method: "POST",
+  //           headers: {
+  //             "Content-Type": "application/json",
+  //           },
+  //           body: JSON.stringify({
+  //             group: groupId, // ✅ Har doim group ID birinchi bo‘lib qo‘yiladi
+  //             name: newLeadTitle, // foydalanuvchi inputdan kiritgan title
+  //             phone: "",
+  //             link: "",
+  //             person: null,
+  //             notes: "",
+  //             status: null,
+  //             order: 0,
+  //             potential_value: 0,
+  //             timeline_start: new Date(),
+  //             timeline_end: new Date(),
+  //           }),
+  //         }
+  //       );
+
+  //       const data = await res.json();
+  //       console.log("Lead yaratildi:", data);
+
+  //       // yangi leadni filteredTasks massiviga qo‘shib qo‘yish
+  //       setFilteredTasks((prev) => [...prev, data]);
+  //       setNewLeadTitle("");
+  //       setIsAddingLead(false);
+  //     } catch (err) {
+  //       console.error("Xatolik:", err);
+  //     }
+  //   }
+  // };
 
   return (
     <div className="h-auto md:min-w-[95%]">
@@ -1133,10 +1058,12 @@ const Table = () => {
                           />
                         </div>
                       </td>
-                      <td className=" p-4 border-r border-gray-200 relative">
-                      <OwnerDropdown
+                      <td className="p-4 border-r border-gray-200 ">
+                        <OwnerDropdown
                           currentOwner={task.owner}
-                          onChange={(newOwner) => handleOwnerChange(task.id, newOwner)}
+                          onChange={(newOwner) =>
+                            handleOwnerChange(task.id, newOwner)
+                          }
                           onSave={() => {}}
                           taskId={task.id}
                         />
@@ -1146,11 +1073,12 @@ const Table = () => {
                           {task.team}
                         </span>
                       </td>
-                      <td className="  p-4 border-r border-gray-200 relative">
+                      <td className="p-4 border-r border-gray-200">
                         <StatusDropdown
-                          className="status-dropdown-container relative"
                           value={task.status}
-                          onChange={(newStatus) => handleStatusChange(task.id, newStatus)}
+                          onChange={(newStatus) =>
+                            handleStatusChange(task.id, newStatus)
+                          }
                           taskId={task.id}
                         />
                       </td>
@@ -1179,10 +1107,39 @@ const Table = () => {
                           />
                         </div>
                       </td>
-                      <TimelineCell
-                        task={task}
-                        onTimelineUpdate={handleTimelineUpdate}
-                      />
+                      <td className="p-4 border-r border-gray-200">
+                        <div className="flex justify-center items-center gap-2">
+                          {editingTimelineId === task.id ? (
+                            <ReactDatePicker
+                              selected={
+                                task.timeline_end
+                                  ? new Date(task.timeline_end)
+                                  : null
+                              }
+                              onChange={(date) => {
+                                const dateStr = date
+                                  ? date.toISOString().split("T")[0]
+                                  : null;
+                                handleChange(task.id, "timeline_end", dateStr);
+                                handleSave(task.id, "timeline_end");
+                                setEditingTimelineId(null);
+                              }}
+                              placeholderText="Select end date"
+                              className="text-sm font-medium text-gray-700 border-none outline-none text-center"
+                            />
+                          ) : (
+                            <span
+                              // onClick={() => setEditingTimelineId(task.id)}
+                              className="text-sm font-medium text-gray-700 cursor-pointer"
+                            >
+                              {calculateRemainingTime(
+                                task.timeline_start,
+                                task.timeline_end
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="p-4 border-r border-gray-200"></td>
                     </tr>
                   );
@@ -1202,7 +1159,7 @@ const Table = () => {
                         type="text"
                         value={newLeadTitle}
                         onChange={(e) => setNewLeadTitle(e.target.value)}
-                        onKeyPress={handleAddLead}
+                        onKeyPress={handleAddLead} // ✅ shu joy POST qiladi
                         placeholder="Enter lead title"
                         className="font-medium text-gray-900 hover:text-blue-600 cursor-text transition-colors truncate pr-2 border-none outline-none bg-transparent w-full text-center"
                         autoFocus
@@ -1272,9 +1229,12 @@ const Table = () => {
                   </td>
                   <td className="p-4 border-r border-gray-200">
                     <div className="flex justify-center items-center gap-2">
-                      <span className="text-sm font-medium text-gray-400">
-                        No timeline
-                      </span>
+                      <ReactDatePicker
+                        selected={null}
+                        placeholderText="Timeline"
+                        disabled
+                        className="text-sm font-medium text-gray-400 border-none outline-none text-center"
+                      />
                     </div>
                   </td>
                   <td className="p-4 border-r border-gray-200"></td>
@@ -1286,7 +1246,16 @@ const Table = () => {
       </div>
 
       <style>{`
-        @keyframes slideIn {      
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
 
         .custom-scrollbar::-webkit-scrollbar {
           height: 8px;
@@ -1315,9 +1284,12 @@ const Table = () => {
           z-index: 1;
         }
 
-       
+        tbody tr.relative.z-50 {
+          position: relative !important;
+          z-index: 50 !important;
+        }
 
-        .status-dropdown-container > div {
+        .status-dropdown-container > div {git 
           position: absolute !important;
           z-index: 1000 !important;
         }
