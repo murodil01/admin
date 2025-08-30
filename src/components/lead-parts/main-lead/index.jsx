@@ -25,7 +25,8 @@ const STORAGE_KEY_EXPANDED = "my-app-groups-expanded";
 const MainLead = () => {
   const { boardId } = useParams();
   const navigate = useNavigate();
-
+  const [tableSelectedRows, setTableSelectedRows] = useState([]);
+  const [showTableView, setShowTableView] = useState(false);
   const [groups, setGroups] = useState([]);
   const [expandedGroups, setExpandedGroups] = useState({});
   const [selectedItems, setSelectedItems] = useState([]);
@@ -35,7 +36,9 @@ const MainLead = () => {
   const [availableBoards, setAvailableBoards] = useState([]);
 
   const toastShownRef = useRef(false);
+  
 
+  
   // Boardlarni yuklash
   useEffect(() => {
     const fetchBoards = async () => {
@@ -76,7 +79,7 @@ const MainLead = () => {
               return {
                 id: group.id,
                 title: group.name || "Untitled Group",
-                items: [], // agar leadlarni olishda xato bo‘lsa, bo‘sh array
+                items: [],
               };
             }
           })
@@ -90,7 +93,7 @@ const MainLead = () => {
       } catch (err) {
         console.error("getGroups/getLeads xatosi:", err);
         toast.error("Guruh yoki leadlarni yuklashda xato ❌");
-        setGroups([]); // fallback: bo‘sh array
+        setGroups([]);
       } finally {
         setLoading(false);
       }
@@ -134,29 +137,30 @@ const MainLead = () => {
     try {
       await deleteGroup(groupId, boardId);
       toast.success("Guruh o'chirildi ✅");
+      
+      // Guruhni o'chirishdan oldin selection larni tozalash
+      setSelectedItems((prev) => prev.filter((s) => s.groupId !== groupId));
+      
     } catch (err) {
       console.error("deleteGroup xatosi:", err.response?.data || err);
       toast.error("Guruh o'chirilmadi ❌");
     }
+    
     setGroups((prev) => prev.filter((g) => g.id !== groupId));
     setExpandedGroups((prev) => {
       const copy = { ...prev };
       delete copy[groupId];
       return copy;
     });
-    setSelectedItems((prev) => prev.filter((s) => s.groupId !== groupId));
   };
 
-  // Lead update
+  // Guruh nomini yangilash
   const updateGroupTitle = async (groupId, newTitle) => {
     const oldTitle = groups.find((g) => g.id === groupId)?.title;
 
     try {
       const res = await updateGroup(groupId, { name: newTitle }, boardId);
-
-      // Backenddan qaytgan yangi nomdan foydalanish
       const updatedTitle = res.data.name || newTitle;
-
       toast.success("Guruh nomi yangilandi ✅");
 
       setGroups((prev) =>
@@ -166,14 +170,13 @@ const MainLead = () => {
       console.error("updateGroup xatosi:", err.response?.data || err);
       toast.error("Guruh nomini yangilashda xato ❌");
 
-      // Xatolik yuz bersa, eski nomni qaytarish
       setGroups((prev) =>
         prev.map((g) => (g.id === groupId ? { ...g, title: oldTitle } : g))
       );
     }
   };
 
-  // Lead qo‘shish
+  // Lead qo'shish
   const addItemToGroup = async (groupId, newItem) => {
     try {
       const res = await createLeads({ ...newItem, group: groupId });
@@ -189,6 +192,7 @@ const MainLead = () => {
     }
   };
 
+  // Lead yangilash
   const updateItemInGroup = async (groupId, itemIndex, updatedItem) => {
     const group = groups.find((g) => g.id === groupId);
     if (!group) {
@@ -203,7 +207,7 @@ const MainLead = () => {
     }
 
     const leadId = oldItem.id;
-    const realGroupId = oldItem.group; // backend kutadi
+    const realGroupId = oldItem.group;
 
     try {
       const res = await updateLeads(realGroupId, leadId, updatedItem);
@@ -228,6 +232,7 @@ const MainLead = () => {
     }
   };
 
+  // Lead o'chirish
   const deleteItemFromGroup = async (groupId, itemIndex) => {
     const group = groups.find((g) => g.id === groupId);
     if (!group) return;
@@ -236,7 +241,15 @@ const MainLead = () => {
     if (!item) return;
 
     try {
-      await deleteLeads(item.group, item.id); // item.group va item.id yuboriladi
+      await deleteLeads(item.group, item.id);
+      
+      // Selection dan ham o'chirish
+      setSelectedItems((prev) =>
+        prev.filter(
+          (s) => !(s.groupId === groupId && s.itemIndex === itemIndex)
+        )
+      );
+      
       setGroups((prev) =>
         prev.map((g) =>
           g.id === groupId
@@ -244,11 +257,7 @@ const MainLead = () => {
             : g
         )
       );
-      setSelectedItems((prev) =>
-        prev.filter(
-          (s) => !(s.groupId === groupId && s.itemIndex === itemIndex)
-        )
-      );
+      
       toast.success("Lead o'chirildi ✅");
     } catch (err) {
       console.error("deleteLeads xatosi:", err);
@@ -256,16 +265,25 @@ const MainLead = () => {
     }
   };
 
+  // Guruhni yoyish/yig'ish
   const toggleExpanded = (groupId) => {
-    setExpandedGroups((prev) => ({
-      ...prev,
-      [groupId]: !prev[groupId],
-    }));
+    const newExpanded = {
+      ...expandedGroups,
+      [groupId]: !expandedGroups[groupId],
+    };
+    setExpandedGroups(newExpanded);
+    localStorage.setItem(STORAGE_KEY_EXPANDED, JSON.stringify(newExpanded));
   };
 
+  // Item tanlash/bekor qilish
   const toggleSelectItem = (groupId, itemIndex, isSelected) => {
     if (isSelected) {
-      setSelectedItems((prev) => [...prev, { groupId, itemIndex }]);
+      setSelectedItems((prev) => {
+        // Agar allaqachon mavjud bo'lsa, takrorlamaymiz
+        const exists = prev.some(s => s.groupId === groupId && s.itemIndex === itemIndex);
+        if (exists) return prev;
+        return [...prev, { groupId, itemIndex }];
+      });
     } else {
       setSelectedItems((prev) =>
         prev.filter(
@@ -275,44 +293,105 @@ const MainLead = () => {
     }
   };
 
-  const handleDeleteSelected = () => {
-    selectedItems.forEach(({ groupId, itemIndex }) =>
-      deleteItemFromGroup(groupId, itemIndex)
-    );
+  // Tanlangan itemlarni o'chirish
+  const handleDeleteSelected = async () => {
+    if (selectedItems.length === 0) return;
+
+    const confirmDelete = window.confirm(`${selectedItems.length} ta lead o'chirilsinmi?`);
+    if (!confirmDelete) return;
+
+    // Har bir tanlangan itemni o'chirish
+    for (const { groupId, itemIndex } of selectedItems) {
+      await deleteItemFromGroup(groupId, itemIndex);
+    }
+    
     setSelectedItems([]);
+    toast.success(`${selectedItems.length} ta lead o'chirildi ✅`);
   };
 
-  const handleDuplicateSelected = () => {
-    selectedItems.forEach(({ groupId, itemIndex }) => {
+  // Tanlangan itemlarni nusxalash
+  const handleDuplicateSelected = async () => {
+    if (selectedItems.length === 0) return;
+
+    for (const { groupId, itemIndex } of selectedItems) {
       const group = groups.find((g) => g.id === groupId);
-      if (group) {
+      if (group && group.items[itemIndex]) {
         const item = group.items[itemIndex];
-        addItemToGroup(groupId, { ...item, name: `${item.name} copy` });
+        await addItemToGroup(groupId, { 
+          ...item, 
+          name: `${item.name} (copy)`,
+          id: undefined // ID ni o'chiramiz, yangi yaratilishi uchun
+        });
       }
-    });
+    }
+    
     setSelectedItems([]);
+    toast.success(`${selectedItems.length} ta lead nusxalandi ✅`);
   };
 
+  // Tanlangan itemlarni export qilish
   const handleExportSelected = () => {
+    if (selectedItems.length === 0) return;
+
     const data = selectedItems
       .map(({ groupId, itemIndex }) => {
         const group = groups.find((g) => g.id === groupId);
-        return group ? group.items[itemIndex] : null;
+        return group && group.items[itemIndex] ? group.items[itemIndex] : null;
       })
       .filter(Boolean);
-    console.log("Exported data:", data);
-    toast.success("Items exported to console ✅");
+
+    // JSON formatda export qilish
+    const jsonData = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `selected-leads-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
     setSelectedItems([]);
+    toast.success(`${data.length} ta lead export qilindi ✅`);
   };
 
+  // Tanlangan itemlarni arxivlash
   const handleArchiveSelected = () => {
-    toast.success("Items archived ✅");
+    if (selectedItems.length === 0) return;
+    
+    // Bu yerda arxivlash logikasini yozasiz
+    console.log("Arxivlash uchun:", selectedItems);
+    toast.success(`${selectedItems.length} ta lead arxivlandi ✅`);
     setSelectedItems([]);
   };
 
+  // Tanlangan itemlarni ko'chirish
   const handleMoveTo = () => {
-    toast.success("Moved items ✅");
+    if (selectedItems.length === 0) return;
+    
+    // Bu yerda ko'chirish logikasini yozasiz (modal oynasi bilan)
+    console.log("Ko'chirish uchun:", selectedItems);
+    toast.success(`${selectedItems.length} ta lead ko'chirildi ✅`);
     setSelectedItems([]);
+  };
+
+  // Barcha itemlarni tanlash/bekor qilish
+  const handleSelectAll = () => {
+    const allItems = [];
+    groups.forEach(group => {
+      group.items.forEach((_, itemIndex) => {
+        allItems.push({ groupId: group.id, itemIndex });
+      });
+    });
+
+    if (selectedItems.length === allItems.length) {
+      // Agar barcha tanlangan bo'lsa, hammasi ni bekor qilish
+      setSelectedItems([]);
+    } else {
+      // Barcha itemlarni tanlash
+      setSelectedItems(allItems);
+    }
   };
 
   if (loading) {
@@ -337,8 +416,11 @@ const MainLead = () => {
     );
   }
 
+  // Jami itemlar soni
+  const totalItems = groups.reduce((sum, group) => sum + group.items.length, 0);
+
   return (
-    <div className="bg-gray-50 py-2 px-4 sm:px-6 lg:px-8 rounded-b-[8px]   overflow-x">
+    <div className="bg-gray-50 py-2 px-4 sm:px-6 lg:px-8 rounded-b-[8px] overflow-x">
       {showBoardSelector && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-md w-full">
@@ -361,9 +443,38 @@ const MainLead = () => {
               className="mt-4 bg-gray-300 px-4 py-2 rounded-[8px] w-full"
               onClick={() => setShowBoardSelector(false)}
             >
-              Cansel
+              Cancel
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Select All tugmasi */}
+      {totalItems > 0 && (
+        <div className="mb-4 flex items-center justify-between">
+          <button
+            onClick={handleSelectAll}
+            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
+          >
+            <input
+              type="checkbox"
+              checked={selectedItems.length === totalItems && totalItems > 0}
+              onChange={handleSelectAll}
+              className="rounded"
+            />
+            {selectedItems.length === totalItems && totalItems > 0
+              ? "Barchasini bekor qilish"
+              : "Barchasini tanlash"}
+            {totalItems > 0 && (
+              <span className="text-gray-500">({totalItems})</span>
+            )}
+          </button>
+          
+          {selectedItems.length > 0 && (
+            <span className="text-sm text-gray-600">
+              {selectedItems.length} / {totalItems} tanlangan
+            </span>
+          )}
         </div>
       )}
 
@@ -384,7 +495,7 @@ const MainLead = () => {
               key={group.id}
               id={group.id}
               items={group.items}
-              title={group.title} // ✅ TO‘G‘RI
+              title={group.title}
               expanded={!!expandedGroups[group.id]}
               onToggleExpanded={() => toggleExpanded(group.id)}
               updateTitle={updateGroupTitle}
@@ -395,9 +506,7 @@ const MainLead = () => {
               selected={selectedItems
                 .filter((s) => s.groupId === group.id)
                 .map((s) => s.itemIndex)}
-              onToggleSelect={(itemIndex, isSelected) =>
-                toggleSelectItem(group.id, itemIndex, isSelected)
-              }
+              onToggleSelect={toggleSelectItem}
             />
           ))
         )}
@@ -411,71 +520,79 @@ const MainLead = () => {
       ) : groups.length > 0 ? (
         <button
           onClick={() => setAddingGroup(true)}
-          className="mt-5 flex items-center justify-center gap-2 bg-[#7D8592] hover:bg-gray-600 text-white px-5 py-[6px] text-[16px] rounded-[8px] font-medium transition-colors "
+          className="mt-5 flex items-center justify-center gap-2 bg-[#7D8592] hover:bg-gray-600 text-white px-5 py-[6px] text-[16px] rounded-[8px] font-medium transition-colors"
         >
           <Plus className="w-5 h-5" /> Add new group
         </button>
       ) : null}
 
+      {/* Selected Items Actions Panel */}
       {selectedItems.length > 0 && (
-        <div className="mt-5 max-w-[1000px] mx-auto bg-[#F2F2F2] p-4 flex flex-wrap items-center justify-center shadow-lg rounded-[8px]">
-          <div className="flex flex-wrap items-center gap-4 font-medium text-[#313131] text-[14px] sm:text-[16px] justify-center w-full md:w-auto">
-            <div className="flex items-center gap-2 sm:gap-4 text-black rounded-full px-2 sm:px-3 py-1 font-semibold">
-              <span className="bg-[#0061FE] px-2 sm:px-[10px] py-[2px] text-[14px] sm:text-[16px] text-white rounded-full">
-                {selectedItems.length}
-              </span>
-              Selected leads
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-40 max-w-[95vw]">
+          <div className="bg-white border border-gray-200 shadow-2xl p-4 flex flex-wrap items-center justify-center rounded-lg">
+            <div className="flex flex-wrap items-center gap-4 font-medium text-[#313131] text-[14px] sm:text-[16px] justify-center w-full md:w-auto">
+              <div className="flex items-center gap-2 sm:gap-4 text-black rounded-full px-2 sm:px-3 py-1 font-semibold">
+                <span className="bg-[#0061FE] px-2 sm:px-[10px] py-[2px] text-[14px] sm:text-[16px] text-white rounded-full">
+                  {selectedItems.length}
+                </span>
+                Selected leads
+              </div>
+
+              <button
+                onClick={handleDuplicateSelected}
+                className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-gray-50 p-2 rounded-md transition-colors"
+                title="Copy selected items"
+              >
+                <Copy size={16} />
+                <span className="text-xs sm:text-sm">Copy</span>
+              </button>
+
+              <button
+                onClick={handleExportSelected}
+                className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-gray-50 p-2 rounded-md transition-colors"
+                title="Export selected items"
+              >
+                <CiExport size={16} />
+                <span className="text-xs sm:text-sm">Export</span>
+              </button>
+
+              <button
+                onClick={handleArchiveSelected}
+                className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-gray-50 p-2 rounded-md transition-colors"
+                title="Archive selected items"
+              >
+                <BiArchiveIn size={16} />
+                <span className="text-xs sm:text-sm">Archive</span>
+              </button>
+
+              <button
+                onClick={handleDeleteSelected}
+                className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-red-50 text-red-600 p-2 rounded-md transition-colors"
+                title="Delete selected items"
+              >
+                <Trash2 size={16} />
+                <span className="text-xs sm:text-sm">Delete</span>
+              </button>
+
+              <button
+                onClick={handleMoveTo}
+                className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-gray-50 p-2 rounded-md transition-colors"
+                title="Move selected items"
+              >
+                <ArrowRight size={16} />
+                <span className="text-xs sm:text-sm">Move to</span>
+              </button>
+
+              <div className="hidden sm:block h-7 w-[1px] bg-gray-300 mx-2"></div>
+
+              <button
+                onClick={() => setSelectedItems([])}
+                className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 p-2 rounded-md transition-colors"
+                title="Clear selection"
+              >
+                <X size={20} />
+              </button>
             </div>
-
-            <button
-              onClick={handleDuplicateSelected}
-              className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px]"
-            >
-              <Copy size={15} />
-              <span className="text-xs sm:text-sm">Copy</span>
-            </button>
-
-            <button
-              onClick={handleExportSelected}
-              className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px]"
-            >
-              <CiExport size={15} />
-              <span className="text-xs sm:text-sm">Export</span>
-            </button>
-
-            <button
-              onClick={handleArchiveSelected}
-              className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px]"
-            >
-              <BiArchiveIn size={15} />
-              <span className="text-xs sm:text-sm">Archive</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleDeleteSelected}
-              className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px]"
-            >
-              <Trash2 size={15} />
-              <span className="text-xs sm:text-sm">Delete</span>
-            </button>
-
-            <button
-              onClick={handleMoveTo}
-              className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px]"
-            >
-              <ArrowRight size={15} />
-              <span className="text-xs sm:text-sm">Move to</span>
-            </button>
-
-            <div className="hidden sm:block h-7 w-[1px] bg-[#313131] mx-2"></div>
-
-            <button
-              onClick={() => setSelectedItems([])}
-              className="text-gray-500 hover:text-gray-700 p-[10px] rounded-[8px] border"
-            >
-              <X size={20} />
-            </button>
           </div>
         </div>
       )}
