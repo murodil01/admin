@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useCallback, useRef } from 'react';
 import api from '../api/base';
 import { roleHierarchy, ROLES } from '../components/constants/roles';
 
@@ -6,34 +6,154 @@ const AuthContext = createContext();
 
 export default AuthContext;
 
+// Token expiry checker
+const isTokenExpired = (token) => {
+    if (!token) return true;
+    
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const currentTime = Date.now() / 1000;
+        return payload.exp < currentTime;
+    } catch {
+        return true;
+    }
+};
+
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(() => {
-        // Dastlabki qiymat sifatida localStorage'dan token borligini tekshirish
-        const token = localStorage.getItem('token');
-        return token ? { role: 'loading' } : null;
-    });
     const [authState, setAuthState] = useState({
         user: null,
         loading: true,
         error: null
     });
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
 
-    const fetchUser = async () => {
+    // Refresh timer reference
+    const refreshTimerRef = useRef(null);
+    const isRefreshingRef = useRef(false);
+
+    // Clear refresh timer
+    const clearRefreshTimer = useCallback(() => {
+        if (refreshTimerRef.current) {
+            clearTimeout(refreshTimerRef.current);
+            refreshTimerRef.current = null;
+        }
+    }, []);
+
+    // Set up automatic token refresh
+    const setupAutoRefresh = useCallback((token) => {
+        if (!token) return;
+
         try {
-            setAuthState(prev => ({ ...prev, loading: true }));
-            setLoading(true);
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const expiryTime = payload.exp * 1000;
+            const currentTime = Date.now();
+            
+            // Refresh 5 minutes before expiry
+            const refreshTime = expiryTime - currentTime - 5 * 60 * 1000;
+            
+            if (refreshTime > 0) {
+                console.log(`🔄 Auto refresh scheduled in ${Math.floor(refreshTime / 1000 / 60)} minutes`);
+                
+                clearRefreshTimer();
+                refreshTimerRef.current = setTimeout(() => {
+                    console.log('⏰ Auto refresh triggered');
+                    refreshTokens();
+                }, refreshTime);
+            }
+        } catch (error) {
+            console.error('❌ Error setting up auto refresh:', error);
+        }
+    }, []);
+
+    // Refresh tokens function
+    const refreshTokens = useCallback(async () => {
+        // Prevent concurrent refresh attempts
+        if (isRefreshingRef.current) {
+            console.log('🔄 Refresh already in progress, skipping...');
+            return false;
+        }
+
+        isRefreshingRef.current = true;
+        console.log('🔄 Refreshing tokens...');
+
+        try {
+            const refreshToken = localStorage.getItem('refreshToken');
+            
+            if (!refreshToken) {
+                console.log('❌ No refresh token found');
+                throw new Error('No refresh token available');
+            }
+
+            const { data } = await api.post('/auth/refresh', {
+                refreshToken
+            }, {
+                withCredentials: true,
+                validateStatus: (status) => status < 500
+            });
+
+            if (data.accessToken) {
+                console.log('✅ Tokens refreshed successfully');
+                localStorage.setItem('token', data.accessToken);
+                
+                if (data.refreshToken) {
+                    localStorage.setItem('refreshToken', data.refreshToken);
+                }
+
+                // Setup next auto refresh
+                setupAutoRefresh(data.accessToken);
+                
+                // Update user data
+                await fetchUser();
+                return true;
+            } else {
+                throw new Error('No access token in response');
+            }
+        } catch (error) {
+            console.error('❌ Token refresh failed:', error);
+            
+            // Clear tokens and redirect to login
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            document.cookie = 'token=; Max-Age=0; path=/;';
+            
+            setAuthState({
+                user: null,
+                loading: false,
+                error: 'Session expired. Please login again.'
+            });
+
+            return false;
+        } finally {
+            isRefreshingRef.current = false;
+        }
+    }, []);
+
+    // Optimized fetchUser with retry logic
+    const fetchUser = useCallback(async (retryCount = 0) => {
+        console.log('🔄 fetchUser started');
+        
+        try {
+            setAuthState(prev => ({ ...prev, loading: true, error: null }));
+            
+            const token = localStorage.getItem('token');
+            
+            // Check if token is expired
+            if (token && isTokenExpired(token)) {
+                console.log('⚠️ Token expired, attempting refresh...');
+                const refreshSuccess = await refreshTokens();
+                
+                if (!refreshSuccess) {
+                    return null;
+                }
+            }
+
+            console.log('📡 Making API request to /me');
+            
             const { data } = await api.get('me', {
                 withCredentials: true,
                 validateStatus: (status) => status < 500
             });
 
-            setAuthState({
-                user: data,
-                loading: false,
-                error: null
-            });
+            console.log('📥 API response received:', data);
 
             if (!data?.id) {
                 throw new Error('User data incomplete - Missing ID');
@@ -43,91 +163,222 @@ export const AuthProvider = ({ children }) => {
             const userData = {
                 id: data.id,
                 email: data.email,
-                role: data.role?.toLowerCase() || 'user', // Ensure lowercase for consistency
-                ...data // Include any additional fields
+                first_name: data.first_name,
+                last_name: data.last_name,
+                profile_picture: data.profile_picture,
+                role: data.role?.toLowerCase() || 'user',
+                ...data
             };
 
-            setUser(userData);
-            setError(null);
+            console.log('✅ User data normalized:', userData);
+
+            setAuthState({
+                user: userData,
+                loading: false,
+                error: null
+            });
+
             return userData;
+            
         } catch (err) {
+            console.error('❌ Auth error:', err.message);
+            
+            // Retry once with token refresh for 401/403 errors
+            if ((err.response?.status === 401 || err.response?.status === 403) && retryCount === 0) {
+                console.log('🔄 Attempting token refresh and retry...');
+                const refreshSuccess = await refreshTokens();
+                
+                if (refreshSuccess) {
+                    return fetchUser(1); // Retry once
+                }
+            }
+            
             setAuthState({
                 user: null,
                 loading: false,
                 error: err.message
             });
-            console.error('Auth error:', err.message);
-            setUser(null);
-            setError(err.message);
-            // Clear auth state on error
+
+            // Clear tokens on persistent auth errors
             if (err.response?.status === 401 || err.response?.status === 403) {
-                document.cookie = 'token=; Max-Age=0; path=/;';
+                console.log('🗑️ Clearing tokens due to auth error');
                 localStorage.removeItem('token');
+                localStorage.removeItem('refreshToken');
+                document.cookie = 'token=; Max-Age=0; path=/;';
+                clearRefreshTimer();
             }
-            throw err; // Re-throw for calling functions
-        } finally {
-            setLoading(false);
+            
+            return null;
         }
-    };
+    }, [refreshTokens, clearRefreshTimer]);
 
+    // Initialize auth on mount
     useEffect(() => {
-        fetchUser();
-    }, []);
+        const initAuth = async () => {
+            const token = localStorage.getItem('token');
+            const refreshToken = localStorage.getItem('refreshToken');
+            
+            console.log('🔑 Token check:', {
+                accessToken: token ? `Found: ${token.substring(0, 20)}...` : 'Not found',
+                refreshToken: refreshToken ? 'Found' : 'Not found'
+            });
+            
+            if (token) {
+                // Check if token is expired
+                if (isTokenExpired(token)) {
+                    console.log('⚠️ Access token expired on init');
+                    
+                    if (refreshToken) {
+                        console.log('🔄 Attempting initial token refresh...');
+                        const refreshSuccess = await refreshTokens();
+                        
+                        if (refreshSuccess) {
+                            return; // fetchUser will be called in refreshTokens
+                        }
+                    }
+                    
+                    // No valid tokens, clear state
+                    console.log('❌ No valid tokens, clearing state');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('refreshToken');
+                    setAuthState({
+                        user: null,
+                        loading: false,
+                        error: null
+                    });
+                    return;
+                }
+                
+                console.log('🚀 Valid token found, fetching user');
+                setupAutoRefresh(token);
+                await fetchUser();
+            } else {
+                console.log('⭕ No access token found');
+                setAuthState({
+                    user: null,
+                    loading: false,
+                    error: null
+                });
+            }
+        };
+        
+        initAuth();
 
-    const login = async (credentials) => {
+        // Cleanup on unmount
+        return () => {
+            clearRefreshTimer();
+        };
+    }, [fetchUser, refreshTokens, setupAutoRefresh, clearRefreshTimer]);
+
+    // Enhanced login function
+    const login = useCallback(async (credentials) => {
+        console.log('🔐 Login attempt started');
+        
         try {
-            setLoading(true);
-            const { data } = await api.post('/login', credentials, {
+            setAuthState(prev => ({ ...prev, loading: true, error: null }));
+            
+            const { data } = await api.post('/auth/login', credentials, {
                 withCredentials: true
             });
 
-            // If using JWT tokens
-            if (data.token) {
-                localStorage.setItem('token', data.token);
+            console.log('✅ Login successful');
+
+            // Store tokens
+            if (data.accessToken) {
+                localStorage.setItem('token', data.accessToken);
+                setupAutoRefresh(data.accessToken);
+            }
+            
+            if (data.refreshToken) {
+                localStorage.setItem('refreshToken', data.refreshToken);
             }
 
-            const userData = await fetchUser(); // Refresh user data
+            const userData = await fetchUser();
             return { success: true, user: userData };
+            
         } catch (err) {
             const errorMsg = err.response?.data?.message || err.message;
-            setError(errorMsg);
+            console.error('❌ Login error:', errorMsg);
+            
+            setAuthState(prev => ({
+                ...prev,
+                loading: false,
+                error: errorMsg
+            }));
+            
             return { success: false, error: errorMsg };
-        } finally {
-            setLoading(false);
         }
-    };
+    }, [fetchUser, setupAutoRefresh]);
 
-    const logout = async () => {
+    // Enhanced logout function
+    const logout = useCallback(async () => {
+        console.log('👋 Logout started');
+        
+        // Clear refresh timer immediately
+        clearRefreshTimer();
+        
         try {
-            await api.post('/logout', {}, { withCredentials: true });
+            const refreshToken = localStorage.getItem('refreshToken');
+            
+            await api.post('/auth/logout', {
+                refreshToken
+            }, { 
+                withCredentials: true 
+            });
+            
+            console.log('✅ Logout API call successful');
+        } catch (error) {
+            console.error('❌ Logout error:', error);
         } finally {
-            setUser(null);
-            setError(null);
-            // Clear all auth tokens
-            document.cookie = 'token=; Max-Age=0; path=/;';
+            // Clear all auth data
+            setAuthState({
+                user: null,
+                loading: false,
+                error: null
+            });
+            
             localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            document.cookie = 'token=; Max-Age=0; path=/;';
+            
+            console.log('🧹 Auth state cleared');
         }
-    };
+    }, [clearRefreshTimer]);
 
-    const value = {
-        ...authState,
-        user,
-        loading,
-        error,
+    // Log auth state changes (in development only)
+    useEffect(() => {
+        if (process.env.NODE_ENV === 'development') {
+            console.log('📊 Auth state updated:', {
+                user: authState.user ? `User: ${authState.user.first_name || authState.user.email}` : 'No user',
+                loading: authState.loading,
+                error: authState.error,
+                isAuthenticated: !!authState.user
+            });
+        }
+    }, [authState]);
+
+    // Memoized context value
+    const contextValue = {
+        user: authState.user,
+        loading: authState.loading,
+        isLoading: authState.loading,
+        error: authState.error,
         isAuthenticated: !!authState.user,
         role: authState.user?.role,
-        isFounder: user?.role === 'founder',
-        isManager: user ? roleHierarchy[user.role] >= roleHierarchy[ROLES.MANAGER] : false,
-        isHeads: user ? roleHierarchy[user.role] >= roleHierarchy[ROLES.HEADS] : false,
-        isEmployee: user?.role === 'employee',
+        isFounder: authState.user?.role === 'founder',
+        isManager: authState.user ? roleHierarchy[authState.user.role] >= roleHierarchy[ROLES.MANAGER] : false,
+        isHeads: authState.user ? roleHierarchy[authState.user.role] >= roleHierarchy[ROLES.HEADS] : false,
+        isEmployee: authState.user?.role === 'employee',
+        
+        // Methods
         login,
         logout,
-        refreshAuth: fetchUser
+        refreshAuth: fetchUser,
+        refreshTokens
     };
 
-
     return (
-        <AuthContext.Provider value={value}>
+        <AuthContext.Provider value={contextValue}>
             {children}
         </AuthContext.Provider>
     );

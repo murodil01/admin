@@ -17,7 +17,7 @@ export const createTask = (formData) => {
 export const updateTask = (id, data) => {
   // Agar data FormData bo'lsa, multipart/form-data ishlatamiz
   if (data instanceof FormData) {
-    return api.put(endpoints.tasks.update(id), data, {
+    return api.patch(endpoints.tasks.update(id), data, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -41,6 +41,8 @@ export const getProjectTaskById = (id) =>
   api.get(endpoints.projects.getByIdTasks(id));
 export const getProjectUsers = (id) =>
   api.get(endpoints.projects.getByIdUsers(id));
+export const updateProjectUsers = (id) =>
+  api.patch(endpoints.projects.updateByIdUsers(id));
 
 export const getTaskFiles = () => api.get(endpoints.tasks.getTaskFiles);
 export const uploadTaskFile = (formData) =>
@@ -96,3 +98,8 @@ export const createComment = async (commentData) => {
     throw error;
   }
 };
+
+export const deleteTaskComment = (id) =>
+  api.delete(endpoints.tasks.deleteComments(id));
+  export const updateTaskComment = (id, data) =>
+  api.patch(endpoints.tasks.updateComments(id), data);

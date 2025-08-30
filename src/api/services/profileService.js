@@ -2,21 +2,22 @@
 import api from "../base";
 import endpoints from "../endpoint";
 
-const API_BASE = "https://prototype-production-2b67.up.railway.app"; // sizning backend host
+const API_BASE = api.defaults.baseURL.replace(/\/$/, '');
 
 // Login qilingan user profilini olish
 export const getMyProfile = async () => {
     const url = endpoints.users.me;
-    console.log("🌐 GET Profil so'rovi URL:", url);
 
     try {
         const res = await api.get(url);
         let data = res.data;
 
-        if (data.profile_picture && data.profile_picture.startsWith("/")) {
-            data.profile_picture = `${API_BASE}${data.profile_picture}`;
+        if (data.profile_picture) {
+            const profilePicturePath = data.profile_picture.startsWith('/')
+                ? data.profile_picture
+                : `/${data.profile_picture}`;
+            data.profile_picture = `${API_BASE}${profilePicturePath}`;
         }
-        console.log("✅ Profil ma'lumotlari:", res.data);
         return data;
     } catch (error) {
         console.error("❌ Profilni olishda xatolik:", error.response?.data || error.message);
@@ -32,7 +33,6 @@ export const updateMyProfile = async (data) => {
         const id = me.id;
 
         const url = endpoints.users.updateProfile(id);
-        console.log("🌐 PATCH Profil yangilash URL:", url);
 
         let res;
         const allowedFields = [
@@ -72,7 +72,6 @@ export const updateMyProfile = async (data) => {
             res = await api.patch(url, jsonData);
         }
 
-        console.log("✅ Profil yangilandi:", res.data);
         return res.data;
     } catch (error) {
         console.error("❌ Profilni yangilashda xatolik:", error);

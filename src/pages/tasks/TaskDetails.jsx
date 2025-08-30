@@ -1,4 +1,3 @@
-///////////////////////////////////////////////////////////////////////////////TaskDetails.jsx
 import { AiOutlinePaperClip } from "react-icons/ai";
 import { useParams, useNavigate } from "react-router-dom";
 import { FiTrash } from "react-icons/fi";
@@ -17,8 +16,10 @@ import memberSearch from "../../assets/icons/memberSearch.svg";
 import {
   createTask,
   getProjectTaskById,
+  getTaskTags,
   getProjectUsers,
 } from "../../api/services/taskService";
+import { getProjectById } from "../../api/services/projectService";
 import dayjs from "dayjs";
 
 import { Permission } from "../../components/Permissions";
@@ -27,31 +28,6 @@ import { ROLES } from "../../components/constants/roles";
 
 const { TextArea } = Input;
 
-// Add this function to your taskService.js file
-const getTaskTags = async () => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    throw new Error("No authentication token found");
-  }
-
-  const response = await fetch('https://prototype-production-2b67.up.railway.app/project/tags/', {
-    method: 'GET',
-    headers: {
-      'accept': 'application/json',
-      'Authorization': `Bearer ${token}`, // Add Bearer token
-      'Content-Type': 'application/json',
-    },
-  });
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      throw new Error("Authentication failed");
-    }
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  return await response.json();
-};
 
 const TaskDetails = ({ tagOptionsFromApi = [] }) => {
   const { projectId } = useParams();
@@ -69,14 +45,27 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
   const [files, setFiles] = useState([]);
   const [checklist, setChecklist] = useState([]);
   const [cards, setCards] = useState([]);
-  const [type, setType] = useState("acknowledged");
+  const [type, setType] = useState("assigned");
   const [selectedAssignee, setSelectedAssignee] = useState(null);
   const [assignees, setAssignees] = useState([]);
   const [loadingAssignees, setLoadingAssignees] = useState(false);
   const [loadingTags, setLoadingTags] = useState(false);
-  const [file, setFile] = useState(null);       // File object
+  const [file, setFile] = useState(null); // File object
   const [preview, setPreview] = useState(null);
+  const [projectName, setProjectName] = useState("");
   const { user, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (projectId) {
+      getProjectById(projectId)
+        .then((response) => {
+          setProjectName(response.name); // Adjust according to your API response structure
+        })
+        .catch((error) => {
+          console.error("Error fetching project:", error);
+        });
+    }
+  }, [projectId]);
 
   useEffect(() => {
     if (!file) {
@@ -94,23 +83,23 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
     const fetchTags = async () => {
       setLoadingTags(true);
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          message.error("Please log in to access tags");
-          return;
-        }
-
-        const tagsData = await getTaskTags();
+        const response = await getTaskTags();
+        const tagsData = response.data;
         // API dan array qaytarsa to'g'ridan-to'g'ri ishlatamiz, aks holda bo'sh array
         setTagOptions(Array.isArray(tagsData) ? tagsData : []);
       } catch (error) {
         console.error("Error fetching tags:", error);
-        if (error.message.includes("Authentication")) {
-          message.error("Session expired. Please log in again.");
+
+        // ✅ Error handling
+        if (error.response?.status === 401) {
+          console.error("Authentication failed. Please log in again.");
+        } else if (error.response?.status === 403) {
+          console.error("Permission denied to access tags.");
         } else {
-          message.error("Failed to load tags");
+          console.error("Failed to load tags");
         }
-        // Set empty array as fallback
+
+        // ✅ Fallback - bo'sh array set qilish
         setTagOptions([]);
       } finally {
         setLoadingTags(false);
@@ -137,9 +126,9 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
       .catch((err) => {
         console.error("Error fetching tasks:", err);
         if (err.response?.status === 401) {
-          message.error("Session expired. Please log in again.");
+          console.error("Session expired. Please log in again.");
         } else {
-          message.error("Failed to fetch tasks");
+          console.error("Failed to fetch tasks");
         }
       });
   }, [projectId]);
@@ -162,11 +151,17 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
 
       const response = await getProjectUsers(projectId);
 
-      const userOptions = response.data.map(user => ({
-        label: user.name || user.username || `${user.first_name} ${user.last_name}`.trim() || "Unknown User",
-        value: user.id || user.user_id,
+      // ✅ Yangi data structure: response.users arrayini ishlatamiz
+      const users = response.users || response.data?.users || [];
+
+      const userOptions = users.map((user) => ({
+        label:
+          `${user.first_name} ${user.last_name}`.trim() ||
+          user.email ||
+          "Unknown User",
+        value: user.id,
         avatar: user.avatar || user.profile_picture,
-        email: user.email
+        email: user.email,
       }));
 
       setAssignees(userOptions);
@@ -182,13 +177,12 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
   const getAssigneeName = (assigneeId) => {
     if (!assigneeId) return "Not assigned";
 
-    const user = assignees.find(u => u.value === assigneeId);
+    const user = assignees.find((u) => u.value === assigneeId);
     return user ? user.label : "Unknown user";
   };
 
   // Helper to map API tasks to card format
   const mapTasksToCards = (tasks) => {
-
     if (!Array.isArray(tasks)) {
       console.warn("Tasks is not an array:", typeof tasks, tasks);
       return [];
@@ -198,15 +192,19 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
       title: task.name || "Untitled Task",
       time: task.deadline
         ? new Date(task.deadline).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        })
+            month: "short",
+            day: "numeric",
+          })
         : "No due date",
       description: task.description,
       assignee: {
-        name: task.assigned?.length > 0
-          ? task.assigned.map(id => getAssigneeName(id)).filter(name => name !== "Unknown user").join(", ") || "Unknown"
-          : "Not assigned",
+        name:
+          task.assigned?.length > 0
+            ? task.assigned
+                .map((id) => getAssigneeName(id))
+                .filter((name) => name !== "Unknown user")
+                .join(", ") || "Unknown"
+            : "Not assigned",
         avatar: "bg-blue-500",
       },
       progress: task.progress || 0,
@@ -232,130 +230,131 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
     setImage(null);
   };
 
- const handleSave = async () => {
-  // Validation
-  if (!title.trim()) {
-    message.error("Please enter a column title");
-    return;
-  }
-  if (!type) {
-    message.error("Please select a type");
-    return;
-  }
-
-  // Retrieve token
-  const token = localStorage.getItem("token");
-  if (!token) {
-    message.error("Please log in to create a task");
-    return;
-  }
-
-  // Prepare FormData for API
-  const formData = new FormData();
-  formData.append('name', title);
-  formData.append('description', description || ''); // Bo'sh bo'lsa ham string yuborish
-  formData.append('tasks_type', type);
-  formData.append('project', projectId);
-
-  // ✅ FIX 1: Deadline format - faqat sana tanlangan bo'lsa yuborish
-  if (date) {
-    // Agar date string bo'lsa
-    if (typeof date === 'string') {
-      formData.append('deadline', date);
-    } else {
-      // Agar dayjs object bo'lsa
-      formData.append('deadline', dayjs(date).format("YYYY-MM-DD"));
+  const handleSave = async () => {
+    // Validation
+    if (!title.trim()) {
+      message.error("Please enter a column title");
+      return;
     }
-  }
-  // deadline bo'sh bo'lsa hech narsa yubormaslik
+    if (!type) {
+      message.error("Please select a type");
+      return;
+    }
 
-  // ✅ FIX 2: tags_ids - faqat tanlangan bo'lsa yuborish
-  if (tags && tags.length > 0) {
-    tags.forEach(tagId => {
-      formData.append('tags_ids', tagId);
+    // Retrieve token
+    const token = localStorage.getItem("token");
+    if (!token) {
+      message.error("Please log in to create a task");
+      return;
+    }
+
+    // Prepare FormData for API
+    const formData = new FormData();
+    formData.append("name", title);
+    formData.append("description", description || ""); // Bo'sh bo'lsa ham string yuborish
+    formData.append("tasks_type", type);
+    formData.append("project", projectId);
+
+    // ✅ FIX 1: Deadline format - faqat sana tanlangan bo'lsa yuborish
+    if (date) {
+      // Agar date string bo'lsa
+      if (typeof date === "string") {
+        formData.append("deadline", date);
+      } else {
+        // Agar dayjs object bo'lsa
+        formData.append("deadline", dayjs(date).format("YYYY-MM-DD"));
+      }
+    }
+    // deadline bo'sh bo'lsa hech narsa yubormaslik
+
+    // ✅ FIX 2: tags_ids - faqat tanlangan bo'lsa yuborish
+    if (tags && tags.length > 0) {
+      tags.forEach((tagId) => {
+        formData.append("tags_ids", tagId);
+      });
+    }
+
+    // ✅ FIX 3: assigned - to'g'ri format
+    if (selectedAssignee) {
+      // Backend list kutayapti, lekin JSON.stringify ishlatmasdan
+      // har bir element uchun alohida append qilish
+      formData.append("assigned", selectedAssignee);
+    }
+
+    // ✅ FIX 4: task_image - faqat file tanlangan bo'lsa yuborish
+    if (file && file instanceof File) {
+      formData.append("task_image", file);
+    }
+
+    // Append other files if any
+    files.forEach((fileItem) => {
+      if (fileItem instanceof File) {
+        formData.append("files", fileItem);
+      }
     });
-  }
 
-  // ✅ FIX 3: assigned - to'g'ri format
-  if (selectedAssignee) {
-    // Backend list kutayapti, lekin JSON.stringify ishlatmasdan
-    // har bir element uchun alohida append qilish
-    formData.append('assigned', selectedAssignee);
-  }
-
-  // ✅ FIX 4: task_image - faqat file tanlangan bo'lsa yuborish
-  if (file && file instanceof File) {
-    formData.append('task_image', file);
-  }
-
-  // Append other files if any
-  files.forEach((fileItem) => {
-    if (fileItem instanceof File) {
-      formData.append('files', fileItem);
+    // Debug: FormData ni tekshirish
+    console.log("FormData contents:");
+    for (let [key, value] of formData.entries()) {
+      console.log(`${key}:`, value);
     }
-  });
 
-  // Debug: FormData ni tekshirish
-  console.log('FormData contents:');
-  for (let [key, value] of formData.entries()) {
-    console.log(`${key}:`, value);
-  }
+    try {
+      // Call createTask API
+      const response = await createTask(formData);
+      const newTask = response.data;
 
-  try {
-    // Call createTask API
-    const response = await createTask(formData);
-    const newTask = response.data;
+      // Map the new task to card format
+      const completedChecks = checklist.filter(
+        (item) => item.text && item.text.trim() !== ""
+      ).length;
+      const totalChecks = checklist.length;
 
-    // Map the new task to card format
-    const completedChecks = checklist.filter(
-      (item) => item.text && item.text.trim() !== ""
-    ).length;
-    const totalChecks = checklist.length;
+      // Find the assignee name from the assignees array
+      const assigneeName =
+        assignees.find((a) => a.value === selectedAssignee)?.label || "Unknown";
 
-    // Find the assignee name from the assignees array
-    const assigneeName = assignees.find(a => a.value === selectedAssignee)?.label || "Unknown";
+      const newCard = {
+        id: newTask.id,
+        title: newTask.name,
+        time: newTask.deadline
+          ? new Date(newTask.deadline).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+            })
+          : "No due date",
+        description: newTask.description,
+        assignee: {
+          name: assigneeName,
+          avatar: "bg-blue-500",
+        },
+        tags: newTask.tags || newTask.tags_ids || tags,
+        checklistProgress: `${completedChecks}/${totalChecks || 0}`,
+        column: newTask.tasks_type,
+        files,
+      };
 
-    const newCard = {
-      id: newTask.id,
-      title: newTask.name,
-      time: newTask.deadline
-        ? new Date(newTask.deadline).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        })
-        : "No due date",
-      description: newTask.description,
-      assignee: {
-        name: assigneeName,
-        avatar: "bg-blue-500",
-      },
-      tags: newTask.tags || newTask.tags_ids || tags,
-      checklistProgress: `${completedChecks}/${totalChecks || 0}`,
-      column: newTask.tasks_type,
-      files,
-    };
+      setCards((prev) => [...prev, newCard]);
+      message.success("Task created successfully!");
 
-    setCards((prev) => [...prev, newCard]);
-    message.success("Task created successfully!");
+      // Reset form
+      handleCancel();
+    } catch (error) {
+      console.error("Error creating task:", error);
 
-    // Reset form
-    handleCancel();
-  } catch (error) {
-    console.error("Error creating task:", error);
-    
-    // ✅ Batafsil error log qilish
-    if (error.response) {
-      console.error("Response data:", error.response.data);
-      console.error("Response status:", error.response.status);
+      // ✅ Batafsil error log qilish
+      if (error.response) {
+        console.error("Response data:", error.response.data);
+        console.error("Response status:", error.response.status);
+      }
+
+      if (error.response?.status === 401) {
+        console.error("Session expired. Please log in again.");
+      } else {
+        console.error(error.response?.data?.message || "Failed to create task");
+      }
     }
-    
-    if (error.response?.status === 401) {
-      message.error("Session expired. Please log in again.");
-    } else {
-      message.error(error.response?.data?.message || "Failed to create task");
-    }
-  }
-};
+  };
 
   const toggleTag = (tagId) => {
     console.log("Toggling tag ID:", tagId, "Current tags:", tags);
@@ -373,7 +372,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
         <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
-          Project name
+          {projectName || "Loading..."}
         </h3>
         <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
           <button
@@ -404,7 +403,9 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
           <div className="px-3 sm:px-4 py-8">
             <div className=" flex justify-center items-center md:justify-between flex-wrap gap-4 mb-6">
               <div className=" w-[100%] flex md:max-w-[250px] flex-col">
-                <label className="mb-1" htmlFor="">Column title</label>
+                <label className="mb-1" htmlFor="">
+                  Column title
+                </label>
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -420,7 +421,9 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                 />
               </div>
               <div className="  w-[100%] md:max-w-[250px] flex flex-col ">
-                <label className=" mb-1" htmlFor="">Type</label>
+                <label className=" mb-1" htmlFor="">
+                  Type
+                </label>
                 <Select
                   className="custom-select  flex-1 min-w-[250px]"
                   value={type}
@@ -437,7 +440,6 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                   ]}
                 />
               </div>
-
               <Upload
                 className="w-[100%] md:max-w-[250px]"
                 style={{ width: "100%" }}
@@ -448,14 +450,15 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                     message.error("Only image files are allowed!");
                     return false;
                   }
-                  setFile(file)
+                  setFile(file);
                   setImage(file);
                   return false;
                 }}
               >
-
                 <div className=" w-[100%] flex   flex-col">
-                  <label className=" mb-1" htmlFor="">Image</label>
+                  <label className=" mb-1" htmlFor="">
+                    Image
+                  </label>
                   <Button
                     style={{ height: "54px", borderRadius: "14px" }}
                     className="  flex justify-between border border-gray-300"
@@ -491,7 +494,6 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                 </div>
               )}
             </div>
-
             <div className="mb-6">
               <label className="block font-bold text-[14px] text-[#7D8592] mb-2">
                 Description
@@ -506,7 +508,12 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
 
             <div className="flex flex-wrap gap-4 mb-6">
               <div className="relative flex-1 flex flex-col flex-wrap md:col-span-2">
-                <label className=" mb-1 font-bold text-[14px] text-[#7D8592]" htmlFor="">Deadline</label>
+                <label
+                  className=" mb-1 font-bold text-[14px] text-[#7D8592]"
+                  htmlFor=""
+                >
+                  Deadline
+                </label>
                 <DatePicker
                   className=" w-full"
                   onChange={(_, dateStr) => setDate(dateStr)}
@@ -517,11 +524,16 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                 />
               </div>
               <div className="relative flex-1 flex flex-col flex-wrap md:col-span-2">
-                <label className=" mb-1 font-bold text-[14px] text-[#7D8592]" htmlFor="">Notification</label>
+                <label
+                  className=" mb-1 font-bold text-[14px] text-[#7D8592]"
+                  htmlFor=""
+                >
+                  Notification
+                </label>
                 <Select
                   className="w-full"
                   optionFilterProp="label"
-                  style={{ borderRadius: "8px", height: "40px", }}
+                  style={{ borderRadius: "8px", height: "40px" }}
                   value={notification}
                   onChange={setNotification}
                   options={[
@@ -529,15 +541,19 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                     { value: "Off", label: "Off" },
                   ]}
                 />
-
               </div>
               <div className="relative flex-1 flex flex-col flex-wrap md:col-span-2">
-
-                <label className="  mb-1 flex-1 font-bold text-[14px] text-[#7D8592]" htmlFor="">Assignee</label>
+                <label
+                  className="  mb-1 flex-1 font-bold text-[14px] text-[#7D8592]"
+                  htmlFor=""
+                >
+                  Assignee
+                </label>
                 <Select
-
                   showSearch
-                  placeholder={loadingAssignees ? "Loading users..." : "Change assignee"}
+                  placeholder={
+                    loadingAssignees ? "Loading users..." : "Change assignee"
+                  }
                   optionFilterProp="label"
                   value={selectedAssignee}
                   onChange={setSelectedAssignee}
@@ -548,21 +564,18 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                   style={{
                     borderRadius: "8px",
                     height: "40px",
-
                   }}
                   filterOption={(input, option) =>
                     (option?.label ?? "")
                       .toLowerCase()
                       .includes(input.toLowerCase())
                   }
-                  notFoundContent={loadingAssignees ? "Loading..." : "No users found"}
+                  notFoundContent={
+                    loadingAssignees ? "Loading..." : "No users found"
+                  }
                 />
                 <span className="absolute inset-y-11.5 right-6 flex items-center pointer-events-none">
-                  <img
-                    src={memberSearch}
-                    alt="search"
-                    className="w-5 h-5"
-                  />
+                  <img src={memberSearch} alt="search" className="w-5 h-5" />
                 </span>
               </div>
             </div>
@@ -571,24 +584,36 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
               <label className="block text-sm text-gray-400 mb-2 font-bold">
                 Task tags
               </label>
-              <div className="grid grid-cols-2 gap-2  w-[300px]">
-                {tagOptions.map((tag) => (
-                  <label
-                    key={tag.id}
-                    className="flex items-center gap-2    text-[12px] cursor-pointer capitalize font-semi-bold text-gray-400"
-                  >
 
-                    <input
-                      type="checkbox"
-                      checked={tags.includes(tag.id)}
-                      onChange={() => toggleTag(tag.id)}
-                    />
-                    {tag.name}
-                  </label>
-                ))}
-              </div>
+              {/* ✅ Loading state ko'rsatish */}
+              {loadingTags ? (
+                <div className="text-center py-4">
+                  <span>Loading tags...</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {tagOptions.length > 0 ? (
+                    tagOptions.map((tag) => (
+                      <label
+                        key={tag.id}
+                        className="flex items-center gap-2 text-[12px] cursor-pointer capitalize font-semi-bold text-gray-400"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={tags.includes(tag.id)}
+                          onChange={() => toggleTag(tag.id)}
+                        />
+                        {tag.name}
+                      </label>
+                    ))
+                  ) : (
+                    <div className="col-span-full text-center text-gray-500">
+                      No tags available
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-
             <div className="flex gap-5  flex-row-reverse ">
               <Button
                 onClick={handleSave}
@@ -603,12 +628,12 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
                   transition: "box-shadow 0.3s ease",
                 }}
                 onMouseEnter={(e) =>
-                (e.currentTarget.style.boxShadow =
-                  "0 6px 20px rgba(24, 144, 255, 0.8)")
+                  (e.currentTarget.style.boxShadow =
+                    "0 6px 20px rgba(24, 144, 255, 0.8)")
                 }
                 onMouseLeave={(e) =>
-                (e.currentTarget.style.boxShadow =
-                  "0 4px 12px rgba(24, 144, 255, 0.5)")
+                  (e.currentTarget.style.boxShadow =
+                    "0 4px 12px rgba(24, 144, 255, 0.5)")
                 }
               >
                 Create
@@ -648,10 +673,12 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
 
       <div className="w-full">
         <div className="w-full pb-4 relative">
-          <Kanban cards={cards}
+          <Kanban
+            cards={cards}
             setCards={setCards}
             assignees={assignees}
-            getAssigneeName={getAssigneeName} />
+            getAssigneeName={getAssigneeName}
+          />
         </div>
       </div>
     </div>

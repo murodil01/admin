@@ -1,10 +1,9 @@
 import { Upload, Button, Dropdown } from "antd";
 import { Download, MoreVertical } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   getControlDataByUserId,
   updateControlData,
-  uploadControlDataFile,
   createControlDataForUser,
 } from "../../../../api/services/controlDataService";
 import { message, Spin } from "antd";
@@ -12,14 +11,16 @@ import { useParams } from "react-router-dom";
 
 const Profiles = () => {
   const { id: employeeId } = useParams(); // Get employee ID from URL
+  const numericEmployeeId = parseInt(employeeId);
+  const employeeIdString = employeeId;
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(true);
   const [saveMessage, setSaveMessage] = useState("");
   const [fileList, setFileList] = useState([]);
   const [isNewRecord, setIsNewRecord] = useState(false);
+  const uploadSuccessShown = useRef(false);
 
-  // ✅ label -> backend field mapping
   const fields = {
     "Acceptance Reason": "accept_reason",
     "Expertise Level": "expertise_level",
@@ -47,85 +48,164 @@ const Profiles = () => {
   const handleEdit = () => setIsEditing(true);
 
   const handleMenuClick = ({ key }) => {
-    if (key === "edit") handleEdit();
+    if (key === "edit") {
+      handleEdit(); // your edit logic
+    } else if (key === "create") {
+      setIsEditing(true); // or whatever should happen on create
+    }
   };
 
-  const handleFileUpload = ({ file }) => {
-    if (file.status === 'done') {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setFormData((prev) => ({
-          ...prev,
-          passport_picture: file.originFileObj,
-          passport_picture_url: e.target.result, // Preview uchun
-        }));
-      };
-      reader.readAsDataURL(file.originFileObj);
+  const handleFileUpload = (info) => {
+    const { file } = info;
+
+    // Reset the success flag when starting a new upload
+    if (file.status === 'uploading') {
+      uploadSuccessShown.current = false;
+    }
+
+    // Handle file selection immediately
+    if (file.originFileObj || file) {
+      const fileObj = file.originFileObj || file;
+
+      // Validate file type and size
+      const isLt10M = fileObj.size / 1024 / 1024 < 10;
+
+      // Only show success message once
+      if (file.status === 'done' && !uploadSuccessShown.current) {
+        message.success(`${file.name} file uploaded successfully`);
+        uploadSuccessShown.current = true;
+      }
+
+      // For files that aren't images, we'll store the file object
+      // but won't try to create a preview URL
+      const isImage = fileObj.type?.startsWith('image/');
+
+      setFormData((prev) => ({
+        ...prev,
+        passport_picture: fileObj,
+        passport_picture_url: isImage ? URL.createObjectURL(fileObj) : null,
+        passport_file_name: fileObj.name,
+      }));
 
       setFileList([{
         uid: file.uid,
         name: file.name,
         status: 'done',
+        originFileObj: fileObj,
+        url: isImage ? URL.createObjectURL(fileObj) : null,
       }]);
-      message.success(`${file.name} file uploaded successfully`);
     }
-    return false; // Avtomatik yuklashni oldini olish
+    return false;
+  };
+
+  // Function to handle image download
+  const handleDownloadFile = () => {
+    const fileUrl = formData.passport_picture_url || (fileList.length > 0 && fileList[0].url);
+    const fileName = formData.passport_file_name || (fileList.length > 0 && fileList[0].name) || "downloaded_file";
+
+    if (!fileUrl) {
+      // If we don't have a URL but have a file object, create a download
+      if (formData.passport_picture instanceof File) {
+        const url = URL.createObjectURL(formData.passport_picture);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        return;
+      }
+
+      message.error("No file available to download");
+      return;
+    }
+
+    // Create a temporary anchor element
+    const link = document.createElement("a");
+    link.href = fileUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleSave = async () => {
     try {
       setLoading(true);
+      setSaveMessage("");
 
-      let response;
-      if (formData.id) {
-        // Mavjud yozuvni yangilash
-        response = await updateControlData(formData.id, formData);
-        message.success("Ma'lumotlar yangilandi");
+      // Convert PINFL to integer if it exists and is not empty
+      let pinflValue = null;
 
-        // Agar rasm yangilangan bo'lsa
-        if (formData.passport_picture instanceof File) {
-          await uploadControlDataFile(response.id, formData.passport_picture);
-          message.success("Passport rasmi yangilandi");
+      if(formData.pinfl !== null && formData.pinfl !== undefined && formData.pinfl !== '') {
+        const parsedPinfl = parseInt(formData.pinfl, 14);
 
-          // Fayl ro'yxatini yangilash
-          setFileList([{
-            uid: '-1',
-            name: 'passport.jpg',
-            status: 'done',
-            url: URL.createObjectURL(formData.passport_picture),
-          }]);
-        }
-      } else {
-        // Yangi yozuv yaratish
-        response = await createControlDataForUser(employeeId, formData);
-
-        // Yangi yaratilgan yozuv ID sini saqlash
-        setFormData(prev => ({ ...prev, id: response.id }));
-
-        // Agar rasm mavjud bo'lsa
-        if (formData.passport_picture instanceof File) {
-          await uploadControlDataFile(response.id, formData.passport_picture);
-          message.success("Passport rasmi saqlandi");
+        // Validate PINFL is a valid number
+        if (isNaN(parsedPinfl)) {
+          message.error("PINFL must be a valid number");
+          return;
         }
 
-        message.success("Yangi yozuv yaratildi");
-        setIsNewRecord(false);
+        pinflValue = parsedPinfl;
       }
 
+      // ✅ Ensure user_id is always included in formData
+      const dataToSave = {
+        ...formData,
+        pinfl: pinflValue, // Use the converted integer value
+        user_id: employeeIdString // Always include user_id
+      };
+
+      let response;
+
+      if (!isNewRecord && formData.id) {
+        // Update existing record using userId (not control data ID)
+        response = await updateControlData(employeeIdString, dataToSave);
+        message.success("Data updated successfully");
+      } else {
+        // Create new record
+        response = await createControlDataForUser(employeeIdString, dataToSave);
+
+        // Update local state with the new record info
+        setFormData(prev => ({
+          ...prev,
+          id: response.id || response.data?.id,
+          user_id: employeeIdString, // Ensure user_id is stored as string
+        }));
+
+        message.success("New data added");
+        setIsNewRecord(false);
+      }
       setIsEditing(false);
     } catch (error) {
-      console.error('Saqlashda xato:', error);
-      message.error(error.response?.data?.message || "Saqlash muvaffaqiyatsiz tugadi");
+      console.error('Save error:', error);
+
+      // More detailed error handling
+      const errorMessage = error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Error in saving data";
+
+      message.error(errorMessage);
+
+      // Log the full error for debugging
+      console.error('Full error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        config: error.config,
+        employeeId: employeeIdString
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   useEffect(() => {
     const fetchData = async () => {
       const initEmptyForm = () => {
         setFormData({
-          user_id: employeeId,
+          user_id: employeeIdString,
           accept_reason: '',
           expertise_level: '',
           strengths: '',
@@ -137,8 +217,10 @@ const Profiles = () => {
           assigned_devices: '',
           access_level: '',
           serial_number: '',
-          pinfl: '',
+          pinfl: null,
           passport_picture: null,
+          passport_picture_url: null,
+          passport_file_name: null,
         });
         setIsNewRecord(true);
         setFileList([]);
@@ -146,33 +228,46 @@ const Profiles = () => {
 
       try {
         setLoading(true);
-        const response = await getControlDataByUserId(employeeId);
+        const response = await getControlDataByUserId(employeeIdString);
 
-        if (response && response.length > 0) {
-          const employeeData = response.find(item =>
-            item?.user_info?.id === employeeId || item?.user_id === employeeId
-          );
+        // Check if we have data
+        if (response) {
+          let employeeData = null;
+
+          if (Array.isArray(response)) {
+            // Find the correct data in array
+            employeeData = response.find(item => {
+              const itemUserId = String(item?.user_info?.id || item?.user_id || '');
+              return itemUserId === employeeIdString;
+            });
+          } else if (response.id || response.user_id) {
+            // Single object response
+            employeeData = response;
+          }
 
           if (employeeData) {
             setFormData({
               id: employeeData.id,
-              user_id: employeeData.user_info.id,
-              accept_reason: employeeData.accept_reason,
-              expertise_level: employeeData.expertise_level,
-              strengths: employeeData.strengths,
-              weaknesses: employeeData.weaknesses,
-              biography: employeeData.biography,
-              trial_period: employeeData.trial_period,
-              work_hours: employeeData.work_hours,
-              contact_type: employeeData.contact_type,
-              assigned_devices: employeeData.assigned_devices,
-              access_level: employeeData.access_level,
-              serial_number: employeeData.serial_number,
-              pinfl: employeeData.pinfl ? String(employeeData.pinfl) : null,
+              user_id: employeeData.user_id || employeeIdString,
+              accept_reason: employeeData.accept_reason || '',
+              expertise_level: employeeData.expertise_level || '',
+              strengths: employeeData.strengths || '',
+              weaknesses: employeeData.weaknesses || '',
+              biography: employeeData.biography || '',
+              trial_period: employeeData.trial_period || '',
+              work_hours: employeeData.work_hours || '',
+              contact_type: employeeData.contact_type || '',
+              assigned_devices: employeeData.assigned_devices || '',
+              access_level: employeeData.access_level || '',
+              serial_number: employeeData.serial_number || '',
+              pinfl: employeeData.pinfl !== null && employeeData.pinfl !== undefined ? employeeData.pinfl : null,
               passport_picture: employeeData.passport_picture || null,
+              passport_picture_url: employeeData.passport_picture || null,
+              passport_file_name: employeeData.passport_file_name || null,
             });
             setIsNewRecord(false);
 
+            // Set file list if passport picture exists
             if (employeeData.passport_picture) {
               setFileList([{
                 uid: '-1',
@@ -190,25 +285,54 @@ const Profiles = () => {
       } catch (err) {
         console.error("Fetch error:", {
           error: err,
-          response: err.response?.data
+          response: err.response?.data,
+          status: err.response?.status,
+          employeeId: employeeIdString
         });
-        message.error(err.response?.data?.message || "Ma'lumotlarni yuklashda xato");
-        initEmptyForm();
+
+        // Check if it's a 404 error (user not found) vs other errors
+        if (err.response?.status === 404) {
+          initEmptyForm();
+        } else {
+          const errorMessage = err.response?.data?.message || err.message || "Error fetching data";
+          message.error(errorMessage);
+          initEmptyForm();
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    if (employeeId) {
+    if (employeeId && typeof employeeId === "string" && employeeId.trim() !== "") {
       fetchData();
+    } else {
+      console.error("Invalid employee ID:", employeeId);
+      message.error("Invalid employee ID");
+      setLoading(false);
     }
-  }, [employeeId]);
+  }, [employeeId, employeeIdString, numericEmployeeId]);
 
   if (loading && !formData.id && !isNewRecord) {
-    return <Spin size="large" className="flex justify-center mt-10" />;
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-600 border-t-transparent"></div>
+            <span className="ml-3 text-gray-600 text-sm sm:text-base">
+              Loading control data...
+            </span>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  const menuItems = [{ key: "edit", label: "Edit" }];
+  const hasData = !isNewRecord && formData.id;
+  const menuItems = hasData ? [{ key: "edit", label: "Edit" }] : [{ key: "create", label: "Create" }];
+
+  // Check if we have a file to display
+  const hasFile = formData.passport_picture || (fileList.length > 0);
+  const isImageFile = formData.passport_picture_url || (fileList.length > 0 && fileList[0].url);
 
   return (
     <div className="w-full bg-white shadow rounded-[24px] py-10 px-6 md:px-10 mt-9 relative">
@@ -219,12 +343,16 @@ const Profiles = () => {
           trigger={["click"]}
           disabled={loading}
         >
-          <Button icon={<MoreVertical />} type="text" loading={loading} />
+          <Button
+            icon={<MoreVertical />}
+            type="text"
+            loading={loading}
+          />
         </Dropdown>
       </div>
 
       <h1 className="font-bold text-[18px] text-[#0061fe] mb-6">
-        Control Data {isNewRecord && "(New Record)"}
+        Control Data {isNewRecord}
       </h1>
 
       {saveMessage && (
@@ -295,14 +423,18 @@ const Profiles = () => {
                 {isEditing ? (
                   <input
                     type="text"
-                    value={formData.pinfl || ""}
-                    onChange={(e) => handleChange("PINFL", e.target.value)}
+                    value={formData.pinfl !== null && formData.pinfl !== undefined ? formData.pinfl : ""}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      // If empty string, set to null, otherwise keep as string (will be converted to number on save)
+                      handleChange("PINFL", value === "" ? null : value);
+                    }}
                     placeholder="45245875495734"
                     className="px-4 border border-[#D8E0F0] h-[48px] rounded-[14px] w-full"
                   />
                 ) : (
                   <div className="px-4 border border-[#D8E0F0] h-[48px] rounded-[14px] w-full flex items-center bg-gray-50">
-                    {formData.pinfl || <span className="text-gray-400">No data</span>}
+                    {formData.pinfl !== null && formData.pinfl !== undefined ? formData.pinfl : <span className="text-gray-400">No data</span>}
                   </div>
                 )}
               </div>
@@ -310,21 +442,41 @@ const Profiles = () => {
 
             <div className="flex flex-col gap-2 text-center">
               <label className="text-sm text-[#7D8592] font-bold">Photo / File</label>
+
+              {/* Show preview if image exists */}
+              {isImageFile && (
+                <div className="flex flex-col items-center mb-4">
+                  <img
+                    src={formData.passport_picture_url || fileList[0]?.url}
+                    alt="Passport Preview"
+                    className="max-h-40 mb-2 rounded"
+                  />
+                </div>
+              )}
+
+              {/* Show file name if non-image file exists */}
+              {hasFile && !isImageFile && (
+                <div className="flex flex-col items-center mb-4">
+                  <span className="text-sm text-gray-600">
+                    File: {formData.passport_file_name || fileList[0]?.name}
+                  </span>
+                </div>
+              )}
+
               {isEditing ? (
                 <Upload
                   fileList={fileList}
                   beforeUpload={(file) => {
-                    // Fayl hajmini tekshirish
-                    const isLt5M = file.size / 1024 / 1024 < 5;
-                    if (!isLt5M) {
-                      message.error('Rasm hajmi 5MB dan kichik bo\'lishi kerak!');
+                    const isLt10M = file.size / 1024 / 1024 < 10;
+                    if (!isLt10M) {
+                      message.error('File size must be less than 10MB');
                     }
-                    return isLt5M;
+                    return isLt10M;
                   }}
                   onChange={handleFileUpload}
                   disabled={loading}
                   showUploadList={false}
-                  accept="image/*"
+                  // Removed accept="image/*" to allow all file types
                 >
                   <Button
                     type="primary"
@@ -344,32 +496,29 @@ const Profiles = () => {
                 </Upload>
               ) : (
                 <div className="min-h-[60px] flex items-center justify-center">
-                  {fileList.length > 0 ? (
-                    <div className="flex flex-col items-center">
-                      <img
-                        src={fileList[0].url}
-                        alt="Passport"
-                        className="max-h-40 mb-2 rounded"
-                      />
-                      {!isEditing && (
-                        <a
-                          href={fileList[0].url}
-                          download="passport.jpg"
-                          className="text-blue-500 underline flex items-center"
-                        >
-                          <Download size={16} className="mr-1" />
-                          Yuklab olish
-                        </a>
-                      )}
-                    </div>
-                  ) : formData.passport_picture ? (
-                    <span className="text-gray-500">Rasm yuklangan, lekin ko'rsatilmayapti</span>
+                  {hasFile ? (
+                    <Button
+                      type="primary"
+                      icon={<Download />}
+                      onClick={handleDownloadFile}
+                      style={{
+                        background: "#0061fe",
+                        borderRadius: "14px",
+                        padding: "10px 20px",
+                        border: "none",
+                        fontSize: "14px",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Download
+                    </Button>
                   ) : (
-                    <span className="text-gray-400">Rasm yuklanmagan</span>
+                    <span className="text-gray-400">File not uploaded</span>
                   )}
                 </div>
               )}
             </div>
+
           </div>
 
           {isEditing && (
@@ -378,7 +527,25 @@ const Profiles = () => {
                 onClick={() => {
                   setIsEditing(false);
                   if (isNewRecord) {
-                    setFormData({ employee: employeeId });
+                    // Reset form for new record
+                    setFormData({
+                      user_id: employeeIdString,
+                      accept_reason: '',
+                      expertise_level: '',
+                      strengths: '',
+                      weaknesses: '',
+                      biography: '',
+                      trial_period: '',
+                      work_hours: '',
+                      contact_type: '',
+                      assigned_devices: '',
+                      access_level: '',
+                      serial_number: '',
+                      pinfl: null,
+                      passport_picture: null,
+                      passport_picture_url: null,
+                      passport_file_name: null,
+                    });
                     setFileList([]);
                   }
                 }}

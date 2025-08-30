@@ -7,12 +7,19 @@ const endpoints = {
   },
 
   users: {
-    getAll: "users/",
+    getAllusers: "users/",
+    getSalesUsers:"users/department/m-sale/",
+    getAll: "get-users-for-projects/",
     me: "users/get_user/",
     getById: (id) => `users/${id}/`,
     update: (id) => `users/${id}/`,
     delete: (id) => `users/${id}/`,
     updateProfile: (id) => `users/${id}/update_profile/`,
+  },
+
+  calendar: {
+    all: "calendars/event/",
+    eventById: (id) => `calendars/event/${id}/`,
   },
 
   tasks: {
@@ -26,6 +33,8 @@ const endpoints = {
     getTaskFiles: "project/files/",
     deleteTaskFile: (id) => `project/files/${id}/`,
     getComments: "project/comments/",
+    updateComments:id=> `project/comments/${id}/`,
+    deleteComments:id=> `project/comments/${id}/`,
     getTaskFilesByTask: (taskId) => `project/task-files/${taskId}`,
     getTaskInstructionsByTask: (taskId) =>
       `project/task-instructions/${taskId}`,
@@ -43,6 +52,7 @@ const endpoints = {
     getById: (id) => `project/projects/${id}/`,
     getByIdTasks: (id) => `project/projects/${id}/tasks/`,
     getByIdUsers: (id) => `project/projects/${id}/users/`,
+    updateByIdUsers: (id) => `project/projects/${id}/users`,
     update: (id) => `project/projects/${id}/`,
     delete: (id) => `project/projects/${id}/`,
   },
@@ -56,9 +66,12 @@ const endpoints = {
   },
 
   boards: {
+    addNewLead:"board/leads",
+    getStatus: "board/status/",
     getAll: "board/list/",
     create: "board/list/",
-    getById: (id) => `board/board/${id}/`, // board detail/list uchun
+    createStatus: (id) => `board/status/${id}/`,
+    getById: (id) => `board/board/${id}/`,    // board detail/list uchun
     update: (id) => `board/board/${id}/`,
     delete: (id) => `board/board/${id}/`,
   },
@@ -75,6 +88,7 @@ const endpoints = {
     getAll: "board/leads/",
     create: "board/leads/",
     getById: (id) => `board/leads/${id}/`,
+    // createStatus: (id) => `board/leads/${id}/`,
     update: (groupId, leadId) => `board/leads/${leadId}/?group=${groupId}`,
     delete: (groupId, leadId) => `board/leads/${leadId}/?group=${groupId}`,
   },
@@ -109,15 +123,26 @@ const endpoints = {
     create: "users/",
   },
 
+  // controlData: {
+  //   getByUserId: (userId) => `control-data/?user_id=${userId}/`,
+  //   createForUser: (userId) => `control-data/?user_id=${userId}/`, // Faqat o'sha user uchun yaratish
+  //   update: (userId) => `control-data/?user_id=${userId}`,
+  // },
+
   controlData: {
-    getByUserId: (userId) => `control-data/?user_id=${userId}/`,
-    createForUser: (userId) => `control-data/?user_id=${userId}/`, // Faqat o'sha user uchun yaratish
-    update: (userId, id) => `control-data/?user_id=${userId}/${id}/`,
+    getAll: "control-data/",
+    getAllEmployees: "control-data/all-employees/",
+    getAvailableUsers: "control-data/available-users/",
+    getByUserId: (userId) => `/control-data/?user_id=${userId}`, // GET /control-data/{user_id}/
+    create: "control-data/", // POST /control-data/
+    update: (userId) => `control-data/${userId}/`, // PUT /control-data/{user_id}/
+    partialUpdate: (userId) => `control-data/${userId}/`, // PATCH /control-data/{user_id}/
+    delete: (userId) => `control-data/${userId}/`, // DELETE /control-data/{user_id}/
   },
 
   userProjects: {
     getAll: "user-projects/",
-    getById: (id) => `user-projects/${id}/`,
+    getById: (userId) => `user-projects/${userId}/`,
   },
 
   notes: {
@@ -125,8 +150,9 @@ const endpoints = {
     getById: (id) => `notes/${id}/`,
     create: "notes/",
     update: (id) => `notes/${id}/`,
-    updateStatus: (id) => `/notes/${id}/`,
+    partialUpdate: (id) => `/notes/${id}/`,
     delete: (id) => `notes/${id}/`,
+    getUserNotes: (userId) => `notes/user/${userId}/`,
   },
 
   notifications: {

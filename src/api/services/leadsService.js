@@ -3,11 +3,11 @@ import endpoints from "../endpoint";
 
 // Barcha leadlarni olish (agar groupId berilsa, shu groupga tegishlilarni oladi)
 export const getLeads = (groupId) => {
+  let url = endpoints.leads.getAll || 'board/leads/';
   if (groupId) {
-    // Agar API shunday ishlasa: /leads?group=groupId
-    return api.get(`${endpoints.leads.getAll}?group=${groupId}`);
+    url += `?group=${groupId}`;
   }
-  return api.get(endpoints.leads.getAll);
+  return api.get(url);
 };
 
 // ID bo‘yicha lead olish
@@ -28,7 +28,7 @@ export const updateStatus = async (statusId, data) => {
     }
     const url = endpoints.board?.updateStatus
       ? endpoints.board.updateStatus(statusId)
-      : `board/status/${statusId}/`; 
+      : `board/status/${statusId}/`;
 
     console.log("🔄 Updating status:", url, data);
 
@@ -43,14 +43,28 @@ export const updateStatus = async (statusId, data) => {
     throw err;
   }
 };
-export const updateLeads = async (groupId, leadId, data) => {
-  try {
-    // normalize status
-    if (data.status && typeof data.status === "object") data.status = data.status.id ?? data.status;
+export const updateLeads = async (...args) => {
+  let groupId = null;
+  let leadId;
+  let data;
 
-    const url = endpoints.leads.update
-      ? endpoints.leads.update(groupId, leadId)
-      : `leads/${groupId}/${leadId}/`; // fallback
+  if (args.length === 2) {
+    [leadId, data] = args;
+  } else if (args.length === 3) {
+    [groupId, leadId, data] = args;
+  } else {
+    throw new Error("Invalid arguments for updateLeads");
+  }
+
+  try {
+    // normalize data
+    if (data.status && typeof data.status === "object") data.status = data.status.id ?? data.status;
+    if (data.person && typeof data.person === "object") data.person = data.person.id ?? data.person;
+
+    let url = `board/leads/${leadId}/`;
+    if (groupId) {
+      url += `?group=${groupId}`;
+    }
 
     console.log("Updating lead:", url, data);
     const res = await api.patch(url, data); // PATCH is safer than PUT for partial updates
@@ -63,7 +77,15 @@ export const updateLeads = async (groupId, leadId, data) => {
 
 // Lead o‘chirish
 export const deleteLeads = (groupId, leadId) => {
-  if (!groupId || !leadId)
-    return Promise.reject(new Error("Group ID yoki Lead ID mavjud emas"));
-  return api.delete(endpoints.leads.delete(groupId, leadId));
+  if (!leadId)
+    return Promise.reject(new Error("Lead ID mavjud emas"));
+  let url = `board/leads/${leadId}/`;
+  if (groupId) {
+    url += `?group=${groupId}`;
+  }
+  return api.delete(url);
 };
+
+export const createAllStatus = (boardId, data) => {
+  return api.patch(endpoints.status.createStatus(boardId), data);
+}
