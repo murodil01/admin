@@ -35,7 +35,7 @@ const Projects = () => {
   const { collapsed } = useSidebar();
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [deadline, setDeadline] = useState("");
-  const allDepartmentsIcon = '/public/M2.png';
+  const allDepartmentsIcon = '/M2.png';
   const { user, loading: authLoading } = useAuth(); 
   const [dataLoading, setDataLoading] = useState(true);
   const isLoading = authLoading || dataLoading;
