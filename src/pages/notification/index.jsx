@@ -4,7 +4,6 @@ import { getNotificationsAll } from "../../api/services/notificationsService";
 import toast from "react-hot-toast";
 
 const Notification = () => {
-  const [showAll, setShowAll] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -25,12 +24,8 @@ const Notification = () => {
     fetchNotifications();
   }, []);
 
-  const displayedNotifications = showAll
-    ? notifications
-    : notifications.slice(0, 3);
-
   return (
-    <div className="flex flex-col h-[80vh] ">
+    <div className="flex flex-col h-[90vh]">
       {/* Title */}
       <h1 className="text-black text-[25px] font-semibold">Notifications</h1>
 
@@ -38,11 +33,11 @@ const Notification = () => {
       <div className="flex-1 overflow-y-auto space-y-4 mt-4 pr-2 pt-4">
         {loading ? (
           <p className="text-gray-500 text-[18px] font-bold">Loading...</p>
-        ) : displayedNotifications.length > 0 ? (
-          displayedNotifications.map((item) => (
+        ) : notifications.length > 0 ? (
+          notifications.map((item) => (
             <div
               key={item.id}
-              className="flex items-start gap-[16px] px-[16px] py-[20px] border border-[#dcdcdc] rounded-[8px]"
+              className="flex items-start gap-[16px] px-[16px] py-[20px] border border-[#dcdcdc] rounded-[12px]"
             >
               <img
                 src={
@@ -50,7 +45,7 @@ const Notification = () => {
                   "https://avatars.mds.yandex.net/i?id=17ce2915d8a8ee46c05a880825f4bdf63150c0be-9863899-images-thumbs&n=13"
                 }
                 alt={item.title}
-                className="w-[72px] h-[76px] object-cover"
+                className="w-[72px] h-[76px] object-cover rounded-xl"
               />
               <div className="flex flex-col">
                 <h3 className="font-semibold text-[17px] text-black">
@@ -70,18 +65,6 @@ const Notification = () => {
           <p className="text-gray-400">No notifications found.</p>
         )}
       </div>
-
-      {/* Button */}
-      {notifications.length > 3 && (
-        <div className="mt-4 flex justify-start">
-          <button
-            onClick={() => setShowAll(!showAll)}
-            className="bg-[#0061FE] text-white w-full max-w-[250px] h-[40px] rounded-[10px] text-[15px] font-normal"
-          >
-            {showAll ? "Show less" : "View more"}
-          </button>
-        </div>
-      )}
     </div>
   );
 };
