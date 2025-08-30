@@ -2964,14 +2964,14 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                   placeholder="Enter task title"
                 />
               </div>
-
+          
               {/* Type */}
               <div>
                 <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
                   Status
                 </label>
                 <Select
-                  className="custom-select w-full"
+                  className="custom-select"
                   value={type}
                   onChange={setType}
                   style={{ height: "54px" }}
