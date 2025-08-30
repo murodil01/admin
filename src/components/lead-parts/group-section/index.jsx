@@ -17,10 +17,10 @@ import {
   updateLeads,
   createLeads,
 } from "../../../api/services/leadsService";
-import { getMSalesUsers, getusersAll } from "../../../api/services/userService";
+import { getMSalesUsers } from "../../../api/services/userService";
 import { getBoardsAll } from "../../../api/services/boardService"; 
 import { Select, Avatar } from "antd";
-import { getMe } from "../../../api/services/authService";
+import { deleteLeads } from "../../../api/services/leadsService";
 import api from "../../../api/base";
 // Helper function to get absolute image URL
 const getAbsoluteImageUrl = (picture) => {
@@ -30,6 +30,11 @@ const getAbsoluteImageUrl = (picture) => {
   if (url.startsWith("http")) return url;
   return `https://prototype-production-2b67.up.railway.app${url.startsWith("/") ? "" : "/"}${url}`;
 };
+
+import { CiExport } from "react-icons/ci";
+import { BiArchiveIn } from "react-icons/bi";
+import { ArrowRight, Trash2, Copy, } from "lucide-react";
+import toast from "react-hot-toast";
 
 // Normalize payload: nested objects -> ids, string numbers -> Number, empty strings -> undefined
 const normalizePayload = (obj = {}) => {
@@ -1015,6 +1020,152 @@ const Table = () => {
   const [personOptions, setPersonOptions] = useState([]);
   const [isAddingLead, setIsAddingLead] = useState(false);
   const [newLeadTitle, setNewLeadTitle] = useState("");
+  const [selectedItems, setSelectedItems] = useState([]);
+   const [groups, setGroups] = useState([]);
+  // Selection functions
+  const handleSelectAll = () => {
+    const totalItems = filteredTasks.length;
+    
+    if (selectedItems.length === totalItems && totalItems > 0) {
+      setSelectedItems([]);
+    } else {
+      const allItems = filteredTasks.map(task => task.id);
+      setSelectedItems(allItems);
+    }
+  };
+
+  const toggleSelectItem = (taskId, isSelected) => {
+    if (isSelected) {
+      setSelectedItems((prev) => {
+        const exists = prev.includes(taskId);
+        if (exists) return prev;
+        return [...prev, taskId];
+      });
+    } else {
+      setSelectedItems((prev) =>
+        prev.filter((id) => id !== taskId)
+      );
+    }
+  };
+  const deleteItemFromGroup = async (groupId, itemIndex) => {
+    const group = groups.find((g) => g.id === groupId);
+    if (!group) return;
+
+    const item = group.items[itemIndex];
+    if (!item) return;
+
+    try {
+      await deleteLeads(item.group, item.id);
+      
+      // Selection dan ham o'chirish
+      setSelectedItems((prev) =>
+        prev.filter(
+          (s) => !(s.groupId === groupId && s.itemIndex === itemIndex)
+        )
+      );
+      
+      setGroups((prev) =>
+        prev.map((g) =>
+          g.id === groupId
+            ? { ...g, items: g.items.filter((_, idx) => idx !== itemIndex) }
+            : g
+        )
+      );
+      
+      toast.success("Lead o'chirildi ✅");
+    } catch (err) {
+      console.error("deleteLeads xatosi:", err);
+      toast.error("Lead o'chirilmadi ❌");
+    }
+  };
+const handleDeleteSelected = async () => {
+  if (selectedItems.length === 0) return;
+
+  const confirmDelete = window.confirm(`${selectedItems.length} ta lead o'chirilsinmi?`);
+  if (!confirmDelete) return;
+
+  try {
+    // Har bir tanlangan leadni o'chirish
+    for (const taskId of selectedItems) {
+      const lead = apiLeads.find(l => l.id === taskId);
+      if (lead) {
+        // deleteLeads funksiyasi groupId va leadId talab qiladi
+        await deleteLeads(lead.group, lead.id);
+      }
+    }
+    
+    // Local state ni yangilash - apiLeads dan o'chirish
+    setApiLeads(prev => prev.filter(lead => !selectedItems.includes(lead.id)));
+    setSelectedItems([]);
+    
+    toast.success(`${selectedItems.length} ta lead o'chirildi`);
+  } catch (error) {
+    console.error('Error deleting items:', error);
+    toast.error('Lead o\'chirilmadi');
+  }
+};
+
+  const handleDuplicateSelected = async () => {
+    if (selectedItems.length === 0) return;
+
+    try {
+      for (const taskId of selectedItems) {
+        const task = apiLeads.find(lead => lead.id === taskId);
+        if (task) {
+          const payload = normalizePayload({
+            ...task,
+            name: `${task.name} (copy)`,
+            id: undefined
+          });
+          await createLeads(payload);
+        }
+      }
+      
+      await loadLeadsFromAPI();
+      setSelectedItems([]);
+      toast.success(`${selectedItems.length} ta lead nusxalandi`);
+    } catch (error) {
+      console.error('Error duplicating items:', error);
+      toast.error('Lead nusxalanmadi');
+    }
+  };
+
+  const handleExportSelected = () => {
+    if (selectedItems.length === 0) return;
+
+    const selectedData = apiLeads.filter(lead => selectedItems.includes(lead.id));
+    
+    const jsonData = JSON.stringify(selectedData, null, 2);
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `selected-leads-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    setSelectedItems([]);
+    toast.success(`${selectedData.length} ta lead export qilindi`);
+  };
+
+  const handleArchiveSelected = () => {
+    if (selectedItems.length === 0) return;
+    
+    console.log("Arxivlash uchun:", selectedItems);
+    toast.success(`${selectedItems.length} ta lead arxivlandi`);
+    setSelectedItems([]);
+  };
+
+  const handleMoveTo = () => {
+    if (selectedItems.length === 0) return;
+    
+    console.log("Ko'chirish uchun:", selectedItems);
+    toast.success(`${selectedItems.length} ta lead ko'chirildi`);
+    setSelectedItems([]);
+  };
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -1137,7 +1288,6 @@ const Table = () => {
     }));
   };
 
-  // Timeline update handler
   const handleTimelineUpdate = (taskId, timelineData) => {
     setApiLeads(prevLeads => 
       prevLeads.map(lead => 
@@ -1151,13 +1301,13 @@ const Table = () => {
   const loadLeadsFromAPI = async (groupId = null) => {
     try {
       setLoading(true);
-      console.log("🔍 Loading leads from API...");
+      console.log("Loading leads from API...");
       const response = await getLeads(groupId);
-      console.log("✅ API Response:", response);
+      console.log("API Response:", response);
 
       if (response.data && Array.isArray(response.data)) {
         setApiLeads(response.data);
-        console.log(`📊 Loaded ${response.data.length} leads from API`);
+        console.log(`Loaded ${response.data.length} leads from API`);
 
         const apiStatusOptions = response.data
           .filter((lead) => lead.status && lead.status.name)
@@ -1174,12 +1324,12 @@ const Table = () => {
           );
 
         if (apiStatusOptions.length > 0) {
-          console.log("📊 Status options from API:", apiStatusOptions);
+          console.log("Status options from API:", apiStatusOptions);
           setStatusOptions(prev => [...prev, ...apiStatusOptions]);
         }
       }
     } catch (error) {
-      console.error("❌ Error loading leads:", {
+      console.error("Error loading leads:", {
         status: error.response?.status,
         statusText: error.response?.statusText,
         url: error.config?.url,
@@ -1223,25 +1373,22 @@ const Table = () => {
     return "text-gray-700";
   };
 
-  // Handle Add Lead submission
   const handleAddLead = async (leadData) => {
     try {
       setLoading(true);
       console.log("Creating lead with data:", leadData);
       
-      // Normalize the payload before sending
       const payload = normalizePayload(leadData);
       console.log("Normalized payload:", payload);
       
       await createLeads(payload);
-      console.log("✅ Lead created successfully");
+      console.log("Lead created successfully");
       
-      // Reload leads from API to get the latest data
       await loadLeadsFromAPI();
       setIsAddLeadModalOpen(false);
       
     } catch (error) {
-      console.error("❌ Error creating lead:", error.response?.data || error);
+      console.error("Error creating lead:", error.response?.data || error);
       alert("Failed to create lead. Please check the console for details.");
     } finally {
       setLoading(false);
@@ -1264,15 +1411,14 @@ const Table = () => {
       });
       
       await createLeads(payload);
-      console.log("✅ New lead created successfully");
+      console.log("New lead created successfully");
       
-      // Reload leads from API
       await loadLeadsFromAPI();
       setNewLeadTitle("");
       setIsAddingLead(false);
       
     } catch (error) {
-      console.error("❌ Error creating new lead:", error.response?.data || error);
+      console.error("Error creating new lead:", error.response?.data || error);
     } finally {
       setLoading(false);
     }
@@ -1350,13 +1496,12 @@ const Table = () => {
         )
       );
 
-      // newStatus might be object or string/id — normalize
       const payload = normalizePayload({ status: newStatus?.id ?? newStatus });
       await updateLeads(taskId, payload);
-      console.log("✅ Status updated on server");
+      console.log("Status updated on server");
       setOpenStatusDropdown(null);
     } catch (error) {
-      console.error("❌ Error updating status:", error.response?.data || error);
+      console.error("Error updating status:", error.response?.data || error);
     }
   };
 
@@ -1428,9 +1573,9 @@ const Table = () => {
     try {
       const payload = normalizePayload(data);
       await updateLeads(id, payload);
-      console.log(`✅ Updated ${apiField} on server`);
+      console.log(`Updated ${apiField} on server`);
     } catch (err) {
-      console.error(`❌ Error updating ${apiField}:`, err.response?.data || err);
+      console.error(`Error updating ${apiField}:`, err.response?.data || err);
     }
   };
 
@@ -1446,7 +1591,6 @@ const Table = () => {
           Add Lead
         </button>
       </div>
-
       {/* Add Lead Modal */}
       <AddLeadModal
         isOpen={isAddLeadModalOpen}
@@ -1479,11 +1623,8 @@ const Table = () => {
                     <input
                       type="checkbox"
                       className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      checked={
-                        selectedRows.length === filteredTasks.length &&
-                        filteredTasks.length > 0
-                      }
-                      onChange={selectAll}
+                      checked={selectedItems.length === filteredTasks.length && filteredTasks.length > 0}
+                      onChange={handleSelectAll}
                     />
                   </th>
                   <th
@@ -1547,7 +1688,7 @@ const Table = () => {
                       key={task.id}
                       className={`border-b border-gray-100 transition-all duration-200 ${
                         hoveredRow === task.id ? "bg-blue-50 shadow-sm" : ""
-                      } ${selectedRows.includes(task.id) ? "bg-blue-50" : ""} ${
+                      } ${selectedItems.includes(task.id) ? "bg-blue-50" : ""} ${
                         dragOverItem === index ? "bg-blue-100" : ""
                       } ${draggedItem === index ? "opacity-50" : ""} ${
                         openStatusDropdown === task.id ? "relative z-50" : ""
@@ -1572,8 +1713,8 @@ const Table = () => {
                         <input
                           type="checkbox"
                           className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          checked={selectedRows.includes(task.id)}
-                          onChange={() => toggleRowSelection(task.id)}
+                          checked={selectedItems.includes(task.id)}
+                          onChange={(e) => toggleSelectItem(task.id, e.target.checked)}
                         />
                       </td>
                       <td className="p-4 sticky left-[88px] bg-white z-10 border-r border-gray-100">
@@ -1601,8 +1742,8 @@ const Table = () => {
                           />
                         </div>
                       </td>
-                      <td className=" p-4 border-r border-gray-200 relative">
-                      <OwnerDropdown
+                      <td className="p-4 border-r border-gray-200 relative">
+                        <OwnerDropdown
                           currentOwner={task.owner}
                           onChange={(newOwner) => handleOwnerChange(task.id, newOwner)}
                           onSave={() => {}}
@@ -1614,7 +1755,7 @@ const Table = () => {
                           {task.team}
                         </span>
                       </td>
-                      <td className="  p-4 border-r border-gray-200 relative">
+                      <td className="p-4 border-r border-gray-200 relative">
                         <StatusDropdown
                           className="status-dropdown-container relative"
                           value={task.status}
@@ -1655,6 +1796,7 @@ const Table = () => {
                     </tr>
                   );
                 })}
+                
                 <tr className="border-b border-gray-100">
                   <td className="p-2 sticky left-0 bg-white z-10"></td>
                   <td className="p-4 sticky left-10 bg-white z-10">
@@ -1751,6 +1893,77 @@ const Table = () => {
           </div>
         </div>
       </div>
+
+      {/* Selected Items Actions Panel */}
+      {selectedItems.length > 0 && (
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-40 max-w-[95vw]">
+          <div className="bg-white border border-gray-200 shadow-2xl p-4 flex flex-wrap items-center justify-center rounded-lg">
+            <div className="flex flex-wrap items-center gap-4 font-medium text-[#313131] text-[14px] sm:text-[16px] justify-center w-full md:w-auto">
+              <div className="flex items-center gap-2 sm:gap-4 text-black rounded-full px-2 sm:px-3 py-1 font-semibold">
+                <span className="bg-[#0061FE] px-2 sm:px-[10px] py-[2px] text-[14px] sm:text-[16px] text-white rounded-full">
+                  {selectedItems.length}
+                </span>
+                Selected leads
+              </div>
+
+              <button
+                onClick={handleDuplicateSelected}
+                className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-gray-50 p-2 rounded-md transition-colors"
+                title="Copy selected items"
+              >
+                <Copy size={16} />
+                <span className="text-xs sm:text-sm">Copy</span>
+              </button>
+
+              <button
+                onClick={handleExportSelected}
+                className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-gray-50 p-2 rounded-md transition-colors"
+                title="Export selected items"
+              >
+                <CiExport size={16} />
+                <span className="text-xs sm:text-sm">Export</span>
+              </button>
+
+              <button
+                onClick={handleArchiveSelected}
+                className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-gray-50 p-2 rounded-md transition-colors"
+                title="Archive selected items"
+              >
+                <BiArchiveIn size={16} />
+                <span className="text-xs sm:text-sm">Archive</span>
+              </button>
+
+              <button
+                onClick={handleDeleteSelected}
+                className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-red-50 text-red-600 p-2 rounded-md transition-colors"
+                title="Delete selected items"
+              >
+                <Trash2 size={16} />
+                <span className="text-xs sm:text-sm">Delete</span>
+              </button>
+
+              <button
+                onClick={handleMoveTo}
+                className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-gray-50 p-2 rounded-md transition-colors"
+                title="Move selected items"
+              >
+                <ArrowRight size={16} />
+                <span className="text-xs sm:text-sm">Move to</span>
+              </button>
+
+              <div className="hidden sm:block h-7 w-[1px] bg-gray-300 mx-2"></div>
+
+              <button
+                onClick={() => setSelectedItems([])}
+                className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 p-2 rounded-md transition-colors"
+                title="Clear selection"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes slideIn { }
