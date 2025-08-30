@@ -17,27 +17,33 @@ const endpoints = {
     updateProfile: (id) => `users/${id}/update_profile/`,
   },
 
+  calendar: {
+    all: "calendars/event/",
+    eventById: (id) => `calendars/event/${id}/`,
+  },
+
   tasks: {
-    getAll: 'project/tasks/',
-    create: 'project/tasks/',
-    getTags: 'project/tags/',
-    getById: id => `project/tasks/${id}/`,
-    update: id => `project/tasks/${id}/`,
-    delete: id => `project/tasks/${id}/`,
-    createTaskFile: 'project/files/',
-    getTaskFiles: 'project/files/',
-    deleteTaskFile: id => `project/files/${id}/`,
+    getAll: "project/tasks/",
+    create: "project/tasks/",
+    getTags: "project/tags/",
+    getById: (id) => `project/tasks/${id}/`,
+    update: (id) => `project/tasks/${id}/`,
+    delete: (id) => `project/tasks/${id}/`,
+    createTaskFile: "project/files/",
+    getTaskFiles: "project/files/",
+    deleteTaskFile: (id) => `project/files/${id}/`,
     getComments: "project/comments/",
     updateComments:id=> `project/comments/${id}/`,
     deleteComments:id=> `project/comments/${id}/`,
     getTaskFilesByTask: (taskId) => `project/task-files/${taskId}`,
-    getTaskInstructionsByTask: (taskId) => `project/task-instructions/${taskId}`,
+    getTaskInstructionsByTask: (taskId) =>
+      `project/task-instructions/${taskId}`,
     getTaskCommentsByTask: (taskId) => `project/task-comments/${taskId}`,
     // Instructions endpoint larini to'g'irlang
-    getTaskInstructions: 'project/instructions/',
-    createTaskInstructions: 'project/instructions/',
-    updateInstruction: id => `project/instructions/${id}/`,
-    deleteTaskInstruction: id => `project/instructions/${id}/`,
+    getTaskInstructions: "project/instructions/",
+    createTaskInstructions: "project/instructions/",
+    updateInstruction: (id) => `project/instructions/${id}/`,
+    deleteTaskInstruction: (id) => `project/instructions/${id}/`,
   },
 
   projects: {
@@ -50,7 +56,6 @@ const endpoints = {
     update: (id) => `project/projects/${id}/`,
     delete: (id) => `project/projects/${id}/`,
   },
-
 
   departments: {
     getAll: "department/departments/",
@@ -89,7 +94,6 @@ const endpoints = {
   },
 
   status: {
-
     getAllstatus: (boardId) => `board/status/${boardId}`,
     create: (boardId) => `board/status/${boardId}`,
     // getById: (boardId, statusId) =>
@@ -149,6 +153,15 @@ const endpoints = {
     partialUpdate: (id) => `/notes/${id}/`,
     delete: (id) => `notes/${id}/`,
     getUserNotes: (userId) => `notes/user/${userId}/`,
+  },
+
+  notifications: {
+    getAll: "notifications/",
+    getById: (id) => `notifications/${id}/`,
+    create: "notifications/",
+    update: (id) => `notifications/${id}/`,
+    updateStatus: (id) => `/notifications/${id}/`,
+    delete: (id) => `notifications/${id}/`,
   },
 };
 

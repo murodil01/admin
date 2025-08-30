@@ -292,11 +292,11 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
             {isEditing ? (
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Department
+                  Departments
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {rawDepartments.map((dept) => {
-                    const isSelected = editData?.department?.some(
+                    const isSelected = editData?.departments?.some(
                       (d) => d.id === dept.id
                     );
                     return (
@@ -305,16 +305,16 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                         type="button"
                         onClick={() =>
                           setEditData((prev) => {
-                            const alreadySelected = prev.department?.some(
+                            const alreadySelected = prev.departments?.some(
                               (d) => d.id === dept.id
                             );
                             return {
                               ...prev,
-                              department: alreadySelected
-                                ? prev.department.filter(
+                              departments: alreadySelected
+                                ? prev.departments.filter(
                                     (d) => d.id !== dept.id
                                   ) // toggle off
-                                : [...(prev.department || []), dept], // toggle on
+                                : [...(prev.departments || []), dept], // toggle on
                             };
                           })
                         }
@@ -335,13 +335,13 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                   })}
                 </div>
               </div>
-            ) : displayData.department?.length ? (
+            ) : displayData.departments?.length ? (
               <div>
                 <h3 className="font-bold text-sm text-gray-700 mb-2">
-                  Department
+                  Departments
                 </h3>
                 <div className="flex flex-wrap gap-4 items-center w-full pt-4">
-                  {displayData.department.map((dept) => (
+                  {displayData.departments.map((dept) => (
                     <div
                       key={dept.id}
                       className="flex items-center"

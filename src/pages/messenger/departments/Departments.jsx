@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import api from "../../../api/base"; 
 
-// Loading skeleton
 const DepartmentSkeleton = () => (
   <div className="flex flex-col items-center p-5 bg-white shadow-md rounded-xl animate-pulse">
     <div className="w-full max-w-[300px] h-48 bg-gray-300 rounded-[10px]"></div>
@@ -12,7 +11,6 @@ const DepartmentSkeleton = () => (
   </div>
 );
 
-// Error state
 const ErrorState = ({ onRetry }) => (
   <div className="col-span-full flex flex-col items-center justify-center p-8 bg-red-50 rounded-xl">
     <div className="text-red-500 text-6xl mb-4">⚠️</div>
@@ -32,7 +30,6 @@ const ErrorState = ({ onRetry }) => (
   </div>
 );
 
-// Single department card
 const DepartmentCard = React.memo(({ user }) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -97,6 +94,7 @@ const DepartmentCard = React.memo(({ user }) => {
 });
 DepartmentCard.displayName = "DepartmentCard";
 
+
 // Departments list
 const Departments = () => {
   const [users, setUsers] = useState([]);
@@ -132,7 +130,7 @@ const Departments = () => {
 
   if (loading) {
     return (
-      <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="p-4 flex flex-wrap justify-center gap-6">
         {Array.from({ length: 6 }).map((_, i) => (
           <DepartmentSkeleton key={i} />
         ))}
@@ -164,9 +162,11 @@ const Departments = () => {
   }
 
   return (
-    <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+    <section className="flex flex-wrap justify-center gap-6 p-4">
       {users.map((user, index) => (
-        <DepartmentCard key={user?.id || index} user={user} />
+        <div key={user?.id || index} className="flex-shrink-0">
+          <DepartmentCard user={user} />
+        </div>
       ))}
     </section>
   );
