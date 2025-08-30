@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect } from 'react';
-import api from '../api/base';
+import api from '../api/base.js';
 import { roleHierarchy, ROLES } from '../components/constants/roles';
 
 const AuthContext = createContext();
