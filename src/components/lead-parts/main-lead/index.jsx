@@ -449,35 +449,7 @@ const MainLead = () => {
         </div>
       )}
 
-      {/* Select All tugmasi */}
-      {totalItems > 0 && (
-        <div className="mb-4 flex items-center justify-between">
-          <button
-            onClick={handleSelectAll}
-            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
-          >
-            <input
-              type="checkbox"
-              checked={selectedItems.length === totalItems && totalItems > 0}
-              onChange={handleSelectAll}
-              className="rounded"
-            />
-            {selectedItems.length === totalItems && totalItems > 0
-              ? "Barchasini bekor qilish"
-              : "Barchasini tanlash"}
-            {totalItems > 0 && (
-              <span className="text-gray-500">({totalItems})</span>
-            )}
-          </button>
-          
-          {selectedItems.length > 0 && (
-            <span className="text-sm text-gray-600">
-              {selectedItems.length} / {totalItems} tanlangan
-            </span>
-          )}
-        </div>
-      )}
-
+   
       <div className="flex flex-col gap-6 overflow-x w-full">
         {groups.length === 0 ? (
           <div className="py-6 text-center">
@@ -527,75 +499,6 @@ const MainLead = () => {
       ) : null}
 
       {/* Selected Items Actions Panel */}
-      {selectedItems.length > 0 && (
-        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-40 max-w-[95vw]">
-          <div className="bg-white border border-gray-200 shadow-2xl p-4 flex flex-wrap items-center justify-center rounded-lg">
-            <div className="flex flex-wrap items-center gap-4 font-medium text-[#313131] text-[14px] sm:text-[16px] justify-center w-full md:w-auto">
-              <div className="flex items-center gap-2 sm:gap-4 text-black rounded-full px-2 sm:px-3 py-1 font-semibold">
-                <span className="bg-[#0061FE] px-2 sm:px-[10px] py-[2px] text-[14px] sm:text-[16px] text-white rounded-full">
-                  {selectedItems.length}
-                </span>
-                Selected leads
-              </div>
-
-              <button
-                onClick={handleDuplicateSelected}
-                className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-gray-50 p-2 rounded-md transition-colors"
-                title="Copy selected items"
-              >
-                <Copy size={16} />
-                <span className="text-xs sm:text-sm">Copy</span>
-              </button>
-
-              <button
-                onClick={handleExportSelected}
-                className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-gray-50 p-2 rounded-md transition-colors"
-                title="Export selected items"
-              >
-                <CiExport size={16} />
-                <span className="text-xs sm:text-sm">Export</span>
-              </button>
-
-              <button
-                onClick={handleArchiveSelected}
-                className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-gray-50 p-2 rounded-md transition-colors"
-                title="Archive selected items"
-              >
-                <BiArchiveIn size={16} />
-                <span className="text-xs sm:text-sm">Archive</span>
-              </button>
-
-              <button
-                onClick={handleDeleteSelected}
-                className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-red-50 text-red-600 p-2 rounded-md transition-colors"
-                title="Delete selected items"
-              >
-                <Trash2 size={16} />
-                <span className="text-xs sm:text-sm">Delete</span>
-              </button>
-
-              <button
-                onClick={handleMoveTo}
-                className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-gray-50 p-2 rounded-md transition-colors"
-                title="Move selected items"
-              >
-                <ArrowRight size={16} />
-                <span className="text-xs sm:text-sm">Move to</span>
-              </button>
-
-              <div className="hidden sm:block h-7 w-[1px] bg-gray-300 mx-2"></div>
-
-              <button
-                onClick={() => setSelectedItems([])}
-                className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 p-2 rounded-md transition-colors"
-                title="Clear selection"
-              >
-                <X size={20} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
