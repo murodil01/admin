@@ -49,8 +49,8 @@ const normalizePayload = (obj = {}) => {
         continue;
       }
       // sometimes status may be an object only with name; fallback to name if id missing
-      if (key === "status" && val.name) {
-        out[key] = val.id ?? val.name;
+      if (key === "status" && (val.name || val.status)) {
+        out[key] = val.id ?? val.name ?? val.status;
         continue;
       }
       // otherwise send object as-is (rare)
@@ -128,9 +128,7 @@ const TimelineRangePicker = ({ task, onSave, isOpen, onToggle }) => {
 
   if (!isOpen) return null;
 
-  
-
-   return createPortal(
+  return createPortal(
     <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[10000] bg-white border border-gray-300 rounded-lg shadow-2xl p-4 min-w-[320px]">
       <div className="space-y-4">
         <div className="text-sm font-semibold text-gray-700 text-center">
@@ -199,7 +197,6 @@ const TimelineRangePicker = ({ task, onSave, isOpen, onToggle }) => {
     </div>,
     document.body
   );
-
 };
 
 // New Add Lead Modal Component
@@ -397,7 +394,6 @@ const AddLeadModal = ({ isOpen, onClose, onSubmit, loading }) => {
                 value={formData.status}
                 onChange={(e) => handleInputChange('status', e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                
               >
                 <option value="">Select Status</option>
                 {statusOptions.map(status => (
@@ -587,16 +583,15 @@ const TimelineCell = ({ task, onTimelineUpdate }) => {
 const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
   const [userOptions, setUserOptions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
-  const [userMe, setUserMe] = useState(null); // Changed to single object
-    useEffect(() => {
+  const [userMe, setUserMe] = useState(null);
+
+  useEffect(() => {
     const fetchUsers = async () => {
       try {
         // Fetch current user
         let myData = null;
         try {
-          const meRes = await api.get("/me/"); // Use configured api instance
-          console.log("Current user response:", meRes);
+          const meRes = await api.get("/me/");
           if (meRes.data) {
             myData = {
               id: meRes.data.id,
@@ -606,7 +601,6 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
               isCurrentUser: true,
             };
             setUserMe(myData);
-            console.log("Current user data:", myData);
           }
         } catch (meErr) {
           console.warn("Failed to fetch current user:", meErr);
@@ -614,8 +608,6 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
 
         // Fetch all MSales users
         const res = await getMSalesUsers();
-        console.log("MSales users response:", res);
-
         if (res.data && Array.isArray(res.data)) {
           if (!myData) {
             const firstUser = res.data[0];
@@ -644,7 +636,6 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
           // Prioritize current user at the top
           const allUsers = myData ? [myData, ...otherUsers] : otherUsers;
           setUserOptions(allUsers);
-          console.log("Final user options:", allUsers);
         } else {
           console.warn("No users data received or invalid format");
         }
@@ -658,8 +649,7 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
     fetchUsers();
   }, []);
 
-
-    const handleChange = async (selectedUserId) => {
+  const handleChange = async (selectedUserId) => {
     const selectedUser = userOptions.find(u => u.id === selectedUserId);
     const personDetail = {
       id: selectedUser.id,
@@ -676,8 +666,7 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
     onSave();
   };
 
-
-   const renderOwnerAvatar = (owner) => {
+  const renderOwnerAvatar = (owner) => {
     if (owner?.profile_picture) {
       return (
         <img
@@ -686,8 +675,7 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
           className="w-full h-full object-cover"
         />
       );
-    }
- else {
+    } else {
       return (
         <svg 
           className="w-5 h-5 text-white" 
@@ -700,12 +688,11 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
     }
   };
 
-   return (
+  return (
     <div className="relative">
-      {/* Removed userMe.map since userMe is a single object */}
       {userMe && (
         <div className="hidden">
-          <div>{userMe.first_name}</div> {/* Hidden for now, adjust as needed */}
+          <div>{userMe.first_name}</div>
         </div>
       )}
       <button
@@ -765,7 +752,6 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
       )}
     </div>
   );
-
 };
 
 // StatusDropdown: ensure update sends id (or name fallback)
@@ -781,14 +767,16 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
           const leadsRes = await getLeads();
           if (leadsRes.data && Array.isArray(leadsRes.data)) {
             leadsRes.data.forEach(lead => {
-              if (lead.status && (lead.status.name || lead.status.id)) {
-                if (!allStatuses.find(s => s.id === lead.status.id)) {
+              // Fix: Handle status object properly
+              const statusValue = lead.status && typeof lead.status === 'object' ? lead.status.name : lead.status;
+              if (statusValue) {
+                if (!allStatuses.find(s => s.name === statusValue)) {
                   allStatuses.push({
-                    id: lead.status.id ?? lead.status,
-                    name: lead.status.name ?? lead.status,
-                    icon: getStatusIcon(lead.status.name ?? lead.status),
-                    lightBg: getStatusLightBg(lead.status.name ?? lead.status),
-                    textColor: getStatusTextColor(lead.status.name ?? lead.status)
+                    id: lead.status?.id || statusValue,
+                    name: statusValue,
+                    icon: getStatusIcon(statusValue),
+                    lightBg: getStatusLightBg(statusValue),
+                    textColor: getStatusTextColor(statusValue)
                   });
                 }
               }
@@ -895,8 +883,16 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
     setIsOpen(false);
   };
 
-  const currentStatus = statusOptions.find(s => s.name === value) || {
-    name: value || "No Status",
+  // Fix: Handle value properly - it could be an object or string
+  const getStatusValue = () => {
+    if (!value) return "No Status";
+    if (typeof value === 'object') return value.name || "No Status";
+    return value || "No Status";
+  };
+
+  const statusValue = getStatusValue();
+  const currentStatus = statusOptions.find(s => s.name === statusValue) || {
+    name: statusValue,
     icon: Circle,
     lightBg: "bg-gray-50",
     textColor: "text-gray-500"
@@ -1021,7 +1017,8 @@ const Table = () => {
   const [isAddingLead, setIsAddingLead] = useState(false);
   const [newLeadTitle, setNewLeadTitle] = useState("");
   const [selectedItems, setSelectedItems] = useState([]);
-   const [groups, setGroups] = useState([]);
+  const [groups, setGroups] = useState([]);
+
   // Selection functions
   const handleSelectAll = () => {
     const totalItems = filteredTasks.length;
@@ -1047,6 +1044,7 @@ const Table = () => {
       );
     }
   };
+
   const deleteItemFromGroup = async (groupId, itemIndex) => {
     const group = groups.find((g) => g.id === groupId);
     if (!group) return;
@@ -1078,32 +1076,33 @@ const Table = () => {
       toast.error("Lead o'chirilmadi ❌");
     }
   };
-const handleDeleteSelected = async () => {
-  if (selectedItems.length === 0) return;
 
-  const confirmDelete = window.confirm(`${selectedItems.length} ta lead o'chirilsinmi?`);
-  if (!confirmDelete) return;
+  const handleDeleteSelected = async () => {
+    if (selectedItems.length === 0) return;
 
-  try {
-    // Har bir tanlangan leadni o'chirish
-    for (const taskId of selectedItems) {
-      const lead = apiLeads.find(l => l.id === taskId);
-      if (lead) {
-        // deleteLeads funksiyasi groupId va leadId talab qiladi
-        await deleteLeads(lead.group, lead.id);
+    const confirmDelete = window.confirm(`${selectedItems.length} ta lead o'chirilsinmi?`);
+    if (!confirmDelete) return;
+
+    try {
+      // Har bir tanlangan leadni o'chirish
+      for (const taskId of selectedItems) {
+        const lead = apiLeads.find(l => l.id === taskId);
+        if (lead) {
+          // deleteLeads funksiyasi groupId va leadId talab qiladi
+          await deleteLeads(lead.group, lead.id);
+        }
       }
+      
+      // Local state ni yangilash - apiLeads dan o'chirish
+      setApiLeads(prev => prev.filter(lead => !selectedItems.includes(lead.id)));
+      setSelectedItems([]);
+      
+      toast.success(`${selectedItems.length} ta lead o'chirildi`);
+    } catch (error) {
+      console.error('Error deleting items:', error);
+      toast.error('Lead o\'chirilmadi');
     }
-    
-    // Local state ni yangilash - apiLeads dan o'chirish
-    setApiLeads(prev => prev.filter(lead => !selectedItems.includes(lead.id)));
-    setSelectedItems([]);
-    
-    toast.success(`${selectedItems.length} ta lead o'chirildi`);
-  } catch (error) {
-    console.error('Error deleting items:', error);
-    toast.error('Lead o\'chirilmadi');
-  }
-};
+  };
 
   const handleDuplicateSelected = async () => {
     if (selectedItems.length === 0) return;
@@ -1211,8 +1210,8 @@ const handleDeleteSelected = async () => {
             if (board.statuses && Array.isArray(board.statuses)) {
               board.statuses.forEach(status => {
                 allStatuses.push({
-                  id: status.id,
-                  name: status.name
+                  id: status.id ?? null,
+                  name: status.name ?? ""
                 });
               });
             }
@@ -1264,28 +1263,41 @@ const handleDeleteSelected = async () => {
     progress: "potential_value",
   };
 
+  // Fix: Handle status object properly in convertApiLeadsToTasks
   const convertApiLeadsToTasks = (leads) => {
-    return leads.map((lead, index) => ({
-      id: lead.id,
-      task: lead.name || `Lead ${index + 1}`,
-      person: lead.person_detail?.fullname || "Unknown Person",
-      profile_picture: getAbsoluteImageUrl(lead.person_detail?.profile_picture),
-      status: lead.status?.name || lead.status || "No Status",
-      priority:
-        lead.potential_value > 50
-          ? "High"
-          : lead.potential_value > 20
-          ? "Medium"
-          : "Low",
-      timeline_start: lead.timeline_start,
-      timeline_end: lead.timeline_end,
-      progress: lead.potential_value || 0,
-      team: lead.link || "General",
-      phone: lead.phone || "",
-      notes: lead.notes || "",
-      owner: lead.person_detail || null,
-      source: "api",
-    }));
+    return leads.map((lead, index) => {
+      // Handle status - it could be an object or string
+      let statusValue = "No Status";
+      if (lead.status) {
+        if (typeof lead.status === 'object') {
+          statusValue = lead.status.name || "No Status";
+        } else {
+          statusValue = lead.status || "No Status";
+        }
+      }
+
+      return {
+        id: lead.id,
+        task: lead.name || `Lead ${index + 1}`,
+        person: lead.person_detail?.fullname || "Unknown Person",
+        profile_picture: getAbsoluteImageUrl(lead.person_detail?.profile_picture),
+        status: statusValue,
+        priority:
+          lead.potential_value > 50
+            ? "High"
+            : lead.potential_value > 20
+            ? "Medium"
+            : "Low",
+        timeline_start: lead.timeline_start,
+        timeline_end: lead.timeline_end,
+        progress: lead.potential_value || 0,
+        team: lead.link || "General",
+        phone: lead.phone || "",
+        notes: lead.notes || "",
+        owner: lead.person_detail || null,
+        source: "api",
+      };
+    });
   };
 
   const handleTimelineUpdate = (taskId, timelineData) => {
@@ -1310,14 +1322,22 @@ const handleDeleteSelected = async () => {
         console.log(`Loaded ${response.data.length} leads from API`);
 
         const apiStatusOptions = response.data
-          .filter((lead) => lead.status && lead.status.name)
-          .map((lead) => ({
-            id: lead.status.id,
-            value: lead.status.name,
-            icon: getStatusIcon(lead.status.name),
-            lightBg: getStatusLightBg(lead.status.name),
-            textColor: getStatusTextColor(lead.status.name),
-          }))
+          .filter((lead) => {
+            // Handle status - it could be an object or string
+            const statusValue = lead.status && typeof lead.status === 'object' ? lead.status.name : lead.status;
+            return statusValue;
+          })
+          .map((lead) => {
+            // Handle status - it could be an object or string
+            const statusValue = lead.status && typeof lead.status === 'object' ? lead.status.name : lead.status;
+            return {
+              id: lead.status?.id || statusValue,
+              value: statusValue,
+              icon: getStatusIcon(statusValue),
+              lightBg: getStatusLightBg(statusValue),
+              textColor: getStatusTextColor(statusValue),
+            };
+          })
           .filter(
             (status, index, self) =>
               self.findIndex((s) => s.value === status.value) === index
@@ -1890,6 +1910,17 @@ const handleDeleteSelected = async () => {
                 </tr>
               </tbody>
             </table>
+            {filteredTasks.length === 0 && !loading && (
+              <div className="text-center py-10">
+                <p className="text-gray-500">No leads found</p>
+              </div>
+            )}
+            {loading && (
+              <div className="text-center py-10">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+                <p className="text-gray-500 mt-2">Loading leads...</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
