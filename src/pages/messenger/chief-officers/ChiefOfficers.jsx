@@ -81,13 +81,15 @@ const ChiefOfficers = () => {
         </section>
       )}
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-8">
+      <section className="flex flex-wrap justify-center gap-4 sm:gap-6 lg:gap-8 mb-8">
         {heads.length > 0 ? (
           heads.map((officer) => (
-            <OfficerCard key={officer.id} officer={officer} professionsData={professionsData} />
+            <div key={officer.id} className="flex-shrink-0">
+              <OfficerCard officer={officer} professionsData={professionsData} />
+            </div>
           ))
         ) : (
-          <p className="col-span-full text-center text-gray-500">
+          <p className="w-full text-center text-gray-500">
             No officers found
           </p>
         )}
@@ -99,18 +101,15 @@ const ChiefOfficers = () => {
 const OfficerCard = ({ officer, professionsData }) => {
   const getProfessionInfo = () => {
     if (officer.profession) {
-      // To'g'ridan-to'g'ri profession nomi bilan tekshiramiz
       if (professionsData[officer.profession]) {
         return professionsData[officer.profession];
       }
       
-      // Agar aynan shu nom bilan topilmasa, uppercase qilib ham sinab ko'ramiz
       const upperKey = officer.profession.toUpperCase();
       if (professionsData[upperKey]) {
         return professionsData[upperKey];
       }
       
-      // Lowercase qilib ham sinab ko'ramiz
       const lowerKey = officer.profession.toLowerCase();
       if (professionsData[lowerKey]) {
         return professionsData[lowerKey];
@@ -124,9 +123,10 @@ const OfficerCard = ({ officer, professionsData }) => {
   };
 
   const professionInfo = getProfessionInfo();
+  
 
   return (
-    <div className="flex flex-col justify-between p-4 bg-white rounded-3xl shadow-md hover:shadow-xl transition duration-300 w-full max-w-[320px] mx-auto h-full">
+    <div className="flex flex-col justify-between p-4 bg-white rounded-3xl shadow-md hover:shadow-xl transition duration-300 w-full max-w-[270px] mx-auto h-full">
       <div className="flex flex-col items-center text-center">
         <img
           loading="lazy"
