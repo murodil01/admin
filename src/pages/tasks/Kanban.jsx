@@ -19,7 +19,9 @@ import dayjs from "dayjs";
 import { DownloadOutlined } from "@ant-design/icons";
 import memberSearch from "../../assets/icons/memberSearch.svg";
 import pencil from "../../assets/icons/pencil.svg";
-
+import { Permission } from "../../components/Permissions";
+import { useAuth } from "../../hooks/useAuth";
+import { ROLES } from "../../components/constants/roles";
 import {
   Modal,
   Input,
@@ -45,8 +47,11 @@ import {
   getTaskFiles,
   uploadTaskFile,
   deleteTaskFile,
+  // updateProjectUsers,
   // getCommentTask, ///
   createComment, //
+  updateTaskComment,
+  deleteTaskComment,
   createChecklistItem,
   getTaskInstructions,
   createInstruction,
@@ -54,12 +59,13 @@ import {
   updateInstruction,
   deleteInstruction,
   deleteChecklistItem,
-
-
-  getTaskFilesByTask,           // ✅ YANGI
-  getTaskInstructionsByTask,    // ✅ YANGI  
-  getTaskCommentsByTask, 
+  getTaskFilesByTask,
+  getTaskInstructionsByTask,
+  getTaskCommentsByTask,
 } from "../../api/services/taskService";
+import { ArrowBigUpDashIcon } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { ChevronUp } from "lucide-react";
 
 const NotionKanban = ({ cards, setCards, assignees, getAssigneeName }) => {
   return (
@@ -80,51 +86,71 @@ const taskColumns = [
     id: "assigned",
     title: "Assigned",
     color: "bg-[#DCE8FF]",
-    icon: <img src={assigned} alt="" />,
+    icon: <img src={assigned} alt="assigned" />,
   },
   {
     id: "acknowledged",
     title: "Acknowledged",
     color: "bg-[#D5F6D7]",
-    icon: <img src={acknowledged} alt="" />,
+    icon: <img src={acknowledged} alt="acknowledged" />,
   },
   {
     id: "in_progress",
     title: "In Progress",
     color: "bg-[#FAF6E1]",
-    icon: <img src={inProgress} alt="" />,
+    icon: <img src={inProgress} alt="inProgress" />,
   },
   {
     id: "completed",
     title: "Completed",
     color: "bg-[#F4EBF9]",
-    icon: <img src={completedIcon} alt="" />,
+    icon: <img src={completedIcon} alt="completedIcon" />,
   },
   {
     id: "in_review",
     title: "In Review",
     color: "bg-[#FFF0E0]",
-    icon: <img src={inReview} alt="" />,
+    icon: <img src={inReview} alt="inReview" />,
   },
   {
     id: "return_for_fixes",
-    title: "Return for Fixes",
+    title: (
+      <Permission allowedRoles={Object.values(ROLES)}>
+        <span className="flex items-center gap-1">Return for Fixes</span>
+      </Permission>
+    ),
     color: "bg-[#E2C7A9]",
     icon: <img src={rework} alt="" />,
+    allowedRoles: Object.values(ROLES),
   },
   {
     id: "dropped",
-    title: "Dropped",
+    title: (
+      <Permission allowedRoles={Object.values(ROLES)}>
+        <span className="flex items-center gap-1">Dropped</span>
+      </Permission>
+    ),
     color: "bg-[#FFDADA]",
     icon: <img src={dropped} alt="" />,
+    allowedRoles: Object.values(ROLES),
   },
   {
     id: "approved",
-    title: "Approved",
+    title: (
+      <Permission allowedRoles={Object.values(ROLES)}>
+        <span className="flex items-center gap-1">Approved</span>
+      </Permission>
+    ),
     color: "bg-[#C2FFCF]",
     icon: <img src={approved} alt="" />,
+    allowedRoles: Object.values(ROLES),
   },
 ];
+
+const getStatusTitle = (statusId) => {
+  const column = taskColumns.find((col) => col.id === statusId);
+  return column ? column.title : statusId || "N/A";
+};
 
 const Board = ({ cards, setCards }) => {
   // const [hasChecked, setHasChecked] = useState(false);
@@ -149,43 +175,49 @@ const Board = ({ cards, setCards }) => {
 
   return (
     <div className="flex flex-col w-full">
-      {/* Column selector */}
-      {/* Bu qism faqat mobil uchun, shuning uchun desktopda ko'rinmaydi */}
+      {/* Column selector for mobile */}
       <div className="items-start sm:hidden flex gap-2 overflow-x-auto mb-4 p-2 bg-white rounded-lg shadow-sm border border-gray-200">
         {taskColumns.map((col) => (
-          <button
-            key={col.id}
-            onClick={() => setActiveColumn(col.id)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap
-        ${
-          activeColumn === col.id
-            ? "bg-blue-500 text-white shadow-md"
-            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-        }`}
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-lg">{col.icon}</span>
-              <span>{col.title}</span>
-            </div>
-          </button>
+          <Permission key={col.id} allowedRoles={col.allowedRoles || []}>
+            <button
+              onClick={() => setActiveColumn(col.id)}
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap
+                ${
+                  activeColumn === col.id
+                    ? "bg-blue-500 text-white shadow-md"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{col.icon}</span>
+                <span>{col.title}</span>
+              </div>
+            </button>
+          </Permission>
         ))}
       </div>
 
       {/* Faqat active column */}
       <div className="flex-1 w-full sm:hidden">
-        <Column
-          key={activeColumn}
-          icon={taskColumns.find((c) => c.id === activeColumn)?.icon}
-          title={taskColumns.find((c) => c.id === activeColumn)?.title}
-          column={activeColumn}
-          backgroundColor={
-            taskColumns.find((c) => c.id === activeColumn)?.color
+        <Permission
+          allowedRoles={
+            taskColumns.find((c) => c.id === activeColumn)?.allowedRoles || []
           }
-          cards={cards.filter((c) => c.column === activeColumn)}
-          setCards={setCards}
-          onEdit={handleEdit}
-          showHeader={false}
-        />
+        >
+          <Column
+            key={activeColumn}
+            icon={taskColumns.find((c) => c.id === activeColumn)?.icon}
+            title={taskColumns.find((c) => c.id === activeColumn)?.title}
+            column={activeColumn}
+            backgroundColor={
+              taskColumns.find((c) => c.id === activeColumn)?.color
+            }
+            cards={cards.filter((c) => c.column === activeColumn)}
+            setCards={setCards}
+            onEdit={handleEdit}
+            showHeader={false}
+          />
+        </Permission>
       </div>
 
       {/* Edit Modal */}
@@ -196,19 +228,20 @@ const Board = ({ cards, setCards }) => {
         onUpdate={handleSaveEdit}
       />
 
-      {/* Desktop: barcha columnlarni yonma-yon chiqarish */}
+      {/* Desktop: all columns side by side */}
       <div className="hidden sm:flex items-start gap-4 overflow-x-auto pb-4">
         {taskColumns.map((col) => (
-          <Column
-            key={col.id}
-            icon={col.icon}
-            title={col.title}
-            column={col.id}
-            backgroundColor={col.color}
-            cards={cards.filter((c) => c.column === col.id)}
-            setCards={setCards}
-            onEdit={handleEdit}
-          />
+          <Permission key={col.id} allowedRoles={col.allowedRoles || []}>
+            <Column
+              icon={col.icon}
+              title={col.title}
+              column={col.id}
+              backgroundColor={col.color}
+              cards={cards.filter((c) => c.column === col.id)}
+              setCards={setCards}
+              onEdit={handleEdit}
+            />
+          </Permission>
         ))}
       </div>
     </div>
@@ -354,7 +387,6 @@ const Column = ({
         ))}
         <DropIndicator beforeId="-1" column={column} />
       </div>
-
       {/* Cards list - Mobile */}
       <div
         onDragOver={handleDragOver}
@@ -391,6 +423,7 @@ const Card = ({
   setCards,
 }) => {
   const [hovered, setHovered] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
@@ -408,8 +441,26 @@ const Card = ({
   const [newChecklistItem, setNewChecklistItem] = useState("");
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
+  const { user, loading: authLoading } = useAuth();
+  const [dataLoading, setDataLoading] = useState(true);
+  // Yuklash holatini birlashtirish
+  const isLoading = authLoading || dataLoading;
+  // ✅ TUZATISH: Progress va total_count uchun alohida state'lar
+  const [cardProgress, setCardProgress] = useState(0);
+  const [cardTotalCount, setCardTotalCount] = useState(0);
+  const [commentsCount, setCommentsCount] = useState(0);
+
+  // Comment editing uchun state'lar qo'shish
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingCommentText, setEditingCommentText] = useState("");
+  const [commentDropdownOpen, setCommentDropdownOpen] = useState(null);
+
+  // Delete confirmation modal uchun state
+  const [deleteCommentModalOpen, setDeleteCommentModalOpen] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState(null);
+
+  const [showAllChecklist, setShowAllChecklist] = useState(false);
+  const [showAllFiles, setShowAllFiles] = useState(false);
 
   // Helper functions
   const getFileIcon = (fileName) => {
@@ -417,21 +468,21 @@ const Card = ({
     const extension = fileName.split(".").pop()?.toLowerCase();
     switch (extension) {
       case "pdf":
-        return "📄";
+        return <img src="/pdf-icon.png" alt="PDF" className="w-5 h-5" />;
       case "doc":
       case "docx":
-        return "📝";
+        return <img src="/docx_icon.png" alt="Word" className="w-5 h-5" />;
       case "xls":
       case "xlsx":
-        return "📊";
+        return <img src="/excel-icon.png" alt="Excel" className="w-5 h-5" />;
       case "jpg":
       case "jpeg":
       case "png":
       case "gif":
-        return "🖼️";
+        return <img src="/picture-icon.png" alt="Image" className="w-5 h-5" />;
       case "zip":
       case "rar":
-        return "🗜️";
+        return <img src="/zip-icon.png" alt="Archive" className="w-5 h-5" />;
       default:
         return "📄";
     }
@@ -450,45 +501,117 @@ const Card = ({
     return dayjs(date).format("MMM D, YYYY");
   };
 
-  const handleFileDownload = (file) => {
-    if (file.file || file.url) {
-      const link = document.createElement("a");
-      link.href = file.file || file.url;
-      link.download = file.original_name || file.file_name || "download";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      message.warning("File download not available");
+  // const handleFileDownload = (file) => {
+  //   if (file.file || file.url) {
+  //     const link = document.createElement("a");
+  //     link.href = file.file || file.url;
+  //     link.download = file.original_name || file.file_name || "download";
+  //     document.body.appendChild(link);
+  //     link.click();
+  //     document.body.removeChild(link);
+  //   } else {
+  //     message.warning("File download not available");
+  //   }
+  // };
+
+  // Card komponenti ichida - handleFileDownload funksiyasini yangilash
+  const handleFileDownload = async (file) => {
+    try {
+      // Loading state ni ko'rsatish uchun
+      message.loading({
+        content: "Downloading file...",
+        key: "download",
+        duration: 0,
+      });
+
+      if (file.file || file.url) {
+        // File URL mavjud bo'lsa, to'g'ridan-to'g'ri download qilish
+        const fileUrl = file.file || file.url;
+        const fileName = file.original_name || file.file_name || "download";
+
+        // Fetch orqali file ni olish va download qilish
+        const response = await fetch(fileUrl);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+
+        // Blob ni download qilish
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = fileName;
+
+        // Browser compatibility uchun
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Memory cleanup
+        window.URL.revokeObjectURL(downloadUrl);
+
+        message.success({
+          content: "File downloaded successfully!",
+          key: "download",
+        });
+      } else {
+        throw new Error("File URL not available");
+      }
+    } catch (error) {
+      console.error("Download error:", error);
+      message.error({
+        content: `Failed to download file: ${error.message}`,
+        key: "download",
+      });
     }
   };
 
-  const getAssigneeName = (assignee) => {
-    if (!assignee) return "Not assigned";
+  const getAssigneeInfo = (assignee) => {
+    if (!assignee)
+      return { name: "Not assigned", avatar: null, initials: "NA" };
 
-    if (typeof assignee === "object") {
-      if (assignee.first_name && assignee.last_name) {
-        return `${assignee.first_name} ${assignee.last_name}`;
+    let assigneeData = null;
+
+    // projectUsers dan qidirish
+    if (Array.isArray(projectUsers) && projectUsers.length > 0) {
+      if (typeof assignee === "number" || typeof assignee === "string") {
+        assigneeData = projectUsers.find((user) => user.id == assignee);
+      } else if (typeof assignee === "object") {
+        assigneeData = assignee;
       }
-      if (assignee.name) {
-        return assignee.name;
-      }
-      if (assignee.id) {
-        return (
-          projectUsers.find((u) => u.id === assignee.id)?.name || "Unknown"
-        );
-      }
-      return "Unknown";
+    } else if (typeof assignee === "object") {
+      assigneeData = assignee;
     }
 
-    const user = projectUsers.find(
-      (u) => u.id === assignee || u.user_id === assignee
-    );
+    if (!assigneeData) return { name: "Unknown", avatar: null, initials: "U" };
 
-    return user ? `${user.first_name} ${user.last_name}` : "Unknown";
+    // Ma'lumotlarni formatlash
+    let name = "Unknown";
+    let initials = "U";
+
+    if (assigneeData.first_name && assigneeData.last_name) {
+      name = `${assigneeData.first_name} ${assigneeData.last_name}`;
+      initials =
+        `${assigneeData.first_name[0]}${assigneeData.last_name[0]}`.toUpperCase();
+    } else if (assigneeData.name) {
+      name = assigneeData.name;
+      const nameParts = name.split(" ");
+      initials = nameParts
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase()
+        .substring(0, 2);
+    }
+
+    return {
+      name,
+      avatar: assigneeData.profile_picture || assigneeData.avatar,
+      initials,
+      email: assigneeData.email,
+    };
   };
-
-  // getCurrentUser function
   const getCurrentUser = () => {
     console.log("🔍 Checking user storage...");
 
@@ -554,97 +677,124 @@ const Card = ({
     try {
       console.log("🔄 Fetching files for task ID:", id);
       const response = await getTaskFilesByTask(id);
-    console.log("📥 Files API Response:", response);
+      console.log("📥 Files API Response:", response);
 
-    let filesList = [];
-    if (Array.isArray(response.data)) {
-      filesList = response.data;
-    } else if (response.data && Array.isArray(response.data.results)) {
-      filesList = response.data.results;
-    } else if (response.data && Array.isArray(response.data.files)) {
-      filesList = response.data.files;
+      let filesList = [];
+      if (Array.isArray(response.data)) {
+        filesList = response.data;
+      } else if (response.data && Array.isArray(response.data.results)) {
+        filesList = response.data.results;
+      } else if (response.data && Array.isArray(response.data.files)) {
+        filesList = response.data.files;
+      }
+
+      console.log("📁 Extracted files:", filesList);
+      setFiles(filesList);
+    } catch (error) {
+      console.error("❌ Error fetching files:", error);
+      message.error("Failed to load files");
+      setFiles([]);
+    } finally {
+      setFilesLoading(false);
     }
+  }, [id]);
 
-    console.log("📁 Extracted files:", filesList);
-    setFiles(filesList);
-  } catch (error) {
-    console.error("❌ Error fetching files:", error);
-    message.error("Failed to load files");
-    setFiles([]);
-  } finally {
-    setFilesLoading(false);
-  }
-}, [id]);
+  const fetchComments = useCallback(async () => {
+    if (!id) return;
+    setCommentsLoading(true);
+    try {
+      console.log("🔄 Fetching comments for task ID:", id);
+      const response = await getTaskCommentsByTask(id);
+      console.log("📥 Comments API Response:", response);
 
-const fetchComments = useCallback(async () => {
-  if (!id) return;
-  setCommentsLoading(true);
-  try {
-    console.log("🔄 Fetching comments for task ID:", id);
-    const response = await getTaskCommentsByTask(id);
-    console.log("📥 Comments API Response:", response);
+      let commentsList = [];
+      if (Array.isArray(response.data)) {
+        commentsList = response.data;
+      } else if (response.data && Array.isArray(response.data.results)) {
+        commentsList = response.data.results;
+      } else if (response.data && Array.isArray(response.data.comments)) {
+        commentsList = response.data.comments;
+      }
 
-    let commentsList = [];
-    if (Array.isArray(response.data)) {
-      commentsList = response.data;
-    } else if (response.data && Array.isArray(response.data.results)) {
-      commentsList = response.data.results;
-    } else if (response.data && Array.isArray(response.data.comments)) {
-      commentsList = response.data.comments;
+      // ✅ YANGILASH: User ma'lumotlarini to'g'ri mapping qilish
+      const mappedComments = commentsList.map((comment) => ({
+        ...comment,
+        user_name: comment.user
+          ? `${comment.user.first_name} ${comment.user.last_name}`
+          : "Unknown User",
+        user_avatar: comment.user?.profile_picture || null,
+        user_initials: comment.user
+          ? `${comment.user.first_name?.[0] || ""}${
+              comment.user.last_name?.[0] || ""
+            }`.toUpperCase()
+          : "U",
+      }));
+
+      console.log("📋 Extracted and mapped comments:", mappedComments);
+      setComments(mappedComments);
+      setCommentsCount(mappedComments.length);
+    } catch (error) {
+      console.error("❌ Error fetching comments:", error);
+      message.error("Failed to load comments");
+      setComments([]);
+      setCommentsCount(0);
+    } finally {
+      setCommentsLoading(false);
     }
+  }, [id]);
 
-    const mappedComments = commentsList.map((comment) => ({
-      ...comment,
-      user_name: getAssigneeName(comment.user) || "Unknown",
-    }));
+  // ✅ Checklist o'zgarishida progress ni yangilash
+  const fetchChecklist = useCallback(async () => {
+    if (!id) return;
+    setChecklistLoading(true);
+    try {
+      console.log("🔄 Fetching checklist for task ID:", id);
+      const response = await getTaskInstructionsByTask(id);
+      console.log("📥 RAW API Response:", response);
 
-    console.log("📋 Extracted and mapped comments:", mappedComments);
-    setComments(mappedComments);
-  } catch (error) {
-    console.error("❌ Error fetching comments:", error);
-    message.error("Failed to load comments");
-    setComments([]);
-  } finally {
-    setCommentsLoading(false);
-  }
-}, [id, projectUsers]);
+      let items = [];
+      if (Array.isArray(response.data)) {
+        items = response.data;
+      } else if (response.data && Array.isArray(response.data.results)) {
+        items = response.data.results;
+      } else if (response.data && Array.isArray(response.data.data)) {
+        items = response.data.data;
+      } else if (response.data && Array.isArray(response.data.instructions)) {
+        items = response.data.instructions;
+      }
+      console.log("📋 Extracted items:", items);
 
-const fetchChecklist = useCallback(async () => {
-  if (!id) return;
-  setChecklistLoading(true);
-  try {
-    console.log("🔄 Fetching checklist for task ID:", id);
-    const response = await getTaskInstructionsByTask(id);
-    console.log("📥 RAW API Response:", response);
+      const normalizedItems = items.map((item) => {
+        console.log("🔄 Processing item:", item);
+        return {
+          ...item,
+          completed: item.status !== undefined ? item.status : false,
+        };
+      });
+      setChecklistItems(normalizedItems);
 
-    let items = [];
-    if (Array.isArray(response.data)) {
-      items = response.data;
-    } else if (response.data && Array.isArray(response.data.results)) {
-      items = response.data.results;
-    } else if (response.data && Array.isArray(response.data.data)) {
-      items = response.data.data;
-    } else if (response.data && Array.isArray(response.data.instructions)) {
-      items = response.data.instructions;
+      // ✅ TUZATISH: Progress ni qayta hisoblash
+      const totalItems = normalizedItems.length;
+      const completedItems = normalizedItems.filter(
+        (item) => item.status
+      ).length;
+
+      console.log("📊 Recalculating progress:", {
+        totalItems,
+        completedItems,
+        taskId: id,
+      });
+
+      setCardTotalCount(totalItems);
+      setCardProgress(completedItems);
+    } catch (error) {
+      console.error("Error fetching checklist:", error);
+      message.error("Failed to load checklist");
+      setChecklistItems([]);
+    } finally {
+      setChecklistLoading(false);
     }
-    console.log("📋 Extracted items:", items);
-
-    const normalizedItems = items.map((item) => {
-      console.log("🔄 Processing item:", item);
-      return {
-        ...item,
-        completed: item.status !== undefined ? item.status : false,
-      };
-    });
-    setChecklistItems(normalizedItems);
-  } catch (error) {
-    console.error("Error fetching checklist:", error);
-    message.error("Failed to load checklist");
-    setChecklistItems([]);
-  } finally {
-    setChecklistLoading(false);
-  }
-}, [id]);
+  }, [id]);
 
   // Comment handlers
   const handleAddComment = async () => {
@@ -676,6 +826,17 @@ const fetchChecklist = useCallback(async () => {
       console.log("📥 createComment response:", response);
 
       setNewComment("");
+      // DOM da textarea ni topib height ni reset qilish
+      setTimeout(() => {
+        const textarea = document.querySelector(
+          'textarea[placeholder="Add a comment"]'
+        );
+        if (textarea) {
+          textarea.style.height = "40px";
+          textarea.dispatchEvent(new Event("input", { bubbles: true })); // onInput ni trigger qilish
+        }
+      }, 10);
+
       await fetchComments();
       message.success("Comment added successfully");
     } catch (error) {
@@ -695,6 +856,78 @@ const fetchChecklist = useCallback(async () => {
     } finally {
       setSubmitLoading(false);
     }
+  };
+
+  // Comment edit handler
+  const handleEditComment = (comment) => {
+    setEditingCommentId(comment.id);
+    setEditingCommentText(comment.message || comment.text);
+    setCommentDropdownOpen(null);
+  };
+
+  // Comment update handler
+  const handleUpdateComment = async (commentId) => {
+    if (!editingCommentText.trim()) {
+      message.warning("Comment cannot be empty");
+      return;
+    }
+
+    try {
+      await updateTaskComment(commentId, {
+        message: editingCommentText.trim(),
+      });
+
+      // Comments ro'yxatini yangilash
+      await fetchComments();
+
+      // Edit mode dan chiqish
+      setEditingCommentId(null);
+      setEditingCommentText("");
+
+      message.success("Comment updated successfully");
+    } catch (error) {
+      console.error("Error updating comment:", error);
+      message.error("Failed to update comment");
+    }
+  };
+
+  // Delete comment confirmation
+  const showDeleteCommentModal = (comment) => {
+    setCommentToDelete(comment);
+    setDeleteCommentModalOpen(true);
+    setCommentDropdownOpen(null);
+  };
+
+  // Confirm delete comment
+  const handleConfirmDeleteComment = async () => {
+    if (!commentToDelete) return;
+
+    try {
+      await deleteTaskComment(commentToDelete.id);
+
+      // Comments ro'yxatini yangilash
+      await fetchComments();
+
+      message.success("Comment deleted successfully");
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      message.error("Failed to delete comment");
+    } finally {
+      setDeleteCommentModalOpen(false);
+      setCommentToDelete(null);
+    }
+  };
+
+  // Cancel delete
+  const handleCancelDeleteComment = () => {
+    setDeleteCommentModalOpen(false);
+    setCommentToDelete(null);
+  };
+
+  // Cancel edit
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditingCommentText("");
   };
 
   // Checklist handlers
@@ -790,11 +1023,14 @@ const fetchChecklist = useCallback(async () => {
     // Calculate new progress
     const total = updatedItems.length;
     const completedCount = updatedItems.filter((item) => item.status).length;
-    const newProgress =
-      total > 0 ? Math.round((completedCount / total) * 100) : 0;
+    console.log("📊 Updating progress:", {
+      total,
+      completedCount,
+      taskId: id,
+    });
 
-    setProgress(newProgress);
-    setTotalCount(total);
+    setCardProgress(completedCount);
+    setCardTotalCount(total);
 
     try {
       await updateInstruction(itemId, { status: completed });
@@ -807,16 +1043,14 @@ const fetchChecklist = useCallback(async () => {
       const originalCompleted = originalItems.filter(
         (item) => item.status
       ).length;
-      setProgress(
-        originalItems.length > 0
-          ? Math.round((originalCompleted / originalItems.length) * 100)
-          : 0
-      );
-      setTotalCount(originalItems.length);
+      setCardProgress(originalCompleted);
+      setCardTotalCount(originalItems.length);
     }
   };
   // Modal handlers
+  // ✅ Modal ochilganda task ma'lumotlarini yuklash
   const openViewModal = async () => {
+    setDropdownOpen(false); // ✅ Dropdown ni yopish
     setIsModalOpen(true);
     setLoading(true);
 
@@ -824,8 +1058,25 @@ const fetchChecklist = useCallback(async () => {
       console.log("🔄 Fetching task data for ID:", id);
       const response = await getTaskById(id);
       console.log("📥 Task data:", response.data);
+
       setTaskData(response.data);
 
+      // ✅ MUHIM: Progress va total_count ni to'g'ri o'rnatish
+      const taskProgress = response.data.progress || 0;
+      const taskTotalCount = response.data.total_count || 0;
+
+      console.log(
+        "📊 Setting progress:",
+        taskProgress,
+        "total_count:",
+        taskTotalCount
+      );
+
+      setCardProgress(taskProgress);
+      setCardTotalCount(taskTotalCount);
+
+      // Project users ni yuklash
+      let users = [];
       if (
         response.data.projectId ||
         response.data.project_id ||
@@ -838,14 +1089,49 @@ const fetchChecklist = useCallback(async () => {
         try {
           const usersResponse = await getProjectUsers(projectId);
           console.log("👥 Project users:", usersResponse.data);
-          setProjectUsers(usersResponse.data || []);
+
+          if (Array.isArray(usersResponse.data)) {
+            users = usersResponse.data;
+          } else if (
+            usersResponse.data &&
+            Array.isArray(usersResponse.data.users)
+          ) {
+            users = usersResponse.data.users;
+          } else if (
+            usersResponse.data &&
+            Array.isArray(usersResponse.data.results)
+          ) {
+            users = usersResponse.data.results;
+          }
         } catch (error) {
           console.warn("⚠️ Failed to fetch project users:", error);
-          setProjectUsers([]);
+          users = [];
         }
+      }
+
+      setProjectUsers(users);
+
+      // Comments count ni o'rnatish
+      if (response.data.comment_count !== undefined) {
+        setCommentsCount(response.data.comment_count);
       } else {
-        console.warn("No project ID found in task data");
-        setProjectUsers([]);
+        const commentsResponse = await getTaskCommentsByTask(id);
+        let commentsList = [];
+
+        if (Array.isArray(commentsResponse.data)) {
+          commentsList = commentsResponse.data;
+        } else if (
+          commentsResponse.data &&
+          Array.isArray(commentsResponse.data.results)
+        ) {
+          commentsList = commentsResponse.data.results;
+        } else if (
+          commentsResponse.data &&
+          Array.isArray(commentsResponse.data.comments)
+        ) {
+          commentsList = commentsResponse.data.comments;
+        }
+        setCommentsCount(commentsList.length);
       }
 
       await Promise.all([fetchComments(), fetchChecklist(), fetchFiles()]);
@@ -856,6 +1142,37 @@ const fetchChecklist = useCallback(async () => {
       setLoading(false);
     }
   };
+
+  // ✅ Task yaratilganda yoki yangilanganda progress ma'lumotlarini yuklash
+  useEffect(() => {
+    const loadProgressData = async () => {
+      if (!id) return;
+
+      try {
+        console.log("🔄 Loading progress data for task:", id);
+        const response = await getTaskById(id);
+
+        if (response.data) {
+          const taskProgress = response.data.progress || 0;
+          const taskTotalCount = response.data.total_count || 0;
+
+          console.log("📊 Initial progress data:", {
+            taskProgress,
+            taskTotalCount,
+            id,
+          });
+
+          setCardProgress(taskProgress);
+          setCardTotalCount(taskTotalCount);
+        }
+      } catch (error) {
+        console.error("❌ Error loading progress data:", error);
+        // Error yuz bersa default qiymatlar qoladi
+      }
+    };
+
+    loadProgressData();
+  }, [id]);
 
   const handleMoveToColumn = async (newColumn) => {
     try {
@@ -901,6 +1218,7 @@ const fetchChecklist = useCallback(async () => {
   };
 
   const handleEditCard = async () => {
+    setDropdownOpen(false); // ✅ Dropdown ni yopish
     setLoading(true);
     try {
       const response = await getTaskById(id);
@@ -915,22 +1233,69 @@ const fetchChecklist = useCallback(async () => {
   };
 
   const handleUpdateCard = (updatedCard) => {
-    console.log("Updated card: ", updatedCard);
+    console.log("Updated card received:", updatedCard);
+
     setIsEditModalOpen(false);
+
+    // ✅ MUHIM: Progress state'larini yangilash
+    if (updatedCard.progress !== undefined) {
+      setCardProgress(updatedCard.progress);
+    }
+    if (updatedCard.total_count !== undefined) {
+      setCardTotalCount(updatedCard.total_count);
+    }
+    if (updatedCard.comment_count !== undefined) {
+      setCommentsCount(updatedCard.comment_count);
+    }
+
+    // Cards listini yangilash
     setCards((prev) =>
       prev.map((card) =>
         card.id === updatedCard.id
           ? {
               ...card,
-              title: updatedCard.name,
-              time: updatedCard.deadline,
+              title: updatedCard.name || updatedCard.title,
+              time: updatedCard.deadline || updatedCard.time,
               description: updatedCard.description,
-              column: updatedCard.tasks_type,
+              column: updatedCard.tasks_type || updatedCard.column,
+              // ✅ Progress ma'lumotlarini ham yangilash
+              progress: updatedCard.progress || 0,
+              total_count: updatedCard.total_count || 0,
+              comment_count: updatedCard.comment_count || 0,
             }
           : card
       )
     );
   };
+
+  useEffect(() => {
+    // Task yaratilganda commentlarni yuklash
+    const loadInitialComments = async () => {
+      if (!id) return;
+
+      try {
+        console.log("🔄 Loading initial comments for task:", id);
+        const response = await getTaskCommentsByTask(id);
+
+        let commentsList = [];
+        if (Array.isArray(response.data)) {
+          commentsList = response.data;
+        } else if (response.data && Array.isArray(response.data.results)) {
+          commentsList = response.data.results;
+        } else if (response.data && Array.isArray(response.data.comments)) {
+          commentsList = response.data.comments;
+        }
+
+        console.log(`📋 Found ${commentsList.length} comments for task ${id}`);
+        setCommentsCount(commentsList.length);
+      } catch (error) {
+        console.error("❌ Error loading initial comments:", error);
+        // Xatoni chop etish lekin foydalanuvchiga xabar bermaslik
+      }
+    };
+
+    loadInitialComments();
+  }, [id]);
 
   // Effects
   useEffect(() => {
@@ -978,23 +1343,39 @@ const fetchChecklist = useCallback(async () => {
         {/* New 3 point button */}
         <div className="absolute top-2 right-1">
           <Dropdown
+            open={dropdownOpen} // ✅ Controlled dropdown
+            onOpenChange={setDropdownOpen} // ✅ State bilan boshqarish
             menu={{
               items: [
                 {
                   key: "edit",
-                  label: "Edit",
-                  onClick: (e) => {
-                    e.domEvent.stopPropagation();
-                    handleEditCard(); // Yangi funksiya chaqiriladi
-                  },
+                  label: (
+                    <Permission
+                      anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}
+                    >
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditCard();
+                        }}
+                      >
+                        Edit
+                      </span>
+                    </Permission>
+                  ),
                 },
                 {
                   key: "detail",
-                  label: "Detail",
-                  onClick: (e) => {
-                    e.domEvent.stopPropagation();
-                    openViewModal();
-                  },
+                  label: (
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openViewModal();
+                      }}
+                    >
+                      Detail
+                    </span>
+                  ),
                 },
                 {
                   key: "move_to",
@@ -1007,18 +1388,32 @@ const fetchChecklist = useCallback(async () => {
                 },
                 {
                   key: "delete",
-                  label: "Delete",
-                  onClick: (e) => {
-                    e.domEvent.stopPropagation();
-                    showDeleteModal(); // qo‘lda modal ochamiz
-                  },
+                  label: (
+                    <Permission
+                      anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}
+                    >
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          showDeleteModal();
+                        }}
+                      >
+                        Delete
+                      </span>
+                    </Permission>
+                  ),
                 },
               ],
             }}
             trigger={["click"]}
+            // ✅ Z-index ni modal dan past qilish
+            overlayStyle={{ zIndex: 999 }}
           >
             <button
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                setDropdownOpen(!dropdownOpen);
+              }}
               className="p-1 rounded hover:bg-gray-200 cursor-pointer"
             >
               <MoreVertical className="size-4" />
@@ -1059,7 +1454,18 @@ const fetchChecklist = useCallback(async () => {
         </button>
 
         <Modal
-          title={taskData ? taskData.name : `Task Details`}
+          title={
+            <div
+              style={{
+                fontSize: "32px",
+                fontWeight: "bold",
+                padding: "5px 0",
+                textTransform: "capitalize",
+              }}
+            >
+              {taskData ? taskData.name : `Task Details`}
+            </div>
+          }
           open={isModalOpen}
           onOk={() => setIsModalOpen(false)}
           onCancel={() => setIsModalOpen(false)}
@@ -1070,22 +1476,24 @@ const fetchChecklist = useCallback(async () => {
             top: 30, // px qiymati, modal yuqoriga yaqinlashadi
           }}
           footer={[
-            <Button
-              key="edit"
-              onClick={() => {
-                setIsModalOpen(false); // eski modal yopiladi
-                handleEditCard(); // Bu yerda ham yangi funksiya
-              }}
-              style={{
-                borderRadius: "14px",
-                padding: "18px 16px",
-                fontSize: "14px",
-                fontWeight: "bolder",
-              }}
-            >
-              <span className="text-gray-500">Edit</span>{" "}
-              <img src={pencil} className="w-[14px]" alt="pencil" />
-            </Button>,
+            <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+              <Button
+                key="edit"
+                onClick={() => {
+                  setIsModalOpen(false); // eski modal yopiladi
+                  handleEditCard(); // Bu yerda ham yangi funksiya
+                }}
+                style={{
+                  borderRadius: "14px",
+                  padding: "18px 16px",
+                  fontSize: "14px",
+                  fontWeight: "bolder",
+                }}
+              >
+                <span className="text-gray-500">Edit</span>{" "}
+                <img src={pencil} className="w-[14px]" alt="pencil" />
+              </Button>
+            </Permission>,
             <Button
               key="gotit"
               type="primary"
@@ -1111,30 +1519,29 @@ const fetchChecklist = useCallback(async () => {
               <div className="md:col-span-6 space-y-6">
                 {/* Top section */}
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <div className="w-full sm:w-[140px] h-[140px] bg-gray-200 flex items-center justify-center rounded">
+                  <div className="w-full max-w-5/6 sm:w-[140px] sm:h-[140px] bg-gray-200 flex items-center justify-center rounded-xl">
                     <span role="img" aria-label="image" className="text-4xl">
                       {taskData?.task_image ? (
                         <img
                           src={taskData.task_image}
-                          alt=""
+                          alt="task image"
                           onError={(e) =>
                             (e.currentTarget.style.display = "none")
                           }
+                          className="rounded-xl"
                         />
                       ) : (
                         <span>🖼️</span>
                       )}
                     </span>
                   </div>
-                  <div className="flex-1 text-sm text-gray-700 leading-6">
+                  <div className="flex-1 text-sm text-gray-700 leading-6 whitespace-pre-wrap">
                     {taskData.description || "No description available"}
                   </div>
                 </div>
 
                 {/* Files */}
                 <div>
-                  <h4 className="font-semibold text-sm mb-3">Files</h4>
-
                   <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
                     <span>📁</span>
                     Files ({files.length})
@@ -1148,50 +1555,219 @@ const fetchChecklist = useCallback(async () => {
                       </span>
                     </div>
                   ) : files.length > 0 ? (
-                    <div className="space-y-2">
-                      {files.map((file, index) => (
-                        <div
-                          key={file.id || index}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
-                        >
-                          <div className="flex items-center gap-3">
-                            {/* Fayl tipi ikonkasi */}
-                            <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                              {getFileIcon(file.file_type || file.file_name)}
-                            </div>
+                    <div className="space-y-2 max-w-sm">
+                      {/* Files list */}
+                      <div
+                        className={`space-y-2 overflow-hidden transition-all duration-300 ${
+                          showAllFiles ? "max-h-none" : "max-h-80"
+                        }`}
+                      >
+                        {(showAllFiles ? files : files.slice(0, 4)).map(
+                          (file, index) => (
+                            <div
+                              key={file.id || index}
+                              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border hover:bg-gray-100 transition-colors"
+                            >
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                {/* File type icon */}
+                                <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center flex-shrink-0">
+                                  <span className="text-lg">
+                                    {getFileIcon(
+                                      file.file_type || file.file_name
+                                    )}
+                                  </span>
+                                </div>
 
-                            <div>
-                              <p className="text-sm font-medium text-gray-900">
-                                {file.original_name ||
-                                  file.file_name ||
-                                  "Unnamed file"}
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                {file.file_size
-                                  ? formatFileSize(file.file_size)
-                                  : ""}{" "}
-                                •{" "}
-                                {file.created_at
-                                  ? formatDate(file.created_at)
-                                  : "Unknown date"}
-                              </p>
-                            </div>
-                          </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-medium text-gray-900 truncate">
+                                    {file.original_name ||
+                                      file.file_name ||
+                                      "Unnamed file"}
+                                  </p>
+                                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                                    <span>
+                                      {file.file_size
+                                        ? formatFileSize(file.file_size)
+                                        : "Size unknown"}
+                                    </span>
+                                    <span>•</span>
+                                    <span>
+                                      {file.created_at
+                                        ? formatDate(file.created_at)
+                                        : "Date unknown"}
+                                    </span>
+                                    {file.uploaded_by && (
+                                      <>
+                                        <span>•</span>
+                                        <span>by {file.uploaded_by}</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
 
-                          {/* Download button */}
-                          <Button
-                            type="text"
-                            icon={<DownloadOutlined />}
-                            onClick={() => handleFileDownload(file)}
-                            className="text-blue-600 hover:text-blue-800"
-                          />
+                              {/* Action buttons */}
+                              <div className="flex items-center gap-2 ml-3">
+                                {/* Preview button (for images) */}
+                                {file.file_type?.startsWith("image/") && (
+                                  <Button
+                                    type="text"
+                                    size="small"
+                                    icon="👁️"
+                                    onClick={() => {
+                                      // Image preview ni modal da ochish
+                                      Modal.info({
+                                        title:
+                                          file.original_name || file.file_name,
+                                        content: (
+                                          <div className="text-center">
+                                            <img
+                                              src={file.file || file.url}
+                                              alt="Preview"
+                                              style={{
+                                                maxWidth: "100%",
+                                                maxHeight: "400px",
+                                              }}
+                                              onError={(e) => {
+                                                e.target.style.display = "none";
+                                                e.target.nextSibling.style.display =
+                                                  "block";
+                                              }}
+                                            />
+                                            <div
+                                              style={{ display: "none" }}
+                                              className="text-gray-500"
+                                            >
+                                              Preview not available
+                                            </div>
+                                          </div>
+                                        ),
+                                        width: 600,
+                                        okText: "Close",
+                                      });
+                                    }}
+                                    className="text-blue-600 hover:text-blue-800"
+                                    title="Preview image"
+                                  />
+                                )}
+
+                                {/* Download button */}
+                                <Button
+                                  type="text"
+                                  icon={<DownloadOutlined />}
+                                  onClick={() => handleFileDownload(file)}
+                                  className="text-blue-600 hover:text-blue-800"
+                                  size="small"
+                                  title="Download file"
+                                />
+
+                                {/* File info button */}
+                                <Button
+                                  type="text"
+                                  icon="ℹ️"
+                                  onClick={() => {
+                                    Modal.info({
+                                      title: "File Information",
+                                      content: (
+                                        <div className="space-y-2">
+                                          <p>
+                                            <strong>Name:</strong>{" "}
+                                            {file.original_name ||
+                                              file.file_name}
+                                          </p>
+                                          <p>
+                                            <strong>Size:</strong>{" "}
+                                            {file.file_size
+                                              ? formatFileSize(file.file_size)
+                                              : "Unknown"}
+                                          </p>
+                                          <p>
+                                            <strong>Type:</strong>{" "}
+                                            {file.file_type || "Unknown"}
+                                          </p>
+                                          <p>
+                                            <strong>Uploaded:</strong>{" "}
+                                            {file.created_at
+                                              ? formatDate(file.created_at)
+                                              : "Unknown"}
+                                          </p>
+                                          {file.uploaded_by && (
+                                            <p>
+                                              <strong>Uploaded by:</strong>{" "}
+                                              {file.uploaded_by}
+                                            </p>
+                                          )}
+                                          {file.file && (
+                                            <p>
+                                              <strong>URL:</strong>{" "}
+                                              <a
+                                                href={file.file}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-blue-600"
+                                              >
+                                                {file.file}
+                                              </a>
+                                            </p>
+                                          )}
+                                        </div>
+                                      ),
+                                      okText: "Close",
+                                    });
+                                  }}
+                                  size="small"
+                                  className="text-gray-600 hover:text-gray-800"
+                                  title="File details"
+                                />
+                              </div>
+                            </div>
+                          )
+                        )}
+                      </div>
+
+                      {/* Show More/Less button */}
+                      {files.length > 4 && (
+                        <div className="mt-3">
+                          <button
+                            onClick={() => setShowAllFiles(!showAllFiles)}
+                            className="w-full py-2 px-3 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-200 transition-colors flex items-center justify-center gap-2 text-sm text-gray-600 hover:text-gray-800"
+                          >
+                            <span>
+                              {showAllFiles
+                                ? `Show Less`
+                                : `Show ${files.length - 4} More Files`}
+                            </span>
+                            {showAllFiles ? (
+                              <ChevronUp className="w-4 h-4" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4" />
+                            )}
+                          </button>
                         </div>
-                      ))}
+                      )}
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500 bg-gray-50 p-4 rounded-lg text-center">
-                      📄 No files attached to this task
-                    </p>
+                    <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                      <div className="text-4xl mb-2">📄</div>
+                      <p className="text-sm text-gray-500 mb-2">
+                        No files attached to this task
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        Files will appear here when uploaded
+                      </p>
+                    </div>
+                  )}
+
+                  {/* File upload progress */}
+                  {filesLoading && (
+                    <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center gap-2">
+                        <Spin size="small" />
+                        <span className="text-sm text-blue-700">
+                          Loading files...
+                        </span>
+                      </div>
+                    </div>
                   )}
                 </div>
 
@@ -1202,43 +1778,76 @@ const fetchChecklist = useCallback(async () => {
                       <img
                         src={checkList}
                         alt="checklist"
-                        className="w-4 h-4"
+                        className="w-4 h-4 bg-blue-600"
                       />
                       Check list ({checklistItems.length})
                     </h4>
-                    <span className="text-xs text-gray-500">Show</span>
+                    {checklistItems.length > 4 && (
+                      <button
+                        onClick={() => setShowAllChecklist(!showAllChecklist)}
+                        className="text-xs text-blue-500 hover:text-blue-700 cursor-pointer font-medium transition-colors duration-200 flex items-center gap-1"
+                      >
+                        {showAllChecklist ? "Hide" : "Show"}
+                        <span
+                          className={`transform text-sm transition-transform duration-200 ${
+                            showAllChecklist ? "rotate-180" : ""
+                          }`}
+                        >
+                          <ArrowBigUpDashIcon />
+                        </span>
+                      </button>
+                    )}
                   </div>
 
                   {checklistItems && checklistItems.length > 0 ? (
                     <div className="space-y-2">
-                      {checklistItems.map((item, index) => (
-                        <div
-                          key={item.id || index}
-                          className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded"
-                        >
-                          <Checkbox
-                            checked={item.completed}
-                            onChange={(e) =>
-                              handleUpdateChecklistItem(
-                                item.id,
-                                e.target.checked
-                              )
-                            }
-                          />
-                          <span
-                            className={`text-sm flex-1 ${
-                              item.completed
-                                ? "line-through text-gray-500"
-                                : "text-gray-900"
-                            }`}
+                      <div
+                        className={`space-y-2 transition-all duration-300 ${
+                          showAllChecklist
+                            ? "max-h-96 overflow-y-auto"
+                            : "max-h-none"
+                        }`}
+                      >
+                        {(showAllChecklist
+                          ? checklistItems
+                          : checklistItems.slice(0, 4)
+                        ).map((item, index) => (
+                          <div
+                            key={item.id || index}
+                            className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded transition-colors duration-150"
                           >
-                            {item.title ||
-                              item.name ||
-                              item.description ||
-                              `Item ${index + 1}`}
+                            <Checkbox
+                              checked={item.completed || item.status}
+                              onChange={(e) =>
+                                handleUpdateChecklistItem(
+                                  item.id,
+                                  e.target.checked
+                                )
+                              }
+                            />
+                            <span
+                              className={`text-sm flex-1 ${
+                                item.completed || item.status
+                                  ? "line-through text-gray-500"
+                                  : "text-gray-900"
+                              }`}
+                            >
+                              {item.title ||
+                                item.name ||
+                                item.description ||
+                                `Item ${index + 1}`}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {!showAllChecklist && checklistItems.length > 4 && (
+                        <div className="text-center pt-2 border-t border-gray-100">
+                          <span className="text-xs text-gray-400">
+                            ... and {checklistItems.length - 4} more items
                           </span>
                         </div>
-                      ))}
+                      )}
                     </div>
                   ) : (
                     <p className="text-sm text-gray-500">No checklist items</p>
@@ -1249,90 +1858,271 @@ const fetchChecklist = useCallback(async () => {
                 <div>
                   <h4 className="font-semibold text-sm mb-3">Comments</h4>
                   <div className="p-4 bg-blue-50 rounded-xl">
-                    {comments.length > 0 ? (
-                      comments.map((c) => (
-                        <div key={c.id} className="rounded-lg bg-blue-50 mb-3">
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs">
-                              👤 {c.user_name[0]}
-                            </div>
-                            <span className="text-sm font-medium">
-                              {c.user_name || "You"}
-                            </span>
-                            <p className="text-xs text-gray-500 ml-2">
-                              {dayjs(c.created_at).format("MMM D, YYYY h:mm A")}
-                            </p>
-                          </div>
-                          <div>
-                            <div className="bg-white p-1 rounded-sm">
-                              <p className="text-sm text-gray-700">
-                                {c.text || c.message}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-gray-500 mb-3">
-                        No comments yet
-                      </p>
-                    )}
+                    <div className=" max-h-96 overflow-y-auto">
+                      {comments.length > 0 ? (
+                        comments.map((c) => (
+                          <div
+                            key={c.id}
+                            className="rounded-lg bg-blue-50 mb-3"
+                          >
+                            <div className="flex items-center gap-3 mb-2 justify-between">
+                              <div className="flex items-center gap-3">
+                                {/* User avatar */}
+                                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center text-xs font-semibold">
+                                  {c.user_avatar ? (
+                                    <img
+                                      src={c.user_avatar}
+                                      alt={c.user_name}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        e.target.style.display = "none";
+                                        e.target.nextSibling.style.display =
+                                          "flex";
+                                      }}
+                                    />
+                                  ) : null}
+                                  <span
+                                    className={`${
+                                      c.user_avatar ? "hidden" : "flex"
+                                    } w-full h-full items-center justify-center bg-blue-500 text-white text-xs font-semibold`}
+                                  >
+                                    {c.user_initials}
+                                  </span>
+                                </div>
 
+                                {/* User name */}
+                                <span className="text-sm font-medium">
+                                  {c.user_name || "Unknown User"}
+                                </span>
+
+                                <p className="text-xs text-gray-500">
+                                  {dayjs(c.created_at).format(
+                                    "MMM D, YYYY h:mm A"
+                                  )}
+                                </p>
+                              </div>
+
+                              {/* Comment actions dropdown */}
+                              <Dropdown
+                                open={commentDropdownOpen === c.id}
+                                onOpenChange={(open) =>
+                                  setCommentDropdownOpen(open ? c.id : null)
+                                }
+                                menu={{
+                                  items: [
+                                    {
+                                      key: "edit",
+                                      label: "Edit message",
+                                      onClick: () => handleEditComment(c),
+                                    },
+                                    {
+                                      key: "delete",
+                                      label: "Delete",
+                                      onClick: () => showDeleteCommentModal(c),
+                                    },
+                                  ],
+                                }}
+                                trigger={["click"]}
+                                overlayStyle={{ zIndex: 1001 }}
+                              >
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCommentDropdownOpen(
+                                      commentDropdownOpen === c.id ? null : c.id
+                                    );
+                                  }}
+                                  className="p-1 rounded hover:bg-gray-200 cursor-pointer"
+                                >
+                                  <MoreVertical className="size-3" />
+                                </button>
+                              </Dropdown>
+                            </div>
+
+                            <div className="ml-11">
+                              <div className="bg-white p-3 rounded-lg">
+                                {editingCommentId === c.id ? (
+                                  // Edit mode
+                                  <div className="space-y-2">
+                                    <textarea
+                                      value={editingCommentText}
+                                      onChange={(e) =>
+                                        setEditingCommentText(e.target.value)
+                                      }
+                                      onInput={(e) => {
+                                        if (e.target.value === "") {
+                                          e.target.style.height = "40px"; // Bo'sh bo'lsa minimal height
+                                        } else {
+                                          e.target.style.height = "auto";
+                                          e.target.style.height =
+                                            Math.min(
+                                              e.target.scrollHeight,
+                                              140
+                                            ) + "px";
+                                        }
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter" && !e.shiftKey) {
+                                          e.preventDefault();
+                                          handleUpdateComment(c.id);
+                                        }
+                                      }}
+                                      className="flex-1 border w-full border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none resize-none"
+                                      style={{
+                                        minHeight: "40px",
+                                        maxHeight: "140px",
+                                      }}
+                                      // rows={1}
+                                    />
+                                    <div className="flex gap-2 pt-2">
+                                      <button
+                                        onClick={() =>
+                                          handleUpdateComment(c.id)
+                                        }
+                                        className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
+                                      >
+                                        Save
+                                      </button>
+                                      <button
+                                        onClick={handleCancelEdit}
+                                        className="px-3 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  // View mode
+                                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                    {c.message || c.text}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500 mb-3">
+                          No comments yet
+                        </p>
+                      )}
+                    </div>
                     {/* Add new comment */}
-                    <div className="mt-3 flex gap-2">
-                      <input
-                        type="text"
+                    <div className="mt-3 flex gap-2 items-end">
+                      <textarea
                         placeholder="Add a comment"
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
-                        onKeyPress={(e) =>
-                          e.key === "Enter" && handleAddComment()
-                        } // Enter bosilganda ham yuborish
-                        className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none"
+                        onInput={(e) => {
+                          if (e.target.value === "") {
+                            e.target.style.height = "40px"; // Bo'sh bo'lsa minimal height
+                          } else {
+                            e.target.style.height = "auto";
+                            e.target.style.height =
+                              Math.min(e.target.scrollHeight, 140) + "px";
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleAddComment();
+                          }
+                        }}
+                        className="flex-1 border border-gray-300 bg-white rounded-lg px-3 py-2 text-sm focus:outline-none resize-none"
+                        style={{ minHeight: "40px", maxHeight: "140px" }}
+                        rows={1}
                       />
                       <button
                         onClick={handleAddComment}
                         disabled={submitLoading}
-                        className="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600 disabled:opacity-50"
+                        className="bg-blue-500 text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600 disabled:opacity-50 mb-0.5"
                       >
                         {submitLoading ? "..." : "➤"}
                       </button>
                     </div>
                   </div>
                 </div>
+                {/* Delete Comment Confirmation Modal */}
+                <Modal
+                  title="Delete Comment"
+                  open={deleteCommentModalOpen}
+                  onOk={handleConfirmDeleteComment}
+                  onCancel={handleCancelDeleteComment}
+                  okText="Yes, delete"
+                  cancelText="Cancel"
+                  okButtonProps={{ danger: true }}
+                  centered
+                >
+                  <div className="py-4">
+                    <p className="text-gray-700 mb-4">
+                      Are you sure you want to delete this comment? This action
+                      cannot be undone.
+                    </p>
+                    {commentToDelete && (
+                      <div className="bg-gray-50 p-3 rounded-lg border-l-4 border-gray-300">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-sm font-medium text-gray-600">
+                            {commentToDelete.user_name || "Unknown User"}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {dayjs(commentToDelete.created_at).format(
+                              "MMM D, YYYY h:mm A"
+                            )}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-700 italic">
+                          "{commentToDelete.message || commentToDelete.text}"
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </Modal>
               </div>
 
               {/* Right section */}
               <div className="md:col-span-4 space-y-4 text-sm">
                 <div>
                   <p className="text-gray-400">Assignee by</p>
+
                   <div className="flex items-center gap-2 mt-1">
-                    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-                      👤
-                    </div>
+                    {(() => {
+                      const assignee =
+                        selectedAssignee ||
+                        taskData?.assignee ||
+                        taskData?.assigned_to ||
+                        taskData?.assigned?.[0];
+                      const assigneeInfo = getAssigneeInfo(assignee);
 
-                    <span>
-                      {(() => {
-                        // Debug ma'lumotlari
-                        console.log("Current taskData:", taskData);
-                        console.log(
-                          "Current selectedAssignee:",
-                          selectedAssignee
-                        );
-                        console.log("Current projectUsers:", projectUsers);
+                      return (
+                        <div className="flex items-center gap-3">
+                          {/* Avatar */}
+                          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center">
+                            {assigneeInfo.avatar ? (
+                              <img
+                                src={assigneeInfo.avatar}
+                                alt={assigneeInfo.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.style.display = "none";
+                                  e.target.parentNode.innerHTML = `<span class="text-xs font-semibold text-white bg-blue-500 w-full h-full flex items-center justify-center">${assigneeInfo.initials}</span>`;
+                                }}
+                              />
+                            ) : (
+                              <span className="text-xs font-semibold text-gray-600">
+                                {assigneeInfo.initials}
+                              </span>
+                            )}
+                          </div>
 
-                        // Har xil assignee formatlarini tekshirish
-                        const assignee =
-                          selectedAssignee ||
-                          taskData?.assignee ||
-                          taskData?.assigned_to ||
-                          taskData?.assigned?.[0];
-
-                        console.log("Final assignee:", assignee);
-
-                        return getAssigneeName(assignee);
-                      })()}
-                    </span>
+                          {/* Info */}
+                          <div>
+                            <span className="font-medium text-gray-900">
+                              {assigneeInfo.name}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -1352,12 +2142,14 @@ const fetchChecklist = useCallback(async () => {
 
                 <div>
                   <p className="text-gray-400">Status</p>
-                  <p className="mt-1">{taskData.tasks_type || "N/A"}</p>
+                  <p className="mt-1">{getStatusTitle(taskData.tasks_type)}</p>
                 </div>
 
                 <div>
                   <p className="text-gray-400">Progress</p>
-                  <p className="mt-1">{taskData.progress}%</p>
+                  <p className="mt-1">
+                    {taskData.progress}/{taskData.total_count}
+                  </p>
                 </div>
 
                 <div>
@@ -1391,7 +2183,10 @@ const fetchChecklist = useCallback(async () => {
         />
 
         {/* Bottom Row */}
-        <div className="flex items-center justify-between text-xs text-gray-500">
+        <div
+          className="flex items-center justify-between text-xs text-gray-500"
+          onClick={openViewModal}
+        >
           {/* Deadline faqat time mavjud bo'lsa ko'rinadi */}
           {time && time !== "No due date" && (
             <div className="flex items-center gap-1 bg-gray-100 rounded p-1">
@@ -1405,16 +2200,29 @@ const fetchChecklist = useCallback(async () => {
               <img src={descriptionIcon} alt="Description Icon" />
             </div>
           )}
-          <div>
-            <img src={comment} alt="Comment Icon" />
-          </div>
 
-          {/* Checklist */}
-          {progress !== undefined && totalCount > 0 && (
+          {/* Comment Icon */}
+          {commentsCount > 0 && (
+            <div className="relative">
+              <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] rounded-full size-4 flex items-center justify-center">
+                {commentsCount}
+              </span>
+              <img src={comment} alt="Comment Icon" className="w-6" />
+            </div>
+          )}
+
+          {/* ✅ TUZATILGAN: Checklist Progress */}
+          {cardTotalCount > 0 && (
             <div className="flex items-center gap-2">
-              <span className="bg-[#64C064] text-white text-[11px] px-2 py-0.5 rounded flex items-center gap-1">
+              <span
+                className={`text-[11px] px-2 py-0.5 rounded flex items-center gap-1 ${
+                  cardProgress > 0
+                    ? "bg-[#64C064] text-white"
+                    : "bg-gray-200 text-gray-600"
+                }`}
+              >
                 <img src={checkList} alt="Checklist" />
-                {progress} / {totalCount}
+                {cardProgress} / {cardTotalCount}
               </span>
             </div>
           )}
@@ -1431,7 +2239,6 @@ const DropIndicator = ({ beforeId, column }) => (
     className="my-0.5 h-2 w-full bg-violet-400 opacity-0"
   />
 );
-
 
 const AddCard = ({ column, setCards }) => {
   const [text, setText] = useState("");
@@ -1489,7 +2296,7 @@ const AddCard = ({ column, setCards }) => {
     }
   };
 
-// bu yerda permission yozilishi kerak (boshlanish)
+  // bu yerda permission yozilishi kerak (boshlanish)
 
   return adding ? (
     <motion.form layout onSubmit={handleSubmit}>
@@ -1527,24 +2334,27 @@ const AddCard = ({ column, setCards }) => {
       </div>
     </motion.form>
   ) : (
-    <motion.button
-      layout
-      onClick={() => setAdding(true)}
-      className="flex w-full items-center gap-1.5 p-2 text-xs text-black font-bold hover:bg-white hover:rounded-lg cursor-pointer"
-    >
-      <FiPlus />
-      <span>Add a card</span>
-    </motion.button>
+    <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+      <motion.button
+        layout
+        onClick={() => setAdding(true)}
+        className="flex w-full items-center gap-1.5 p-2 text-xs text-black font-bold hover:bg-white hover:rounded-lg cursor-pointer"
+      >
+        <FiPlus />
+        <span>Add a card</span>
+      </motion.button>
+    </Permission>
   );
 
   // tugashi.
-
 };
 
 const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
   const { projectId } = useParams();
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
+
+  const [originalAssignee, setOriginalAssignee] = React.useState(null);
 
   // Form state variables
   const [title, setTitle] = React.useState("");
@@ -1581,13 +2391,28 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
     if (visible && projectId && cardData?.id) {
       loadModalData();
       loadTaskFiles();
-      loadTaskInstructions(cardData.id); // Yangi qo'shildi
+      loadTaskInstructions(cardData.id);
+
+      // Save the original assignee when modal opens
+      if (
+        cardData.assigned &&
+        Array.isArray(cardData.assigned) &&
+        cardData.assigned.length > 0
+      ) {
+        // Extract the ID from the assigned object/ID
+        const assigneeId =
+          typeof cardData.assigned[0] === "object"
+            ? cardData.assigned[0].id
+            : cardData.assigned[0];
+        setOriginalAssignee(assigneeId);
+      } else {
+        setOriginalAssignee(null);
+      }
     }
-    // ✅ MUHIM: Modal yopilganda state ni tozalash
+
+    // Reset when modal closes
     if (!visible) {
-      setChecklist([]);
-      setUploadedFiles([]);
-      setFiles([]);
+      setOriginalAssignee(null);
     }
   }, [visible, cardData?.id]);
 
@@ -1601,12 +2426,18 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       // setSelectedAssignee(cardData.assigned || []);
 
       // Assigned maydonini to'g'ri formatlash
+      // ✅ TUZATISH: assigned maydonini to'g'ri formatlash
       if (
         cardData.assigned &&
         Array.isArray(cardData.assigned) &&
         cardData.assigned.length > 0
       ) {
-        setSelectedAssignee(cardData.assigned[0]);
+        // Extract just the ID for the select value
+        const assigneeId =
+          typeof cardData.assigned[0] === "object"
+            ? cardData.assigned[0].id
+            : cardData.assigned[0];
+        setSelectedAssignee(assigneeId);
       } else {
         setSelectedAssignee(null);
       }
@@ -1614,7 +2445,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       setDescription(cardData.description || "");
       setSelectedTags(cardData.tags ? cardData.tags.map((tag) => tag.id) : []);
       setProgress(cardData.progress || 0);
-      setTotalCount(cardData.totalCount || 0);
+      setTotalCount(cardData.total_count || 0);
       // ✅ Image ma'lumotlarini yuklash
       if (cardData.task_image) {
         setCurrentImage(cardData.task_image);
@@ -1813,8 +2644,15 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
         getTaskTags(),
       ]);
 
-      // Users ma'lumotlarini formatlash
-      const formattedUsers = usersResponse.data.map((user) => ({
+      // Users ma'lumotlarini formatlash - YANGILANDI
+      let usersData = [];
+      if (usersResponse.data && usersResponse.data.users) {
+        usersData = usersResponse.data.users;
+      } else if (Array.isArray(usersResponse.data)) {
+        usersData = usersResponse.data;
+      }
+
+      const formattedUsers = usersData.map((user) => ({
         value: user.id,
         label: `${user.first_name} ${user.last_name}`,
         email: user.email,
@@ -1902,48 +2740,62 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
     setSaveLoading(true);
 
     try {
+      // FormData yaratish
       const formData = new FormData();
       formData.append("name", title.trim());
       formData.append("description", description.trim() || "");
       formData.append("tasks_type", type);
-      formData.append("deadline", date ? date.format("YYYY-MM-DD") : "");
+      // formData.append("deadline", date ? date.format("YYYY-MM-DD") : "");
+      if (date) {
+        formData.append("deadline", date.format("YYYY-MM-DD"));
+      }
       formData.append("project", projectId);
-      formData.append("progress", Math.min(100, Math.max(0, progress)));
       formData.append("is_active", notification === "On");
 
-      // Assigned field
-      if (selectedAssignee && selectedAssignee.length > 0) {
-        const assignedArray = Array.isArray(selectedAssignee)
-          ? selectedAssignee
-          : [selectedAssignee];
-        assignedArray.forEach((assignee, index) => {
-          formData.append(`assigned[${index}]`, assignee);
-        });
+      // ✅ TUZATISH: assigned maydonini FormData ga qo'shish
+      // updateTask assigned uchun array ichida string kutayotgan bo'lsa:
+      if (selectedAssignee) {
+        // Format 1: JSON array
+        formData.append("assigned", selectedAssignee);
+        // Format 2: Oddiy string (yuqoridagi qatorni comment qilib, buni sinab ko'ring)
+        // formData.append("assigned", selectedAssignee);
+
+        // Format 3: Multiple entries (yuqoridagilarni comment qilib, buni sinab ko'ring)
+        // formData.append("assigned", selectedAssignee);
+
+        console.log("🎯 Selected assignee:", selectedAssignee);
+        console.log("🎯 Assigned format: JSON array");
       }
 
-      // Tags field
+      // ✅ TUZATILGAN: tags - har bir ID ni alohida yuborish
       if (Array.isArray(selectedTags) && selectedTags.length > 0) {
-        selectedTags.forEach((tag, index) => {
-          formData.append(`tags_ids[${index}]`, tag);
+        // Backend har bir tag ID ni alohida kutadi
+        selectedTags.forEach((tag) => {
+          formData.append("tags_ids", tag);
         });
+
+        console.log("🎯 Selected tags:", selectedTags);
+        console.log("🎯 Tags format: Multiple separate fields");
       }
 
-      // ✅ Image field - yangi rasm yuklangan bo'lsa
+      // Image field
       if (newImage) {
         formData.append("task_image", newImage);
       } else if (currentImage === null && cardData.task_image) {
-        // Agar current image o'chirilgan bo'lsa, bo'sh string yuboramiz
         formData.append("task_image", "");
       }
 
-      // Debug: FormData contents
-      console.log("🔍 FormData contents:");
-      for (let pair of formData.entries()) {
-        console.log(pair[0], pair[1]);
+      // Debug: FormData ni tekshirish
+      console.log("FormData contents:");
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
       }
-
-      await saveChecklist();
+      // Task ni yangilash
       const response = await updateTask(cardData.id, formData);
+      console.log("✅ Task muvaffaqiyatli yangilandi:", response.data);
+
+      // Checklist saqlash
+      await saveChecklist();
 
       // Fayllarni yuklash
       let newUploadedFiles = [];
@@ -1951,54 +2803,44 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
         newUploadedFiles = await uploadMultipleFiles(cardData.id);
       }
 
+      // ✅ MUHIM: Yangilangan task ma'lumotlarini qayta yuklash
+      const updatedTaskResponse = await getTaskById(cardData.id);
       message.success("Task muvaffaqiyatli yangilandi!");
+      // ✅ TUZATISH: To'g'ri formatda ma'lumot yuborish
+      const updatedCardData = {
+        id: cardData.id,
+        title: updatedTaskResponse.data.name,
+        name: updatedTaskResponse.data.name,
+        time: updatedTaskResponse.data.deadline,
+        description: updatedTaskResponse.data.description,
+        column: updatedTaskResponse.data.tasks_type,
+        tasks_type: updatedTaskResponse.data.tasks_type,
+        assigned: updatedTaskResponse.data.assigned,
+        task_image: updatedTaskResponse.data.task_image,
+        // ✅ MUHIM: Progress ma'lumotlarini qo'shish
+        progress: updatedTaskResponse.data.progress || 0,
+        total_count: updatedTaskResponse.data.total_count || 0,
+        comment_count: updatedTaskResponse.data.comment_count || 0,
+        files: [...uploadedFiles, ...newUploadedFiles],
+      };
 
-      // State ni yangilash
-      if (response && response.data) {
-        const updatedCardData = {
-          ...response.data,
-          files: [...uploadedFiles, ...newUploadedFiles],
-        };
-        onUpdate(updatedCardData);
-      } else {
-        onUpdate({
-          ...cardData,
-          name: title.trim(),
-          description: description.trim(),
-          tasks_type: type,
-          deadline: date ? date.format("YYYY-MM-DD") : null,
-          task_image: newImage ? imagePreviewUrl : currentImage,
-          files: [...uploadedFiles, ...newUploadedFiles],
-          id: cardData.id,
-        });
-      }
-
+      onUpdate(updatedCardData);
       onClose();
     } catch (error) {
       console.error("❌ Task yangilashda xatolik:", error);
 
       if (error.response) {
-        console.error("🔍 Server javobi:", error.response.data);
-        console.error("📊 Status:", error.response.status);
+        console.error("Response data:", error.response.data);
+        console.error("Response status:", error.response.status);
 
-        // Server validation xatoliklarini batafsil ko'rsatish
-        const errorData = error.response.data;
-        let errorMessage = "Task yangilashda xatolik";
-
-        if (errorData.assigned && Array.isArray(errorData.assigned)) {
-          errorMessage = `Assigned field error: ${errorData.assigned.join(
-            ", "
-          )}`;
-        } else if (errorData.tags_ids && Array.isArray(errorData.tags_ids)) {
-          errorMessage = `Tags error: ${errorData.tags_ids.join(", ")}`;
-        } else if (typeof errorData === "object") {
-          const firstError = Object.values(errorData)[0];
-          errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
-        }
-
-        message.error(errorMessage);
+        // Server xabarini ko'rsatish
+        const errorMessage =
+          error.response.data?.message ||
+          error.response.data?.error ||
+          `Server error: ${error.response.status}`;
+        message.error(`Task yangilashda xatolik: ${errorMessage}`);
       } else if (error.request) {
-        message.error("Serverga ulanishda xatolik");
+        message.error("Server bilan bog'lanishda xatolik");
       } else {
         message.error("Kutilmagan xatolik yuz berdi");
       }
@@ -2084,7 +2926,8 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       console.log(`${newItems.length} ta yangi checklist item saqlandi`);
     } catch (error) {
       console.error("Checklist saqlashda xatolik:", error);
-      message.error("Ba'zi checklist elementlari saqlanmadi");
+      // message.error("Ba'zi checklist elementlari saqlanmadi");
+      message.error(`Failed to add instructions: ${error}`);
     }
   };
 
@@ -2121,14 +2964,14 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                   placeholder="Enter task title"
                 />
               </div>
-
+          
               {/* Type */}
               <div>
                 <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
                   Status
                 </label>
                 <Select
-                  className="custom-select w-full"
+                  className="custom-select"
                   value={type}
                   onChange={setType}
                   style={{ height: "54px" }}
@@ -2150,6 +2993,11 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                     style={{ borderRadius: "14px", height: "54px" }}
                     value={date}
                     onChange={(date) => setDate(date)}
+                    disabledDate={(current) => {
+                      // O'tgan sanalarni disable qilish
+                      return current && current < dayjs().startOf("day");
+                    }}
+                    // placeholder="Select deadline"
                   />
                 </div>
 
@@ -2175,20 +3023,22 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                   <div className="relative">
                     <Select
                       showSearch
-                      placeholder="Select assignees"
+                      placeholder="Select assignee"
                       value={selectedAssignee}
                       optionFilterProp="label"
                       className="custom-assigne"
-                      // mode="multiple"
                       onChange={setSelectedAssignee}
                       options={availableUsers}
                       filterOption={(input, option) =>
                         (option?.label ?? "")
                           .toLowerCase()
+                          .includes(input.toLowerCase()) ||
+                        (option?.email ?? "")
+                          .toLowerCase()
                           .includes(input.toLowerCase())
                       }
                       notFoundContent={
-                        loadModalData ? "Loading..." : "No users found"
+                        availableUsers.length === 0 ? "No users found" : null
                       }
                     />
                     <span className="absolute top-7 right-10 -translate-y-1/2 flex items-center pointer-events-none">
@@ -2512,7 +3362,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
               </div>
 
               {/* Buttons */}
-              <div className="flex justify-center gap-5 pt-10 md:pt-65">
+              <div className="flex justify-center gap-5 pt-8 md:pt-32">
                 <Button
                   onClick={onClose}
                   disabled={saveLoading || fileUploading}

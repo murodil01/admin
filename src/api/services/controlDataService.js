@@ -1,174 +1,154 @@
 import api from "../base";
 import endpoints from "../endpoint";
-import { getUserById } from "./userService";
-
-// export const getControlData = async () => {
-//     try {
-//         const response = await api.get(endpoints.controlData.getAll);
-//         console.log('GET Control Data Response:', response.data);
-//         return response.data;
-//     } catch (error) {
-//         console.error('Error fetching control data:', error);
-//         throw error;
-//     }
-// };
 
 export const getControlDataByUserId = async (userId) => {
     try {
-        const response = await api.get(endpoints.controlData.getByUserId(userId));
-        console.log("controlData id:", response);
+        // Ensure userId is a string
+        const userIdString = String(userId);
 
-        console.log('API Response:', {
-            status: response.status,
-            data: response.data,
-            headers: response.headers
-        });
+        // Use the correct endpoint based on Swagger - /control-data/{user_id}/
+        const response = await api.get(endpoints.controlData.getByUserId(userIdString));
 
-        // Javob strukturasi tekshiriladi
         if (!response.data) {
             throw new Error('API dan ma\'lumot qaytmadi');
         }
 
-        // Agar ma'lumotlar massiv bo'lsa
-        if (Array.isArray(response.data)) {
-            console.log('Qaytgan ma\'lumotlar soni:', response.data.length);
-            return response.data;
-        }
-
-        // Agar bitta obyekt qaytsa
-        if (typeof response.data === 'object' && response.data !== null) {
-            console.log('Qaytgan obyekt:', response.data);
-            return [response.data]; // Massivga o'rab qaytarish
-        }
-
-        throw new Error('Noto\'g\'ri javob formati');
-
+        // Return the data as is - don't force it into an array
+        return response.data;
     } catch (error) {
         console.error(`Error fetching control data for user ${userId}:`, {
             error: error,
             response: error.response?.data,
-            status: error.response?.status
+            status: error.response?.status,
+            requestUrl: endpoints.controlData.getByUserId
         });
         throw error;
     }
 };
 
-export const updateControlData = async (id, data) => {
-    let dataToSend;
+export const updateControlData = async (userId, data) => {
+    let cleanData;
+    const userIdString = String(userId);
     try {
-        const user = await getUserById(data.user_id || data.user_info?.id);
-        // Create clean dataToSend object with only allowed fields
-        dataToSend = {
-            id: data.id,
-            accept_reason: data.accept_reason,
-            expertise_level: data.expertise_level,
-            strengths: data.strengths,
-            weaknesses: data.weaknesses,
-            biography: data.biography,
-            trial_period: data.trial_period,
-            work_hours: data.work_hours,
-            contact_type: data.contact_type,
-            assigned_devices: data.assigned_devices,
-            access_level: data.access_level,
-            serial_number: data.serial_number,
-            pinfl: data.pinfl ? parseInt(data.pinfl) : null,
-            user_info: {
-                id: user.id,
-                first_name: user.first_name,
-                last_name: user.last_name,
-                email: user.email,
-                role: user.role,
-                full_name: user.full_name,
-            },
+        // Clean data object - INCLUDE user_id for updates
+        cleanData = {
+            user_id: userIdString, // ✅ Add user_id to the request body
+            accept_reason: data.accept_reason || "",
+            expertise_level: data.expertise_level || "",
+            strengths: data.strengths || "",
+            weaknesses: data.weaknesses || "",
+            biography: data.biography || "",
+            trial_period: data.trial_period || "",
+            work_hours: data.work_hours || "",
+            contact_type: data.contact_type || "",
+            assigned_devices: data.assigned_devices || "",
+            access_level: data.access_level || "",
+            serial_number: data.serial_number || "",
+            pinfl: data.pinfl !== undefined ? data.pinfl : null, // Ensure null if undefined
         };
-
-        console.log("Cleaned data being sent:", dataToSend);
 
         if (data.passport_picture instanceof File) {
             const formData = new FormData();
+
+            // Add the file
             formData.append('passport_picture', data.passport_picture);
 
-            // Append only the cleaned fields
-            Object.entries(dataToSend).forEach(([key, value]) => {
-                if (value !== undefined && value !== null) {
+            // Add all other fields INCLUDING user_id
+            Object.entries(cleanData).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && value !== "") {
                     formData.append(key, value);
                 }
             });
 
             const response = await api.patch(
-                endpoints.controlData.update(id),
-                formData,
-                {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                }
+                endpoints.controlData.partialUpdate(userIdString),
+                formData
+                // Don't set Content-Type header - let browser set it with boundary
             );
             return response.data;
         }
 
-        // Regular update without file
-        const response = await api.patch(
-            endpoints.controlData.update(id),
-            dataToSend
-        );
+        // Regular update without file using PUT method
+        const response = await api.put(endpoints.controlData.update(userIdString), cleanData);
+
         return response.data;
     } catch (error) {
         console.error('Update error:', {
             error: error.response?.data || error.message,
-            id,
-            sentData: dataToSend
+            userId: String(userId),
+            sentData: cleanData,
+            requestUrl: endpoints.controlData.update(userIdString)
         });
         throw error;
     }
 };
 
-export const createControlDataForUser = async (userInfo, data) => {
+export const createControlDataForUser = async (userId, data) => {
+    let cleanData;
     try {
-        const dataToSend = {
-            ...data,
-            user_info: {  // user_info strukturasini to'g'ri shaklda yuboramiz
-                id: userInfo.id,
-                first_name: userInfo.first_name,
-                last_name: userInfo.last_name,
-                email: userInfo.email,
-                role: userInfo.role,
-                full_name: userInfo.full_name,
-            },
-            pinfl: data.pinfl ? parseInt(data.pinfl) : null
+        // Ensure userId is a string
+        const userIdString = String(userId);
+
+        // Clean data for creation - INCLUDE user_id
+        cleanData = {
+            user_id: userIdString, // ✅ Add user_id to the request body
+            accept_reason: data.accept_reason || "",
+            expertise_level: data.expertise_level || "",
+            strengths: data.strengths || "",
+            weaknesses: data.weaknesses || "",
+            biography: data.biography || "",
+            trial_period: data.trial_period || "",
+            work_hours: data.work_hours || "",
+            contact_type: data.contact_type || "",
+            assigned_devices: data.assigned_devices || "",
+            access_level: data.access_level || "",
+            serial_number: data.serial_number || "",
+            pinfl: data.pinfl !== undefined ? data.pinfl : null, // Ensure null if undefined
         };
 
-        delete dataToSend.pinfl;
-        delete dataToSend.id;
-        delete dataToSend.employee;
+        // Check if we have a file to upload
+        if (data.passport_picture instanceof File) {
+            const formData = new FormData();
 
-        const response = await api.post(
-            endpoints.controlData.createForUser(userInfo.id), // User ID ni endpointga qo'shamiz
-            dataToSend
-        );
+            // Add the file
+            formData.append('passport_picture', data.passport_picture);
 
-        // console.log('CREATE for user response:', response.data);
+            // Add all other fields INCLUDING user_id
+            Object.entries(cleanData).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && value !== "") {
+                    formData.append(key, value);
+                }
+            });
+
+            // Create with file using FormData
+            const response = await api.post(endpoints.controlData.create, formData);
+            return response.data;
+        }
+
+        // Regular creation without file
+        const response = await api.post(endpoints.controlData.create, cleanData);
         return response.data;
     } catch (error) {
-        console.error('Error creating for user:', {
-            userInfo,
-            error: error.response?.data || error.message
+        console.error('Error creating control data:', {
+            error: error.response?.data || error.message,
+            userId,
+            sentData: cleanData
         });
         throw error;
     }
 };
 
-export const uploadControlDataFile = async (id, file) => {
+export const uploadControlDataFile = async (userId, file) => {
     try {
+        // Ensure userId is a string
+        const userIdString = String(userId);
+
         const formData = new FormData();
         formData.append('passport_picture', file);
+        // Also include user_id in file uploads
+        formData.append('user_id', userIdString);
 
-        // Mavjud update endpointidan foydalanamiz
-        const response = await api.patch(
-            endpoints.controlData.update(id),
-            formData,
-            {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            }
-        );
+        const response = await api.patch(endpoints.controlData.partialUpdate(userIdString), formData);
         return response.data;
     } catch (error) {
         console.error('File upload error:', error);

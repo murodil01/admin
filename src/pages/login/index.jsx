@@ -255,6 +255,7 @@ const Login = () => {
 
       // biroz kutib keyin navigate
       setTimeout(() => navigate("/"), 500);
+      navigate("/");
     } catch {
       toast.error("Login or Password is not correct!", {
         duration: 7000,

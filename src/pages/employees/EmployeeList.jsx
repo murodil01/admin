@@ -23,12 +23,23 @@ const EmployeeList = ({ employees, onDelete, onStatusUpdate }) => {
             return;
         }
 
+        const tableRect = e.currentTarget.getBoundingClientRect();
         const buttonRect = e.currentTarget.getBoundingClientRect();
-        const spaceBelow = window.innerHeight - buttonRect.bottom;
-        const spaceAbove = buttonRect.top;
 
-        const position = spaceBelow < 300 && spaceAbove > spaceBelow ? "top" : "bottom";
-        setDropdownPosition((prev) => ({ ...prev, [id]: position }));
+        const spaceBelow = tableRect.bottom - buttonRect.bottom;
+        const spaceAbove = buttonRect.top - tableRect.top;
+        const dropdownheight = 120;
+
+        const position = spaceBelow < dropdownheight && spaceAbove > spaceBelow ? "top" : "bottom";
+
+        let adjustPosition = position;
+        if (position === 'bottom' && spaceBelow < dropdownheight) {
+            adjustPosition = 'top';
+        } else if (position === 'top' && spaceAbove < dropdownheight) {
+            adjustPosition = 'bottom';
+        }
+
+        setDropdownPosition((prev) => ({ ...prev, [id]: adjustPosition }));
         setOpenDropdown(id);
     };
 
@@ -49,11 +60,11 @@ const EmployeeList = ({ employees, onDelete, onStatusUpdate }) => {
 
     return (
         <div className="bg-gray-50 rounded-2xl shadow">
-            <div className="overflow-x-auto p-1">
+            <div className="overflow-x-auto p-3">
                 <div className="w-full">
                     {/* Table Header */}
                     <div className="hidden lg:grid grid-cols-17 text-gray-500 text-md font-bold py-3 px-4 border-b border-b-gray-200 mb-7 pb-5">
-                        <div className="col-span-5">Employees</div>
+                        <div className="col-span-5">Members</div>
                         <div className="col-span-3 text-center">Department</div>
                         <div className="col-span-4 text-center">Phone number</div>
                         <div className="col-span-2 text-center">Projects</div>
@@ -86,22 +97,42 @@ const EmployeeList = ({ employees, onDelete, onStatusUpdate }) => {
 
 const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDelete, navigate, onStatusUpdate, setOpenDropdown }) => {
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
-    const [isMobileModalOpen, setIsMobileModalOpen] = useState(false); // Yangi state
+    const [isMobileModalOpen, setIsMobileModalOpen] = useState(false);
 
     const handleEditStatus = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        setIsMobileModalOpen(false); // Mobil modalni yopamiz
+        setIsMobileModalOpen(false);
         setTimeout(() => {
-            setIsStatusModalOpen(true); // Keyin status modalni ochamiz
+            setIsStatusModalOpen(true);
         }, 100);
         setOpenDropdown(null);
+    };
+
+    // Debug function to check employee ID
+    const handleNavigateToProfile = (employeeId) => {
+        // Validate the ID before navigation
+        if (!employeeId || employeeId === null || employeeId === undefined) {
+            console.error('Invalid member ID:', employeeId);
+            alert('Error: Invalid member ID');
+            return;
+        }
+
+        // Convert to string if it's a number
+        const validId = String(employeeId);
+
+        navigate(`/profile/${validId}`);
     };
 
     return (
         <div className="bg-white border border-gray-200 rounded-lg shadow hover:shadow-md transition p-4 grid grid-cols-1 gap-3 lg:grid-cols-17 lg:items-center">
             {/* Mobile View - Top Section */}
-            <div className="flex justify-between items-center lg:hidden">
+            <div
+                onClick={(e) => {
+                        e.stopPropagation();
+                        setIsMobileModalOpen(true);
+                    }}
+                className="flex justify-between items-center lg:hidden">
                 <div className="flex items-center gap-3">
                     <img
                         src={emp.profile_picture}
@@ -110,12 +141,12 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
                     />
                     <div>
                         <p className="text-[#1F2937] font-semibold">
-                            {emp.first_name} {emp.last_name}
+                            <span className="capitalize">{emp.first_name}</span> <span className="capitalize">{emp.last_name}</span>
                         </p>
                         <div className="flex items-center gap-1">
                             <span className="text-gray-500 text-sm">{emp.profession}</span>
                             {emp.level && emp.level !== "none" && (
-                                <span className={`px-2 py-1 rounded-md text-xs font-medium border border-gray-300 text-gray-600 bg-gray-100`}>
+                                <span className={`px-2 py-1 rounded-md text-xs font-medium border border-gray-300 text-gray-600 bg-gray-100 capitalize`}>
                                     {emp.level}
                                 </span>
                             )}
@@ -126,7 +157,7 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
                     className="cursor-pointer"
                     onClick={(e) => {
                         e.stopPropagation();
-                        setIsMobileModalOpen(true); // Modalni ochish
+                        setIsMobileModalOpen(true);
                     }}
                 >
                     <AiOutlineRight size={18} className="text-blue-500" />
@@ -169,12 +200,12 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
                                         />
                                         <div>
                                             <p className="text-lg font-semibold">
-                                                {emp.first_name} {emp.last_name}
+                                                <span className="capitalize">{emp.first_name}</span> <span className="capitalize">{emp.last_name}</span>
                                             </p>
                                             <p className="text-gray-600 flex items-center gap-2">
                                                 {emp.profession}
                                                 {emp.level && emp.level !== "none" && (
-                                                    <span className={`px-3 py-1 rounded-md text-xs font-medium border border-gray-300 text-gray-600 bg-gray-100`}>
+                                                    <span className={`px-3 py-1 rounded-md text-xs font-medium border border-gray-300 text-gray-600 bg-gray-100 capitalize`}>
                                                         {emp.level}
                                                     </span>
                                                 )}
@@ -208,7 +239,7 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        onDelete(emp.id); // <- onDelete(emp.id) deb to'g'rilang
+                                                        onDelete(emp.id);
                                                         setOpenDropdown(null);
                                                     }}
                                                     className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100"
@@ -261,7 +292,7 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
                             <div className="py-5 flex justify-center">
                                 <button
                                     onClick={() => {
-                                        navigate(`/profile/${emp.id}`);
+                                        handleNavigateToProfile(emp.id);
                                         setIsMobileModalOpen(false);
                                     }}
                                     className="py-1.5 px-10 bg-blue-500 text-white hover:bg-blue-600 rounded-lg shadow-md shadow-blue-300 transition duration-200"
@@ -274,23 +305,23 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
                 </>
             )}
 
-            {/* Desktop View - Remains Unchanged */}
+            {/* Desktop View */}
             <div className="hidden lg:flex items-center gap-3 col-span-5">
                 <img
                     src={emp.profile_picture}
                     alt={emp.name}
                     className="w-12 h-12 rounded-full object-cover"
                 />
-                <div className="min-w-0"> {/* truncate ishlashi uchun */}
+                <div className="min-w-0">
                     <p className="text-[#1F2937] font-semibold truncate max-w-[180px] overflow-hidden">
-                        {emp.first_name} {emp.last_name}
+                        <span className="capitalize">{emp.first_name}</span> <span className="capitalize">{emp.last_name}</span>
                     </p>
                     <div className="flex items-center gap-2 min-w-0">
                         <span className="text-gray-500 text-sm font-medium truncate overflow-hidden max-w-[120px]">
                             {emp.profession}
                         </span>
                         {emp.level && emp.level !== "none" && (
-                            <span className="px-3 py-[3px] rounded-md text-xs font-medium border border-gray-300 text-gray-600 bg-gray-100 truncate overflow-hidden max-w-[80px]">
+                            <span className="px-3 py-[3px] rounded-md text-xs font-medium border border-gray-300 text-gray-600 bg-gray-100 truncate overflow-hidden max-w-[80px] capitalize">
                                 {emp.level}
                             </span>
                         )}
@@ -333,6 +364,7 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
                         onDelete={onDelete}
                         navigate={navigate}
                         setOpenDropdown={setOpenDropdown}
+                        handleNavigateToProfile={handleNavigateToProfile}
                     />
                 )}
             </div>
@@ -353,43 +385,89 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
     );
 };
 
-const StatusBadge = ({ status }) => (
-    <span className={`flex px-2 w-[84px] py-[6px] rounded-lg text-xs font-medium capitalize items-center gap-1 justify-center
-    ${status === "free" ? "text-green-600 bg-green-100" :
-            status === "overload" ? "text-red-600 bg-red-100" :
-                status === "working" ? "text-blue-600 bg-blue-100" :
-                    status === "sick" ? "text-yellow-600 bg-yellow-100" :
-                        "text-gray-600 bg-gray-200"
-        }`}
-    >
-        <div className={`w-[5px] h-[5px] rounded-full
-      ${status === "free" ? "bg-green-500" :
-                status === "overload" ? "bg-red-500" :
-                    status === "working" ? "bg-blue-500" :
-                        status === "sick" ? "bg-yellow-500" :
-                            "bg-gray-400"
-            }`}
-        ></div>
-        <span className="ml-2 capitalize">{status}</span>
-    </span>
-);
+const StatusBadge = ({ status }) => {
+    const formattedStatus =
+        status?.toLowerCase() === "on_leave"
+            ? "On Leave"
+            : status;
 
-const EmployeeDropdownMenu = ({ emp, dropdownPosition, setIsStatusModalOpen, onDelete, navigate, setOpenDropdown }) => (
-    <div
-        className={`absolute z-10 w-40 bg-white rounded-lg shadow border border-gray-300 dropdown-menu
-            ${dropdownPosition[emp.id] === "top" ? "bottom-full mb-2" : "mt-2"}`}
-        style={{ right: 0 }}
-        onClick={(e) => e.stopPropagation()}
-    >
-        <>
+    return (
+        <span
+            className={`flex px-2 w-[90px] py-[6px] rounded-lg text-xs font-medium capitalize items-center gap-1 justify-center
+    ${status === "free"
+                    ? "text-green-600 bg-green-100"
+                    : status === "overload"
+                        ? "text-red-600 bg-red-100"
+                        : status === "working"
+                            ? "text-blue-600 bg-blue-100"
+                            : status === "sick"
+                                ? "text-yellow-600 bg-yellow-100"
+                                : status === "on_leave"
+                                    ? "text-gray-600 bg-gray-200"
+                                    : "text-gray-600 bg-gray-200"
+                }`}
+        >
+            <div
+                className={`w-[5px] h-[5px] rounded-full
+      ${status === "free"
+                        ? "bg-green-500"
+                        : status === "overload"
+                            ? "bg-red-500"
+                            : status === "working"
+                                ? "bg-blue-500"
+                                : status === "sick"
+                                    ? "bg-yellow-500"
+                                    : status === "on_leave"
+                                        ? "bg-gray-500"
+                                        : "bg-gray-400"
+                    }`}
+            ></div>
+            <span className="ml-2">{formattedStatus}</span>
+        </span>
+    );
+};
+
+const EmployeeDropdownMenu = ({
+    emp,
+    dropdownPosition,
+    setIsStatusModalOpen,
+    onDelete,
+    setOpenDropdown,
+    handleNavigateToProfile
+}) => {
+    const calculatePosition = () => {
+        const position = dropdownPosition[emp.id] || "bottom";
+        return position === "top" ? { bottom: '100%', marginBottom: '8px' } : { top: '100%', marginTop: '8px' };
+    };
+
+    return (
+        <div
+            className={`fixed z-9999 w-40 bg-white rounded-lg shadow border border-gray-300 dropdown-menu
+                ${dropdownPosition[emp.id] === "top" ? "bottom-full mb-" : "mt-2"}`}
+            style={{ right: 0, ...calculatePosition() }}
+            onClick={(e) => e.stopPropagation()}
+        >
             <div className="py-1">
-                {/* Always visible button */}
+                <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsStatusModalOpen(true);
+                            setOpenDropdown(null);
+                        }}
+                        className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-green-500 cursor-pointer"
+                    >
+                        Edit status
+                    </button>
+                </Permission>
+
+                {/* Always visible button - FIXED */}
                 <button
                     type="button"
-                    onMouseDown={(e) => {
+                    onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/profile/${emp.id}`);
-                        setTimeout(() => setOpenDropdown(null), 0);
+                        handleNavigateToProfile(emp.id);
+                        setOpenDropdown(null);
                     }}
                     className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-yellow-500 cursor-pointer"
                 >
@@ -398,32 +476,20 @@ const EmployeeDropdownMenu = ({ emp, dropdownPosition, setIsStatusModalOpen, onD
 
                 {/* Founder/Manager only buttons */}
                 <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
-                    <>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setIsStatusModalOpen(true);
-                                setOpenDropdown(null);
-                            }}
-                            className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-green-500 cursor-pointer"
-                        >
-                            Edit status
-                        </button>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onDelete(emp.id);
-                                setOpenDropdown(null);
-                            }}
-                            className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-red-500 cursor-pointer"
-                        >
-                            Delete
-                        </button>
-                    </>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(emp.id);
+                            setOpenDropdown(null);
+                        }}
+                        className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-red-500 cursor-pointer"
+                    >
+                        Delete
+                    </button>
                 </Permission>
             </div>
-        </>
-    </div>
-);
+        </div>
+    );
+};
 
 export default EmployeeList;

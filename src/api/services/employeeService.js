@@ -1,16 +1,36 @@
 import api from "../base";
 import endpoints from "../endpoint";
 
-export const getEmployees = async (page = 1) => {
+export const getEmployees = async (page = 1, filters = null) => {
     try {
-        const res = await api.get(endpoints.employees.getAll, {
-            params: {
-                page_num: page // Backend 'page' parametrini kutayotgan bo'lishi mumkin
+        const params = {
+            page_num: page
+        };
+
+        if (filters) {
+            // Department filter
+            if (filters.selectedDepartments && filters.selectedDepartments.length > 0) {
+                params["department__name"] = filters.selectedDepartments.join(",");
             }
+
+            // Role filter
+            if (filters.selectedRoles && filters.selectedRoles.length > 0) {
+                params.role = filters.selectedRoles.join(",");
+            }
+
+            // Status filter
+            if (filters.status && filters.status !== '') {
+                params.status = filters.status;
+            }
+        }
+
+        const res = await api.get(endpoints.employees.getAll, {
+            params: params
         });
+
         return res.data;
     } catch (error) {
-        console.error('Xodimlarni olishda xato:', error);
+        console.error('Error fetching employees:', error);
         throw error;
     }
 };
@@ -22,11 +42,6 @@ export const getEmployeeById = async (id) => {
 
 export const createEmployees = async (formData) => {
     try {
-        // FormData-ni tekshirish
-        for (let [key, value] of formData.entries()) {
-            console.log(`${key}:`, value); // Debug uchun
-        }
-
         const res = await api.post(endpoints.employees.create, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
@@ -40,8 +55,6 @@ export const createEmployees = async (formData) => {
 };
 
 export const updateEmployees = async (id, data) => {
-    console.log("Yuborilayotgan ma'lumot:", data); // Ma'lumotlarni ko'rish
-    console.log("Endpoint:", endpoints.employees.update(id)); // Endpointni ko'rish
     const res = await api.patch(endpoints.employees.update(id), data);
     return res.data;
 };

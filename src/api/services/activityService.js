@@ -2,7 +2,6 @@ import api from "../base";
 import endpoints from "../endpoint";
 
 export const getActivities = async (page = 1) => {
-    console.log('Soʻrov manzili:', `${endpoints.activities.getAll}?page_num=${page}`);
     try {
         const res = await api.get(endpoints.activities.getAll, {
             params: {

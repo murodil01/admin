@@ -6,6 +6,7 @@ import {
   Calendar,
   MoreVertical,
 } from "lucide-react";
+import { Select, Input } from "antd";
 import { useNavigate, useParams } from "react-router-dom";
 import Projects from "./projects";
 import Notes from "./notes";
@@ -16,6 +17,9 @@ import { message } from "antd";
 import { Permission } from "../../../components/Permissions";
 import { useAuth } from "../../../hooks/useAuth";
 import { ROLES } from "../../../components/constants/roles";
+import dayjs from "dayjs";
+import { DatePicker } from "antd";
+import { RefreshCw } from "lucide-react";
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState(() => {
@@ -34,6 +38,7 @@ const Profile = () => {
   const [employee, setEmployee] = useState(null);
   const { id } = useParams();
   const [saveMessage, setSaveMessage] = useState("");
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const [departments, setDepartments] = useState([]);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
@@ -65,20 +70,33 @@ const Profile = () => {
 
   useEffect(() => {
     if (!id) return;
-    // console.log("Employee ID:", id); // Check the ID format
 
     const fetchEmployee = async () => {
       try {
         const data = await getEmployeeById(id);
-        setEmployee(data);
-        console.log(data);
 
-        setBirthday(data.birthday || "");
+        let departmentObj = null;
+        if (typeof data.department === "number") {
+          const foundDept = departments.find(d => d.id === data.department);
+          if (foundDept) {
+            departmentObj = foundDept;
+          } else {
+            departmentObj = { id: data.department, name: `Department ${data.department}` };
+          }
+        } else {
+          departmentObj = data.department; // already object
+        }
+
+        setEmployee({ ...data, department: departmentObj });
+        setBirthday(data.birth_date || "");
       } catch (err) {
-        // console.error("Error fetching employee:", err);
+        console.error('Error fetching employee:', err); // Debug log
         if (err.response?.status === 404) {
           message.error("Employee not found");
-          navigate("/employees"); // Redirect if employee doesn't exist
+          navigate("/employees");
+        } else if (err.response?.status === 400) {
+          message.error("Invalid employee ID");
+          navigate("/employees");
         } else {
           message.error("Failed to load employee data");
         }
@@ -86,85 +104,73 @@ const Profile = () => {
     };
 
     fetchEmployee();
-  }, [id, navigate]);
+  }, [id, navigate, departments, refreshTrigger]);
 
   const handleSave = async () => {
     if (!employee) return;
 
     try {
-      const formattedBirthday = birthday
-        ? new Date(birthday + 'T00:00:00').toISOString().split('T')[0]
-        : null;
-
       const formData = new FormData();
 
-      // 1. Backend talabiga ko'ra departmentni yuborish
-      // Agar backend 'department_id' talab qilsa:
-      formData.append('department_id', employee.department_id?.id || '');
-      // Yoki agar 'department' talab qilsa:
-      formData.append('department', employee.department?.id || '');
-
-      // 2. Boshqa maydonlarni qo'shamiz
+      // Add all employee data to formData
       Object.entries(employee).forEach(([key, value]) => {
-        if (key === 'department') return; // Departmentni allaqachon qo'shganmiz
-        if (key === 'profile_picture') {
-          if (value instanceof File) {
-            formData.append(key, value);
+        // Skip profile_picture if it's not a File (already uploaded)
+        if (key === 'profile_picture' && !(value instanceof File)) {
+          return;
+        }
+
+        // Handle department field
+        if (key === 'department') {
+          if (value && value.id) {
+            formData.append('department_id', value.id);
           }
-        } else if (value !== null && value !== undefined) {
+          return;
+        }
+
+        if (value !== null && value !== undefined) {
           formData.append(key, value);
         }
       });
 
-      const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          setEmployee(prev => ({
-            ...prev,
-            profile_picture: URL.createObjectURL(file), // Preview uchun
-            profile_picture_file: file // Asl fayl
-          }));
-        }
-      };
-
-      // Keyin formData.append('profile_picture', employee.profile_picture_file);
-
-      // 3. Tug'ilgan kunini qo'shamiz
-      if (formattedBirthday) {
-        formData.append('birth_date', formattedBirthday);
+      // Add birthday if it exists
+      if (birthday) {
+        formData.append('birth_date', birthday);
       }
 
-      // 5. API so'rovini yuboramiz
+      // Add profile picture if it's a File
+      if (employee.profile_picture instanceof File) {
+        formData.append('profile_picture', employee.profile_picture);
+      }
+
+      // API call to update employee
       const updatedEmployee = await updateEmployees(employee.id, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // 6. Yangilangan ma'lumotlarni saqlaymiz
-      setEmployee({
-        ...updatedEmployee,
-        department: {
-          id: updatedEmployee.department?.id || employee.department?.id,
-          name: updatedEmployee.department?.name ||
-                updatedEmployee.department_name ||
-                employee.department?.name
-        }
-      });
+      // Trigger a refresh of the data
+      setRefreshTrigger(prev => prev + 1);
+
+      // Update local state with the response
+      setEmployee(updatedEmployee);
 
       setIsEditing(false);
-      setSaveMessage("✅ Ma'lumotlar muvaffaqiyatli saqlandi");
+      setSaveMessage("✅ Successfully saved");
       setTimeout(() => setSaveMessage(""), 3000);
     } catch (err) {
+      console.error("Save error:", err);
       const errorMessage = err.response?.data?.detail ||
         err.response?.data?.message ||
         err.message ||
-        "Noma'lum xatolik";
-      setSaveMessage(`❌ Saqlashda xatolik: ${errorMessage}`);
+        "Unknown error";
+      setSaveMessage(`❌ Error during saving: ${errorMessage}`);
     }
   };
 
   useEffect(() => {
     localStorage.setItem("profileTab", activeTab);
   }, [activeTab]);
+
+  const levels = ["intern", "junior", "middle", "specialist", "senior", "expert", "none"];
 
   const statusOptions = [
     { value: "free", label: "Free" },
@@ -182,10 +188,13 @@ const Profile = () => {
           {
             label: "Department",
             name: "department",
-            value: employee.department?.id || "",
+            value: employee.department?.name || "",
             displayValue: employee.department?.name || "",
             input: true,
-            options: departments,
+            options: departments.map(dept => ({
+              value: dept.id,
+              label: dept.name
+            })),
             isSelect: true
           },
           {
@@ -195,7 +204,6 @@ const Profile = () => {
             input: true,
             isSelect: true,
             options: statusOptions,
-            optionKey: "label" // Agar obyektlardan foydalansangiz
           },
         ],
       },
@@ -205,14 +213,16 @@ const Profile = () => {
           {
             label: "Mobile Number",
             name: "phone_number",
-            value: employee.phone_number || "",
-            input: true
+            value: employee.phone_number || "+998",
+            input: true,
+            isLink: true
           },
           {
             label: "Telegram username",
             name: "tg_username",
-            value: employee.tg_username || "",
-            input: true
+            value: employee.tg_username || "@",
+            input: true,
+            isLink: true
           },
         ],
       },
@@ -222,7 +232,8 @@ const Profile = () => {
             label: "Email",
             name: "email",
             value: employee.email || "",
-            input: true
+            input: true,
+            isLink: true
           },
           {
             label: "Address",
@@ -238,7 +249,7 @@ const Profile = () => {
           {
             label: "Birthday Date",
             name: "birth_date",
-            value: employee.birth_date || "",
+            value: birthday || "",
             input: true,
             type: "date"
           },
@@ -247,25 +258,24 @@ const Profile = () => {
     ]
     : [];
 
-    const availableTabs = [
-      { id: "Profile", label: "Profile", visible: isAdmin },
-      { id: "Projects", label: "Projects", visible: true }, // Always visible
-      { id: "Notes", label: "Notes", visible: isAdmin },
-    ].filter(tab => tab.visible);
+  const availableTabs = [
+    { id: "Profile", label: "Profile", visible: isAdmin },
+    { id: "Projects", label: "Projects", visible: true },
+    { id: "Notes", label: "Notes", visible: isAdmin },
+  ].filter(tab => tab.visible);
 
-    // If current tab becomes unavailable, switch to Projects
-    useEffect(() => {
-      if (!availableTabs.some(tab => tab.id === activeTab)) {
-        setActiveTab("Projects");
-      }
-    }, [isAdmin, activeTab]);
+  useEffect(() => {
+    if (!availableTabs.some(tab => tab.id === activeTab)) {
+      setActiveTab("Projects");
+    }
+  }, [isAdmin, activeTab]);
 
   const renderTabContent = () => {
     switch (activeTab) {
       case "Profile":
         return isAdmin ? <Profiles /> : null;
       case "Projects":
-        return <Projects />; // Always visible to all roles
+        return <Projects />;
       case "Notes":
         return isAdmin ? <Notes /> : null;
       default:
@@ -282,11 +292,10 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="py-4 md:py-6 px-4 sm:px-6">
-        {/* Orqaga qaytish tugmasi */}
         <div className="mb-4 md:mb-6 flex items-center justify-between">
           <button
             onClick={() => navigate("/employees")}
-            className="flex justify-center rounded-[14px] items-center gap-2 text-sm md:text-[16px] font-bold text-[#1F2937] hover:text-[#6b82a8] shadow bg-white w-[100px] md:w-[133px] h-[40px] md:h-[48px]"
+            className="flex justify-center rounded-[14px] items-center gap-2 text-sm md:text-[16px] font-bold text-[#1F2937] hover:text-[#6b82a8] shadow bg-white w-[100px] md:w-[133px] h-[40px] md:h-[48px] cursor-pointer"
           >
             <ArrowLeft size={16} className="md:size-5" />
             <span className="hidden sm:inline">Go Back</span>
@@ -298,13 +307,18 @@ const Profile = () => {
               {saveMessage}
             </div>
           )}
+          {/* Add refresh button */}
+            <button
+              onClick={() => setRefreshTrigger(prev => prev + 1)}
+              className="hidden justify-center rounded-[14px] items-center gap-2 text-sm md:text-[16px] font-bold text-[#1F2937] hover:text-[#6b82a8] shadow bg-white w-[40px] md:w-[48px] h-[40px] md:h-[48px] cursor-pointer"
+              title="Refresh data"
+            >
+              <RefreshCw size={16} className="md:size-5" />
+            </button>
         </div>
 
-        {/* Asosiy kontent */}
         <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
-          {/* SIDEBAR */}
           <div className="w-full lg:w-[350px] xl:w-[430px] bg-white border border-gray-100 rounded-[20px] md:rounded-[24px] p-4 md:p-6 shadow-sm relative">
-            {/* Edit icon */}
             <div className="absolute top-4 md:top-5 right-4 md:right-5 z-10">
               <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
                 <button
@@ -313,7 +327,7 @@ const Profile = () => {
                     e.stopPropagation();
                     setShowEditDropdown((prev) => !prev);
                   }}
-                  className="p-1 md:p-2 text-gray-600 hover:bg-gray-100 rounded-full"
+                  className="p-1 md:p-2 text-gray-600 hover:bg-gray-100 rounded-full cursor-pointer"
                 >
                   <MoreVertical className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
@@ -330,7 +344,7 @@ const Profile = () => {
                       setIsEditing(true);
                       setShowEditDropdown(false);
                     }}
-                    className="w-full px-3 py-1 md:px-4 md:py-2 text-xs md:text-sm text-left hover:bg-gray-100"
+                    className="w-full px-3 py-1 md:px-4 md:py-2 text-xs md:text-sm text-left hover:bg-gray-100 cursor-pointer"
                   >
                     Edit
                   </button>
@@ -338,7 +352,6 @@ const Profile = () => {
               )}
             </div>
 
-            {/* Profile section */}
             <div
               className="flex items-center border-b border-[#E4E6E8] pb-4 md:pb-5 cursor-pointer"
               onClick={() => setShowDetails(!showDetails)}
@@ -350,20 +363,50 @@ const Profile = () => {
               />
               <div className="ml-3 md:ml-4 flex flex-col">
                 <h3 className="text-sm sm:text-[16px] md:text-[18px] lg:text-[20px] font-bold text-[#0061fe] whitespace-nowrap">
-                  {employee.first_name} {employee.last_name}
+                  <span className="capitalize">{employee.first_name}</span> <span className="capitalize">{employee.last_name}</span>
                 </h3>
-                <p className="text-xs sm:text-[14px] md:text-[16px] font-medium text-[#1F2937] flex items-center gap-1 md:gap-2">
-                  {employee.profession}
-                  {employee.level !== "none" && (
-                    <span className="text-[8px] md:text-[10px] border border-[#7D8592] px-1 py-0.5 md:px-[2px] md:py-[2px] rounded-[3px] md:rounded-[4px]">
-                      {employee.level}
-                    </span>
+                {/* FIXED: Changed from <p> to <div> to avoid nesting issues */}
+                <div className="text-xs sm:text-[14px] md:text-[16px] font-medium text-[#1F2937] flex items-center gap-1 md:gap-2">
+                  {isEditing ? (
+                    <>
+                      <Input
+                        placeholder="Enter profession"
+                        value={employee.profession || ""}
+                        onChange={(e) =>
+                          setEmployee((prev) => ({ ...prev, profession: e.target.value }))
+                        }
+                        className="w-full md:w-40"
+                      />
+
+                      {/* Level select */}
+                      <Select
+                        value={employee.level}
+                        onChange={(value) =>
+                          setEmployee((prev) => ({ ...prev, level: value }))
+                        }
+                        className="w-full md:w-28"
+                      >
+                        {levels.map((lvl) => (
+                          <Select.Option key={lvl} value={lvl}>
+                            {lvl}
+                          </Select.Option>
+                        ))}
+                      </Select>
+                    </>
+                  ) : (
+                    <>
+                      <span>{employee.profession}</span>
+                      {employee.level !== "none" && (
+                        <span className="text-[8px] md:text-[10px] border border-[#7D8592] px-1 py-0.5 md:px-[2px] md:py-[2px] rounded-[3px] md:rounded-[4px] capitalize">
+                          {employee.level}
+                        </span>
+                      )}
+                    </>
                   )}
-                </p>
+                </div>
               </div>
             </div>
 
-            {/* Content info */}
             <div className={`mt-4 md:mt-6 space-y-6 md:space-y-8 ${showDetails ? "block" : "hidden lg:block"}`}>
               {SidebarSections.map((section, index) => (
                 <div key={index}>
@@ -384,11 +427,11 @@ const Profile = () => {
                               <select
                                 name={item.name}
                                 value={item.name === 'department'
-                                  ? employee.department?.id
+                                  ? employee.department?.id || ""
                                   : employee[item.name] || ""}
                                 onChange={(e) => {
                                   if (item.name === 'department') {
-                                    const selectedDept = departments.find(d => d.id === e.target.value);
+                                    const selectedDept = departments.find(d => d.id == e.target.value);
                                     setEmployee(prev => ({
                                       ...prev,
                                       department: selectedDept || null
@@ -412,32 +455,57 @@ const Profile = () => {
                                   </option>
                                 ))}
                               </select>
-                            ) : (
+                            ) : item.type === "date" ? (
                               <div className="relative">
-                                <input
-                                  type={item.type || "text"}
-                                  name={item.name}
-                                  value={employee[item.name] || ""}
-                                  onChange={(e) =>
-                                    setEmployee((prev) => ({
-                                      ...prev,
-                                      [item.name]: e.target.value,
-                                    }))
-                                  }
-                                  className="w-full h-[40px] md:h-[48px] bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg md:rounded-xl px-3 md:px-4 py-1 md:py-2 font-normal text-xs md:text-[14px] text-[#7D8592] pr-8 md:pr-10"
+                                <DatePicker
+                                  className="w-full calendar-details"
+                                  value={birthday ? dayjs(birthday) : null}
+                                  onChange={(date, dateString) => setBirthday(dateString)}
+                                  format="YYYY-MM-DD"
                                 />
-                                {item.type === "date" && (
-                                  <Calendar className="absolute right-2 md:right-3 top-2 md:top-2.5 text-gray-400 w-4 h-4 md:w-5 md:h-5 pointer-events-none" />
-                                )}
                               </div>
+                            ) : (
+                              <input
+                                type={item.type || "text"}
+                                name={item.name}
+                                value={employee[item.name] || ""}
+                                onChange={(e) =>
+                                  setEmployee((prev) => ({
+                                    ...prev,
+                                    [item.name]: e.target.value,
+                                  }))
+                                }
+                                className="w-full h-[40px] md:h-[48px] bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg md:rounded-xl px-3 md:px-4 py-1 md:py-2 font-normal text-xs md:text-[14px] text-[#7D8592] pr-8 md:pr-10"
+                              />
                             )
                           ) : (
-                              <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg md:rounded-xl px-3 md:px-4 py-1 md:py-2 text-xs md:text-[14px] font-normal text-[#7D8592] h-[40px] md:h-[48px] flex items-center">
-                                {item.isSelect ?
-                                  (item.name === 'department'
-                                    ? employee.department?.name
-                                    : employee[item.name]) || `No ${item.label.toLowerCase()} selected`
-                                  : item.value}
+                            <div className="bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg md:rounded-xl px-3 md:px-4 py-1 md:py-2 text-xs md:text-[14px] font-normal text-[#7D8592] h-[40px] md:h-[48px] flex items-center">
+                              {item.isLink && item.name === "phone_number" && employee.phone_number ? (
+                                <a href={`tel:${employee.phone_number.replace(/\s/g, '')}`} className="hover:underline">
+                                  {employee.phone_number}
+                                </a>
+                              ) : item.isLink && item.name === "email" && employee.email ? (
+                                <a href={`mailto:${employee.email}`} className="hover:underline">
+                                  {employee.email}
+                                </a>
+                              ) : item.isLink && item.name === "tg_username" && employee.tg_username ? (
+                                <a
+                                  href={`https://t.me/${employee.tg_username.replace(/^@/, "")}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="hover:underline"
+                                >
+                                  {employee.tg_username}
+                                </a>
+                              ) : item.name === "status" && employee.status ? (
+                                  employee.status === "on_leave" ? "On Leave" : employee.status
+                              ) : item.isSelect ? (
+                                item.name === 'department'
+                                  ? employee.department?.name || `No ${item.label.toLowerCase()} selected`
+                                  : employee[item.name] || `No ${item.label.toLowerCase()} selected`
+                              ) : (
+                                item.value
+                              )}
                             </div>
                           )
                         ) : (
@@ -465,7 +533,6 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* MAIN CONTENT */}
           <div className="flex-1">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-2 md:gap-4">
               <div className="flex flex-wrap sm:flex-nowrap bg-[#E3EDFA] rounded-full p-0.5 md:p-1 w-full sm:w-auto">
@@ -473,11 +540,10 @@ const Profile = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex-1 sm:flex-none px-3 sm:px-4 md:px-6 lg:px-[40px] xl:px-[56px] py-1 md:py-2 text-xs md:text-sm lg:text-base font-medium rounded-full transition-all duration-200 ${
-                      activeTab === tab.id
+                    className={`flex-1 sm:flex-none px-3 sm:px-4 md:px-6 lg:px-[40px] xl:px-[56px] py-1 md:py-2 text-xs md:text-sm lg:text-base font-medium rounded-full transition-all duration-200 ${activeTab === tab.id
                         ? "bg-[#0061fe] text-white shadow-sm"
                         : "text-[#0061fe] hover:bg-gray-200"
-                    }`}
+                      }`}
                   >
                     {tab.label}
                   </button>

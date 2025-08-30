@@ -1,3 +1,4 @@
+
 // import { useState, useEffect } from "react";
 // import {
 //   ChevronDown,
@@ -12,12 +13,536 @@
 //   updateLeads,
 //   createLeads,
 // } from "../../../api/services/leadsService";
+// import { getMSalesUsers, getusersAll } from "../../../api/services/userService";
+// import { getBoardsAll } from "../../../api/services/boardService";
 // import ReactDatePicker from "react-datepicker";
 // import "react-datepicker/dist/react-datepicker.css";
+// import { Select, Avatar } from "antd";
+
+// // Helper function to get absolute image URL
+// const getAbsoluteImageUrl = (picture) => {
+//   if (!picture) return null;
+
+//   // Get the URL string
+//   const url = typeof picture === "string" ? picture : picture?.url;
+//   if (!url) return null;
+
+//   // If it's already a full URL, return as is
+//   if (url.startsWith("http")) {
+//     return url;
+//   }
+
+//   return `https://prototype-production-2b67.up.railway.app${
+//     url.startsWith("/") ? "" : "/"
+//   }${url}`;
+// };
+
+// const calculateRemainingTime = (startDateStr, endDateStr) => {
+//   if (!endDateStr || !startDateStr) return "No timeline";
+
+//   const now = new Date();
+//   const start = new Date(startDateStr);
+//   const end = new Date(endDateStr);
+
+//   if (isNaN(start.getTime()) || isNaN(end.getTime())) return "Invalid date";
+//   if (end < start) return "Invalid timeline";
+
+//   const effectiveStart = now > start ? now : start;
+//   const diffMs = end - effectiveStart;
+
+//   if (diffMs < 0) {
+//     const absDiffMs = Math.abs(diffMs);
+//     const days = Math.floor(absDiffMs / 86400000);
+//     const hours = Math.floor((absDiffMs % 86400000) / 3600000);
+//     return `${days} days, ${hours} h`;
+//   }
+
+//   const days = Math.floor(diffMs / 86400000);
+//   const hours = Math.floor((diffMs % 86400000) / 3600000);
+//   return `${days} days ${hours} h`;
+// };
+
+// const LinkDropdown = ({ value, onChange, onSave, onCancel }) => {
+//   const linkOptions = [
+//     { value: "", label: "Select Link Type" },
+//     { value: "ad", label: "Ad" },
+//     { value: "outreach", label: "Outreach" },
+//     { value: "referral", label: "Referral" },
+//     { value: "event", label: "Event" },
+//   ];
+
+//   const handleChange = (e) => {
+//     onChange(e.target.value);
+//     onSave();
+//   };
+
+//   return (
+//     <select
+//       value={value || ""}
+//       onChange={handleChange}
+//       onBlur={onSave}
+//       onKeyDown={(e) => {
+//         if (e.key === "Enter") onSave();
+//         if (e.key === "Escape") onCancel();
+//       }}
+//       className="w-full h-full text-center focus:outline-none border-none appearance-none bg-transparent"
+//     >
+//       {linkOptions.map((option) => (
+//         <option
+//           key={option.value}
+//           value={option.value}
+//           className="bg-white text-black"
+//         >
+//           {option.label}
+//         </option>
+//       ))}
+//     </select>
+//   );
+// };
+
+// // Owner Dropdown Component
+// const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
+//   const [userOptions, setUserOptions] = useState([]);
+//   const [isOpen, setIsOpen] = useState(false);
+
+//   useEffect(() => {
+//     const fetchUsers = async () => {
+//       try {
+//         const res = await getMSalesUsers();
+
+//         if (res.data && Array.isArray(res.data)) {
+//           setUserOptions(
+//             res.data.map((user) => ({
+//               id: user.id,
+//               name:
+//                 user.fullname ||
+//                 `${user.first_name} ${user.last_name}` ||
+//                 "Unknown User",
+//               email: user.email,
+//               profile_picture: getAbsoluteImageUrl(user.profile_picture),
+//             }))
+//           );
+//         }
+//       } catch (err) {
+//         console.error("Failed to fetch users:", err);
+//       }
+//     };
+//     fetchUsers();
+//   }, []);
+
+//   const handleChange = async (selectedUserId) => {
+//     const selectedUser = userOptions.find((u) => u.id === selectedUserId);
+
+//     const personDetail = {
+//       id: selectedUser.id,
+//       fullname: selectedUser.name,
+//       profile_picture: selectedUser.profile_picture,
+//     };
+
+//     onChange(personDetail);
+
+//     // Update on server - person_detail field ni yangilaymiz
+//     try {
+//       await updateLeads(taskId, { person: selectedUserId });
+//     } catch (err) {
+//       console.error("Failed to update owner:", err);
+//     }
+
+//     setIsOpen(false);
+//     onSave();
+//   };
+
+//   return (
+//     <div className="relative">
+//       <button
+//         onClick={() => setIsOpen(!isOpen)}
+//         className="flex items-center gap-2 w-full hover:bg-gray-50 p-1 rounded transition-colors"
+//       >
+//         <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 overflow-hidden">
+//           {currentOwner?.profile_picture ? (
+//             <img
+//               src={getAbsoluteImageUrl(currentOwner.profile_picture)}
+//               alt={currentOwner.fullname}
+//               className="w-full h-full object-cover"
+//             />
+//           ) : (
+//             currentOwner?.fullname
+//               ?.split(" ")
+//               .map((n) => n[0])
+//               .join("") || "?"
+//           )}
+//         </div>
+//         <span className="text-gray-700 truncate flex-1 text-left">
+//           {currentOwner?.fullname || "Unknown Person"}
+//         </span>
+//         <ChevronDown className="w-4 h-4 text-gray-400" />
+//       </button>
+
+//       {isOpen && (
+//         <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[1000] min-w-[200px] max-h-60 overflow-y-auto">
+//           {userOptions.map((user) => (
+//             <button
+//               key={user.id}
+//               onClick={() => handleChange(user.id)}
+//               className="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-2 text-sm transition-colors"
+//             >
+//               <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 overflow-hidden">
+//                 {user.profile_picture ? (
+//                   <img
+//                     src={user.profile_picture}
+//                     alt={user.name}
+//                     className="w-full h-full object-cover"
+//                   />
+//                 ) : (
+//                   user.name
+//                     .split(" ")
+//                     .map((n) => n[0])
+//                     .join("")
+//                 )}
+//               </div>
+//               <div className="flex-1 truncate">
+//                 <div className="font-medium">{user.name}</div>
+//                 {user.email && (
+//                   <div className="text-xs text-gray-500">{user.email}</div>
+//                 )}
+//               </div>
+//             </button>
+//           ))}
+//         </div>
+//       )}
+//     </div>
+//   );
+// };
+
+// // Status Dropdown Component
+// const StatusDropdown = ({ value, onChange, taskId }) => {
+//   const [statusOptions, setStatusOptions] = useState([]);
+//   const [isOpen, setIsOpen] = useState(false);
+
+//   useEffect(() => {
+//     const fetchStatuses = async () => {
+//       try {
+//         const allStatuses = [];
+
+//         // First, get statuses from leads
+//         try {
+//           const leadsRes = await getLeads();
+//           if (leadsRes.data && Array.isArray(leadsRes.data)) {
+//             leadsRes.data.forEach((lead) => {
+//               if (lead.status && lead.status.name && lead.status.id) {
+//                 // Check if status already exists to avoid duplicates
+//                 if (!allStatuses.find((s) => s.id === lead.status.id)) {
+//                   allStatuses.push({
+//                     id: lead.status.id,
+//                     name: lead.status.name,
+//                     icon: getStatusIcon(lead.status.name),
+//                     lightBg: getStatusLightBg(lead.status.name),
+//                     textColor: getStatusTextColor(lead.status.name),
+//                   });
+//                 }
+//               }
+//             });
+//           }
+//         } catch (leadsErr) {
+//           console.error("Error fetching statuses from leads:", leadsErr);
+//         }
+//         try {
+//           const boardsRes = await getBoardsAll();
+//           console.log("📊 Boards API response:", boardsRes);
+
+//           if (boardsRes.data && Array.isArray(boardsRes.data)) {
+//             boardsRes.data.forEach((board) => {
+//               // Check if board has statuses array
+//               if (board.statuses && Array.isArray(board.statuses)) {
+//                 board.statuses.forEach((status) => {
+//                   if (!allStatuses.find((s) => s.id === status.id)) {
+//                     allStatuses.push({
+//                       id: status.id,
+//                       name: status.name,
+//                       color: status.color || "#6b7280",
+//                       icon: getStatusIcon(status.name),
+//                       lightBg: getStatusLightBg(status.name),
+//                       textColor: getStatusTextColor(status.name),
+//                     });
+//                   }
+//                 });
+//               }
+//               // If boards themselves are statuses (based on your API response)
+//               else if (board.id && board.name) {
+//                 if (!allStatuses.find((s) => s.id === board.id)) {
+//                   allStatuses.push({
+//                     id: board.id,
+//                     name: board.name,
+//                     color: board.color || "#6b7280",
+//                     icon: getStatusIcon(board.name),
+//                     lightBg: getStatusLightBg(board.name),
+//                     textColor: getStatusTextColor(board.name),
+//                   });
+//                 }
+//               }
+//             });
+//           }
+//         } catch (boardsErr) {
+//           console.error("Error fetching statuses from boards:", boardsErr);
+//         }
+
+//         // Set the combined status options
+//         setStatusOptions(allStatuses);
+//         console.log("📊 Final combined status options:", allStatuses);
+//       } catch (err) {
+//         console.error("Failed to fetch statuses:", err);
+
+//         // Fallback to default statuses if API calls fail
+//         const fallbackStatuses = [
+//           {
+//             id: "default-1",
+//             name: "Not Started",
+//             icon: XCircle,
+//             lightBg: "bg-gray-50",
+//             textColor: "text-gray-700",
+//           },
+//           {
+//             id: "default-2",
+//             name: "Working on it",
+//             icon: Circle,
+//             lightBg: "bg-yellow-50",
+//             textColor: "text-yellow-700",
+//           },
+//           {
+//             id: "default-3",
+//             name: "Stuck",
+//             icon: AlertCircle,
+//             lightBg: "bg-red-50",
+//             textColor: "text-red-700",
+//           },
+//           {
+//             id: "default-4",
+//             name: "Done",
+//             icon: CheckCircle2,
+//             lightBg: "bg-green-50",
+//             textColor: "text-green-700",
+//           },
+//         ];
+//         setStatusOptions(fallbackStatuses);
+//       }
+//     };
+
+//     fetchStatuses();
+//   }, []);
+
+//   const getStatusIcon = (statusName) => {
+//     if (!statusName) return Circle;
+//     const name = statusName.toLowerCase();
+//     if (
+//       name.includes("done") ||
+//       name.includes("complete") ||
+//       name.includes("finished")
+//     )
+//       return CheckCircle2;
+//     if (
+//       name.includes("working") ||
+//       name.includes("progress") ||
+//       name.includes("doing")
+//     )
+//       return Circle;
+//     if (
+//       name.includes("stuck") ||
+//       name.includes("blocked") ||
+//       name.includes("issue")
+//     )
+//       return AlertCircle;
+//     if (
+//       name.includes("not started") ||
+//       name.includes("todo") ||
+//       name.includes("pending")
+//     )
+//       return XCircle;
+//     return Circle;
+//   };
+
+//   const getStatusLightBg = (statusName) => {
+//     if (!statusName) return "bg-gray-50";
+//     const name = statusName.toLowerCase();
+//     if (
+//       name.includes("done") ||
+//       name.includes("complete") ||
+//       name.includes("finished")
+//     )
+//       return "bg-green-50";
+//     if (
+//       name.includes("working") ||
+//       name.includes("progress") ||
+//       name.includes("doing")
+//     )
+//       return "bg-yellow-50";
+//     if (
+//       name.includes("stuck") ||
+//       name.includes("blocked") ||
+//       name.includes("issue")
+//     )
+//       return "bg-red-50";
+//     if (
+//       name.includes("not started") ||
+//       name.includes("todo") ||
+//       name.includes("pending")
+//     )
+//       return "bg-gray-50";
+//     return "bg-blue-50";
+//   };
+
+//   const getStatusTextColor = (statusName) => {
+//     if (!statusName) return "text-gray-500";
+//     const name = statusName.toLowerCase();
+//     if (
+//       name.includes("done") ||
+//       name.includes("complete") ||
+//       name.includes("finished")
+//     )
+//       return "text-green-700";
+//     if (
+//       name.includes("working") ||
+//       name.includes("progress") ||
+//       name.includes("doing")
+//     )
+//       return "text-yellow-700";
+//     if (
+//       name.includes("stuck") ||
+//       name.includes("blocked") ||
+//       name.includes("issue")
+//     )
+//       return "text-red-700";
+//     if (
+//       name.includes("not started") ||
+//       name.includes("todo") ||
+//       name.includes("pending")
+//     )
+//       return "text-gray-700";
+//     return "text-blue-700";
+//   };
+
+//   const handleChange = async (selectedStatusId) => {
+//     const selectedStatus = statusOptions.find((s) => s.id === selectedStatusId);
+//     onChange(selectedStatus);
+
+//     // Update on server
+//     try {
+//       await updateLeads(taskId, { status: selectedStatus });
+//     } catch (err) {
+//       console.error("Failed to update status:", err);
+//     }
+
+//     setIsOpen(false);
+//   };
+
+//   const currentStatus = statusOptions.find((s) => s.name === value) || {
+//     name: value || "No Status",
+//     icon: Circle,
+//     lightBg: "bg-gray-50",
+//     textColor: "text-gray-500",
+//   };
+
+//   const StatusIcon = currentStatus.icon;
+
+//   return (
+//     <div className="relative">
+//       <button
+//         onClick={() => setIsOpen(!isOpen)}
+//         className={`inline-flex items-center gap-3 px-2 py-1 rounded-full ${currentStatus.lightBg} ${currentStatus.textColor} text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer`}
+//       >
+//         <StatusIcon className="w-4 h-4" />
+//         {currentStatus.name}
+//         <ChevronDown className="w-3 h-3" />
+//       </button>
+
+//       {isOpen && (
+//         <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[] min-w-[160px] max-h-60 overflow-y-auto">
+//           {statusOptions.map((status) => {
+//             const OptionIcon = status.icon;
+//             return (
+//               <button
+//                 key={status.id}
+//                 onClick={() => handleChange(status.id)}
+//                 className={`w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-2 ${status.textColor} text-sm transition-colors`}
+//               >
+//                 <OptionIcon className="w-4 h-4" />
+//                 {status.name}
+//               </button>
+//             );
+//           })}
+//         </div>
+//       )}
+//     </div>
+//   );
+// };
+
+// const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
+//   const [personOptions, setPersonOptions] = useState([]);
+
+//   useEffect(() => {
+//     const fetchPersons = async () => {
+//       try {
+//         const res = await getLeads();
+//         const options = res.data
+//           .filter((lead) => lead.person_detail)
+//           .map((lead) => ({
+//             id: lead.person_detail.id,
+//             name: lead.person_detail.fullname || "Unnamed Person",
+//             img: getAbsoluteImageUrl(lead.person_detail.profile_picture),
+//           }));
+//         setPersonOptions(options);
+//       } catch (err) {
+//         console.error("Failed to fetch persons:", err);
+//       }
+//     };
+//     fetchPersons();
+//   }, []);
+
+//   const handleChange = async (selectedId) => {
+//     const selectedPerson =
+//       personOptions.find((p) => p.id === selectedId) || null;
+
+//     onChange(selectedPerson);
+
+//     if (groupId && leadId) {
+//       try {
+//         await updateLeads(groupId, leadId, { person_detail: selectedId });
+//       } catch (err) {
+//         console.error("Failed to update person_detail:", err);
+//       }
+//     }
+
+//     onSave();
+//   };
+
+//   return (
+//     <Select
+//       value={value?.id || undefined}
+//       onChange={handleChange}
+//       onBlur={onSave}
+//       placeholder="Select Person"
+//       style={{ width: "100%", border: "none" }}
+//       className="ant-select-borderless custom-selectt"
+//       optionLabelProp="label"
+//     >
+//       {personOptions.map((person) => (
+//         <Select.Option
+//           key={person.id}
+//           value={person.id}
+//           label={person.name}
+//           style={{ border: "none" }}
+//         >
+//           <div className="flex items-center gap-2">
+//             {person.img && <Avatar size={24} src={person.img} />}
+//             <span>{person.name}</span>
+//           </div>
+//         </Select.Option>
+//       ))}
+//     </Select>
+//   );
+// };
 
 // const Table = () => {
 //   const [hoveredRow, setHoveredRow] = useState(null);
-
 //   const [selectedRows, setSelectedRows] = useState([]);
 //   const [searchTerm, setSearchTerm] = useState("");
 //   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
@@ -26,8 +551,10 @@
 //   const [openStatusDropdown, setOpenStatusDropdown] = useState(null);
 //   const [apiLeads, setApiLeads] = useState([]);
 //   const [loading, setLoading] = useState(false);
-
 //   const [statusOptions, setStatusOptions] = useState([]);
+//   const [isAddingLead, setIsAddingLead] = useState(false);
+//   const [newLeadTitle, setNewLeadTitle] = useState("");
+//   const [editingTimelineId, setEditingTimelineId] = useState(null);
 
 //   const statusConfig = {
 //     Done: {
@@ -62,11 +589,18 @@
 //     },
 //   };
 
+//   const fieldMap = {
+//     task: "name",
+//     progress: "potential_value",
+//     // Add more if needed
+//   };
+
 //   const convertApiLeadsToTasks = (leads) => {
 //     return leads.map((lead, index) => ({
 //       id: lead.id,
 //       task: lead.name || `Lead ${index + 1}`,
 //       person: lead.person_detail?.fullname || "Unknown Person",
+//       profile_picture: getAbsoluteImageUrl(lead.person_detail?.profile_picture),
 //       status: lead.status?.name || lead.status || "No Status",
 //       priority:
 //         lead.potential_value > 50
@@ -74,21 +608,22 @@
 //           : lead.potential_value > 20
 //           ? "Medium"
 //           : "Low",
-//       deadline: lead.last_interaction || "2025-08-30",
+//       timeline_start: lead.timeline_start,
+//       timeline_end: lead.timeline_end,
 //       progress: lead.potential_value || 0,
 //       team: lead.link || "General",
-//       phone: lead.phone,
-//       notes: lead.notes,
+//       phone: lead.phone || "",
+//       notes: lead.notes || "",
+//       // Owner sifatida person_detail ni ishlatamiz
+//       owner: lead.person_detail || null,
 //       source: "api",
 //     }));
 //   };
 
-//   // Load all leads from API
 //   const loadLeadsFromAPI = async (groupId = null) => {
 //     try {
 //       setLoading(true);
 //       console.log("🔍 Loading leads from API...");
-
 //       const response = await getLeads(groupId);
 //       console.log("✅ API Response:", response);
 
@@ -96,7 +631,6 @@
 //         setApiLeads(response.data);
 //         console.log(`📊 Loaded ${response.data.length} leads from API`);
 
-//         // Extract unique status options from API data
 //         const apiStatusOptions = response.data
 //           .filter((lead) => lead.status && lead.status.name)
 //           .map((lead) => ({
@@ -108,12 +642,11 @@
 //           }))
 //           .filter(
 //             (status, index, self) =>
-//               self.findIndex((s) => s.value === status.value) === index // Remove duplicates
+//               self.findIndex((s) => s.value === status.value) === index
 //           );
 
 //         if (apiStatusOptions.length > 0) {
 //           console.log("📊 Status options from API:", apiStatusOptions);
-//           // Merge with default status options
 //           setStatusOptions([...statusOptions, ...apiStatusOptions]);
 //         }
 //       }
@@ -125,22 +658,11 @@
 //         data: error.response?.data,
 //         message: error.message,
 //       });
-
-//       if (error.response?.status === 404) {
-//         console.log(
-//           "💡 API endpoint not found. Check your API server and endpoints."
-//         );
-//       } else if (error.response?.status === 401) {
-//         console.log("🔐 Authentication required");
-//       } else {
-//         console.log("🌐 Network error or server unavailable");
-//       }
 //     } finally {
 //       setLoading(false);
 //     }
 //   };
 
-//   // Helper functions to get status styling
 //   const getStatusIcon = (statusName) => {
 //     if (!statusName) return Circle;
 //     const name = statusName.toLowerCase();
@@ -173,12 +695,10 @@
 //     return "text-gray-700";
 //   };
 
-//   // Load data on component mount
 //   useEffect(() => {
 //     loadLeadsFromAPI();
 //   }, []);
 
-//   // Click outside handler for dropdown
 //   useEffect(() => {
 //     const handleClickOutside = (event) => {
 //       if (!event.target.closest(".status-dropdown-container")) {
@@ -193,7 +713,6 @@
 //     }
 //   }, [openStatusDropdown]);
 
-//   // Only use API data
 //   const displayTasks = convertApiLeadsToTasks(apiLeads);
 
 //   const handleDragStart = (e, index) => {
@@ -218,7 +737,6 @@
 
 //     const draggedTask = filteredTasks[draggedItem];
 //     const newTasks = [...displayTasks];
-
 //     const originalDraggedIndex = displayTasks.findIndex(
 //       (t) => t.id === draggedTask.id
 //     );
@@ -237,21 +755,25 @@
 
 //   const handleStatusChange = async (taskId, newStatus) => {
 //     try {
-//       // Update API data
 //       setApiLeads(
 //         apiLeads.map((lead) =>
-//           lead.id === taskId ? { ...lead, status: { name: newStatus } } : lead
+//           lead.id === taskId ? { ...lead, status: newStatus } : lead
 //         )
 //       );
-
-//       // Update on server
 //       await updateLeads(taskId, { status: newStatus });
 //       console.log("✅ Status updated on server");
-
 //       setOpenStatusDropdown(null);
 //     } catch (error) {
 //       console.error("❌ Error updating status:", error);
 //     }
+//   };
+
+//   const handleOwnerChange = (taskId, newOwner) => {
+//     setApiLeads(
+//       apiLeads.map((lead) =>
+//         lead.id === taskId ? { ...lead, person_detail: newOwner } : lead
+//       )
+//     );
 //   };
 
 //   const handleSort = (key) => {
@@ -264,10 +786,8 @@
 
 //   const sortedTasks = [...displayTasks].sort((a, b) => {
 //     if (!sortConfig.key) return 0;
-
 //     const aValue = a[sortConfig.key];
 //     const bValue = b[sortConfig.key];
-
 //     if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
 //     if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
 //     return 0;
@@ -298,17 +818,99 @@
 //     }
 //   };
 
-//   const handleChange = (id, field, value) => {
-//     setTasks((prevTasks) =>
-//       prevTasks.map((task) =>
-//         task.id === id ? { ...task, [field]: value } : task
+//   const handleChange = (id, uiField, value) => {
+//     const apiField = fieldMap[uiField] || uiField;
+//     setApiLeads((prevLeads) =>
+//       prevLeads.map((lead) =>
+//         lead.id === id ? { ...lead, [apiField]: value } : lead
 //       )
 //     );
 //   };
 
+//   const handleSave = async (id, uiField) => {
+//     const lead = apiLeads.find((l) => l.id === id);
+//     if (!lead) return;
+
+//     const apiField = fieldMap[uiField] || uiField;
+//     const data = { [apiField]: lead[apiField] };
+//     try {
+//       await updateLeads(id, data);
+//       console.log(`✅ Updated ${apiField} on server`);
+//     } catch (err) {
+//       console.error(`❌ Error updating ${apiField}:`, err);
+//     }
+//   };
+
+//   const handleAddLead = async (e) => {
+//     if (e.key !== "Enter" || !newLeadTitle.trim()) return;
+
+//     try {
+//       setLoading(true);
+//       const newLead = {
+//         name: newLeadTitle,
+//         status: { name: "Not Started" },
+//         person_detail: { fullname: "Unknown Person" },
+//         potential_value: 0,
+//         last_interaction: new Date().toISOString().split("T")[0],
+//         link: "General",
+//         phone: "",
+//         notes: "",
+//       };
+
+//       await createLeads(newLead);
+//       console.log("✅ New lead created");
+//       await loadLeadsFromAPI();
+//       setNewLeadTitle("");
+//       setIsAddingLead(false);
+//     } catch (error) {
+//       console.error("❌ Error creating lead:", error);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   // Table.jsx ichida
+//   // const handleAddLead = async (e) => {
+//   //   if (e.key === "Enter" && newLeadTitle.trim()) {
+//   //     try {
+//   //       const res = await fetch(
+//   //         "https://prototype-production-2b67.up.railway.app/board/leads/",
+//   //         {
+//   //           method: "POST",
+//   //           headers: {
+//   //             "Content-Type": "application/json",
+//   //           },
+//   //           body: JSON.stringify({
+//   //             group: groupId, // ✅ Har doim group ID birinchi bo‘lib qo‘yiladi
+//   //             name: newLeadTitle, // foydalanuvchi inputdan kiritgan title
+//   //             phone: "",
+//   //             link: "",
+//   //             person: null,
+//   //             notes: "",
+//   //             status: null,
+//   //             order: 0,
+//   //             potential_value: 0,
+//   //             timeline_start: new Date(),
+//   //             timeline_end: new Date(),
+//   //           }),
+//   //         }
+//   //       );
+
+//   //       const data = await res.json();
+//   //       console.log("Lead yaratildi:", data);
+
+//   //       // yangi leadni filteredTasks massiviga qo‘shib qo‘yish
+//   //       setFilteredTasks((prev) => [...prev, data]);
+//   //       setNewLeadTitle("");
+//   //       setIsAddingLead(false);
+//   //     } catch (err) {
+//   //       console.error("Xatolik:", err);
+//   //     }
+//   //   }
+//   // };
+
 //   return (
 //     <div className="h-auto md:min-w-[95%]">
-//       {/* Table Container with Horizontal Scroll */}
 //       <div className="bg-white rounded-b-xl shadow-xl border border-gray-200 overflow-hidden">
 //         <div className="overflow-x-auto custom-scrollbar">
 //           <div className="min-w-[1200px]">
@@ -356,52 +958,43 @@
 //                       />
 //                     </div>
 //                   </th>
-
 //                   <th
 //                     className="text-left p-4 border-r border-gray-200 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
-//                     onClick={() => handleSort("person")}
+//                     onClick={() => handleSort("phone")}
 //                   >
 //                     <div className="flex justify-center items-center gap-2">
 //                       Phone Number
 //                     </div>
 //                   </th>
-
 //                   <th className="text-center p-4 font-semibold text-gray-700 border-r border-gray-200">
 //                     <div className="flex justify-center items-center gap-2">
 //                       Owner
 //                     </div>
 //                   </th>
-
 //                   <th className="text-center p-4 font-semibold text-gray-700 border-r border-gray-200">
 //                     <div className="flex justify-center items-center gap-2">
 //                       Source
 //                     </div>
 //                   </th>
-
 //                   <th className="text-center p-4 font-semibold text-gray-700 border-r border-gray-200">
 //                     <div className="flex justify-center items-center gap-2">
 //                       Status
 //                     </div>
 //                   </th>
-
 //                   <th className="text-center p-4 font-semibold text-gray-700 border-r border-gray-200">
 //                     Potential Value
 //                   </th>
-
 //                   <th className="text-center p-4 font-semibold text-gray-700 border-r border-gray-200">
 //                     Notes
 //                   </th>
-
 //                   <th className="text-center p-4 font-semibold text-gray-700 border-r border-gray-200">
 //                     Timeline
 //                   </th>
-
 //                   <th className="text-center p-4 font-semibold text-gray-700 border-r border-gray-200">
 //                     +
 //                   </th>
 //                 </tr>
 //               </thead>
-
 //               <tbody>
 //                 {filteredTasks.map((task, index) => {
 //                   const StatusIcon = statusConfig[task.status]?.icon || Circle;
@@ -433,7 +1026,6 @@
 //                       >
 //                         <GripVertical className="w-4 h-4 text-gray-400 hover:text-gray-600" />
 //                       </td>
-
 //                       <td className="p-4 sticky left-10 bg-white z-10">
 //                         <input
 //                           type="checkbox"
@@ -442,7 +1034,6 @@
 //                           onChange={() => toggleRowSelection(task.id)}
 //                         />
 //                       </td>
-
 //                       <td className="p-4 sticky left-[88px] bg-white z-10 border-r border-gray-100">
 //                         <input
 //                           type="text"
@@ -450,10 +1041,10 @@
 //                           onChange={(e) =>
 //                             handleChange(task.id, "task", e.target.value)
 //                           }
+//                           onBlur={() => handleSave(task.id, "task")}
 //                           className="font-medium text-gray-900 hover:text-blue-600 cursor-text transition-colors truncate pr-2 border-none outline-none bg-transparent w-full text-center"
 //                         />
 //                       </td>
-
 //                       <td className="p-4 border-r border-gray-200">
 //                         <div className="flex justify-center items-center gap-2 text-gray-600">
 //                           <input
@@ -461,86 +1052,37 @@
 //                             value={task.phone || ""}
 //                             placeholder="No phone"
 //                             onChange={(e) =>
-//                               handleChange(task.id, e.target.value)
+//                               handleChange(task.id, "phone", e.target.value)
 //                             }
+//                             onBlur={() => handleSave(task.id, "phone")}
 //                             className="hover:text-blue-600 transition-colors border-none outline-none bg-transparent text-center"
 //                           />
 //                         </div>
 //                       </td>
-
-//                       <td className="p-4 border-r border-gray-200">
-//                         <div className="flex items-center gap-2">
-//                           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
-//                             {task.person
-//                               .split(" ")
-//                               .map((n) => n[0])
-//                               .join("")}
-//                           </div>
-//                           <span className="text-gray-700 truncate">
-//                             {task.person}
-//                           </span>
-//                         </div>
+//                       <td className="p-4 border-r border-gray-200 ">
+//                         <OwnerDropdown
+//                           currentOwner={task.owner}
+//                           onChange={(newOwner) =>
+//                             handleOwnerChange(task.id, newOwner)
+//                           }
+//                           onSave={() => {}}
+//                           taskId={task.id}
+//                         />
 //                       </td>
-
 //                       <td className="p-4 border-r border-gray-200">
-//                         <span className="flex justify-center  px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm">
+//                         <span className="flex justify-center px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm">
 //                           {task.team}
 //                         </span>
 //                       </td>
-
-//                       {/* STATUS CELL - Bu yerda asosiy o'zgartirish */}
-//                       <td
-//                         className={`p-4 border-r border-gray-200 ${
-//                           openStatusDropdown === task.id
-//                             ? "relative z-[100] bg-transparent"
-//                             : ""
-//                         }`}
-//                       >
-//                         <div className="relative status-dropdown-container">
-//                           <button
-//                             onClick={(e) => {
-//                               e.preventDefault();
-//                               e.stopPropagation();
-//                               setOpenStatusDropdown(
-//                                 openStatusDropdown === task.id ? null : task.id
-//                               );
-//                             }}
-//                             className={`inline-flex items-center gap-3 px-2 py-1 rounded-full ${
-//                               statusConfig[task.status]?.lightBg || "bg-gray-50"
-//                             } ${
-//                               statusConfig[task.status]?.textColor ||
-//                               "text-gray-500"
-//                             } text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer`}
-//                           >
-//                             <StatusIcon className="w-4 h-4" />
-//                             {task.status}
-//                             <ChevronDown className="w-3 h-3" />
-//                           </button>
-
-//                           {openStatusDropdown === task.id && (
-//                             <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[1000] min-w-[160px]">
-//                               {statusOptions.map((option) => {
-//                                 const OptionIcon = option.icon;
-//                                 return (
-//                                   <button
-//                                     key={option.id || option.value}
-//                                     onClick={(e) => {
-//                                       e.preventDefault();
-//                                       e.stopPropagation();
-//                                       handleStatusChange(task.id, option.value);
-//                                     }}
-//                                     className={`w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-2 ${option.textColor} text-sm transition-colors z-[1001]`}
-//                                   >
-//                                     <OptionIcon className="w-4 h-4" />
-//                                     {option.value}
-//                                   </button>
-//                                 );
-//                               })}
-//                             </div>
-//                           )}
-//                         </div>
+//                       <td className="p-4 border-r border-gray-200">
+//                         <StatusDropdown
+//                           value={task.status}
+//                           onChange={(newStatus) =>
+//                             handleStatusChange(task.id, newStatus)
+//                           }
+//                           taskId={task.id}
+//                         />
 //                       </td>
-
 //                       <td className="p-4 border-r flex justify-center border-gray-200">
 //                         <input
 //                           type="number"
@@ -548,11 +1090,10 @@
 //                           onChange={(e) =>
 //                             handleChange(task.id, "progress", e.target.value)
 //                           }
-//                           className="px-3 py-1 rounded-full text-sm font-medium text-center border-none outline-none bg-transparent w-20
-//                [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+//                           onBlur={() => handleSave(task.id, "progress")}
+//                           className="px-3 py-1 rounded-full text-sm font-medium text-center border-none outline-none bg-transparent w-20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
 //                         />
 //                       </td>
-
 //                       <td className="p-4 border-r border-gray-200">
 //                         <div>
 //                           <input
@@ -562,48 +1103,142 @@
 //                             onChange={(e) =>
 //                               handleChange(task.id, "notes", e.target.value)
 //                             }
+//                             onBlur={() => handleSave(task.id, "notes")}
 //                             className="text-[16px] text-gray-500 mt-1 truncate text-center border-none outline-none bg-transparent w-full"
 //                           />
 //                         </div>
 //                       </td>
-
 //                       <td className="p-4 border-r border-gray-200">
 //                         <div className="flex justify-center items-center gap-2">
-//                           <ReactDatePicker
-//                             selected={
-//                               task.timeline ? new Date(task.timeline[0]) : null
-//                             }
-//                             onChange={(dates) =>
-//                               handleChange(task.id, "timeline", dates)
-//                             }
-//                             startDate={
-//                               task.timeline_start
-//                                 ? new Date(task.timeline_start[0])
-//                                 : null
-//                             }
-//                             endDate={
-//                               task.timeline_end
-//                                 ? new Date(task.timeline_end[1])
-//                                 : null
-//                             }
-//                             selectsRange
-//                             isClearable
-//                             placeholderText="TimeLine"
-//                             className="text-sm font-medium text-gray-700 border-none outline-none text-center"
-//                           />
+//                           {editingTimelineId === task.id ? (
+//                             <ReactDatePicker
+//                               selected={
+//                                 task.timeline_end
+//                                   ? new Date(task.timeline_end)
+//                                   : null
+//                               }
+//                               onChange={(date) => {
+//                                 const dateStr = date
+//                                   ? date.toISOString().split("T")[0]
+//                                   : null;
+//                                 handleChange(task.id, "timeline_end", dateStr);
+//                                 handleSave(task.id, "timeline_end");
+//                                 setEditingTimelineId(null);
+//                               }}
+//                               placeholderText="Select end date"
+//                               className="text-sm font-medium text-gray-700 border-none outline-none text-center"
+//                             />
+//                           ) : (
+//                             <span
+//                               // onClick={() => setEditingTimelineId(task.id)}
+//                               className="text-sm font-medium text-gray-700 cursor-pointer"
+//                             >
+//                               {calculateRemainingTime(
+//                                 task.timeline_start,
+//                                 task.timeline_end
+//                               )}
+//                             </span>
+//                           )}
 //                         </div>
 //                       </td>
-
 //                       <td className="p-4 border-r border-gray-200"></td>
 //                     </tr>
 //                   );
 //                 })}
-//                 <tr>
-//                   <td colSpan={12} className="pl-30 py-3">
-//                     <button className=" text-gray-700 transition">
-//                       + Add new lead
-//                     </button>
+//                 <tr className="border-b border-gray-100">
+//                   <td className="p-2 sticky left-0 bg-white z-10"></td>
+//                   <td className="p-4 sticky left-10 bg-white z-10">
+//                     <input
+//                       type="checkbox"
+//                       className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+//                       disabled
+//                     />
 //                   </td>
+//                   <td className="p-4 sticky left-[88px] bg-white z-10 border-r border-gray-100">
+//                     {isAddingLead ? (
+//                       <input
+//                         type="text"
+//                         value={newLeadTitle}
+//                         onChange={(e) => setNewLeadTitle(e.target.value)}
+//                         onKeyPress={handleAddLead} // ✅ shu joy POST qiladi
+//                         placeholder="Enter lead title"
+//                         className="font-medium text-gray-900 hover:text-blue-600 cursor-text transition-colors truncate pr-2 border-none outline-none bg-transparent w-full text-center"
+//                         autoFocus
+//                         onBlur={() => {
+//                           if (!newLeadTitle.trim()) setIsAddingLead(false);
+//                         }}
+//                       />
+//                     ) : (
+//                       <button
+//                         onClick={() => setIsAddingLead(true)}
+//                         className="font-medium text-gray-700 transition-colors w-full text-center"
+//                       >
+//                         + Add new lead
+//                       </button>
+//                     )}
+//                   </td>
+//                   <td className="p-4 border-r border-gray-200">
+//                     <div className="flex justify-center items-center gap-2 text-gray-600">
+//                       <input
+//                         type="tel"
+//                         value=""
+//                         placeholder="No phone"
+//                         disabled
+//                         className="text-gray-400 transition-colors border-none outline-none bg-transparent text-center"
+//                       />
+//                     </div>
+//                   </td>
+//                   <td className="p-4 border-r border-gray-200">
+//                     <div className="flex items-center gap-2">
+//                       <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
+//                         ?
+//                       </div>
+//                       <span className="text-gray-400 truncate">
+//                         {/* Unknown Person */}
+//                       </span>
+//                     </div>
+//                   </td>
+//                   <td className="p-4 border-r border-gray-200">
+//                     <span className="flex justify-center px-3 py-1 bg-gray-100 text-gray-400 rounded-lg text-sm">
+//                       General
+//                     </span>
+//                   </td>
+//                   <td className="p-4 border-r border-gray-200">
+//                     <div className="inline-flex items-center gap-3 px-2 py-1 rounded-full bg-gray-50 text-gray-400 text-sm font-medium">
+//                       <Circle className="w-4 h-4" />
+//                       No Status
+//                     </div>
+//                   </td>
+//                   <td className="p-4 border-r flex justify-center border-gray-200">
+//                     <input
+//                       type="number"
+//                       value="0"
+//                       disabled
+//                       className="px-3 py-1 rounded-full text-sm font-medium text-center border-none outline-none bg-transparent w-20 text-gray-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+//                     />
+//                   </td>
+//                   <td className="p-4 border-r border-gray-200">
+//                     <div>
+//                       <input
+//                         type="text"
+//                         value=""
+//                         placeholder="No notes"
+//                         disabled
+//                         className="text-[16px] text-gray-400 mt-1 truncate text-center border-none outline-none bg-transparent w-full"
+//                       />
+//                     </div>
+//                   </td>
+//                   <td className="p-4 border-r border-gray-200">
+//                     <div className="flex justify-center items-center gap-2">
+//                       <ReactDatePicker
+//                         selected={null}
+//                         placeholderText="Timeline"
+//                         disabled
+//                         className="text-sm font-medium text-gray-400 border-none outline-none text-center"
+//                       />
+//                     </div>
+//                   </td>
+//                   <td className="p-4 border-r border-gray-200"></td>
 //                 </tr>
 //               </tbody>
 //             </table>
@@ -641,24 +1276,20 @@
 //           background: #555;
 //         }
 
-//         /* Dropdown menu uchun qo'shimcha stillar */
 //         .status-dropdown-container {
 //           position: relative;
 //         }
 
-//         /* Table overflow konteyneriga qo'shimcha stil */
 //         .overflow-x-auto {
 //           position: relative;
 //           z-index: 1;
 //         }
 
-//         /* Dropdown ochiq bo'lganda parent row uchun */
 //         tbody tr.relative.z-50 {
 //           position: relative !important;
 //           z-index: 50 !important;
 //         }
 
-//         /* Dropdown menu uchun eng yuqori z-index */
 //         .status-dropdown-container > div {
 //           position: absolute !important;
 //           z-index: 1000 !important;
@@ -669,570 +1300,8 @@
 // };
 
 // export default Table;
-
-// import React, { useState, useRef, useEffect } from 'react';
-// import { ChevronDown, Plus, Search, Filter, Download, MoreHorizontal, Calendar, User, Tag, Clock, CheckCircle2, Circle, AlertCircle, XCircle, GripVertical, Phone } from 'lucide-react';
-// // Updated import path to match your API structure
-// import { getLeadsById, getLeads, updateLeads } from '../../../api/services/leadsService';
-
-// const Table = () => {
-//   const [hoveredRow, setHoveredRow] = useState(null);
-
-//   const [selectedRows, setSelectedRows] = useState([]);
-//   const [searchTerm, setSearchTerm] = useState('');
-//   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
-//   const [draggedItem, setDraggedItem] = useState(null);
-//   const [dragOverItem, setDragOverItem] = useState(null);
-//   const [openStatusDropdown, setOpenStatusDropdown] = useState(null);
-//   const [apiLeads, setApiLeads] = useState([]);
-//   const [loading, setLoading] = useState(false);
-//   const [statusOptions, setStatusOptions] = useState([
-//     { value: 'Done', color: 'bg-green-500', icon: CheckCircle2, lightBg: 'bg-green-50', textColor: 'text-green-700' },
-//     { value: 'Working on it', color: 'bg-yellow-500', icon: Circle, lightBg: 'bg-yellow-50', textColor: 'text-yellow-700' },
-//     { value: 'Stuck', color: 'bg-red-500', icon: AlertCircle, lightBg: 'bg-red-50', textColor: 'text-red-700' },
-//     { value: 'Not Started', color: 'bg-gray-400', icon: XCircle, lightBg: 'bg-gray-50', textColor: 'text-gray-700' },
-//     { value: 'No Status', color: 'bg-gray-300', icon: Circle, lightBg: 'bg-gray-50', textColor: 'text-gray-500' }
-//   ]);
-
-//   const statusConfig = {
-//     'Done': { color: 'bg-green-500', icon: CheckCircle2, lightBg: 'bg-green-50', textColor: 'text-green-700' },
-//     'Working on it': { color: 'bg-yellow-500', icon: Circle, lightBg: 'bg-yellow-50', textColor: 'text-yellow-700' },
-//     'Stuck': { color: 'bg-red-500', icon: AlertCircle, lightBg: 'bg-red-50', textColor: 'text-red-700' },
-//     'Not Started': { color: 'bg-gray-400', icon: XCircle, lightBg: 'bg-gray-50', textColor: 'text-gray-700' },
-//     'No Status': { color: 'bg-gray-300', icon: Circle, lightBg: 'bg-gray-50', textColor: 'text-gray-500' }
-//   };
-
-//   const priorityConfig = {
-//     'Critical': { color: 'bg-purple-600', textColor: 'text-purple-600', bgLight: 'bg-purple-100' },
-//     'High': { color: 'bg-red-500', textColor: 'text-red-600', bgLight: 'bg-red-100' },
-//     'Medium': { color: 'bg-blue-500', textColor: 'text-blue-600', bgLight: 'bg-blue-100' },
-//     'Low': { color: 'bg-gray-400', textColor: 'text-gray-600', bgLight: 'bg-gray-100' }
-//   };
-
-//   // Convert API leads to task format
-//   const convertApiLeadsToTasks = (leads) => {
-//     return leads.map((lead, index) => ({
-//       id: lead.id,
-//       task: lead.name || `Lead ${index + 1}`,
-//       person: lead.person_detail?.fullname || 'Unknown Person',
-//       status: lead.status?.name || lead.status || 'No Status',
-//       priority: lead.potential_value > 50 ? 'High' : lead.potential_value > 20 ? 'Medium' : 'Low',
-//       deadline: lead.last_interaction || '2025-08-30',
-//       progress: lead.potential_value || 0,
-//       team: lead.link || 'General',
-//       phone: lead.phone,
-//       notes: lead.notes,
-//       source: 'api'
-//     }));
-//   };
-
-//   // Load all leads from API
-//   const loadLeadsFromAPI = async (groupId = null) => {
-//     try {
-//       setLoading(true);
-//       console.log('🔍 Loading leads from API...');
-
-//       const response = await getLeads(groupId);
-//       console.log('✅ API Response:', response);
-
-//       if (response.data && Array.isArray(response.data)) {
-//         setApiLeads(response.data);
-//         console.log(`📊 Loaded ${response.data.length} leads from API`);
-
-//         // Extract unique status options from API data
-//         const apiStatusOptions = response.data
-//           .filter(lead => lead.status && lead.status.name)
-//           .map(lead => ({
-//             id: lead.status.id,
-//             value: lead.status.name,
-//             icon: getStatusIcon(lead.status.name),
-//             lightBg: getStatusLightBg(lead.status.name),
-//             textColor: getStatusTextColor(lead.status.name)
-//           }))
-//           .filter((status, index, self) =>
-//             self.findIndex(s => s.value === status.value) === index // Remove duplicates
-//           );
-
-//         if (apiStatusOptions.length > 0) {
-//           console.log('📊 Status options from API:', apiStatusOptions);
-//           // Merge with default status options
-//           setStatusOptions([...statusOptions, ...apiStatusOptions]);
-//         }
-//       }
-//     } catch (error) {
-//       console.error('❌ Error loading leads:', {
-//         status: error.response?.status,
-//         statusText: error.response?.statusText,
-//         url: error.config?.url,
-//         data: error.response?.data,
-//         message: error.message
-//       });
-
-//       if (error.response?.status === 404) {
-//         console.log('💡 API endpoint not found. Check your API server and endpoints.');
-//       } else if (error.response?.status === 401) {
-//         console.log('🔐 Authentication required');
-//       } else {
-//         console.log('🌐 Network error or server unavailable');
-//       }
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   // Helper functions to get status styling
-//   const getStatusIcon = (statusName) => {
-//     if (!statusName) return Circle;
-//     const name = statusName.toLowerCase();
-//     if (name.includes('done') || name.includes('complete')) return CheckCircle2;
-//     if (name.includes('working') || name.includes('progress')) return Circle;
-//     if (name.includes('stuck') || name.includes('blocked')) return AlertCircle;
-//     return XCircle;
-//   };
-
-//   const getStatusLightBg = (statusName) => {
-//     if (!statusName) return 'bg-gray-50';
-//     const name = statusName.toLowerCase();
-//     if (name.includes('done') || name.includes('complete')) return 'bg-green-50';
-//     if (name.includes('working') || name.includes('progress')) return 'bg-yellow-50';
-//     if (name.includes('stuck') || name.includes('blocked')) return 'bg-red-50';
-//     return 'bg-gray-50';
-//   };
-
-//   const getStatusTextColor = (statusName) => {
-//     if (!statusName) return 'text-gray-500';
-//     const name = statusName.toLowerCase();
-//     if (name.includes('done') || name.includes('complete')) return 'text-green-700';
-//     if (name.includes('working') || name.includes('progress')) return 'text-yellow-700';
-//     if (name.includes('stuck') || name.includes('blocked')) return 'text-red-700';
-//     return 'text-gray-700';
-//   };
-
-//   // Load data on component mount
-//   useEffect(() => {
-//     loadLeadsFromAPI();
-//   }, []);
-
-//   // Click outside handler for dropdown
-//   useEffect(() => {
-//     const handleClickOutside = (event) => {
-//       if (!event.target.closest('.status-dropdown-container')) {
-//         setOpenStatusDropdown(null);
-//       }
-//     };
-
-//     if (openStatusDropdown !== null) {
-//       document.addEventListener('mousedown', handleClickOutside);
-//       return () => document.removeEventListener('mousedown', handleClickOutside);
-//     }
-//   }, [openStatusDropdown]);
-
-//   // Only use API data
-//   const displayTasks = convertApiLeadsToTasks(apiLeads);
-
-//   const handleDragStart = (e, index) => {
-//     setDraggedItem(index);
-//     e.dataTransfer.effectAllowed = 'move';
-//   };
-
-//   const handleDragOver = (e, index) => {
-//     e.preventDefault();
-//     e.dataTransfer.dropEffect = 'move';
-//     setDragOverItem(index);
-//   };
-
-//   const handleDragEnd = () => {
-//     setDraggedItem(null);
-//     setDragOverItem(null);
-//   };
-
-//   const handleDrop = (e, dropIndex) => {
-//     e.preventDefault();
-//     if (draggedItem === null) return;
-
-//     const draggedTask = filteredTasks[draggedItem];
-//     const newTasks = [...displayTasks];
-
-//     const originalDraggedIndex = displayTasks.findIndex(t => t.id === draggedTask.id);
-//     const dropTask = filteredTasks[dropIndex];
-//     const originalDropIndex = displayTasks.findIndex(t => t.id === dropTask.id);
-
-//     const [removed] = newTasks.splice(originalDraggedIndex, 1);
-//     newTasks.splice(originalDropIndex, 0, removed);
-
-//     setApiLeads(newTasks);
-//     setDraggedItem(null);
-//     setDragOverItem(null);
-//   };
-
-//   const handleStatusChange = async (taskId, newStatus) => {
-//     try {
-//       // Update API data
-//       setApiLeads(apiLeads.map(lead =>
-//         lead.id === taskId ? { ...lead, status: { name: newStatus } } : lead
-//       ));
-
-//       // Update on server
-//       await updateLeads(taskId, { status: newStatus });
-//       console.log('✅ Status updated on server');
-
-//       setOpenStatusDropdown(null);
-//     } catch (error) {
-//       console.error('❌ Error updating status:', error);
-//     }
-//   };
-
-//   const handleSort = (key) => {
-//     let direction = 'asc';
-//     if (sortConfig.key === key && sortConfig.direction === 'asc') {
-//       direction = 'desc';
-//     }
-//     setSortConfig({ key, direction });
-//   };
-
-//   const sortedTasks = [...displayTasks].sort((a, b) => {
-//     if (!sortConfig.key) return 0;
-
-//     const aValue = a[sortConfig.key];
-//     const bValue = b[sortConfig.key];
-
-//     if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-//     if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-//     return 0;
-//   });
-
-//   const filteredTasks = sortedTasks.filter(task =>
-//     (task.task && task.task.toLowerCase().includes(searchTerm.toLowerCase())) ||
-//     (task.person && task.person.toLowerCase().includes(searchTerm.toLowerCase())) ||
-//     (task.status && task.status.toLowerCase().includes(searchTerm.toLowerCase())) ||
-//     (task.phone && task.phone.includes(searchTerm))
-//   );
-
-//   const toggleRowSelection = (id) => {
-//     setSelectedRows(prev =>
-//       prev.includes(id) ? prev.filter(rowId => rowId !== id) : [...prev, id]
-//     );
-//   };
-
-//   const selectAll = () => {
-//     if (selectedRows.length === filteredTasks.length) {
-//       setSelectedRows([]);
-//     } else {
-//       setSelectedRows(filteredTasks.map(task => task.id));
-//     }
-//   };
-
-//   return (
-//     <div className="h-auto  md:min-w-[95%]">
-
-//       {/* <div className="mb-8">
-//         <div className="flex items-center justify-between mb-6">
-//           <div>
-//             <h1 className="text-3xl font-bold text-gray-900 mb-2">Leads Management Board</h1>
-//             {loading && <p className="text-blue-600 text-sm">🔄 Loading data from API...</p>}
-
-//           </div>
-//           <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-all transform hover:scale-105 shadow-lg">
-//             <Plus className="w-5 h-5" />
-//             New Lead
-//           </button>
-//         </div>
-
-//         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-//           <div className="flex items-center gap-4 flex-wrap">
-//             <div className="flex-1 min-w-64">
-//               <div className="relative">
-//                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-//                 <input
-//                   type="text"
-//                   placeholder="Search leads, people, phone..."
-//                   className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-//                   value={searchTerm}
-//                   onChange={(e) => setSearchTerm(e.target.value)}
-//                 />
-//               </div>
-//             </div>
-//             <button
-//               onClick={() => loadLeadsFromAPI()}
-//               disabled={loading}
-//               className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-all disabled:opacity-50"
-//             >
-//               🔄 Refresh API
-//             </button>
-//             <button className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-all">
-//               <Filter className="w-4 h-4" />
-//               Filter
-//             </button>
-//             <button className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 transition-all">
-//               <Download className="w-4 h-4" />
-//               Export
-//             </button>
-//           </div>
-//         </div>
-//       </div> */}
-
-//       {/* Table Container with Horizontal Scroll */}
-//       <div className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
-//         <div className="overflow-x-auto custom-scrollbar">
-//           <div className="min-w-[1200px]">
-//             <table className="w-full table-fixed">
-//               <colgroup>
-//                 <col className="w-10" />
-//                 <col className="w-12" />
-//                 <col className="w-50" />
-//                 <col className="w-50" />
-//                 <col className="w-35" />
-//                 <col className="w-45" />
-//                 <col className="w-40" />
-//                 <col className="w-44" />
-//                 <col className="w-40" />
-//                 <col className='w-20' />
-//                 <col className="w-15" />
-//               </colgroup>
-//               <thead>
-//                 <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-//                   <th className="p-2 sticky left-0 bg-gradient-to-r from-gray-50 to-gray-100 z-20"></th>
-//                   <th className="p-4 sticky left-10 bg-gradient-to-r from-gray-50 to-gray-100 z-20">
-//                     <input
-//                       type="checkbox"
-//                       className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-//                       checked={selectedRows.length === filteredTasks.length && filteredTasks.length > 0}
-//                       onChange={selectAll}
-//                     />
-//                   </th>
-//                   <th
-//                     className="text-left p-4 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors sticky left-[88px] bg-gradient-to-r from-gray-50 to-gray-100 z-20 border-r border-gray-200"
-//                     onClick={() => handleSort('task')}
-//                   >
-//                     <div className="flex items-center gap-2">
-//                       Leads
-//                       <ChevronDown className={`w-4 h-4 transition-transform ${sortConfig.key === 'task' && sortConfig.direction === 'desc' ? 'rotate-180' : ''}`} />
-//                     </div>
-//                   </th>
-//                   <th
-//                     className="text-left p-4 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
-//                     onClick={() => handleSort('person')}
-//                   >
-//                     <div className="flex items-center gap-2">
-//                       <User className="w-4 h-4" />
-//                       Phone Number
-//                     </div>
-//                   </th>
-//                   <th className="text-left p-4 font-semibold text-gray-700">
-//                     <div className="flex items-center gap-2">
-//                       <Circle className="w-4 h-4" />
-//                       Source
-//                     </div>
-//                   </th>
-//                   <th className="text-left p-4 font-semibold text-gray-700">
-//                     <div className="flex items-center gap-2">
-//                       <Tag className="w-4 h-4" />
-//                       Owner
-//                     </div>
-//                   </th>
-//                   <th className="text-left p-4 font-semibold text-gray-700">
-//                     <div className="flex items-center gap-2">
-//                       <Phone className="w-4 h-4" />
-//                       Status
-//                     </div>
-//                   </th>
-//                   <th className="text-left p-4 font-semibold text-gray-700">
-//                     Potential Value
-//                   </th>
-//                   <th className="text-left p-4 font-semibold text-gray-700">
-//                     Potential value
-//                   </th>
-//                   <th>
-//                     Notes
-//                   </th>
-//                   <th className="p-4"></th>
-//                 </tr>
-//               </thead>
-//               <tbody>
-//                 {filteredTasks.map((task, index) => {
-//                   const StatusIcon = statusConfig[task.status]?.icon || Circle;
-//                   return (
-//                     <tr
-//                       key={task.id}
-//                       className={`border-b border-gray-100 transition-all duration-200 ${
-//                         hoveredRow === task.id ? 'bg-blue-50 shadow-sm' : ''
-//                       } ${selectedRows.includes(task.id) ? 'bg-blue-50' : ''} ${
-//                         dragOverItem === index ? 'bg-blue-100' : ''
-//                       } ${draggedItem === index ? 'opacity-50' : ''}`}
-//                       onMouseEnter={() => setHoveredRow(task.id)}
-//                       onMouseLeave={() => setHoveredRow(null)}
-//                       onDragOver={(e) => handleDragOver(e, index)}
-//                       onDrop={(e) => handleDrop(e, index)}
-//                       style={{
-//                         animation: `slideIn 0.3s ease-out ${index * 0.05}s both`
-//                       }}
-//                     >
-//                       <td
-//                         className="p-2 cursor-move sticky left-0 bg-white z-10"
-//                         draggable
-//                         onDragStart={(e) => handleDragStart(e, index)}
-//                         onDragEnd={handleDragEnd}
-//                       >
-//                         <GripVertical className="w-4 h-4 text-gray-400 hover:text-gray-600" />
-//                       </td>
-
-//                       <td className="p-4 sticky left-10 bg-white z-10">
-//                         <input
-//                           type="checkbox"
-//                           className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-//                           checked={selectedRows.includes(task.id)}
-//                           onChange={() => toggleRowSelection(task.id)}
-//                         />
-//                       </td>
-
-//                       <td className="p-4 sticky left-[88px] bg-white z-10 border-r border-gray-100">
-//                         <div className="font-medium text-gray-900 hover:text-blue-600 cursor-pointer transition-colors truncate pr-2">
-//                           {task.task}
-//                           {/* <span className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">API</span> */}
-//                         </div>
-
-//                       </td>
-//                         <td className="p-4">
-//                         <div className="flex items-center gap-2 text-gray-600">
-//                           <Phone className="w-4 h-4" />
-//                           <a href={`tel:${task.phone}`} className="hover:text-blue-600 transition-colors">
-//                             {task.phone || 'No phone'}
-//                           </a>
-//                         </div>
-//                       </td>
-//                        <td className="p-4">
-//                         <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm">
-//                           {task.team}
-//                         </span>
-//                       </td>
-//                       <td className="p-4">
-//                         <div className="flex items-center gap-2">
-//                           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
-//                             {task.person.split(' ').map(n => n[0]).join('')}
-//                           </div>
-//                           <span className="text-gray-700 truncate">{task.person}</span>
-//                         </div>
-//                       </td>
-//                       <td className={`p-4 ${openStatusDropdown === task.id ? 'relative z-[1002] bg-transparent' : ''}`}>
-//                         <div className="relative status-dropdown-container">
-//                           <button
-//                             onClick={(e) => {
-//                               e.preventDefault();
-//                               e.stopPropagation();
-//                               setOpenStatusDropdown(openStatusDropdown === task.id ? null : task.id);
-//                             }}
-//                             className={`inline-flex items-center gap-3 px-2 py-1 rounded-full ${statusConfig[task.status]?.lightBg || 'bg-gray-50'} ${statusConfig[task.status]?.textColor || 'text-gray-500'} text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer`}
-//                           >
-//                             <StatusIcon className="w-4 h-4" />
-//                             {task.status}
-//                             <ChevronDown className="w-3 h-3" />
-//                           </button>
-
-//                           {openStatusDropdown === task.id && (
-//                             <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-[1007] min-w-[160px]">
-//                               {statusOptions.map((option) => {
-//                                 const OptionIcon = option.icon;
-//                                 return (
-//                                   <button
-//                                     key={option.id || option.value}
-//                                     onClick={(e) => {
-//                                       e.preventDefault();
-//                                       e.stopPropagation();
-//                                       handleStatusChange(task.id, option.value);
-//                                     }}
-//                                     className={`w-full text-left px-3 py-2 !z-50 hover:bg-gray-50 flex items-center gap-2 ${option.textColor} text-sm transition-colors`}
-//                                   >
-//                                     <OptionIcon className="w-4 h-4" />
-//                                     {option.value}
-//                                   </button>
-//                                 );
-//                               })}
-//                             </div>
-//                           )}
-//                         </div>
-//                       </td>
-//                       <td className="p-4">
-//                         <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
-//                           task.progress > 50 ? 'bg-green-100 text-green-600' :
-//                           task.progress > 20 ? 'bg-yellow-100 text-yellow-600' :
-//                           'bg-red-100 text-red-600'
-//                         }`}>
-//                           ${task.progress || 0}
-//                         </span>
-//                       </td>
-
-//                       <td className="p-4">
-//                         <div className="flex items-center gap-2">
-//                           <span className="text-sm font-medium text-gray-700">
-//                             ${task.progress || 0}
-//                           </span>
-//                           <div className="w-16 bg-gray-200 rounded-full h-2">
-//                             <div
-//                               className="h-full bg-green-500 rounded-full transition-all duration-300"
-//                               style={{ width: `${Math.min((task.progress || 0) / 100 * 100, 100)}%` }}
-//                             />
-//                           </div>
-//                         </div>
-//                       </td>
-//                       <td>
-//                         <div className='ml-5' >
-//                            {task.notes && (
-//                           <div className="text-xs text-gray-500 mt-1 truncate">{task.notes}</div>
-//                         )}
-//                         </div>
-//                       </td>
-
-//                       <td className="p-4">
-//                         <button className="text-gray-400 hover:text-gray-600 transition-colors">
-//                           <MoreHorizontal className="w-5 h-5" />
-//                         </button>
-//                       </td>
-//                     </tr>
-//                   );
-//                 })}
-//               </tbody>
-//             </table>
-//           </div>
-//         </div>
-//       </div>
-
-//       <style jsx>{`
-//         @keyframes slideIn {
-//           from {
-//             opacity: 0;
-//             transform: translateY(10px);
-//           }
-//           to {
-//             opacity: 1;
-//             transform: translateY(0);
-//           }
-//         }
-
-//         .custom-scrollbar::-webkit-scrollbar {
-//           height: 8px;
-//         }
-
-//         .custom-scrollbar::-webkit-scrollbar-track {
-//           background: #f1f1f1;
-//           border-radius: 10px;
-//         }
-
-//         .custom-scrollbar::-webkit-scrollbar-thumb {
-//           background: #888;
-//           border-radius: 10px;
-//         }
-
-//         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-//           background: #555;
-//         }
-//       `}</style>
-//     </div>
-//   );
-// };
-
-// export default Table;
-
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   ChevronDown,
   CheckCircle2,
@@ -1240,136 +1309,771 @@ import {
   AlertCircle,
   XCircle,
   GripVertical,
+  Plus,
 } from "lucide-react";
+import ReactDatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 import {
   getLeads,
   updateLeads,
   createLeads,
 } from "../../../api/services/leadsService";
-import ReactDatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
+import { getMSalesUsers } from "../../../api/services/userService";
+import { getBoardsAll } from "../../../api/services/boardService"; 
+import { Select, Avatar } from "antd";
+import api from "../../../api/base";
 
-const LinkDropdown = ({ value, onChange, onSave, onCancel }) => {
-  const linkOptions = [
-    { value: "", label: "Select Link Type" },
-    { value: "ad", label: "Ad" },
-    { value: "outreach", label: "Outreach" },
-    { value: "referral", label: "Referral" },
-    { value: "event", label: "Event" },
-  ];
+// Helper function to get absolute image URL
+const getAbsoluteImageUrl = (picture) => {
+  if (!picture) return null;
+  const url = typeof picture === "string" ? picture : picture?.url;
+  if (!url) return null;
+  if (url.startsWith("http")) return url;
+  return `https://prototype-production-2b67.up.railway.app${url.startsWith("/") ? "" : "/"}${url}`;
+};
 
-  const handleChange = (e) => {
-    onChange(e.target.value);
+// Calculate remaining time for timeline
+const calculateRemainingTime = (startDateStr, endDateStr) => {
+  if (!endDateStr || !startDateStr) return "No timeline";
+  const now = new Date();
+  const start = new Date(startDateStr);
+  const end = new Date(endDateStr);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return "Invalid date";
+  if (end < start) return "Invalid timeline";
+  const effectiveStart = now > start ? now : start;
+  const diffMs = end - effectiveStart;
+  if (diffMs < 0) {
+    const absDiffMs = Math.abs(diffMs);
+    const days = Math.floor(absDiffMs / 86400000);
+    const hours = Math.floor((absDiffMs % 86400000) / 3600000);
+    return `${days} days, ${hours} h overdue`;
+  }
+  const days = Math.floor(diffMs / 86400000);
+  const hours = Math.floor((diffMs % 86400000) / 3600000);
+  return `${days} days ${hours} h remaining`;
+};
+
+// Timeline Range Picker Component
+const TimelineRangePicker = ({ task, onSave, isOpen, onToggle }) => {
+  const [startDate, setStartDate] = useState(
+    task.timeline_start ? new Date(task.timeline_start) : null
+  );
+  const [endDate, setEndDate] = useState(
+    task.timeline_end ? new Date(task.timeline_end) : null
+  );
+
+  const handleSave = () => {
+    const startDateStr = startDate ? startDate.toISOString().split("T")[0] : null;
+    const endDateStr = endDate ? endDate.toISOString().split("T")[0] : null;
+    onSave(task.id, {
+      timeline_start: startDateStr,
+      timeline_end: endDateStr,
+    });
+    onToggle();
+  };
+
+  const handleCancel = () => {
+    setStartDate(task.timeline_start ? new Date(task.timeline_start) : null);
+    setEndDate(task.timeline_end ? new Date(task.timeline_end) : null);
+    onToggle();
+  };
+
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[10000] bg-white border border-gray-300 rounded-lg shadow-2xl p-4 min-w-[320px]">
+      <div className="space-y-4">
+        <div className="text-sm font-semibold text-gray-700 text-center">
+          Select Timeline Range
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Start Date
+            </label>
+            <ReactDatePicker
+              selected={startDate}
+              onChange={(date) => setStartDate(date)}
+              selectsStart
+              startDate={startDate}
+              endDate={endDate}
+              placeholderText="Start date"
+              className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              dateFormat="yyyy-MM-dd"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              End Date
+            </label>
+            <ReactDatePicker
+              selected={endDate}
+              onChange={(date) => setEndDate(date)}
+              selectsEnd
+              startDate={startDate}
+              endDate={endDate}
+              minDate={startDate}
+              placeholderText="End date"
+              className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              dateFormat="yyyy-MM-dd"
+            />
+          </div>
+        </div>
+        {startDate && endDate && startDate instanceof Date && endDate instanceof Date && (
+          <div className="text-center py-2 px-3 bg-blue-50 rounded-md">
+            <div className="text-xs text-gray-600">Timeline:</div>
+            <div className="text-sm font-medium text-blue-700">
+              {calculateRemainingTime(
+                startDate.toISOString().split("T")[0],
+                endDate.toISOString().split("T")[0]
+              )}
+            </div>
+          </div>
+        )}
+        <div className="flex justify-end gap-2 pt-2 border-t border-gray-200">
+          <button
+            onClick={handleCancel}
+            className="px-3 py-1.5 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            className="px-3 py-1.5 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors"
+            disabled={!startDate || !endDate}
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+// Timeline Cell Component
+const TimelineCell = ({ task, onTimelineUpdate }) => {
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+
+  const handleSave = async (taskId, timelineData) => {
+    try {
+      onTimelineUpdate(taskId, timelineData);
+      await updateLeads(taskId, timelineData);
+      console.log("✅ Timeline updated on server");
+      setIsPickerOpen(false);
+    } catch (error) {
+      console.error("❌ Error updating timeline:", error);
+    }
+  };
+
+  const togglePicker = () => {
+    setIsPickerOpen(!isPickerOpen);
+  };
+
+  return (
+    <td className="p-4 border-r border-gray-200 relative">
+      <div className="flex justify-center items-center gap-2">
+        <span
+          onClick={togglePicker}
+          className="text-sm font-medium text-gray-700 cursor-pointer hover:text-blue-600 hover:underline transition-colors px-2 py-1 rounded hover:bg-blue-50"
+          title="Click to edit timeline"
+        >
+          {calculateRemainingTime(task.timeline_start, task.timeline_end)}
+        </span>
+        <TimelineRangePicker
+          task={task}
+          onSave={handleSave}
+          isOpen={isPickerOpen}
+          onToggle={togglePicker}
+        />
+      </div>
+      {isPickerOpen && (
+        <div
+          className="fixed inset-0 z-[9999]"
+          onClick={togglePicker}
+        />
+      )}
+    </td>
+  );
+};
+
+// Owner Dropdown Component
+const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
+  const [userOptions, setUserOptions] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [userMe, setUserMe] = useState(null);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        let myData = null;
+        try {
+          const meRes = await api.get("/me/");
+          console.log("Current user response:", meRes);
+          if (meRes.data) {
+            myData = {
+              id: meRes.data.id,
+              name: meRes.data.first_name || `${meRes.data.first_name || ''} ${meRes.data.last_name || ''}`.trim() || "Me",
+              email: meRes.data.email,
+              profile_picture: getAbsoluteImageUrl(meRes.data.profile_picture),
+              isCurrentUser: true,
+            };
+            setUserMe(myData);
+            console.log("Current user data:", myData);
+          }
+        } catch (meErr) {
+          console.warn("Failed to fetch current user:", meErr);
+        }
+
+        const res = await getMSalesUsers();
+        console.log("MSales users response:", res);
+
+        if (res.data && Array.isArray(res.data)) {
+          if (!myData) {
+            const firstUser = res.data[0];
+            if (firstUser) {
+              myData = {
+                id: firstUser.id,
+                name: firstUser.fullname || `${firstUser.first_name || ''} ${firstUser.last_name || ''}`.trim() || "Me",
+                email: firstUser.email,
+                profile_picture: getAbsoluteImageUrl(firstUser.profile_picture),
+                isCurrentUser: true,
+              };
+              setUserMe(myData);
+            }
+          }
+
+          const otherUsers = res.data
+            .filter(user => user.id !== myData?.id)
+            .map(user => ({
+              id: user.id,
+              name: user.fullname || `${user.first_name || ''} ${user.last_name || ''}`.trim() || "Unknown User",
+              email: user.email,
+              profile_picture: getAbsoluteImageUrl(user.profile_picture),
+              isCurrentUser: false,
+            }));
+
+          const allUsers = myData ? [myData, ...otherUsers] : otherUsers;
+          setUserOptions(allUsers);
+          console.log("Final user options:", allUsers);
+        } else {
+          console.warn("No users data received or invalid format");
+        }
+      } catch (err) {
+        console.error("Failed to fetch users:", err);
+        if (userMe) {
+          setUserOptions([userMe]);
+        }
+      }
+    };
+    fetchUsers();
+  }, []);
+
+  const handleChange = async (selectedUserId) => {
+    const selectedUser = userOptions.find(u => u.id === selectedUserId);
+    const personDetail = {
+      id: selectedUser.id,
+      fullname: selectedUser.name,
+      profile_picture: selectedUser.profile_picture,
+    };
+    onChange(personDetail);
+    try {
+      await updateLeads(taskId, { person: selectedUserId });
+    } catch (err) {
+      console.error("Failed to update owner:", err);
+    }
+    setIsOpen(false);
     onSave();
   };
 
-  return (
-    <select
-      value={value || ""}
-      onChange={handleChange}
-      onBlur={onSave}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") onSave();
-        if (e.key === "Escape") onCancel();
-      }}
-      className="w-full h-full text-center focus:outline-none border-none appearance-none bg-transparent"
-    >
-      {linkOptions.map((option) => (
-        <option
-          key={option.value}
-          value={option.value}
-          className="bg-white text-black"
-        >
-          {option.label}
-        </option>
-      ))}
-    </select>
-  );
-};
-
-const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
-  const [personOptions, setPersonOptions] = useState([]);
-
-  useEffect(() => {
-    const fetchPersons = async () => {
-      try {
-        const res = await getLeads();
-        const options = res.data
-          .filter((lead) => lead.person_detail)
-          .map((lead) => ({
-            id: lead.person_detail.id,
-            name: lead.person_detail.fullname || "Unnamed Person",
-            img: (() => {
-              const picture = lead.person_detail.profile_picture;
-
-              if (!picture) return null;
-
-              // Get the URL string
-              const url = typeof picture === "string" ? picture : picture?.url;
-
-              if (!url) return null;
-
-              // If it's already a full URL, return as is
-              if (url.startsWith("http://") || url.startsWith("https://")) {
-                return url;
-              }
-
-              // Prepend base URL for relative paths
-              return `https://prototype-production-2b67.up.railway.app${url}`;
-            })(),
-          }));
-        setPersonOptions(options);
-      } catch (err) {
-        console.error("Failed to fetch persons:", err);
-      }
-    };
-    fetchPersons();
-  }, []);
-
-  const handleChange = async (selectedId) => {
-    const selectedPerson =
-      personOptions.find((p) => p.id === selectedId) || null;
-
-    onChange(selectedPerson); // localItems ga to‘liq obyekt
-
-    if (groupId && leadId) {
-      try {
-        await updateLeads(groupId, leadId, { person_detail: selectedPerson });
-      } catch (err) {
-        console.error("Failed to update person_detail:", err);
-      }
+  const renderOwnerAvatar = (owner) => {
+    if (owner?.profile_picture) {
+      return (
+        <img
+          src={getAbsoluteImageUrl(owner.profile_picture)}
+          alt={owner.fullname}
+          className="w-full h-full object-cover"
+        />
+      );
     }
-
-    onSave(); // editingni yakunlash
+    return (
+      <svg
+        className="w-5 h-5 text-white"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+      >
+        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+      </svg>
+    );
   };
 
   return (
-    <Select
-      value={value?.id || undefined}
-      onChange={handleChange}
-      onBlur={onSave}
-      placeholder="Select Person"
-      style={{ width: "100%", border: "none" }}
-      className="ant-select-borderless custom-selectt"
-      optionLabelProp="label"
-    >
-      {personOptions.map((person) => (
-        <Select.Option
-          key={person.id}
-          value={person.id}
-          label={person.name}
-          style={{ border: "none" }}
-        >
-          <div className="flex items-center gap-2">
-            {person.img && <Avatar size={24} src={person.img} />}
-            <span>{person.name}</span>
-          </div>
-        </Select.Option>
-      ))}
-    </Select>
+    <div className="relative">
+      {userMe && (
+        <div className="hidden">
+          <div>{userMe.first_name}</div>
+        </div>
+      )}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 w-full hover:bg-gray-50 p-1 rounded transition-colors"
+      >
+        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 overflow-hidden">
+          {renderOwnerAvatar(currentOwner)}
+        </div>
+        <span className="text-gray-700 truncate flex-1 text-left">
+          {currentOwner?.fullname || "No Owner"}
+        </span>
+        <ChevronDown className="w-4 h-4 text-gray-400" />
+      </button>
+      {isOpen && (
+        <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[100000] min-w-[200px] max-h-60 overflow-y-auto">
+          {userOptions.map((user) => (
+            <button
+              key={user.id}
+              onClick={() => handleChange(user.id)}
+              className="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-2 text-sm transition-colors"
+            >
+              <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 overflow-hidden">
+                {user.profile_picture ? (
+                  <img
+                    src={user.profile_picture}
+                    alt={user.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <svg
+                    className="w-4 h-4 text-white"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
+              <div className="flex-1 truncate">
+                <div className="font-medium">
+                  {user.isCurrentUser ? `${user.name} (Me)` : user.name}
+                </div>
+                {user.email && (
+                  <div className="text-xs text-gray-500">{user.email}</div>
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-[99999]"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+    </div>
   );
 };
 
+// Status Dropdown Component
+const StatusDropdown = ({ value, onChange, taskId }) => {
+  const [statusOptions, setStatusOptions] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchStatuses = async () => {
+      try {
+        const allStatuses = [];
+        try {
+          const leadsRes = await getLeads();
+          if (leadsRes.data && Array.isArray(leadsRes.data)) {
+            leadsRes.data.forEach(lead => {
+              if (lead.status && lead.status.name && lead.status.id) {
+                if (!allStatuses.find(s => s.id === lead.status.id)) {
+                  allStatuses.push({
+                    id: lead.status.id,
+                    name: lead.status.name,
+                    icon: getStatusIcon(lead.status.name),
+                    lightBg: getStatusLightBg(lead.status.name),
+                    textColor: getStatusTextColor(lead.status.name),
+                  });
+                }
+              }
+            });
+          }
+        } catch (leadsErr) {
+          console.error("Error fetching statuses from leads:", leadsErr);
+        }
+        try {
+          const boardsRes = await getBoardsAll();
+          console.log("📊 Boards API response:", boardsRes);
+          if (boardsRes.data && Array.isArray(boardsRes.data)) {
+            boardsRes.data.forEach(board => {
+              if (board.statuses && Array.isArray(board.statuses)) {
+                board.statuses.forEach(status => {
+                  if (!allStatuses.find(s => s.id === status.id)) {
+                    allStatuses.push({
+                      id: status.id,
+                      name: status.name,
+                      color: status.color || "#6b7280",
+                      icon: getStatusIcon(status.name),
+                      lightBg: getStatusLightBg(status.name),
+                      textColor: getStatusTextColor(status.name),
+                    });
+                  }
+                });
+              } else if (board.id && board.name) {
+                if (!allStatuses.find(s => s.id === board.id)) {
+                  allStatuses.push({
+                    id: board.id,
+                    name: board.name,
+                    color: board.color || "#6b7280",
+                    icon: getStatusIcon(board.name),
+                    lightBg: getStatusLightBg(board.name),
+                    textColor: getStatusTextColor(board.name),
+                  });
+                }
+              }
+            });
+          }
+        } catch (boardsErr) {
+          console.error("Error fetching statuses from boards:", boardsErr);
+        }
+        setStatusOptions(allStatuses);
+        console.log("📊 Final combined status options:", allStatuses);
+      } catch (err) {
+        console.error("Failed to fetch statuses:", err);
+        const fallbackStatuses = [
+          { id: 'default-1', name: 'Not Started', icon: XCircle, lightBg: 'bg-gray-50', textColor: 'text-gray-700' },
+          { id: 'default-2', name: 'Working on it', icon: Circle, lightBg: 'bg-yellow-50', textColor: 'text-yellow-700' },
+          { id: 'default-3', name: 'Stuck', icon: AlertCircle, lightBg: 'bg-red-50', textColor: 'text-red-700' },
+          { id: 'default-4', name: 'Done', icon: CheckCircle2, lightBg: 'bg-green-50', textColor: 'text-green-700' },
+        ];
+        setStatusOptions(fallbackStatuses);
+      }
+    };
+    fetchStatuses();
+  }, []);
+
+  const getStatusIcon = (statusName) => {
+    if (!statusName) return Circle;
+    const name = statusName.toLowerCase();
+    if (name.includes("done") || name.includes("complete") || name.includes("finished")) return CheckCircle2;
+    if (name.includes("working") || name.includes("progress") || name.includes("doing")) return Circle;
+    if (name.includes("stuck") || name.includes("blocked") || name.includes("issue")) return AlertCircle;
+    if (name.includes("not started") || name.includes("todo") || name.includes("pending")) return XCircle;
+    return Circle;
+  };
+
+  const getStatusLightBg = (statusName) => {
+    if (!statusName) return "bg-gray-50";
+    const name = statusName.toLowerCase();
+    if (name.includes("done") || name.includes("complete") || name.includes("finished")) return "bg-green-50";
+    if (name.includes("working") || name.includes("progress") || name.includes("doing")) return "bg-yellow-50";
+    if (name.includes("stuck") || name.includes("blocked") || name.includes("issue")) return "bg-red-50";
+    if (name.includes("not started") || name.includes("todo") || name.includes("pending")) return "bg-gray-50";
+    return "bg-blue-50";
+  };
+
+  const getStatusTextColor = (statusName) => {
+    if (!statusName) return "text-gray-500";
+    const name = statusName.toLowerCase();
+    if (name.includes("done") || name.includes("complete") || name.includes("finished")) return "text-green-700";
+    if (name.includes("working") || name.includes("progress") || name.includes("doing")) return "text-yellow-700";
+    if (name.includes("stuck") || name.includes("blocked") || name.includes("issue")) return "text-red-700";
+    if (name.includes("not started") || name.includes("todo") || name.includes("pending")) return "text-gray-700";
+    return "text-blue-700";
+  };
+
+  const handleChange = async (selectedStatusId) => {
+    const selectedStatus = statusOptions.find(s => s.id === selectedStatusId);
+    onChange(selectedStatus);
+    try {
+      await updateLeads(taskId, { status: selectedStatus });
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    }
+    setIsOpen(false);
+  };
+
+  const currentStatus = statusOptions.find(s => s.name === value) || {
+    name: value || "No Status",
+    icon: Circle,
+    lightBg: "bg-gray-50",
+    textColor: "text-gray-500",
+  };
+
+  const StatusIcon = currentStatus.icon;
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`inline-flex items-center gap-3 px-2 py-1 rounded-full ${currentStatus.lightBg} ${currentStatus.textColor} text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer`}
+      >
+        <StatusIcon className="w-4 h-4" />
+        {currentStatus.name}
+        <ChevronDown className="w-3 h-3" />
+      </button>
+      {isOpen && (
+        <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[10000] min-w-[200px] max-h-60 overflow-y-auto">
+          {statusOptions.map((status) => {
+            const OptionIcon = status.icon;
+            return (
+              <button
+                key={status.id}
+                onClick={() => handleChange(status.id)}
+                className={`w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-2 ${status.textColor} text-sm transition-colors`}
+              >
+                <OptionIcon className="w-4 h-4" />
+                {status.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Add Lead Modal Component
+const AddLeadModal = ({ isOpen, onClose, onCreate, groups, statusOptions, users }) => {
+  if (!isOpen) return null;
+
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    link: "ad",
+    person: "",
+    notes: "",
+    status: "",
+    group: "",
+    order: 0,
+    potential_value: 0,
+    timeline_start: "",
+    timeline_end: "",
+  });
+
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    validateField(name, value);
+  };
+
+  const handleSelectChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    validateField(field, value);
+  };
+
+  const handleDateChange = (field, date) => {
+    const dateStr = date ? date.toISOString().split("T")[0] : null;
+    setFormData((prev) => ({ ...prev, [field]: dateStr }));
+  };
+
+  const validateField = (field, value) => {
+    let error = "";
+    if (["name", "group"].includes(field) && !value) {
+      error = `${field.charAt(0).toUpperCase() + field.slice(1)} is required`;
+    }
+    setErrors((prev) => ({ ...prev, [field]: error }));
+  };
+
+  const isFormValid = () => {
+    return formData.name && formData.group && Object.values(errors).every((err) => !err);
+  };
+
+  const handleSubmit = async () => {
+    if (!isFormValid()) {
+      console.warn("Form validation failed: Required fields missing");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await onCreate(formData);
+      onClose();
+      
+      // Reset form
+      setFormData({
+        name: "",
+        phone: "",
+        link: "ad",
+        person: "",
+        notes: "",
+        status: "",
+        group: "",
+        order: 0,
+        potential_value: 0,
+        timeline_start: "",
+        timeline_end: "",
+      });
+    } catch (err) {
+      console.error("Error creating lead:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 flex items-center justify-center z-[10000] bg-black bg-opacity-50">
+      <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
+        <h2 className="text-xl font-bold mb-4">Add New Lead</h2>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+            <input
+              type="text"
+              name="name"
+              placeholder="Lead name"
+              value={formData.name}
+              onChange={handleInputChange}
+              className={`w-full p-2 border rounded-md ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
+            />
+            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+            <input
+              type="tel"
+              name="phone"
+              placeholder="Phone number"
+              value={formData.phone}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded-md"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Person</label>
+            <Select
+              placeholder="Select person"
+              value={formData.person || undefined}
+              onChange={(value) => handleSelectChange("person", value)}
+              style={{ width: "100%" }}
+            >
+              {users.map((user) => (
+                <Select.Option key={user.id} value={user.id}>
+                  {user.fullname || `${user.first_name || ""} ${user.last_name || ""}`.trim() || "Unknown User"}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+            <input
+              type="text"
+              name="notes"
+              placeholder="Notes"
+              value={formData.notes}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded-md"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <Select
+              placeholder="Select status"
+              value={formData.status || undefined}
+              onChange={(value) => handleSelectChange("status", value)}
+              style={{ width: "100%" }}
+            >
+              {statusOptions.map((status) => (
+                <Select.Option key={status.id} value={status.id}>
+                  {status.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Group *</label>
+            <Select
+              placeholder="Select group"
+              value={formData.group || undefined}
+              onChange={(value) => handleSelectChange("group", value)}
+              style={{ width: "100%" }}
+              className={errors.group ? 'border-red-500' : ''}
+            >
+              {groups.map((group) => (
+                <Select.Option key={group.id} value={group.id}>
+                  {group.name}
+                </Select.Option>
+              ))}
+            </Select>
+            {errors.group && <p className="text-red-500 text-xs mt-1">{errors.group}</p>}
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Potential Value</label>
+            <input
+              type="number"
+              name="potential_value"
+              placeholder="Potential value"
+              value={formData.potential_value}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded-md"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Timeline Start</label>
+            <ReactDatePicker
+              selected={formData.timeline_start ? new Date(formData.timeline_start) : null}
+              onChange={(date) => handleDateChange("timeline_start", date)}
+              placeholderText="Select start date"
+              className="w-full p-2 border border-gray-300 rounded-md"
+              dateFormat="yyyy-MM-dd"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Timeline End</label>
+            <ReactDatePicker
+              selected={formData.timeline_end ? new Date(formData.timeline_end) : null}
+              onChange={(date) => handleDateChange("timeline_end", date)}
+              placeholderText="Select end date"
+              className="w-full p-2 border border-gray-300 rounded-md"
+              dateFormat="yyyy-MM-dd"
+            />
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 mt-6">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            disabled={loading}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!isFormValid() || loading}
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                Creating...
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4" />
+                Create Lead
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+// Table Component
 const Table = () => {
   const [hoveredRow, setHoveredRow] = useState(null);
   const [selectedRows, setSelectedRows] = useState([]);
@@ -1381,8 +2085,9 @@ const Table = () => {
   const [apiLeads, setApiLeads] = useState([]);
   const [loading, setLoading] = useState(false);
   const [statusOptions, setStatusOptions] = useState([]);
-  const [isAddingLead, setIsAddingLead] = useState(false);
-  const [newLeadTitle, setNewLeadTitle] = useState("");
+  const [groups, setGroups] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const statusConfig = {
     Done: {
@@ -1417,11 +2122,17 @@ const Table = () => {
     },
   };
 
+  const fieldMap = {
+    task: "name",
+    progress: "potential_value",
+  };
+
   const convertApiLeadsToTasks = (leads) => {
     return leads.map((lead, index) => ({
       id: lead.id,
       task: lead.name || `Lead ${index + 1}`,
       person: lead.person_detail?.fullname || "Unknown Person",
+      profile_picture: getAbsoluteImageUrl(lead.person_detail?.profile_picture),
       status: lead.status?.name || lead.status || "No Status",
       priority:
         lead.potential_value > 50
@@ -1429,13 +2140,25 @@ const Table = () => {
           : lead.potential_value > 20
           ? "Medium"
           : "Low",
-      deadline: lead.last_interaction || "2025-08-30",
+      timeline_start: lead.timeline_start,
+      timeline_end: lead.timeline_end,
       progress: lead.potential_value || 0,
       team: lead.link || "General",
       phone: lead.phone || "",
       notes: lead.notes || "",
+      owner: lead.person_detail || null,
       source: "api",
     }));
+  };
+
+  const handleTimelineUpdate = (taskId, timelineData) => {
+    setApiLeads(prevLeads =>
+      prevLeads.map(lead =>
+        lead.id === taskId
+          ? { ...lead, ...timelineData }
+          : lead
+      )
+    );
   };
 
   const loadLeadsFromAPI = async (groupId = null) => {
@@ -1444,29 +2167,9 @@ const Table = () => {
       console.log("🔍 Loading leads from API...");
       const response = await getLeads(groupId);
       console.log("✅ API Response:", response);
-
       if (response.data && Array.isArray(response.data)) {
         setApiLeads(response.data);
         console.log(`📊 Loaded ${response.data.length} leads from API`);
-
-        const apiStatusOptions = response.data
-          .filter((lead) => lead.status && lead.status.name)
-          .map((lead) => ({
-            id: lead.status.id,
-            value: lead.status.name,
-            icon: getStatusIcon(lead.status.name),
-            lightBg: getStatusLightBg(lead.status.name),
-            textColor: getStatusTextColor(lead.status.name),
-          }))
-          .filter(
-            (status, index, self) =>
-              self.findIndex((s) => s.value === status.value) === index
-          );
-
-        if (apiStatusOptions.length > 0) {
-          console.log("📊 Status options from API:", apiStatusOptions);
-          setStatusOptions([...statusOptions, ...apiStatusOptions]);
-        }
       }
     } catch (error) {
       console.error("❌ Error loading leads:", {
@@ -1493,10 +2196,8 @@ const Table = () => {
   const getStatusLightBg = (statusName) => {
     if (!statusName) return "bg-gray-50";
     const name = statusName.toLowerCase();
-    if (name.includes("done") || name.includes("complete"))
-      return "bg-green-50";
-    if (name.includes("working") || name.includes("progress"))
-      return "bg-yellow-50";
+    if (name.includes("done") || name.includes("complete")) return "bg-green-50";
+    if (name.includes("working") || name.includes("progress")) return "bg-yellow-50";
     if (name.includes("stuck") || name.includes("blocked")) return "bg-red-50";
     return "bg-gray-50";
   };
@@ -1504,17 +2205,77 @@ const Table = () => {
   const getStatusTextColor = (statusName) => {
     if (!statusName) return "text-gray-500";
     const name = statusName.toLowerCase();
-    if (name.includes("done") || name.includes("complete"))
-      return "text-green-700";
-    if (name.includes("working") || name.includes("progress"))
-      return "text-yellow-700";
-    if (name.includes("stuck") || name.includes("blocked"))
-      return "text-red-700";
+    if (name.includes("done") || name.includes("complete")) return "text-green-700";
+    if (name.includes("working") || name.includes("progress")) return "text-yellow-700";
+    if (name.includes("stuck") || name.includes("blocked")) return "text-red-700";
     return "text-gray-700";
   };
 
   useEffect(() => {
-    loadLeadsFromAPI();
+    const fetchData = async () => {
+      try {
+        // Fetch groups (boards)
+        const boardsRes = await getBoardsAll();
+        setGroups(boardsRes.data || []);
+
+        // Fetch users
+        const usersRes = await getMSalesUsers();
+        setUsers(usersRes.data || []);
+
+        // Fetch full statuses
+        const allStatuses = [];
+        try {
+          const leadsRes = await getLeads();
+          leadsRes.data.forEach(lead => {
+            if (lead.status && lead.status.name && lead.status.id) {
+              if (!allStatuses.find(s => s.id === lead.status.id)) {
+                allStatuses.push({
+                  id: lead.status.id,
+                  name: lead.status.name,
+                  icon: getStatusIcon(lead.status.name),
+                  lightBg: getStatusLightBg(lead.status.name),
+                  textColor: getStatusTextColor(lead.status.name),
+                });
+              }
+            }
+          });
+        } catch (leadsErr) {
+          console.error("Error fetching statuses from leads:", leadsErr);
+        }
+        boardsRes.data.forEach(board => {
+          if (board.statuses && Array.isArray(board.statuses)) {
+            board.statuses.forEach(status => {
+              if (!allStatuses.find(s => s.id === status.id)) {
+                allStatuses.push({
+                  id: status.id,
+                  name: status.name,
+                  color: status.color || "#6b7280",
+                  icon: getStatusIcon(status.name),
+                  lightBg: getStatusLightBg(status.name),
+                  textColor: getStatusTextColor(status.name),
+                });
+              }
+            });
+          } else if (board.id && board.name) {
+            if (!allStatuses.find(s => s.id === board.id)) {
+              allStatuses.push({
+                id: board.id,
+                name: board.name,
+                color: board.color || "#6b7280",
+                icon: getStatusIcon(board.name),
+                lightBg: getStatusLightBg(board.name),
+                textColor: getStatusTextColor(board.name),
+              });
+            }
+          }
+        });
+        setStatusOptions(allStatuses);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+      }
+      loadLeadsFromAPI();
+    };
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -1523,11 +2284,9 @@ const Table = () => {
         setOpenStatusDropdown(null);
       }
     };
-
     if (openStatusDropdown !== null) {
       document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [openStatusDropdown]);
 
@@ -1552,7 +2311,6 @@ const Table = () => {
   const handleDrop = (e, dropIndex) => {
     e.preventDefault();
     if (draggedItem === null) return;
-
     const draggedTask = filteredTasks[draggedItem];
     const newTasks = [...displayTasks];
     const originalDraggedIndex = displayTasks.findIndex(
@@ -1562,10 +2320,8 @@ const Table = () => {
     const originalDropIndex = displayTasks.findIndex(
       (t) => t.id === dropTask.id
     );
-
     const [removed] = newTasks.splice(originalDraggedIndex, 1);
     newTasks.splice(originalDropIndex, 0, removed);
-
     setApiLeads(newTasks);
     setDraggedItem(null);
     setDragOverItem(null);
@@ -1575,7 +2331,7 @@ const Table = () => {
     try {
       setApiLeads(
         apiLeads.map((lead) =>
-          lead.id === taskId ? { ...lead, status: { name: newStatus } } : lead
+          lead.id === taskId ? { ...lead, status: newStatus } : lead
         )
       );
       await updateLeads(taskId, { status: newStatus });
@@ -1584,6 +2340,14 @@ const Table = () => {
     } catch (error) {
       console.error("❌ Error updating status:", error);
     }
+  };
+
+  const handleOwnerChange = (taskId, newOwner) => {
+    setApiLeads(
+        apiLeads.map((lead) =>
+          lead.id === taskId ? { ...lead, person_detail: newOwner } : lead
+        )
+      );
   };
 
   const handleSort = (key) => {
@@ -1628,37 +2392,40 @@ const Table = () => {
     }
   };
 
-  const handleChange = (id, field, value) => {
+  const handleChange = (id, uiField, value) => {
+    const apiField = fieldMap[uiField] || uiField;
     setApiLeads((prevLeads) =>
       prevLeads.map((lead) =>
-        lead.id === id ? { ...lead, [field]: value } : lead
+        lead.id === id ? { ...lead, [apiField]: value } : lead
       )
     );
   };
 
-  const handleAddLead = async (e) => {
-    if (e.key !== "Enter" || !newLeadTitle.trim()) return;
+  const handleSave = async (id, uiField) => {
+    const lead = apiLeads.find((l) => l.id === id);
+    if (!lead) return;
+    const apiField = fieldMap[uiField] || uiField;
+    const data = { [apiField]: lead[apiField] };
+    try {
+      await updateLeads(id, data);
+      console.log(`✅ Updated ${apiField} on server`);
+    } catch (err) {
+      console.error(`❌ Error updating ${apiField}:`, err);
+    }
+  };
 
+  const handleCreateLead = async (data) => {
     try {
       setLoading(true);
-      const newLead = {
-        name: newLeadTitle,
-        status: { name: "Not Started" },
-        person_detail: { fullname: "Unknown Person" },
-        potential_value: 0,
-        last_interaction: new Date().toISOString().split("T")[0],
-        link: "General",
-        phone: "",
-        notes: "",
-      };
-
-      await createLeads(newLead);
+      await createLeads(data);
       console.log("✅ New lead created");
       await loadLeadsFromAPI();
-      setNewLeadTitle("");
-      setIsAddingLead(false);
+      setIsAddModalOpen(false);
     } catch (error) {
       console.error("❌ Error creating lead:", error);
+      if (error.response) {
+        console.error("Server response:", error.response.data);
+      }
     } finally {
       setLoading(false);
     }
@@ -1666,6 +2433,17 @@ const Table = () => {
 
   return (
     <div className="h-auto md:min-w-[95%]">
+      <div className="mb-4 flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-800">Leads Management</h2>
+        <button
+          onClick={() => setIsAddModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="w-5 h-5" />
+          Add Lead
+        </button>
+      </div>
+
       <div className="bg-white rounded-b-xl shadow-xl border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto custom-scrollbar">
           <div className="min-w-[1200px]">
@@ -1715,7 +2493,7 @@ const Table = () => {
                   </th>
                   <th
                     className="text-left p-4 border-r border-gray-200 font-semibold text-gray-700 cursor-pointer hover:bg-gray-100 transition-colors"
-                    onClick={() => handleSort("person")}
+                    onClick={() => handleSort("phone")}
                   >
                     <div className="flex justify-center items-center gap-2">
                       Phone Number
@@ -1746,7 +2524,7 @@ const Table = () => {
                     Timeline
                   </th>
                   <th className="text-center p-4 font-semibold text-gray-700 border-r border-gray-200">
-                    +
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -1767,11 +2545,6 @@ const Table = () => {
                       onMouseLeave={() => setHoveredRow(null)}
                       onDragOver={(e) => handleDragOver(e, index)}
                       onDrop={(e) => handleDrop(e, index)}
-                      style={{
-                        animation: `slideIn 0.3s ease-out ${
-                          index * 0.05
-                        }s both`,
-                      }}
                     >
                       <td
                         className="p-2 cursor-move sticky left-0 bg-white z-10"
@@ -1796,6 +2569,7 @@ const Table = () => {
                           onChange={(e) =>
                             handleChange(task.id, "task", e.target.value)
                           }
+                          onBlur={() => handleSave(task.id, "task")}
                           className="font-medium text-gray-900 hover:text-blue-600 cursor-text transition-colors truncate pr-2 border-none outline-none bg-transparent w-full text-center"
                         />
                       </td>
@@ -1808,77 +2582,31 @@ const Table = () => {
                             onChange={(e) =>
                               handleChange(task.id, "phone", e.target.value)
                             }
+                            onBlur={() => handleSave(task.id, "phone")}
                             className="hover:text-blue-600 transition-colors border-none outline-none bg-transparent text-center"
                           />
                         </div>
                       </td>
-                      <td className="p-4 border-r border-gray-200">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
-                            {task.person
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </div>
-                          <span className="text-gray-700 truncate">
-                            {task.person}
-                          </span>
-                        </div>
+                      <td className="p-4 border-r border-gray-200 relative">
+                        <OwnerDropdown
+                          currentOwner={task.owner}
+                          onChange={(newOwner) => handleOwnerChange(task.id, newOwner)}
+                          onSave={() => {}}
+                          taskId={task.id}
+                        />
                       </td>
                       <td className="p-4 border-r border-gray-200">
                         <span className="flex justify-center px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm">
                           {task.team}
                         </span>
                       </td>
-                      <td
-                        className={`p-4 border-r border-gray-200 ${
-                          openStatusDropdown === task.id
-                            ? "relative z-[100] bg-transparent"
-                            : ""
-                        }`}
-                      >
-                        <div className="relative status-dropdown-container">
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setOpenStatusDropdown(
-                                openStatusDropdown === task.id ? null : task.id
-                              );
-                            }}
-                            className={`inline-flex items-center gap-3 px-2 py-1 rounded-full ${
-                              statusConfig[task.status]?.lightBg || "bg-gray-50"
-                            } ${
-                              statusConfig[task.status]?.textColor ||
-                              "text-gray-500"
-                            } text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer`}
-                          >
-                            <StatusIcon className="w-4 h-4" />
-                            {task.status}
-                            <ChevronDown className="w-3 h-3" />
-                          </button>
-                          {openStatusDropdown === task.id && (
-                            <div className="absolute top-full mt-1 left-0 bg-white rounded-lg shadow-2xl border border-gray-200 py-1 z-[1000] min-w-[160px]">
-                              {statusOptions.map((option) => {
-                                const OptionIcon = option.icon;
-                                return (
-                                  <button
-                                    key={option.id || option.value}
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleStatusChange(task.id, option.value);
-                                    }}
-                                    className={`w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-2 ${option.textColor} text-sm transition-colors z-[1001]`}
-                                  >
-                                    <OptionIcon className="w-4 h-4" />
-                                    {option.value}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
+                      <td className="p-4 border-r border-gray-200 relative">
+                        <StatusDropdown
+                          className="status-dropdown-container relative"
+                          value={task.status}
+                          onChange={(newStatus) => handleStatusChange(task.id, newStatus)}
+                          taskId={task.id}
+                        />
                       </td>
                       <td className="p-4 border-r flex justify-center border-gray-200">
                         <input
@@ -1887,6 +2615,7 @@ const Table = () => {
                           onChange={(e) =>
                             handleChange(task.id, "progress", e.target.value)
                           }
+                          onBlur={() => handleSave(task.id, "progress")}
                           className="px-3 py-1 rounded-full text-sm font-medium text-center border-none outline-none bg-transparent w-20 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         />
                       </td>
@@ -1899,173 +2628,56 @@ const Table = () => {
                             onChange={(e) =>
                               handleChange(task.id, "notes", e.target.value)
                             }
+                            onBlur={() => handleSave(task.id, "notes")}
                             className="text-[16px] text-gray-500 mt-1 truncate text-center border-none outline-none bg-transparent w-full"
                           />
                         </div>
                       </td>
-                      <td className="p-4 border-r border-gray-200">
-                        <div className="flex justify-center items-center gap-2">
-                          <ReactDatePicker
-                            selected={
-                              task.deadline ? new Date(task.deadline) : null
-                            }
-                            onChange={(date) =>
-                              handleChange(task.id, "deadline", date)
-                            }
-                            placeholderText="Timeline"
-                            className="text-sm font-medium text-gray-700 border-none outline-none text-center"
-                          />
-                        </div>
-                      </td>
+                      <TimelineCell
+                        task={task}
+                        onTimelineUpdate={handleTimelineUpdate}
+                      />
                       <td className="p-4 border-r border-gray-200"></td>
                     </tr>
                   );
                 })}
-                <tr className="border-b border-gray-100">
-                  <td className="p-2 sticky left-0 bg-white z-10"></td>
-                  <td className="p-4 sticky left-10 bg-white z-10">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      disabled
-                    />
-                  </td>
-                  <td className="p-4 sticky left-[88px] bg-white z-10 border-r border-gray-100">
-                    {isAddingLead ? (
-                      <input
-                        type="text"
-                        value={newLeadTitle}
-                        onChange={(e) => setNewLeadTitle(e.target.value)}
-                        onKeyPress={handleAddLead}
-                        placeholder="Enter lead title"
-                        className="font-medium text-gray-900 hover:text-blue-600 cursor-text transition-colors truncate pr-2 border-none outline-none bg-transparent w-full text-center"
-                        autoFocus
-                        onBlur={() => {
-                          if (!newLeadTitle.trim()) setIsAddingLead(false);
-                        }}
-                      />
-                    ) : (
-                      <button
-                        onClick={() => setIsAddingLead(true)}
-                        className="font-medium text-gray-700 transition-colors w-full text-center"
-                      >
-                        + Add new lead
-                      </button>
-                    )}
-                  </td>
-                  <td className="p-4 border-r border-gray-200">
-                    <div className="flex justify-center items-center gap-2 text-gray-600">
-                      <input
-                        type="tel"
-                        value=""
-                        placeholder="No phone"
-                        disabled
-                        className="text-gray-400 transition-colors border-none outline-none bg-transparent text-center"
-                      />
-                    </div>
-                  </td>
-                  <td className="p-4 border-r border-gray-200">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
-                        ?
-                      </div>
-                      <span className="text-gray-400 truncate">
-                        Unknown Person
-                      </span>
-                    </div>
-                  </td>
-                  <td className="p-4 border-r border-gray-200">
-                    <span className="flex justify-center px-3 py-1 bg-gray-100 text-gray-400 rounded-lg text-sm">
-                      General
-                    </span>
-                  </td>
-                  <td className="p-4 border-r border-gray-200">
-                    <div className="inline-flex items-center gap-3 px-2 py-1 rounded-full bg-gray-50 text-gray-400 text-sm font-medium">
-                      <Circle className="w-4 h-4" />
-                      No Status
-                    </div>
-                  </td>
-                  <td className="p-4 border-r flex justify-center border-gray-200">
-                    <input
-                      type="number"
-                      value="0"
-                      disabled
-                      className="px-3 py-1 rounded-full text-sm font-medium text-center border-none outline-none bg-transparent w-20 text-gray-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                  </td>
-                  <td className="p-4 border-r border-gray-200">
-                    <div>
-                      <input
-                        type="text"
-                        value=""
-                        placeholder="No notes"
-                        disabled
-                        className="text-[16px] text-gray-400 mt-1 truncate text-center border-none outline-none bg-transparent w-full"
-                      />
-                    </div>
-                  </td>
-                  <td className="p-4 border-r border-gray-200">
-                    <div className="flex justify-center items-center gap-2">
-                      <ReactDatePicker
-                        selected={null}
-                        placeholderText="Timeline"
-                        disabled
-                        className="text-sm font-medium text-gray-400 border-none outline-none text-center"
-                      />
-                    </div>
-                  </td>
-                  <td className="p-4 border-r border-gray-200"></td>
-                </tr>
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
-      <style>{`
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
+      <AddLeadModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onCreate={handleCreateLead}
+        groups={groups}
+        statusOptions={statusOptions}
+        users={users}
+      />
 
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           height: 8px;
         }
-
         .custom-scrollbar::-webkit-scrollbar-track {
           background: #f1f1f1;
           border-radius: 10px;
         }
-
         .custom-scrollbar::-webkit-scrollbar-thumb {
           background: #888;
           border-radius: 10px;
         }
-
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: #555;
         }
-
         .status-dropdown-container {
           position: relative;
         }
-
         .overflow-x-auto {
           position: relative;
           z-index: 1;
         }
-
-        tbody tr.relative.z-50 {
-          position: relative !important;
-          z-index: 50 !important;
-        }
-
         .status-dropdown-container > div {
           position: absolute !important;
           z-index: 1000 !important;
@@ -2076,3 +2688,4 @@ const Table = () => {
 };
 
 export default Table;
+
