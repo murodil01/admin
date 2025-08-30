@@ -303,7 +303,7 @@ const LibraryPage = () => {
     <main className="min-h-screen py-7">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 pb-3">
-          <h1 className="text-xl sm:text-2xl font-semibold">Library</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold">M Library</h1>
           <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
             <button
               onClick={() => setIsModalOpen(true)}
