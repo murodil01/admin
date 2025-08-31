@@ -64,15 +64,13 @@ const CalendarDay = ({
                 className="w-6 h-6 rounded-full border-2 border-white bg-gray-300 flex items-center justify-center text-white text-[10px] font-semibold overflow-hidden"
                 title={dept.name}
               >
-                {dept.avatar === "M" || !dept.avatar ? (
-                  dept.name?.[0] || "M"
-                ) : (
-                  <img
-                    src={dept.avatar}
+              {dept.photo?( <img
+                    src={dept.photo}
                     alt={dept.name}
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                )}
+                    className="w-full h-full object-cover rounded-full border border-blue-300"
+                  />):(dept.name?.[0] || "D")}
+                 
+              
               </div>
             ))}
           </div>

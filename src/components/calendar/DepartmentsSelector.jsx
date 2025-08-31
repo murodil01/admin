@@ -16,11 +16,13 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const data = await getDepartments();
-        let fetched = data.map((d) => ({
+        const apiDepartments = await getDepartments();
+        let fetched = apiDepartments.map((d) => ({
           id: d.id,
           name: d.name,
-          avatar: d.photo,
+          avatar: d.photo || '/default-avatar.png', // API dan photo field
+          description: d.description,
+          head: d.head,
           isSelected: selectedIds.includes(d.id),
         }));
 
@@ -118,12 +120,13 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
             className="w-8 h-8 rounded-full object-cover"
             onError={(e) => {
               e.target.style.display = "none";
-              e.target.nextSibling?.remove(); // Remove any existing fallback
+              // e.target.nextSibling?.remove(); // Remove any existing fallback //////////////remove if it should be
               const fallbackSpan = document.createElement("span");
               fallbackSpan.className = `text-sm font-bold ${
                 isSelected ? "text-white" : "text-gray-600"
               }`;
-              fallbackSpan.textContent = "M";
+              // fallbackSpan.textContent = "M";
+              fallbackSpan.textContent = "All";
               e.target.parentNode.appendChild(fallbackSpan);
             }}
           />
@@ -145,7 +148,7 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
       );
     }
 
-    if (!dept.avatar) {
+    if (!dept.avatar || dept.avatar === '/default-avatar.png') {
       return (
         <div
           className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${
@@ -169,7 +172,19 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
           src={dept.avatar}
           alt={`${dept.name} avatar`}
           className="w-full h-full rounded-full object-cover border border-gray-300"
-        />
+          onError={(e) => {
+            // Fallback to initial letter if image fails to load
+            e.target.style.display = 'none';
+            const fallback = document.createElement('div');
+            fallback.className = `w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold ${
+              isSelected
+                ? "bg-blue-500 text-white border-2 border-blue-300"
+                : "bg-gray-200 text-gray-600 border border-gray-300"
+            }`;
+            fallback.textContent = dept.name?.charAt(0)?.toUpperCase() || "?";
+            e.target.parentNode.replaceChild(fallback, e.target);
+          }}
+       />
       </div>
     );
   };

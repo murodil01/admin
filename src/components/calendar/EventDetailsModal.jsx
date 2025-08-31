@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { X, Edit2, Calendar, Clock, FileDown, ChevronDown } from "lucide-react";
-import { rawDepartments } from "../../utils/department"; // static data uchun
+import { getDepartments } from "../../api/services/departmentService";
 
 const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState(null);
+  const [availableDepartments, setAvailableDepartments] = useState([]);
+
   useEffect(() => {
     if (event) {
       setEditData({
@@ -14,6 +16,30 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
       });
     }
   }, [event]);
+
+  // Fetch departments when modal opens for editing
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const departments = await getDepartments();
+        setAvailableDepartments(
+          departments.map((dept) => ({
+            id: dept.id,
+            name: dept.name,
+            avatar: dept.photo || "/default-avatar.png",
+            description: dept.description,
+            head: dept.head,
+          }))
+        );
+      } catch (error) {
+        console.error("Failed to fetch departments:", error);
+      }
+    };
+
+    if (isOpen && isEditing) {
+      fetchDepartments();
+    }
+  }, [isOpen, isEditing]);
 
   const handleEditClick = () => setIsEditing(true);
 
@@ -75,6 +101,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                 />
               </div>
             )}
+
             {/* Image */}
             <div className="w-full mx-auto max-w-sm max-sm:max-w-5/6">
               {isEditing && (
@@ -155,59 +182,6 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
               </div>
             ) : null}
 
-            {/* File */}
-            {/* <div className="mt-4">
-              {isEditing ? (
-                <>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    File
-                  </label>
-                  <div className="border rounded-lg p-4 bg-gray-50 flex items-center justify-between">
-                    {displayData.file ? (
-                      <div className="text-sm text-gray-800 break-all">
-                        {displayData.file.name}
-                      </div>
-                    ) : (
-                      <div className="text-sm text-gray-500">No file</div>
-                    )}
-                    <label className="ml-4 inline-flex items-center gap-2 cursor-pointer text-sm text-blue-600 hover:underline">
-                      <svg
-                        className="w-5 h-5 text-blue-500"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M8 2a1 1 0 00-1 1v4H5a1 1 0 00-.8 1.6l5 7a1 1 0 001.6 0l5-7A1 1 0 0015 7h-2V3a1 1 0 00-1-1H8z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      <input
-                        type="file"
-                        onChange={handleFileChange}
-                        className="hidden"
-                      />
-                      Change File
-                    </label>
-                  </div>
-                </>
-              ) : (
-                displayData.file && (
-                  <div className="">
-                    <h3 className="font-medium text-gray-900 mb-2">File</h3>
-                    <a
-                      href={URL.createObjectURL(displayData.file)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-600 hover:underline break-all"
-                    >
-                      {displayData.file.name}
-                    </a>
-                  </div>
-                )
-              )}
-            </div> */}
-
             {/* File and Link */}
             <div className="flex max-sm:flex-wrap gap-9 max-sm:gap-4 mt-4">
               <div>
@@ -235,7 +209,12 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                   </label>
                 ) : displayData.file ? (
                   <a
-                    href={URL.createObjectURL(displayData.file)}
+                    // ✅ To'g'ri usul
+                    href={
+                      typeof displayData.file === "string"
+                        ? displayData.file // API dan kelgan URL
+                        : URL.createObjectURL(displayData.file) // Frontend File obyekti
+                    }
                     download={displayData.file.name}
                     className="flex items-center px-4 py-3 max-sm:py-2 gap-2 w-full max-w-56 border border-gray-300 rounded-[14px] bg-white hover:bg-gray-100 hover:text-gray-900"
                   >
@@ -295,7 +274,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                   Departments
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {rawDepartments.map((dept) => {
+                  {availableDepartments.map((dept) => {
                     const isSelected = editData?.departments?.some(
                       (d) => d.id === dept.id
                     );
@@ -328,6 +307,18 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                           src={dept.avatar}
                           alt={`${dept.name} avatar`}
                           className="w-6 h-6 rounded-full object-cover"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            const fallback = document.createElement("div");
+                            fallback.className =
+                              "w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs font-bold text-gray-600";
+                            fallback.textContent =
+                              dept.name?.charAt(0)?.toUpperCase() || "?";
+                            e.target.parentNode.insertBefore(
+                              fallback,
+                              e.target
+                            );
+                          }}
                         />
                         <span>{dept.name}</span>
                       </button>
@@ -342,17 +333,21 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                 </h3>
                 <div className="flex flex-wrap gap-4 items-center w-full pt-4">
                   {displayData.departments.map((dept) => (
-                    <div
-                      key={dept.id}
-                      className="flex items-center"
-                      // className="flex items-center space-x-1 border px-2 py-1 rounded text-sm text-gray-600"
-                    >
+                    <div key={dept.id} className="flex items-center">
                       <img
                         src={dept.avatar}
                         alt={`${dept.name} avatar`}
                         className="w-6 h-6 rounded-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                          const fallback = document.createElement("div");
+                          fallback.className =
+                            "w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs font-bold text-gray-600";
+                          fallback.textContent =
+                            dept.name?.charAt(0)?.toUpperCase() || "?";
+                          e.target.parentNode.insertBefore(fallback, e.target);
+                        }}
                       />
-                      {/* <span>{dept.name}</span> */}
                     </div>
                   ))}
                 </div>
@@ -445,9 +440,9 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                       <option value="Choose" disabled>
                         Choose
                       </option>
-                      <option value="Private">Private</option>
-                      <option value="Public">Public</option>
-                      <option value="Department">Department</option>
+                      <option value="public">Public</option>
+                      <option value="chosen">Chosen</option>
+                      <option value="private">Private</option>
                     </select>
                     <div className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2">
                       <ChevronDown className="w-4 h-4" />

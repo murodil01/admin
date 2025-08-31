@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { X, Paperclip, ChevronDown, FileUp } from "lucide-react";
-import { rawDepartments } from "../../utils/department"; // faqat array kerak, types emas
+import { getDepartments } from "../../api/services/departmentService";
 import DepartmentsSelector from "./DepartmentsSelector";
 
 const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
@@ -11,11 +11,33 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
     date: selectedDate || new Date(),
     image: null,
     file: null,
-    department: null,
+    departments: [], // departments array
     link: "",
     notification: "Select Time",
-    viewOption: "Choose",
+    viewOption: "chosen",
   });
+  const [availableDepartments, setAvailableDepartments] = useState([]);
+   // Fetch departments when modal opens
+   useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const departments = await getDepartments();
+        setAvailableDepartments(departments.map(dept => ({
+          id: dept.id,
+          name: dept.name,
+          avatar: dept.photo || '/default-avatar.png',
+          description: dept.description,
+          head: dept.head
+        })));
+      } catch (error) {
+        console.error('Failed to fetch departments:', error);
+      }
+    };
+
+    if (isOpen) {
+      fetchDepartments();
+    }
+  }, [isOpen]);
 
   // Formni har safar selectedDate o‘zgarsa sync qilish
   useEffect(() => {
@@ -41,13 +63,18 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.title.trim()) return;
+     // Department tanlanganligini tekshirish
+  if (!formData.departments || formData.departments.length === 0) {
+    alert('Kamida bitta department tanlash shart!');
+    return;
+  }
 
     onSave({
       title: formData.title,
       date: formData.date,
       description: formData.description,
       image: formData.image,
-      department: formData.department,
+      department: formData.departments,
       file: formData.file,
       link: formData.link,
       notification: formData.notification,
@@ -60,10 +87,10 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
       date: selectedDate || new Date(),
       image: null,
       file: null,
-      department: null,
+      departments: [],
       link: "",
       notification: "Select Time",
-      viewOption: "Choose",
+      viewOption: "chosen",
     });
 
     onClose();
@@ -119,9 +146,9 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-[14px] focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
                   >
-                    <option>Choose</option>
-                    <option>Public</option>
-                    <option>Private</option>
+                    <option value="chosen">Chosen</option>
+                    <option value="public">Public</option>
+                    <option value="private">Private</option>
                   </select>
                   <div className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2">
                     <ChevronDown className="w-4 h-4" />
@@ -325,9 +352,13 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
 
               {/* Department buttons */}
               <DepartmentsSelector
-                selectedIds={[formData.department?.id]} // agar ko‘p tanlash bo‘lsa, bu yerga array
+                 selectedIds={
+                  Array.isArray(formData.departments) 
+                    ? formData.departments.map(d => d.id)
+                    : []
+                }
                 onChange={(ids) => {
-                  const selectedDepartments = rawDepartments.filter((d) =>
+                  const selectedDepartments = availableDepartments.filter((d) =>
                     ids.includes(d.id)
                   );
                   setFormData((prev) => ({
