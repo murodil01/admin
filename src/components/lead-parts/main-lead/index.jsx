@@ -220,44 +220,44 @@ const MainLead = () => {
   };
 
   // Lead yangilash (2-chi komponentdan)
-  const updateItemInGroup = async (groupId, itemIndex, updatedItem) => {
-    const group = groups.find((g) => g.id === groupId);
-    if (!group) {
-      toast.error("Group topilmadi!");
-      return;
-    }
+ const updateItemInGroup = async (groupId, itemIndex, updatedItem) => {
+  const group = groups.find((g) => g.id === groupId);
+  if (!group) {
+    toast.error("Group topilmadi!");
+    return;
+  }
 
-    const oldItem = group.items[itemIndex];
-    if (!oldItem) {
-      toast.error("Lead topilmadi!");
-      return;
-    }
+  const oldItem = group.items[itemIndex];
+  if (!oldItem) {
+    toast.error("Lead topilmadi!");
+    return;
+  }
 
-    const leadId = oldItem.id;
-    const realGroupId = oldItem.group; // backend kutadi
+  const leadId = oldItem.id;
 
-    try {
-      const res = await updateLeads(realGroupId, leadId, updatedItem);
+  try {
+    
+      const res = await updateLeads(leadId, updatedItem);
 
-      setGroups((prev) =>
-        prev.map((g) =>
-          g.id === groupId
-            ? {
-                ...g,
-                items: g.items.map((item, idx) =>
-                  idx === itemIndex ? res.data : item
-                ),
-              }
-            : g
-        )
-      );
+    setGroups((prev) =>
+      prev.map((g) =>
+        g.id === groupId
+          ? {
+              ...g,
+              items: g.items.map((item, idx) =>
+                idx === itemIndex ? res.data : item
+              ),
+            }
+          : g
+      )
+    );
 
-      toast.success("Lead yangilandi");
-    } catch (err) {
-      console.error("updateLeads xatosi:", err.response?.data || err);
-      toast.error("Lead yangilashda xato");
-    }
-  };
+    toast.success("Lead yangilandi ✅");
+  } catch (err) {
+    console.error("updateLeads xatosi:", err.response?.data || err);
+    toast.error("Lead yangilashda xato ❌");
+  }
+};
 
   // Lead o'chirish (2-chi komponentdan)
   const deleteItemFromGroup = async (groupId, itemIndex) => {
