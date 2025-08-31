@@ -22,7 +22,12 @@ function CalendarPage() {
       try {
         setLoading(true);
         const apiEvents = await getEvents();
-        const transformedEvents = apiEvents.map(transformApiEventToFrontend);
+        
+        // Transform each event asynchronously
+        const transformedEvents = await Promise.all(
+          apiEvents.map(event => transformApiEventToFrontend(event))
+        );
+        
         setEvents(transformedEvents);
       } catch (error) {
         console.error('Failed to fetch events:', error);
@@ -55,14 +60,16 @@ function CalendarPage() {
       
       // Text fieldlarni qo'shish
       Object.keys(apiData).forEach(key => {
-        if (key !== 'departments') {
+        if (key !== 'department_ids') {
           formData.append(key, apiData[key]);
         }
       });
       
-      // Departments ni JSON string sifatida qo'shish
-      if (apiData.departments.length > 0) {
-        formData.append('departments', JSON.stringify(apiData.departments));
+      // Department IDs ni array sifatida qo'shish
+      if (apiData.department_ids && apiData.department_ids.length > 0) {
+        apiData.department_ids.forEach(id => {
+          formData.append('department_ids', id);
+        });
       }
       
       // Files qo'shish
@@ -74,12 +81,17 @@ function CalendarPage() {
       }
 
       const newApiEvent = await createEvent(formData);
-      const transformedEvent = transformApiEventToFrontend(newApiEvent);
+      const transformedEvent = await transformApiEventToFrontend(newApiEvent);
       setEvents(prev => [...prev, transformedEvent]);
       
       console.log('Event yaratildi:', transformedEvent);
     } catch (error) {
       console.error('Event yaratishda xatolik:', error);
+      
+      // Detailed error logging
+      if (error.response?.data) {
+        console.error('API Error Response:', error.response.data);
+      }
     }
   };
 
@@ -89,13 +101,16 @@ function CalendarPage() {
       
       const formData = new FormData();
       Object.keys(apiData).forEach(key => {
-        if (key !== 'departments') {
+        if (key !== 'department_ids') {
           formData.append(key, apiData[key]);
         }
       });
       
-      if (apiData.departments.length > 0) {
-        formData.append('departments', JSON.stringify(apiData.departments));
+      // Department IDs ni array sifatida qo'shish
+      if (apiData.department_ids && apiData.department_ids.length > 0) {
+        apiData.department_ids.forEach(id => {
+          formData.append('department_ids', id);
+        });
       }
       
       if (updatedEvent.image instanceof File) {
@@ -106,7 +121,7 @@ function CalendarPage() {
       }
 
       const updatedApiEvent = await updateEvent(updatedEvent.id, formData);
-      const transformedEvent = transformApiEventToFrontend(updatedApiEvent);
+      const transformedEvent = await transformApiEventToFrontend(updatedApiEvent);
       
       setEvents(prev =>
         prev.map(event =>
@@ -118,6 +133,11 @@ function CalendarPage() {
       console.log('Event yangilandi:', transformedEvent);
     } catch (error) {
       console.error('Event yangilashda xatolik:', error);
+      
+      // Detailed error logging
+      if (error.response?.data) {
+        console.error('API Error Response:', error.response.data);
+      }
     }
   };
 
