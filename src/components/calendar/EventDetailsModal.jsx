@@ -335,7 +335,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                   {displayData.departments.map((dept) => (
                     <div key={dept.id} className="flex items-center">
                       <img
-                        src={dept.avatar}
+                        src={dept.photo}
                         alt={`${dept.name} avatar`}
                         className="w-6 h-6 rounded-full object-cover"
                         onError={(e) => {
