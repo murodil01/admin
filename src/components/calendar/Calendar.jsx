@@ -60,7 +60,7 @@ const Calendar = ({ currentDate, events, onEventClick, onDayClick }) => {
   ];
 
   return (
-    <div className="bg-white">
+    <div className="bg-white max-md:w-full max-lg:min-w-3xl">
       {/* Day Names Header */}
       <div className="grid grid-cols-7 border-b border-gray-200">
         {dayNames.map((day) => (

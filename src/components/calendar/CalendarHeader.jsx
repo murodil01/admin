@@ -2,6 +2,8 @@ import React from "react";
 import PropTypes from "prop-types";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { useSidebar } from "../../context/index";
+import { Permission } from "../../components/Permissions";
+import { ROLES } from "../../components/constants/roles";
 
 const CalendarHeader = ({ currentDate, onNavigate, onAddEvent }) => {
   const { collapsed } = useSidebar(); // 👈 sidebar holati
@@ -47,7 +49,7 @@ const CalendarHeader = ({ currentDate, onNavigate, onAddEvent }) => {
             </button>
           </div>
         </div>
-
+        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
         <div className="flex items-center space-x-4">
           <button
             onClick={onAddEvent}
@@ -57,6 +59,7 @@ const CalendarHeader = ({ currentDate, onNavigate, onAddEvent }) => {
             <span>Add Event</span>
           </button>
         </div>
+        </Permission>
       </div>
     </div>
   );
