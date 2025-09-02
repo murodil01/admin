@@ -439,7 +439,7 @@ const MainLead = () => {
         </div>
       )}
 
-      <div className="flex flex-col gap-6 overflow-x w-full">
+      <div className="flex flex-col gap-4 overflow-x w-full">
         {groups.length === 0 ? (
           <div className="py-6 text-center">
             <p className="text-gray-500 text-lg mb-4">Hali guruhlar yo'q</p>
