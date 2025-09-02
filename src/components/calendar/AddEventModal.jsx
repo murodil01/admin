@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import { X, Paperclip, ChevronDown, FileUp } from "lucide-react";
 import { getDepartments } from "../../api/services/departmentService";
 import DepartmentsSelector from "./DepartmentsSelector";
+import { toLocalDateInputValue, fromLocalDateInputValue } from '../../utils/dateUtils';
 
 const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
   const [formData, setFormData] = useState({
@@ -163,11 +164,11 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
                   </label>
                   <input
                     type="date"
-                    value={formData.date.toISOString().split("T")[0]}
+                    value={toLocalDateInputValue(formData.date)}
                     onChange={(e) =>
                       setFormData((prev) => ({
                         ...prev,
-                        date: new Date(e.target.value),
+                        date: fromLocalDateInputValue(e.target.value),
                       }))
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-[14px] focus:ring-2 focus:ring-blue-500 focus:border-transparent"

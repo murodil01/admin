@@ -53,12 +53,23 @@ export const formatMonth = (date) => {
 };
 
 export const toLocalDateInputValue = (date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0'); // 1-based
-  const day = String(date.getDate()).padStart(2, '0');
+  if (!date) return '';
+  const localDate = new Date(date);
+  // Local vaqt zonasida format qilish
+  const year = localDate.getFullYear();
+  const month = String(localDate.getMonth() + 1).padStart(2, '0');
+  const day = String(localDate.getDate()).padStart(2, '0');
+  
   return `${year}-${month}-${day}`;
 };
 
+export const fromLocalDateInputValue = (dateString) => {
+  if (!dateString) return new Date();
+  
+  // Local vaqt zonasida Date yaratish (UTC emas!)
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day); // month 0-indexed
+};
 
 export const isSameDay = (date1, date2) => {
   return (
@@ -84,5 +95,7 @@ export const isToday = (date) => {
     date.getFullYear() === today.getFullYear()
   );
 };
+
+
 
 

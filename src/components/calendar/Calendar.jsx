@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
-import PropTypes from 'prop-types';
-import CalendarDay from './CalendarDay';
+import React, { useState, useMemo } from "react";
+import PropTypes from "prop-types";
+import CalendarDay from "./CalendarDay";
 
 const Calendar = ({ currentDate, events, onEventClick, onDayClick }) => {
   const [dayEventIndices, setDayEventIndices] = useState({});
@@ -37,7 +37,7 @@ const Calendar = ({ currentDate, events, onEventClick, onDayClick }) => {
     const currentIndex = dayEventIndices[dateKey] || 0;
 
     let newIndex;
-    if (direction === 'prev') {
+    if (direction === "prev") {
       newIndex = currentIndex > 0 ? currentIndex - 1 : dayEvents.length - 1;
     } else {
       newIndex = currentIndex < dayEvents.length - 1 ? currentIndex + 1 : 0;
@@ -49,7 +49,15 @@ const Calendar = ({ currentDate, events, onEventClick, onDayClick }) => {
     }));
   };
 
-  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const dayNames = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ];
 
   return (
     <div className="bg-white">
@@ -57,14 +65,14 @@ const Calendar = ({ currentDate, events, onEventClick, onDayClick }) => {
       <div className="grid grid-cols-7 border-b border-gray-200">
         {dayNames.map((day) => (
           <div key={day} className="p-4 text-center">
-              {/* Large screen: full name */}
+            {/* Large screen: full name */}
             <span className="hidden sm:inline text-sm font-medium text-gray-700 capitalize">
               {day}
             </span>
-              {/* Small screen: short name (Mon, Tue, etc.) */}
-          <span className="sm:hidden text-sm font-medium text-gray-700 capitalize">
-            {day.slice(0, 3)}
-          </span>
+            {/* Small screen: short name (Mon, Tue, etc.) */}
+            <span className="sm:hidden text-sm font-medium text-gray-700 capitalize">
+              {day.slice(0, 3)}
+            </span>
           </div>
         ))}
       </div>
@@ -74,12 +82,20 @@ const Calendar = ({ currentDate, events, onEventClick, onDayClick }) => {
         {calendarDays.map((date, index) => {
           const dayEvents = getEventsForDay(date);
           const dateKey = date.toDateString();
-          const currentEventIndex = dayEventIndices[dateKey] || 0;
+          let currentEventIndex = dayEventIndices[dateKey] || 0;
 
-          const isToday =
-          date.toDateString() === new Date().toDateString();
-        const isCurrentMonth =
-          date.getMonth() === currentDate.getMonth();
+          // Index bounds check qo'shing
+          if (currentEventIndex >= dayEvents.length && dayEvents.length > 0) {
+            currentEventIndex = dayEvents.length - 1;
+            // State ni ham yangilang
+            setDayEventIndices((prev) => ({
+              ...prev,
+              [dateKey]: currentEventIndex,
+            }));
+          }
+
+          const isToday = date.toDateString() === new Date().toDateString();
+          const isCurrentMonth = date.getMonth() === currentDate.getMonth();
 
           return (
             <div
@@ -92,7 +108,9 @@ const Calendar = ({ currentDate, events, onEventClick, onDayClick }) => {
                 events={dayEvents}
                 currentEventIndex={currentEventIndex}
                 onEventClick={onEventClick}
-                onNavigateEvent={(direction) => handleNavigateEvent(date, direction)}
+                onNavigateEvent={(direction) =>
+                  handleNavigateEvent(date, direction)
+                }
                 isToday={isToday}
                 isCurrentMonth={isCurrentMonth}
               />
@@ -110,16 +128,15 @@ Calendar.propTypes = {
     PropTypes.shape({
       id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
       title: PropTypes.string.isRequired,
-      date: PropTypes.oneOfType([
-        PropTypes.string,
-        PropTypes.instanceOf(Date),
-      ]).isRequired,
+      date: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)])
+        .isRequired,
       description: PropTypes.string,
       image: PropTypes.oneOfType([
         PropTypes.string, // URL from API
         PropTypes.object, // File object from form
       ]),
-      department: PropTypes.arrayOf( // Changed to array to match API
+      department: PropTypes.arrayOf(
+        // Changed to array to match API
         PropTypes.shape({
           id: PropTypes.string,
           name: PropTypes.string,
@@ -139,5 +156,3 @@ Calendar.propTypes = {
 };
 
 export default Calendar;
-
- 
