@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { Permission } from "../../components/Permissions";
+import { ROLES } from "../../components/constants/roles";
 import PropTypes from "prop-types";
 import {
   X,
@@ -150,7 +152,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                 ) : (
                   <div className="w-28 flex items-center justify-center mx-auto">
                     <img
-                      src="/insert-picture-icon.svg"
+                      src="/insert-picture-icon.png"
                       alt="picture-placeholder"
                       className="mx-auto rounded-2xl"
                     />
@@ -168,7 +170,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                       <div className="flex items-center justify-center gap-2 text-base max-sm:text-sm max-sm:gap-1 text-gray-700">
                         Change Image
                         <img
-                          src="/change-image.svg"
+                          src="/change-image-icon.svg"
                           alt="change-image-logo"
                           className="w-6 h-6 max-sm:size-5 text-gray-500"
                         />
@@ -202,7 +204,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                 <h3 className="font-bold text-sm text-gray-700 mb-2">
                   Description
                 </h3>
-                <p className="w-full text-sm leading-relaxed">
+                <p className="w-full text-sm leading-relaxed whitespace-pre-wrap">
                   {displayData.description}
                 </p>
               </div>
@@ -217,8 +219,8 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
 
                 {isEditing ? (
                   <label className="flex items-center justify-between gap-2 max-w-60 py-2 px-3 border border-gray-300 rounded-[14px] cursor-pointer hover:bg-blue-50">
-                    <span className="text-sm text-gray-800 break-all">
-                      {editData?.file ? editData.file.name : "No file selected"}
+                    <span className="text-sm text-gray-800 break-all truncate">
+                      {editData?.file ? editData.file : "No file selected"}
                     </span>
 
                     <img
@@ -226,6 +228,9 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                       alt="folder-change-icon"
                       className="w-7 h-6 text-gray-500 max-sm:size-5"
                     />
+                    {/* <ImageUpIcon
+                          className="w-5 h-5 max-sm:size-5 opacity-75"
+                        /> */}
 
                     <input
                       type="file"
@@ -241,11 +246,11 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                         ? displayData.file // API dan kelgan URL
                         : URL.createObjectURL(displayData.file) // Frontend File obyekti
                     }
-                    download={displayData.file.name}
+                    download={displayData.file.title}
                     className="flex items-center px-4 py-3 max-sm:py-2 gap-2 w-full max-w-56 border border-gray-300 rounded-[14px] bg-white hover:bg-gray-100 hover:text-gray-900"
                   >
-                    <span className="truncate max-w-[150px] text-sm text-gray-800">
-                      {displayData.file.name}
+                    <span className="truncate min-w-[150px] text-sm text-gray-800">
+                      {displayData.file}
                     </span>
                     <FileDown className="w-5 h-5 shrink-0" />
                   </a>
@@ -508,25 +513,27 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
               </>
             ) : (
               <>
-                <button
-                  onClick={handleEditClick}
-                  className="px-5 py-2 max-sm:text-sm text-gray-700 border border-gray-300 rounded-[14px] hover:bg-gray-50 flex items-center space-x-2"
-                >
-                  <span>Edit</span>
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={handleDeleteClick}
-                  className="px-5 py-2 max-sm:text-sm text-red-600 border border-red-300 rounded-[14px] hover:bg-red-50 flex items-center space-x-2"
-                >
-                  <span>Delete</span>
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+                  <button
+                    onClick={handleEditClick}
+                    className="px-5 py-2  max-[420px]:px-3  max-[420px]:py-2 max-sm:text-sm text-gray-700 border border-gray-300 rounded-[14px] hover:bg-gray-50 flex items-center space-x-2"
+                  >
+                    <span className=" max-[420px]:text-xs">Edit</span>
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={handleDeleteClick}
+                    className="px-5 py-2 max-[420px]:px-3  max-[420px]:py-2 max-sm:text-sm text-red-600 border border-red-300 rounded-[14px] hover:bg-red-50 flex items-center space-x-2"
+                  >
+                    <span className=" max-[420px]:text-xs">Delete</span>
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </Permission>
                 <button
                   onClick={onClose}
-                  className="px-5 py-2 max-sm:text-sm bg-blue-600 text-white rounded-[14px] hover:bg-blue-700"
+                  className="px-5 py-2  max-[420px]:px-3  max-[420px]:py-2 max-sm:text-sm bg-blue-600 text-white rounded-[14px] hover:bg-blue-700"
                 >
-                  Got it
+                  <span className=" max-[420px]:text-xs">Got it</span>
                 </button>
               </>
             )}
