@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ChevronDown,
   CheckCircle2,
@@ -8,18 +8,18 @@ import {
   GripVertical,
   Plus,
   X,
+  Copy,
+  Trash2,
+  ArrowRight
 } from "lucide-react";
+import { CiExport } from "react-icons/ci";
+import { BiArchiveIn } from "react-icons/bi";
 import ReactDatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import { createPortal } from "react-dom";
-import {
-  getLeads,
-  updateLeads,
-  createLeads,
-} from "../../../api/services/leadsService";
+import { Select, Avatar } from "antd";
+import { getLeads, updateLeads, createLeads } from "../../../api/services/leadsService";
 import { getMSalesUsers } from "../../../api/services/userService";
 import { getBoardsAll } from "../../../api/services/boardService"; 
-import { Select, Avatar } from "antd";
 import { deleteLeads } from "../../../api/services/leadsService";
 import api from "../../../api/base";
 import toast from "react-hot-toast";
@@ -33,46 +33,18 @@ const getAbsoluteImageUrl = (picture) => {
   return `https://prototype-production-2b67.up.railway.app${url.startsWith("/") ? "" : "/"}${url}`;
 };
 
-// Normalize payload: nested objects -> ids, string numbers -> Number, empty strings -> undefined
+// Normalize payload function
 const normalizePayload = (obj = {}) => {
   const out = {};
   for (const key in obj) {
     let val = obj[key];
-
-    // Convert nested object with id to id
-    if (val && typeof val === "object") {
-      if ("id" in val && (val.id !== undefined && val.id !== null)) {
-        out[key] = val.id;
-        continue;
-      }
-      // sometimes status may be an object only with name; fallback to name if id missing
-      if (key === "status" && (val.name || val.status)) {
-        out[key] = val.id ?? val.name ?? val.status;
-        continue;
-      }
-      // otherwise send object as-is (rare)
-      out[key] = val;
-      continue;
-    }
-
-    // Convert numeric-like strings for known numeric fields
-    if (
-      typeof val === "string" &&
-      val.trim() !== "" &&
-      (/^(?:\d+|\d+\.\d+)$/).test(val.trim()) &&
-      /progress|potential|value|amount|price|count|id/i.test(key)
-    ) {
-      out[key] = Number(val);
-      continue;
-    }
-
-    // Turn empty strings into undefined so server-side required validation triggers sensible messages
-    if (val === "") {
+    if (val && typeof val === "object" && "id" in val) {
+      out[key] = val.id;
+    } else if (val === "") {
       out[key] = undefined;
-      continue;
+    } else {
+      out[key] = val;
     }
-
-    out[key] = val;
   }
   return out;
 };
@@ -125,7 +97,7 @@ const TimelineRangePicker = ({ task, onSave, isOpen, onToggle }) => {
 
   if (!isOpen) return null;
 
-  return createPortal(
+  return ReactDOM.createPortal(
     <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[10000] bg-white border border-gray-300 rounded-lg shadow-2xl p-4 min-w-[320px]">
       <div className="space-y-4">
         <div className="text-sm font-semibold text-gray-700 text-center">
@@ -164,7 +136,7 @@ const TimelineRangePicker = ({ task, onSave, isOpen, onToggle }) => {
             />
           </div>
         </div>
-        {startDate && endDate && startDate instanceof Date && endDate instanceof Date && (
+        {startDate && endDate && (
           <div className="text-center py-2 px-3 bg-blue-50 rounded-md">
             <div className="text-xs text-gray-600">Timeline:</div>
             <div className="text-sm font-medium text-blue-700">
@@ -246,9 +218,7 @@ const TimelineCell = ({ task, onTimelineUpdate }) => {
   );
 };
 
-
-
-// OwnerDropdown: normalize update payload (use person_detail id)
+// OwnerDropdown Component
 const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
   const [userOptions, setUserOptions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -257,7 +227,6 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        // Fetch current user
         let myData = null;
         try {
           const meRes = await api.get("/me/");
@@ -275,7 +244,6 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
           console.warn("Failed to fetch current user:", meErr);
         }
 
-        // Fetch all MSales users
         const res = await getMSalesUsers();
         if (res.data && Array.isArray(res.data)) {
           if (!myData) {
@@ -302,11 +270,8 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
               isCurrentUser: false,
             }));
 
-          // Prioritize current user at the top
           const allUsers = myData ? [myData, ...otherUsers] : otherUsers;
           setUserOptions(allUsers);
-        } else {
-          console.warn("No users data received or invalid format");
         }
       } catch (err) {
         console.error("Failed to fetch users:", err);
@@ -359,11 +324,6 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
 
   return (
     <div className="relative">
-      {userMe && (
-        <div className="hidden">
-          <div>{userMe.first_name}</div>
-        </div>
-      )}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 w-full hover:bg-gray-50 p-1 rounded transition-colors"
@@ -423,7 +383,7 @@ const OwnerDropdown = ({ currentOwner, onChange, onSave, taskId }) => {
   );
 };
 
-// StatusDropdown: ensure update sends id (or name fallback)
+// StatusDropdown Component
 const StatusDropdown = ({ value, onChange, taskId }) => {
   const [statusOptions, setStatusOptions] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -436,7 +396,6 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
           const leadsRes = await getLeads();
           if (leadsRes.data && Array.isArray(leadsRes.data)) {
             leadsRes.data.forEach(lead => {
-              // Fix: Handle status object properly
               const statusValue = lead.status && typeof lead.status === 'object' ? lead.status.name : lead.status;
               if (statusValue) {
                 if (!allStatuses.find(s => s.name === statusValue)) {
@@ -541,10 +500,9 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
     onChange(selectedStatus?.name ?? selectedStatusId);
 
     try {
-      // Send id if available, otherwise send name
       const payload = normalizePayload({ status: selectedStatus?.id ?? selectedStatus?.name ?? selectedStatusId });
       await updateLeads(taskId, payload);
-      console.log("✅ Status updated on server");
+      console.log("Status updated on server");
     } catch (err) {
       console.error("Failed to update status:", err.response?.data || err);
     }
@@ -552,7 +510,6 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
     setIsOpen(false);
   };
 
-  // Fix: Handle value properly - it could be an object or string
   const getStatusValue = () => {
     if (!value) return "No Status";
     if (typeof value === 'object') return value.name || "No Status";
@@ -601,7 +558,7 @@ const StatusDropdown = ({ value, onChange, taskId }) => {
   );
 };
 
-// PersonDropdown: assume updateLeads(leadId, data)
+// PersonDropdown Component
 const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
   const [personOptions, setPersonOptions] = useState([]);
 
@@ -633,7 +590,7 @@ const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
     if (leadId) {
       try {
         await updateLeads(leadId, normalizePayload({ person_detail: selectedId }));
-        console.log("✅ person_detail updated for lead", leadId);
+        console.log("person_detail updated for lead", leadId);
       } catch (err) {
         console.error("Failed to update person_detail:", err.response?.data || err);
       }
@@ -669,6 +626,7 @@ const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
   );
 };
 
+// Main Table Component
 const Table = () => {
   const [hoveredRow, setHoveredRow] = useState(null);
   const [selectedRows, setSelectedRows] = useState([]);
@@ -680,25 +638,25 @@ const Table = () => {
   const [apiLeads, setApiLeads] = useState([]);
   const [loading, setLoading] = useState(false);
   const [statusOptions, setStatusOptions] = useState([]);
-  const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false);
   const [groupOptions, setGroupOptions] = useState([]);
   const [personOptions, setPersonOptions] = useState([]);
   const [isAddingLead, setIsAddingLead] = useState(false);
-  const [newLeadTitle, setNewLeadTitle] = useState("");
   const [selectedItems, setSelectedItems] = useState([]);
   const [groups, setGroups] = useState([]);
-    const [newLeadData, setNewLeadData] = useState({
+  
+  const [newLeadData, setNewLeadData] = useState({
     name: '',
     phone: '',
     person: null,
-    status: statusOptions[0]?.id || '',
+    status: null,
     potential_value: 0,
     notes: '',
     timeline_start: null,
     timeline_end: null,
-    group: groupOptions[0]?.id || '',
-    link: 'ad'
+    group: null,
+    link: ''
   });
+
   // Selection functions
   const handleSelectAll = () => {
     const totalItems = filteredTasks.length;
@@ -725,65 +683,31 @@ const Table = () => {
     }
   };
 
-  const deleteItemFromGroup = async (groupId, itemIndex) => {
-    const group = groups.find((g) => g.id === groupId);
-    if (!group) return;
+  const handleDeleteSelected = async () => {
+    if (selectedItems.length === 0) return;
 
-    const item = group.items[itemIndex];
-    if (!item) return;
+    const confirmDelete = window.confirm(`${selectedItems.length} ta lead o'chirilsinmi?`);
+    if (!confirmDelete) return;
 
     try {
-      await deleteLeads(item.group, item.id);
+      for (const taskId of selectedItems) {
+        const lead = apiLeads.find(l => l.id === taskId);
+        if (lead) {
+          const groupId = lead.group;
+          await deleteLeads(groupId, lead.id);
+        }
+      }
       
-      // Selection dan ham o'chirish
-      setSelectedItems((prev) =>
-        prev.filter(
-          (s) => !(s.groupId === groupId && s.itemIndex === itemIndex)
-        )
-      );
+      setApiLeads(prev => prev.filter(lead => !selectedItems.includes(lead.id)));
+      setSelectedItems([]);
       
-      setGroups((prev) =>
-        prev.map((g) =>
-          g.id === groupId
-            ? { ...g, items: g.items.filter((_, idx) => idx !== itemIndex) }
-            : g
-        )
-      );
-      
-      toast.success("Lead o'chirildi ✅");
-    } catch (err) {
-      console.error("deleteLeads xatosi:", err);
-      toast.error("Lead o'chirilmadi ❌");
+      toast.success(`${selectedItems.length} ta lead o'chirildi`);
+    } catch (error) {
+      console.error('Error deleting items:', error);
+      toast.error('Lead o\'chirishda xato');
     }
   };
 
-  const handleDeleteSelected = async () => {
-  if (selectedItems.length === 0) return;
-
-  const confirmDelete = window.confirm(`${selectedItems.length} ta lead o'chirilsinmi?`);
-  if (!confirmDelete) return;
-
-  try {
-    // Har bir tanlangan leadni o'chirish
-    for (const taskId of selectedItems) {
-      const lead = apiLeads.find(l => l.id === taskId);
-      if (lead) {
-        // To'g'ri groupId ishlatish
-        const groupId = lead.group;
-        await deleteLeads(groupId, lead.id);
-      }
-    }
-    
-    // Local state ni yangilash - apiLeads dan o'chirish
-    setApiLeads(prev => prev.filter(lead => !selectedItems.includes(lead.id)));
-    setSelectedItems([]);
-    
-    toast.success(`${selectedItems.length} ta lead o'chirildi`);
-  } catch (error) {
-    console.error('Error deleting items:', error);
-    toast.error('Lead o\'chirishda xato');
-  }
-};
   const handleDuplicateSelected = async () => {
     if (selectedItems.length === 0) return;
 
@@ -850,11 +774,19 @@ const Table = () => {
     const fetchGroups = async () => {
       try {
         const res = await getBoardsAll();
+        console.log("=== GROUP OPTIONS FETCH ===");
+        console.log("Raw boards response:", res.data);
+        
         if (res.data && Array.isArray(res.data)) {
-          setGroupOptions(res.data.map(board => ({
-            id: board.id,
-            name: board.name
-          })));
+          const validGroups = res.data
+            .filter(board => board.id && board.name)
+            .map(board => ({
+              id: board.id,
+              name: board.name
+            }));
+          
+          console.log("Processed group options:", validGroups);
+          setGroupOptions(validGroups);
         }
       } catch (err) {
         console.error("Failed to fetch groups:", err);
@@ -943,10 +875,9 @@ const Table = () => {
     progress: "potential_value",
   };
 
-  // Fix: Handle status object properly in convertApiLeadsToTasks
+  // Convert API leads to tasks
   const convertApiLeadsToTasks = (leads) => {
     return leads.map((lead, index) => {
-      // Handle status - it could be an object or string
       let statusValue = "No Status";
       if (lead.status) {
         if (typeof lead.status === 'object') {
@@ -975,6 +906,7 @@ const Table = () => {
         phone: lead.phone || "",
         notes: lead.notes || "",
         owner: lead.person_detail || null,
+        group: lead.group || null,
         source: "api",
       };
     });
@@ -991,61 +923,59 @@ const Table = () => {
   };
 
   const loadLeadsFromAPI = async (groupId = null) => {
-  try {
-    setLoading(true);
-    console.log("Loading leads from API...", groupId ? `for group ${groupId}` : "all leads");
-    
-    // Agar groupId berilgan bo'lsa, faqat shu guruh uchun leads ni yuklash
-    const response = await getLeads(groupId);
-    console.log("API Response:", response);
-
-    if (response.data && Array.isArray(response.data)) {
-      // Agar groupId berilgan bo'lsa, faqat shu guruh uchun filter qilish
-      let filteredLeads = response.data;
-      if (groupId) {
-        filteredLeads = response.data.filter(lead => lead.group === groupId);
-      }
+    try {
+      setLoading(true);
+      console.log("Loading leads from API...", groupId ? `for group ${groupId}` : "all leads");
       
-      setApiLeads(filteredLeads);
-      console.log(`Loaded ${filteredLeads.length} leads from API`);
+      const response = await getLeads(groupId);
+      console.log("API Response:", response);
 
-      const apiStatusOptions = filteredLeads
-        .filter((lead) => {
-          const statusValue = lead.status && typeof lead.status === 'object' ? lead.status.name : lead.status;
-          return statusValue;
-        })
-        .map((lead) => {
-          const statusValue = lead.status && typeof lead.status === 'object' ? lead.status.name : lead.status;
-          return {
-            id: lead.status?.id || statusValue,
-            value: statusValue,
-            icon: getStatusIcon(statusValue),
-            lightBg: getStatusLightBg(statusValue),
-            textColor: getStatusTextColor(statusValue),
-          };
-        })
-        .filter(
-          (status, index, self) =>
-            self.findIndex((s) => s.value === status.value) === index
-        );
+      if (response.data && Array.isArray(response.data)) {
+        let filteredLeads = response.data;
+        if (groupId) {
+          filteredLeads = response.data.filter(lead => lead.group === groupId);
+        }
+        
+        setApiLeads(filteredLeads);
+        console.log(`Loaded ${filteredLeads.length} leads from API`);
 
-      if (apiStatusOptions.length > 0) {
-        console.log("Status options from API:", apiStatusOptions);
-        setStatusOptions(prev => [...prev, ...apiStatusOptions]);
+        const apiStatusOptions = filteredLeads
+          .filter((lead) => {
+            const statusValue = lead.status && typeof lead.status === 'object' ? lead.status.name : lead.status;
+            return statusValue;
+          })
+          .map((lead) => {
+            const statusValue = lead.status && typeof lead.status === 'object' ? lead.status.name : lead.status;
+            return {
+              id: lead.status?.id || statusValue,
+              value: statusValue,
+              icon: getStatusIcon(statusValue),
+              lightBg: getStatusLightBg(statusValue),
+              textColor: getStatusTextColor(statusValue),
+            };
+          })
+          .filter(
+            (status, index, self) =>
+              self.findIndex((s) => s.value === status.value) === index
+          );
+
+        if (apiStatusOptions.length > 0) {
+          console.log("Status options from API:", apiStatusOptions);
+          setStatusOptions(prev => [...prev, ...apiStatusOptions]);
+        }
       }
+    } catch (error) {
+      console.error("Error loading leads:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        url: error.config?.url,
+        data: error.response?.data,
+        message: error.message,
+      });
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Error loading leads:", {
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      url: error.config?.url,
-      data: error.response?.data,
-      message: error.message,
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const getStatusIcon = (statusName) => {
     if (!statusName) return Circle;
@@ -1079,72 +1009,123 @@ const Table = () => {
     return "text-gray-700";
   };
 
-//   const handleAddLead = async (leadData) => {
-//   try {
-//     setLoading(true);
-//     console.log("Creating lead with data:", leadData);
+  // Debug function
+  const debugNewLeadData = () => {
+    console.log("=== DEBUG: New Lead Data ===");
+    console.log("newLeadData:", newLeadData);
+    console.log("Selected group ID:", newLeadData.group);
+    console.log("Selected status ID:", newLeadData.status);
+    console.log("Available groups:", groupOptions);
+    console.log("Available statuses:", statusOptions);
     
-//     const payload = normalizePayload(leadData);
-//     console.log("Normalized payload:", payload);
+    const selectedGroup = groupOptions.find(g => g.id === newLeadData.group);
+    console.log("Selected group object:", selectedGroup);
     
-//     const response = await createLeads(payload);
-//     console.log("Lead created successfully:", response);
+    const selectedStatus = statusOptions.find(s => s.id === newLeadData.status);
+    console.log("Selected status object:", selectedStatus);
     
-//     // Yangi lead yaratilgandan keyin, faqat o'sha guruh uchun leads ni yangilash
-//     if (leadData.group) {
-//       await loadLeadsFromAPI(leadData.group);
-//     } else {
-//       await loadLeadsFromAPI();
-//     }
-    
-//     setIsAddLeadModalOpen(false);
-//     toast.success("Lead muvaffaqiyatli yaratildi");
-    
-//   } catch (error) {
-//     console.error("Error creating lead:", error.response?.data || error);
-//     toast.error("Lead yaratishda xato: " + (error.response?.data?.message || error.message));
-//   } finally {
-//     setLoading(false);
-//   }
-// };
+    console.log("=== END DEBUG ===");
+  };
 
-   const handleAddNewLead = async () => {
+  // Fixed handleAddNewLead function
+  const handleAddNewLead = async () => {
+    // Validate required fields
     if (!newLeadData.name.trim()) {
-      setIsAddingLead(false);
+      toast.error("Lead nomi majburiy");
+      return;
+    }
+
+    if (!newLeadData.group) {
+      toast.error("Guruh tanlash majburiy");
+      return;
+    }
+
+    if (!newLeadData.status) {
+      toast.error("Status tanlash majburiy");
+      return;
+    }
+
+    // Validate group exists
+    const groupExists = groupOptions.some(group => group.id === newLeadData.group);
+    if (!groupExists) {
+      toast.error("Noto'g'ri guruh tanlandi");
+      return;
+    }
+
+    // Validate status exists
+    const statusExists = statusOptions.some(status => status.id === newLeadData.status);
+    if (!statusExists) {
+      toast.error("Noto'g'ri status tanlandi");
       return;
     }
 
     try {
       setLoading(true);
-      const payload = normalizePayload(newLeadData);
-      await createLeads(payload);
+      
+      // Prepare the payload according to API structure
+      const payload = {
+        name: newLeadData.name.trim(),
+        phone: newLeadData.phone || '',
+        link: newLeadData.link || '',
+        person: newLeadData.person,
+        notes: newLeadData.notes || '',
+        status: newLeadData.status,
+        group: newLeadData.group,
+        potential_value: Number(newLeadData.potential_value) || 0,
+        timeline_start: newLeadData.timeline_start ? 
+          (newLeadData.timeline_start instanceof Date ? 
+            newLeadData.timeline_start.toISOString().split('T')[0] : 
+            newLeadData.timeline_start) : null,
+        timeline_end: newLeadData.timeline_end ? 
+          (newLeadData.timeline_end instanceof Date ? 
+            newLeadData.timeline_end.toISOString().split('T')[0] : 
+            newLeadData.timeline_end) : null,
+        custom_fields: {},
+        order: 1
+      };
+
+      console.log("Creating lead with payload:", payload);
+      
+      const normalizedPayload = normalizePayload(payload);
+      await createLeads(normalizedPayload);
+      
       console.log("New lead created successfully");
       
       await loadLeadsFromAPI();
-      // Yangi lead ma'lumotlarini tozalash
+      
+      // Reset the form
       setNewLeadData({
         name: '',
         phone: '',
         person: null,
-        status: statusOptions[0]?.id || '',
+        status: null,
         potential_value: 0,
         notes: '',
         timeline_start: null,
         timeline_end: null,
-        group: groupOptions[0]?.id || '',
-        link: 'ad'
+        group: null,
+        link: ''
       });
+      
       setIsAddingLead(false);
+      toast.success("Lead muvaffaqiyatli yaratildi");
       
     } catch (error) {
       console.error("Error creating new lead:", error.response?.data || error);
-      toast.error("Lead yaratishda xato: " + (error.response?.data?.message || error.message));
+      // Display specific field errors if available
+      if (error.response?.data) {
+        Object.entries(error.response.data).forEach(([field, errors]) => {
+          toast.error(`${field}: ${errors.join(', ')}`);
+        });
+      } else {
+        toast.error("Lead yaratishda xato: " + (error.message || "Noma'lum xato"));
+      }
     } finally {
       setLoading(false);
     }
   };
   
-   const handleNewLeadFieldChange = (field, value) => {
+  const handleNewLeadFieldChange = (field, value) => {
     setNewLeadData(prev => ({
       ...prev,
       [field]: value
@@ -1154,7 +1135,6 @@ const Table = () => {
   const handleKeyPress = (e, field) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      // Keyingi inputga fokusni o'tkazish
       const inputs = document.querySelectorAll('.new-lead-input');
       const currentIndex = Array.from(inputs).findIndex(input => input === e.target);
       if (currentIndex < inputs.length - 1) {
@@ -1224,59 +1204,54 @@ const Table = () => {
   };
 
   const handleStatusChange = async (taskId, newStatus) => {
-  try {
-    // Local state ni darhol yangilash (optimistic update)
-    setApiLeads(prevLeads =>
-      prevLeads.map((lead) =>
-        lead.id === taskId ? { ...lead, status: newStatus } : lead
-      )
-    );
+    try {
+      setApiLeads(prevLeads =>
+        prevLeads.map((lead) =>
+          lead.id === taskId ? { ...lead, status: newStatus } : lead
+        )
+      );
 
-    // Server ga so'rov yuborish
-    const payload = normalizePayload({ status: newStatus?.id ?? newStatus });
-    const lead = apiLeads.find(l => l.id === taskId);
-    
-    if (lead) {
-      await updateLeads(lead.group, taskId, payload); // groupId ni to'g'ri berish
-      console.log("Status updated on server");
+      const payload = normalizePayload({ status: newStatus?.id ?? newStatus });
+      const lead = apiLeads.find(l => l.id === taskId);
+      
+      if (lead) {
+        await updateLeads(lead.group, taskId, payload);
+        console.log("Status updated on server");
+      }
+      
+      setOpenStatusDropdown(null);
+    } catch (error) {
+      console.error("Error updating status:", error.response?.data || error);
+      
+      setApiLeads(prevLeads =>
+        prevLeads.map((lead) =>
+          lead.id === taskId ? { ...lead, status: lead.status } : lead
+        )
+      );
+      
+      toast.error("Status yangilashda xato");
     }
-    
-    setOpenStatusDropdown(null);
-  } catch (error) {
-    console.error("Error updating status:", error.response?.data || error);
-    
-    // Xatolik bo'lganda state ni qaytarish
-    setApiLeads(prevLeads =>
-      prevLeads.map((lead) =>
-        lead.id === taskId ? { ...lead, status: lead.status } : lead
-      )
-    );
-    
-    toast.error("Status yangilashda xato");
-  }
-};
+  };
 
-const handleOwnerChange = async (taskId, newOwner) => {
-  try {
-    // Local state ni yangilash
-    setApiLeads(prevLeads =>
-      prevLeads.map((lead) =>
-        lead.id === taskId ? { ...lead, person_detail: newOwner } : lead
-      )
-    );
+  const handleOwnerChange = async (taskId, newOwner) => {
+    try {
+      setApiLeads(prevLeads =>
+        prevLeads.map((lead) =>
+          lead.id === taskId ? { ...lead, person_detail: newOwner } : lead
+        )
+      );
 
-    // Server ga yangilash
-    const lead = apiLeads.find(l => l.id === taskId);
-    if (lead && newOwner) {
-      const payload = normalizePayload({ person: newOwner.id });
-      await updateLeads(lead.group, taskId, payload);
-      console.log("Owner updated on server");
+      const lead = apiLeads.find(l => l.id === taskId);
+      if (lead && newOwner) {
+        const payload = normalizePayload({ person: newOwner.id });
+        await updateLeads(lead.group, taskId, payload);
+        console.log("Owner updated on server");
+      }
+    } catch (error) {
+      console.error("Error updating owner:", error.response?.data || error);
+      toast.error("Owner yangilashda xato");
     }
-  } catch (error) {
-    console.error("Error updating owner:", error.response?.data || error);
-    toast.error("Owner yangilashda xato");
-  }
-};
+  };
 
   const handleSort = (key) => {
     let direction = "asc";
@@ -1320,8 +1295,6 @@ const handleOwnerChange = async (taskId, newOwner) => {
     }
   };
 
-  
-
   const handleChange = (id, uiField, value) => {
     const apiField = fieldMap[uiField] || uiField;
     setApiLeads((prevLeads) =>
@@ -1332,45 +1305,27 @@ const handleOwnerChange = async (taskId, newOwner) => {
   };
 
   const handleSave = async (id, uiField) => {
-  const lead = apiLeads.find((l) => l.id === id);
-  if (!lead) return;
+    const lead = apiLeads.find((l) => l.id === id);
+    if (!lead) return;
 
-  const apiField = fieldMap[uiField] || uiField;
-  const data = { [apiField]: lead[apiField] };
-  
-  try {
-    const payload = normalizePayload(data);
-    await updateLeads(lead.group, id, payload); // groupId ni to'g'ri berish
-    console.log(`Updated ${apiField} on server`);
-  } catch (err) {
-    console.error(`Error updating ${apiField}:`, err.response?.data || err);
-    toast.error(`${apiField} yangilashda xato`);
-  }
-};
+    const apiField = fieldMap[uiField] || uiField;
+    const data = { [apiField]: lead[apiField] };
+    
+    try {
+      const payload = normalizePayload(data);
+      await updateLeads(lead.group, id, payload);
+      console.log(`Updated ${apiField} on server`);
+    } catch (err) {
+      console.error(`Error updating ${apiField}:`, err.response?.data || err);
+      toast.error(`${apiField} yangilashda xato`);
+    }
+  };
 
   return (
     <div className="h-auto md:min-w-[95%]">
-      {/* Add Lead Button */}
-      <div className="mb-4 flex justify-end">
-        <button
-          onClick={() => setIsAddLeadModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-md"
-        >
-          <Plus className="w-5 h-5" />
-          Add Lead
-        </button>
-      </div>
-      Add Lead Modal
-      {/* <AddLeadModal
-        isOpen={isAddLeadModalOpen}
-        onClose={() => setIsAddLeadModalOpen(false)}
-        onSubmit={handleAddLead}
-        loading={loading}
-      /> */}
-
       <div className="bg-white rounded-b-xl shadow-xl border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto custom-scrollbar">
-          <div className="min-w-[1200px]">
+          <div className="min-w-[1400px]">
             <table className="w-full table-fixed">
               <colgroup>
                 <col className="w-10" />
@@ -1379,6 +1334,8 @@ const handleOwnerChange = async (taskId, newOwner) => {
                 <col className="w-50" />
                 <col className="w-50" />
                 <col className="w-45" />
+                <col className="w-40" />
+                <col className="w-40" />
                 <col className="w-40" />
                 <col className="w-44" />
                 <col className="w-40" />
@@ -1567,162 +1524,192 @@ const handleOwnerChange = async (taskId, newOwner) => {
                 })}
                 
                 <tr className="border-b border-gray-100">
-        <td className="p-2 sticky left-0 bg-white z-10"></td>
-        <td className="p-4 sticky left-10 bg-white z-10">
-          <input
-            type="checkbox"
-            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            disabled
-          />
-        </td>
-        <td className="p-4 sticky left-[88px] bg-white z-10 border-r border-gray-100">
-          {isAddingLead ? (
-            <input
-              type="text"
-              value={newLeadData.name}
-              onChange={(e) => handleNewLeadFieldChange('name', e.target.value)}
-              onKeyPress={(e) => handleKeyPress(e, 'name')}
-              placeholder="Lead nomi"
-              className="new-lead-input font-medium text-gray-900 hover:text-blue-600 cursor-text transition-colors truncate pr-2 border-none outline-none bg-transparent w-full text-center"
-              autoFocus
-            />
-          ) : (
-            <button
-              onClick={() => setIsAddingLead(true)}
-              className="font-medium text-gray-700 transition-colors w-full text-center"
-            >
-              + Yangi lead qo'shish
-            </button>
-          )}
-        </td>
-        
-        {/* Phone Number input */}
-        <td className="p-4 border-r border-gray-200">
-          {isAddingLead ? (
-            <input
-              type="tel"
-              value={newLeadData.phone}
-              onChange={(e) => handleNewLeadFieldChange('phone', e.target.value)}
-              onKeyPress={(e) => handleKeyPress(e, 'phone')}
-              placeholder="Telefon raqami"
-              className="new-lead-input text-gray-600 transition-colors border-none outline-none bg-transparent w-full text-center"
-            />
-          ) : (
-            <div className="text-gray-400 text-center">-</div>
-          )}
-        </td>
-        
-        {/* Owner dropdown */}
-        <td className="p-4 border-r border-gray-200">
-          {isAddingLead ? (
-            <Select
-              value={newLeadData.person}
-              onChange={(value) => handleNewLeadFieldChange('person', value)}
-              onKeyPress={(e) => handleKeyPress(e, 'person')}
-              placeholder="Owner tanlang"
-              className="new-lead-input"
-              options={personOptions.map(person => ({
-                value: person.id,
-                label: person.name
-              }))}
-            />
-          ) : (
-            <div className="text-gray-400 text-center">-</div>
-          )}
-        </td>
-        
-        {/* Status dropdown */}
-        <td className="p-4 border-r border-gray-200">
-          {isAddingLead ? (
-            <Select
-              value={newLeadData.status}
-              onChange={(value) => handleNewLeadFieldChange('status', value)}
-              onKeyPress={(e) => handleKeyPress(e, 'status')}
-              placeholder="Status tanlang"
-              className="new-lead-input"
-              options={statusOptions.map(status => ({
-                value: status.id,
-                label: status.name
-              }))}
-            />
-          ) : (
-            <div className="text-gray-400 text-center">-</div>
-          )}
-        </td>
-        
-        {/* Potential Value input */}
-        <td className="p-4 border-r border-gray-200">
-          {isAddingLead ? (
-            <input
-              type="number"
-              value={newLeadData.potential_value}
-              onChange={(e) => handleNewLeadFieldChange('potential_value', e.target.value)}
-              onKeyPress={(e) => handleKeyPress(e, 'potential_value')}
-              placeholder="Potential value"
-              className="new-lead-input text-center border-none outline-none bg-transparent w-20"
-            />
-          ) : (
-            <div className="text-gray-400 text-center">-</div>
-          )}
-        </td>
-        
-        {/* Notes input */}
-        <td className="p-4 border-r border-gray-200">
-          {isAddingLead ? (
-            <input
-              type="text"
-              value={newLeadData.notes}
-              onChange={(e) => handleNewLeadFieldChange('notes', e.target.value)}
-              onKeyPress={(e) => handleKeyPress(e, 'notes')}
-              placeholder="Izohlar"
-              className="new-lead-input text-gray-500 truncate text-center border-none outline-none bg-transparent w-full"
-            />
-          ) : (
-            <div className="text-gray-400 text-center">-</div>
-          )}
-        </td>
-        
-        {/* Timeline inputs */}
-        <td className="p-4 border-r border-gray-200">
-          {isAddingLead ? (
-            <div className="flex flex-col gap-2">
-              <ReactDatePicker
-                selected={newLeadData.timeline_start ? new Date(newLeadData.timeline_start) : null}
-                onChange={(date) => handleNewLeadFieldChange('timeline_start', date)}
-                placeholderText="Boshlanish sanasi"
-                className="new-lead-input text-sm p-1 border rounded"
-              />
-              <ReactDatePicker
-                selected={newLeadData.timeline_end ? new Date(newLeadData.timeline_end) : null}
-                onChange={(date) => handleNewLeadFieldChange('timeline_end', date)}
-                placeholderText="Tugash sanasi"
-                className="new-lead-input text-sm p-1 border rounded"
-              />
-            </div>
-          ) : (
-            <div className="text-gray-400 text-center">-</div>
-          )}
-        </td>
-        
-        <td className="p-4 border-r border-gray-200">
-          {isAddingLead && (
-            <div className="flex gap-2">
-              <button
-                onClick={handleAddNewLead}
-                className="px-2 py-1 bg-green-500 text-white rounded text-sm"
-              >
-                Saqlash
-              </button>
-              <button
-                onClick={() => setIsAddingLead(false)}
-                className="px-2 py-1 bg-red-500 text-white rounded text-sm"
-              >
-                Bekor qilish
-              </button>
-            </div>
-          )}
-        </td>
-      </tr>
+                  <td className="p-2 sticky left-0 bg-white z-10"></td>
+                  <td className="p-4 sticky left-10 bg-white z-10">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      disabled
+                    />
+                  </td>
+                  <td className="p-4 sticky left-[88px] bg-white z-10 border-r border-gray-100">
+                    {isAddingLead ? (
+                      <input
+                        type="text"
+                        value={newLeadData.name}
+                        onChange={(e) => handleNewLeadFieldChange('name', e.target.value)}
+                        onKeyPress={(e) => handleKeyPress(e, 'name')}
+                        placeholder="Lead nomi"
+                        className="new-lead-input font-medium text-gray-900 hover:text-blue-600 cursor-text transition-colors truncate pr-2 border-none outline-none bg-transparent w-full text-center"
+                        autoFocus
+                      />
+                    ) : (
+                      <button
+                        onClick={() => setIsAddingLead(true)}
+                        className="font-medium text-gray-700 transition-colors w-full text-center"
+                      >
+                        + Yangi lead qo'shish
+                      </button>
+                    )}
+                  </td>
+                  
+                  <td className="p-4 border-r border-gray-200">
+                    {isAddingLead ? (
+                      <input
+                        type="tel"
+                        value={newLeadData.phone}
+                        onChange={(e) => handleNewLeadFieldChange('phone', e.target.value)}
+                        onKeyPress={(e) => handleKeyPress(e, 'phone')}
+                        placeholder="Telefon raqami"
+                        className="new-lead-input text-gray-600 transition-colors border-none outline-none bg-transparent w-full text-center"
+                      />
+                    ) : (
+                      <div className="text-gray-400 text-center">-</div>
+                    )}
+                  </td>
+                  
+                  <td className="p-4 border-r border-gray-200">
+                    {isAddingLead ? (
+                      <Select
+                        value={newLeadData.person}
+                        onChange={(value) => handleNewLeadFieldChange('person', value)}
+                        onKeyPress={(e) => handleKeyPress(e, 'person')}
+                        placeholder="Owner tanlang"
+                        className="new-lead-input"
+                        options={personOptions.map(person => ({
+                          value: person.id,
+                          label: person.name
+                        }))}
+                      />
+                    ) : (
+                      <div className="text-gray-400 text-center">-</div>
+                    )}
+                  </td>
+                  
+                  <td className="p-4 border-r border-gray-200">
+                    {isAddingLead ? (
+                      <Select
+                        value={newLeadData.link}
+                        onChange={(value) => handleNewLeadFieldChange('link', value)}
+                        placeholder="Manba tanlang"
+                        className="new-lead-input w-full"
+                        options={[
+                          { value: 'website', label: 'Vebsayt' },
+                          { value: 'social_media', label: 'Ijtimoiy tarmoqlar' },
+                          { value: 'referral', label: 'Taklif' },
+                          { value: 'advertisement', label: 'Reklama' },
+                          { value: 'other', label: 'Boshqa' }
+                        ]}
+                      />
+                    ) : (
+                      <div className="text-gray-400 text-center">-</div>
+                    )}
+                  </td>
+                  
+                  <td className="p-4 border-r border-gray-200">
+                    {isAddingLead ? (
+                      <Select
+                        value={newLeadData.status}
+                        onChange={(value) => handleNewLeadFieldChange('status', value)}
+                        placeholder="Status tanlang"
+                        className="new-lead-input w-full"
+                        options={statusOptions.map(status => ({
+                          value: status.id,
+                          label: status.name
+                        }))}
+                      />
+                    ) : (
+                      <div className="text-gray-400 text-center">-</div>
+                    )}
+                  </td>
+                  
+                  <td className="p-4 border-r border-gray-200">
+                    {isAddingLead ? (
+                      <Select
+                        value={newLeadData.group}
+                        onChange={(value) => handleNewLeadFieldChange('group', value)}
+                        placeholder="Guruh tanlang"
+                        className="new-lead-input w-full"
+                        options={groupOptions.map(group => ({
+                          value: group.id,
+                          label: group.name
+                        }))}
+                      />
+                    ) : (
+                      <div className="text-gray-400 text-center">-</div>
+                    )}
+                  </td>
+                  
+                  <td className="p-4 border-r border-gray-200">
+                    {isAddingLead ? (
+                      <input
+                        type="number"
+                        value={newLeadData.potential_value}
+                        onChange={(e) => handleNewLeadFieldChange('potential_value', e.target.value)}
+                        onKeyPress={(e) => handleKeyPress(e, 'potential_value')}
+                        placeholder="Potential value"
+                        className="new-lead-input text-gray-500 truncate text-center border-none outline-none bg-transparent w-full"
+                      />
+                    ) : (
+                      <div className="text-gray-400 text-center">-</div>
+                    )}
+                  </td>
+                  
+                  <td className="p-4 border-r border-gray-200">
+                    {isAddingLead ? (
+                      <input
+                        type="text"
+                        value={newLeadData.notes}
+                        onChange={(e) => handleNewLeadFieldChange('notes', e.target.value)}
+                        onKeyPress={(e) => handleKeyPress(e, 'notes')}
+                        placeholder="Izohlar"
+                        className="new-lead-input text-gray-500 truncate text-center border-none outline-none bg-transparent w-full"
+                      />
+                    ) : (
+                      <div className="text-gray-400 text-center">-</div>
+                    )}
+                  </td>
+                  
+                  <td className="p-4 border-r border-gray-200">
+                    {isAddingLead ? (
+                      <div className="flex flex-col gap-2">
+                        <ReactDatePicker
+                          selected={newLeadData.timeline_start ? new Date(newLeadData.timeline_start) : null}
+                          onChange={(date) => handleNewLeadFieldChange('timeline_start', date)}
+                          placeholderText="Boshlanish sanasi"
+                          className="new-lead-input text-sm p-1 border rounded"
+                        />
+                        <ReactDatePicker
+                          selected={newLeadData.timeline_end ? new Date(newLeadData.timeline_end) : null}
+                          onChange={(date) => handleNewLeadFieldChange('timeline_end', date)}
+                          placeholderText="Tugash sanasi"
+                          className="new-lead-input text-sm p-1 border rounded"
+                        />
+                      </div>
+                    ) : (
+                      <div className="text-gray-400 text-center">-</div>
+                    )}
+                  </td>
+                  
+                  <td className="p-4 border-r border-gray-200">
+                    {isAddingLead && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleAddNewLead}
+                          className="px-2 py-1 bg-green-500 text-white rounded text-sm"
+                        >
+                          Saqlash
+                        </button>
+                        <button
+                          onClick={() => setIsAddingLead(false)}
+                          className="px-2 py-1 bg-red-500 text-white rounded text-sm"
+                        >
+                          Bekor qilish
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
               </tbody>
             </table>
             {filteredTasks.length === 0 && !loading && (
