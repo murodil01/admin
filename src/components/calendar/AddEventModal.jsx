@@ -317,7 +317,6 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
                 <div className="relative">
                   <input
                     type="file"
-                    accept=".pdf,.docx"
                     onChange={handleFileChange}
                     className="hidden"
                     id="file-upload"

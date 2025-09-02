@@ -521,6 +521,8 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                     <span className=" max-[420px]:text-xs">Edit</span>
                     <Edit2 className="w-4 h-4" />
                   </button>
+                   </Permission>
+                   <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
                   <button
                     onClick={handleDeleteClick}
                     className="px-5 py-2 max-[420px]:px-3  max-[420px]:py-2 max-sm:text-sm text-red-600 border border-red-300 rounded-[14px] hover:bg-red-50 flex items-center space-x-2"
@@ -528,7 +530,8 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                     <span className=" max-[420px]:text-xs">Delete</span>
                     <Trash2 className="w-4 h-4" />
                   </button>
-                </Permission>
+                  </Permission>
+               
                 <button
                   onClick={onClose}
                   className="px-5 py-2  max-[420px]:px-3  max-[420px]:py-2 max-sm:text-sm bg-blue-600 text-white rounded-[14px] hover:bg-blue-700"
