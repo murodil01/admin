@@ -27,7 +27,6 @@ const Login = () => {
         body: { email, password },
       });
       localStorage.setItem("token", res.data.access);
-      toast.success("Successful login!");
       navigate("/");
     } catch {
       toast.error("Login or Password is not correct!", {
