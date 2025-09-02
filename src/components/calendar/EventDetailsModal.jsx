@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { X, Edit2, Calendar, Clock, FileDown, ChevronDown } from "lucide-react";
+import {
+  X,
+  Edit2,
+  Calendar,
+  Clock,
+  FileDown,
+  ChevronDown,
+  Trash2,
+} from "lucide-react";
 import { getDepartments } from "../../api/services/departmentService";
-
+import {
+  toLocalDateInputValue,
+  fromLocalDateInputValue,
+} from "../../utils/dateUtils";
 const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState(null);
   const [availableDepartments, setAvailableDepartments] = useState([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (event) {
@@ -48,6 +60,20 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
       onEdit(editData);
       setIsEditing(false);
     }
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = () => {
+    onDelete(event.id);
+    setShowDeleteConfirm(false);
+    onClose();
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
   };
 
   const handleImageChange = (e) => {
@@ -297,7 +323,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                             };
                           })
                         }
-                        className={`p-2 border rounded-lg text-xs flex items-center space-x-2 ${
+                        className={`p-2 border rounded-lg text-xs flex items-center space-x-2  ${
                           isSelected
                             ? "border-blue-500 bg-blue-50"
                             : "border-gray-300 hover:bg-gray-50"
@@ -337,7 +363,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                       <img
                         src={dept.photo}
                         alt={`${dept.name} avatar`}
-                        className="w-6 h-6 rounded-full object-cover"
+                        className="w-6 h-6 rounded-full object-cover border border-blue-300"
                         onError={(e) => {
                           e.target.style.display = "none";
                           const fallback = document.createElement("div");
@@ -363,11 +389,11 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                 {isEditing ? (
                   <input
                     type="date"
-                    value={editData?.date.toISOString().split("T")[0] || ""}
+                    value={toLocalDateInputValue(editData?.date) || ""}
                     onChange={(e) =>
                       setEditData((prev) => ({
                         ...prev,
-                        date: new Date(e.target.value),
+                        date: fromLocalDateInputValue(e.target.value),
                       }))
                     }
                     className="w-full p-3 max-sm:text-sm border border-gray-300 rounded-[14px]"
@@ -490,14 +516,48 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                   <Edit2 className="w-4 h-4" />
                 </button>
                 <button
+                  onClick={handleDeleteClick}
+                  className="px-5 py-2 max-sm:text-sm text-red-600 border border-red-300 rounded-[14px] hover:bg-red-50 flex items-center space-x-2"
+                >
+                  <span>Delete</span>
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <button
                   onClick={onClose}
-                  className="px-5 py-2  max-sm:text-sm bg-blue-600 text-white rounded-[14px] hover:bg-blue-700"
+                  className="px-5 py-2 max-sm:text-sm bg-blue-600 text-white rounded-[14px] hover:bg-blue-700"
                 >
                   Got it
                 </button>
               </>
             )}
           </div>
+
+          {/* Delete Confirmation Modal */}
+          {showDeleteConfirm && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-40">
+              <div className="bg-white rounded-2xl p-6 max-w-sm w-full mx-4">
+                <h3 className="text-lg font-semibold mb-4">Delete Event</h3>
+                <p className="text-gray-600 mb-6">
+                  Are you sure you want to delete "{event.title}"? This action
+                  cannot be undone.
+                </p>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={handleCancelDelete}
+                    className="px-4 py-2 text-gray-700 border border-gray-300 rounded-[14px] hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmDelete}
+                    className="px-4 py-2 bg-red-600 text-white rounded-[14px] hover:bg-red-700"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

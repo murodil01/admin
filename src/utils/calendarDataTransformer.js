@@ -1,6 +1,6 @@
 // utils/calendarDataTransformer.js
 import { getDepartments } from '../api/services/departmentService';
-
+import { toApiDateString } from './dateUtils';
 // Cache for departments to avoid repeated API calls
 let departmentsCache = null;
 
@@ -130,9 +130,7 @@ export const transformFrontendEventToApi = (frontendEvent) => {
   return {
     title: frontendEvent.title,
     description: frontendEvent.description || '',
-    event_time: frontendEvent.date instanceof Date 
-      ? frontendEvent.date.toISOString() 
-      : new Date(frontendEvent.date).toISOString(),
+    event_time: toApiDateString(frontendEvent.date),
     notification_time: mapNotificationStringToMinutes(frontendEvent.notification),
     department_ids: departmentIds,
     link: frontendEvent.link || '',
