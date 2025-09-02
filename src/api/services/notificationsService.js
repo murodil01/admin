@@ -24,3 +24,8 @@ export const deleteNotifications = async (id) => {
     const res = await api.delete(endpoints.notifications.delete(id));
     return res.data;
 };
+
+export const markAllRead = async () => {
+    const res = await api.post(endpoints.notifications.markAllRead);
+    return res.data;
+}

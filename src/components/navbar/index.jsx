@@ -7,6 +7,7 @@ import AuthContext from "../../context/AuthContext.jsx";
 import Notification from "../../pages/notification";
 import { X } from "lucide-react";
 import { getNotificationsAll } from "../../api/services/notificationsService";
+import { useCallback } from "react";
 
 const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
   const { user, loading, logout, refreshAuth } = useContext(AuthContext);
@@ -93,7 +94,7 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
         }
       } catch (error) {
         console.error("Notifications fetch error:", error);
-        
+
         if (error.response?.status === 401 || error.response?.status === 403) {
           console.log("Auth error in notifications - token might be invalid");
         }
@@ -112,6 +113,33 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
       setNotificationCount(0);
     }
   }, [user, loading]);
+
+  // Navbar komponentida
+  const handleNotificationUpdate = useCallback((updatedNotifications) => {
+    // O'qilmagan notificationlarni hisoblash
+    const unreadCount = updatedNotifications.filter((notif) => {
+      if (!notif) return false;
+      
+      const isUnread =
+        notif.is_read === false ||
+        notif.read === false ||
+        !notif.is_read ||
+        !notif.read ||
+        notif.status === "unread" ||
+        notif.read_at === null ||
+        notif.read_at === undefined;
+
+      return isUnread;
+    }).length;
+
+    console.log(`Updated notification count: ${unreadCount}`);
+    setNotificationCount(unreadCount);
+  }, []);
+
+  // Notification komponentini chaqirishda
+  <Notification
+    onNotificationUpdate={handleNotificationUpdate}
+  />
 
   // User retry logic
   useEffect(() => {
@@ -446,14 +474,7 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
                 <X size={30} />
               </button>
               <Notification
-                onNotificationUpdate={() => {
-                  setTimeout(() => {
-                    if (user && user.id) {
-                      console.log("Notification updated, refreshing count...");
-                      setNotificationCount((prev) => prev);
-                    }
-                  }, 1000);
-                }}
+                onNotificationUpdate={handleNotificationUpdate}
               />
             </div>
           </div>

@@ -156,6 +156,7 @@ const endpoints = {
     update: (id) => `notifications/${id}/`,
     updateStatus: (id) => `/notifications/${id}/`,
     delete: (id) => `notifications/${id}/`,
+    markAllRead: "notifications/mark-all-read/", // Barcha bildirishnomalarni o'qilgan deb belgilash
   },
 };
 
