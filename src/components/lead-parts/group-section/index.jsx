@@ -17,7 +17,7 @@ import { BiArchiveIn } from "react-icons/bi";
 import ReactDatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { Select, Avatar } from "antd";
-import { getLeads, updateLeads, createLeads } from "../../../api/services/leadsService";
+import {updateLeads, createLeads } from "../../../api/services/leadsService";
 import { getMSalesUsers } from "../../../api/services/userService";
 import { getBoardsAll } from "../../../api/services/boardService"; 
 import { deleteLeads } from "../../../api/services/leadsService";
