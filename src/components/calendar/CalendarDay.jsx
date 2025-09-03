@@ -79,7 +79,7 @@ const CalendarDay = ({
             {/* Agar 2tadan ko'p department bo'lsa, badge ko'rsatish */}
             {currentEvent.departments.length > 2 && (
               <div
-                className="w-6 h-6 rounded-full border-2 border-white bg-blue-600 flex items-center justify-center text-white text-[10px] font-semibold"
+                className="w-6 h-6 rounded-full border-2 border-white bg-blue-500 flex items-center justify-center text-white text-[10px] font-semibold"
                 title={`+${
                   currentEvent.departments.length - 2
                 } more departments`}
