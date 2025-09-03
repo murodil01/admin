@@ -1343,8 +1343,8 @@ const Card = ({
         {/* New 3 point button */}
         <div className="absolute top-2 right-1">
           <Dropdown
-            open={dropdownOpen} // ✅ Controlled dropdown
-            onOpenChange={setDropdownOpen} // ✅ State bilan boshqarish
+            open={dropdownOpen}
+            onOpenChange={setDropdownOpen}
             menu={{
               items: [
                 {
@@ -1353,29 +1353,25 @@ const Card = ({
                     <Permission
                       anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}
                     >
-                      <span
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditCard();
-                        }}
-                      >
-                        Edit
-                      </span>
+                      <span>Edit</span>
                     </Permission>
                   ),
+                  // ✅ onClick ni menu item ichiga ko'chirish
+                  onClick: (e) => {
+                    e.domEvent.stopPropagation(); // DOM event ni to'xtatish
+                    setDropdownOpen(false); // Dropdownni yopish
+                    handleEditCard();
+                  },
                 },
                 {
                   key: "detail",
-                  label: (
-                    <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openViewModal();
-                      }}
-                    >
-                      Detail
-                    </span>
-                  ),
+                  label: <span>Detail</span>,
+                  // ✅ onClick ni menu item ichiga ko'chirish
+                  onClick: (e) => {
+                    e.domEvent.stopPropagation();
+                    setDropdownOpen(false);
+                    openViewModal();
+                  },
                 },
                 {
                   key: "move_to",
@@ -1383,7 +1379,11 @@ const Card = ({
                   children: taskColumns.map((col) => ({
                     key: col.id,
                     label: col.title,
-                    onClick: () => handleMoveToColumn(col.id),
+                    onClick: (e) => {
+                      e.domEvent.stopPropagation();
+                      setDropdownOpen(false);
+                      handleMoveToColumn(col.id);
+                    },
                   })),
                 },
                 {
@@ -1392,21 +1392,19 @@ const Card = ({
                     <Permission
                       anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}
                     >
-                      <span
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          showDeleteModal();
-                        }}
-                      >
-                        Delete
-                      </span>
+                      <span>Delete</span>
                     </Permission>
                   ),
+                  // ✅ onClick ni menu item ichiga ko'chirish
+                  onClick: (e) => {
+                    e.domEvent.stopPropagation();
+                    setDropdownOpen(false);
+                    showDeleteModal();
+                  },
                 },
               ],
             }}
             trigger={["click"]}
-            // ✅ Z-index ni modal dan past qilish
             overlayStyle={{ zIndex: 999 }}
           >
             <button
@@ -2964,7 +2962,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                   placeholder="Enter task title"
                 />
               </div>
-          
+
               {/* Type */}
               <div>
                 <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
