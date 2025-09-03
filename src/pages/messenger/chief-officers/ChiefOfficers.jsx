@@ -11,14 +11,14 @@ const ChiefOfficers = () => {
   const professionsData = useMemo(() => ({
     "GM": {
       title: "General Manager",
-      description: "The Master Coordinator of Operations.Unifies all departments under one strategy, ensuring flawless execution across the company.Balances vision with discipline, transforming plans into results and systems into momentum.The bridge between high command and frontline execution."},
+      description: "The Master Coordinator of Operations. Unifies all departments under one strategy, ensuring flawless execution across the company.Balances vision with discipline, transforming plans into results and systems into momentum.The bridge between high command and frontline execution."},
     "CMO": {
       title: "Chief Marketing Officer",
-      description: "Guardian of Growth, and Influence.Commands marketing strategy, creative direction, and public image.Designs campaigns that dominate attention, expand market reach, and forge unshakable client loyalty.The shield and spear of M Company’s influence in every arena."
+      description: "Guardian of Growth, and Influence. Commands marketing strategy, creative direction, and public image.Designs campaigns that dominate attention, expand market reach, and forge unshakable client loyalty.The shield and spear of M Company’s influence in every arena."
     },
     "CCO": {
       title: "Chief Creative Officer",
-      description: "Architect of vision, branding and storytelling.Leads design, media, and creative direction across all channels.Crafts the imagery, campaigns, and experiences that define M Company’s identity and capture the imagination of markets.",
+      description: "Architect of vision, branding and storytelling. Leads design, media, and creative direction across all channels.Crafts the imagery, campaigns, and experiences that define M Company’s identity and capture the imagination of markets.",
     },
     "CAO": {
       title: "Chief Academy Officer",
@@ -26,15 +26,15 @@ const ChiefOfficers = () => {
     },
     "CSO": {
       title: "Chief Sales Officer",
-      description: "Commander of sales and client growth.Drives market expansion, secures key partnerships, and engineers revenue dominance.Leads the Sales Agents with precision, building unshakable client trust while capturing new territories for M Company’s advance.",
+      description: "Commander of sales and client growth. Drives market expansion, secures key partnerships, and engineers revenue dominance.Leads the Sales Agents with precision, building unshakable client trust while capturing new territories for M Company’s advance.",
     },
     "CTO": {
       title: "Chief Technology Officer",
-      description: "Architect of technology and innovation at M Company.Guides the long-term technological vision, ensuring every system, platform, and product is built for scale, security, and dominance.Leads product development and IT infrastructure, while pioneering the innovations that will define the company’s future edge.",
+      description: "Architect of technology and innovation at M Company. Guides the long-term technological vision, ensuring every system, platform, and product is built for scale, security, and dominance.Leads product development and IT infrastructure, while pioneering the innovations that will define the company’s future edge.",
     },
     "CFO": {
       title: "Chief Financial Officer",
-      description: "Keeper of Capital and Strategy.Master of financial systems, investments, and risk management.Protects wealth, secures cash flow, and builds the financial architecture that ensures M Company’s long-term dominance.",
+      description: "Keeper of Capital and Strategy. Master of financial systems, investments, and risk management.Protects wealth, secures cash flow, and builds the financial architecture that ensures M Company’s long-term dominance.",
     },
     "COO": {
       title: "Chief Operating Officer",
@@ -125,7 +125,7 @@ const OfficerCard = ({ officer, professionsData }) => {
   
 
   return (
-    <div className="flex flex-col justify-between p-4 bg-white rounded-3xl shadow-md hover:shadow-xl transition duration-300 w-full max-w-[270px] mx-auto h-full">
+    <div className="flex flex-col justify-between p-4 bg-white rounded-3xl shadow-md hover:shadow-xl transition duration-300 w-full max-w-[290px] mx-auto h-full">
       <div className="flex flex-col items-center text-center">
         <img
           loading="lazy"
@@ -177,4 +177,3 @@ const OfficerCard = ({ officer, professionsData }) => {
 };
 
 export default ChiefOfficers;
-
