@@ -43,7 +43,7 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
   // Notifications ma'lumotlarini olish
   useEffect(() => {
     let isMounted = true; // To prevent state updates on unmounted component
-    
+
     const fetchNotificationStats = async () => {
       try {
         const token = localStorage.getItem("token");
@@ -86,9 +86,9 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
         }
       } catch (error) {
         console.error("Notification stats fetch error:", error);
-        
+
         if (!isMounted) return;
-        
+
         // Fallback to old method on error
         try {
           const fallbackResponse = await getNotificationsAll();
@@ -128,7 +128,7 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
     } else if (isMounted) {
       setNotificationCount(0);
     }
-    
+
     return () => {
       isMounted = false;
     };
@@ -242,44 +242,6 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
   // Notification modal handlers
   const handleNotificationClick = () => {
     setIsNotifOpen(true);
-
-    setTimeout(async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (user && user.id && token) {
-          const response = await getNotificationsStats();
-
-          let unreadCount = 0;
-          if (response?.unread_count !== undefined) {
-            unreadCount = response.unread_count;
-          } else if (response?.data?.unread_count !== undefined) {
-            unreadCount = response.data.unread_count;
-          } else if (response?.stats?.unread_count !== undefined) {
-            unreadCount = response.stats.unread_count;
-          } else {
-            // Fallback
-            const allNotificationsResponse = await getNotificationsAll();
-            let notifications = [];
-
-            if (allNotificationsResponse?.data && Array.isArray(allNotificationsResponse.data)) {
-              notifications = allNotificationsResponse.data;
-            } else if (allNotificationsResponse?.results && Array.isArray(allNotificationsResponse.results)) {
-              notifications = allNotificationsResponse.results;
-            } else if (Array.isArray(allNotificationsResponse)) {
-              notifications = allNotificationsResponse;
-            }
-
-            unreadCount = calculateUnreadCount(notifications);
-          }
-
-          // Only update if count actually changed
-          setNotificationCount(prev => prev !== unreadCount ? unreadCount : prev);
-        }
-      } catch (error) {
-        console.error("Error refreshing notification stats:", error);
-        // Don't set to 0 on error, keep current count
-      }
-    }, 100); // Increased debounce time
   };
 
   const handleNotificationClose = () => {
@@ -405,7 +367,7 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
             size={24}
             className={!user || !user.id ? "text-gray-400" : "text-gray-600"}
           />
-          {notificationCount > 0 && user && user.id && (
+          {notificationCount > 0 && user && user.id && !isNotifOpen && (
             <span className="absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center px-1">
               {notificationCount > 99 ? "99+" : notificationCount}
             </span>
