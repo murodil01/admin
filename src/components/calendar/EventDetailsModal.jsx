@@ -220,7 +220,13 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                 {isEditing ? (
                   <label className="flex items-center justify-between gap-2 max-w-60 py-2 px-3 border border-gray-300 rounded-[14px] cursor-pointer hover:bg-blue-50">
                     <span className="text-sm text-gray-800 break-all truncate">
-                      {editData?.file ? editData.file : "No file selected"}
+                      {editData?.file
+                        ? typeof editData.file === "string"
+                          ? "File selected"
+                          : editData.file.name ||
+                            editData.file.file_name ||
+                            "File selected"
+                        : "No file selected"}
                     </span>
 
                     <img
@@ -241,16 +247,28 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                 ) : displayData.file ? (
                   <a
                     // ✅ To'g'ri usul
-                    href={
-                      typeof displayData.file === "string"
-                        ? displayData.file // API dan kelgan URL
-                        : URL.createObjectURL(displayData.file) // Frontend File obyekti
-                    }
-                    download={displayData.file.title}
+                    //   href={
+                    //     typeof displayData.file === "string"
+                    //       ? displayData.file // API dan kelgan URL
+                    //       : URL.createObjectURL(displayData.file) // Frontend File obyekti
+                    //   }
+                    //   download={displayData.file.title}
+                    //   className="flex items-center px-4 py-3 max-sm:py-2 gap-2 w-full max-w-56 border border-gray-300 rounded-[14px] bg-white hover:bg-gray-100 hover:text-gray-900"
+                    // >
+                    //   <span className="truncate min-w-[150px] text-sm text-gray-800">
+                    //     {displayData.file}
+                    //   </span>
+                    //   <FileDown className="w-5 h-5 shrink-0" />
+                    // </a>
+
+                    href={displayData.file || displayData.file.downloadUrl}
+                    download={displayData.file.name}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex items-center px-4 py-3 max-sm:py-2 gap-2 w-full max-w-56 border border-gray-300 rounded-[14px] bg-white hover:bg-gray-100 hover:text-gray-900"
                   >
-                    <span className="truncate min-w-[150px] text-sm text-gray-800">
-                      {displayData.file}
+                    <span className="truncate max-w-[150px] text-sm text-gray-800">
+                      {displayData.file.name}
                     </span>
                     <FileDown className="w-5 h-5 shrink-0" />
                   </a>
@@ -521,8 +539,8 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                     <span className=" max-[420px]:text-xs">Edit</span>
                     <Edit2 className="w-4 h-4" />
                   </button>
-                   </Permission>
-                   <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+                </Permission>
+                <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
                   <button
                     onClick={handleDeleteClick}
                     className="px-5 py-2 max-[420px]:px-3  max-[420px]:py-2 max-sm:text-sm text-red-600 border border-red-300 rounded-[14px] hover:bg-red-50 flex items-center space-x-2"
@@ -530,8 +548,8 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                     <span className=" max-[420px]:text-xs">Delete</span>
                     <Trash2 className="w-4 h-4" />
                   </button>
-                  </Permission>
-               
+                </Permission>
+
                 <button
                   onClick={onClose}
                   className="px-5 py-2  max-[420px]:px-3  max-[420px]:py-2 max-sm:text-sm bg-blue-600 text-white rounded-[14px] hover:bg-blue-700"

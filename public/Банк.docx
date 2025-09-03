@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script type="module">import { injectIntoGlobalHook } from "/@react-refresh";
+injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => (type) => type;</script>
+
+    <script type="module" src="/@vite/client"></script>
+
+    <meta charset="UTF-8" />
+    <meta
+      name="description"
+      content="Ushbu sahifa foydalanuvchilar uchun Prototype loyihasining asosiy interfeysini taqdim etadi."
+    />
+    <meta name="author" content="M Company | M Tech" />
+    <meta name="theme-color" content="#0d6efd" />
+
+    <meta property="og:title" content="M Prototype" />
+    <meta
+      property="og:description"
+      content="Bu havola M Prototype platformasining rasmiy sahifasini ifodalaydi."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/src/assets/metaImg.png" />
+    <meta property="og:url" content="https://mprototype.uz" />
+
+    <link rel="icon" href="/src/assets/side_blue3.png" type="image/x-icon" />
+    <link
+      href="/src/assets/metaImg.png"
+      rel="apple-touch-icon"
+      sizes="180x180"
+    />
+
+    <!-- Font Familiy links -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prototype</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx?t=1756823630246"></script>
+  </body>
+</html>
