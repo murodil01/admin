@@ -157,10 +157,11 @@ const endpoints = {
 
   notifications: {
     getAll: "notifications/",
+    getStats: "notifications/stats/",
     getById: (id) => `notifications/${id}/`,
     create: "notifications/",
     update: (id) => `notifications/${id}/`,
-    updateStatus: (id) => `/notifications/${id}/`,
+    updateStatus: (id) => `notifications/${id}/mark-read/`,
     delete: (id) => `notifications/${id}/`,
     markAllRead: "notifications/mark-all-read/", // Barcha bildirishnomalarni o'qilgan deb belgilash
   },
