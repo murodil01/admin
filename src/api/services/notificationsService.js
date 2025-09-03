@@ -29,3 +29,20 @@ export const markAllRead = async () => {
     const res = await api.post(endpoints.notifications.markAllRead);
     return res.data;
 }
+
+export const getNotificationsStats = async () => {
+    const res = await api.get(endpoints.notifications.getStats);
+    return res.data;
+}
+
+export const getNotificationById = async (id) => {
+    const res = await api.get(endpoints.notifications.getById(id));
+    return res.data;
+};
+
+export const markNotificationAsRead = async (id) => {
+    const res = await api.post(endpoints.notifications.updateStatus(id), {
+        is_read: true
+    });
+    return res.data;
+};
