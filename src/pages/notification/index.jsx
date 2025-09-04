@@ -147,7 +147,7 @@ const NotificationDetailModal = ({ notification, isOpen, onClose, onMarkAsRead }
   );
 };
 
-const Notification = ({ onNotificationUpdate }) => {
+const Notification = ({ onNotificationUpdate, onCloseNotificationModal }) => {
   const [notifications, setNotifications] = useState([]);
   const [filteredNotifications, setFilteredNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -678,9 +678,9 @@ useEffect(() => {
                           onClick={(e) => {
                             e.stopPropagation();
 
-                            // Close modal if open
-                            if (isModalOpen) {
-                              closeModal();
+                            // Close the notification modal
+                            if (onCloseNotificationModal) {
+                              onCloseNotificationModal();
                             }
 
                             // Navigate based on notification type

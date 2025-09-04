@@ -476,6 +476,7 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
               </button>
               <Notification
                 onNotificationUpdate={handleNotificationUpdate}
+                onCloseNotificationModal={() => setIsNotifOpen(false)}
               />
             </div>
           </div>
