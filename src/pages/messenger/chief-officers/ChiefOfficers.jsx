@@ -149,9 +149,15 @@ const OfficerCard = ({ officer, professionsData }) => {
         </p>
       </div>
 
-      <div className="text-sm text-gray-700 mt-3">
-        {professionInfo.description}
-      </div>
+  <div className="text-sm text-gray-700 mt-3 space-y-1">
+  {professionInfo.description
+    .split(".")
+    .filter((sentence) => sentence.trim() !== "")
+    .map((sentence, index) => (
+      <p key={index}>{sentence.trim()}.</p>
+    ))}
+</div>
+
 
       <a
         href={
