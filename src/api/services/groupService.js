@@ -3,9 +3,29 @@ import endpoints from "../endpoint";
 
 // Barcha gruppalarni olish (boardId bilan filtrlangan)
 export const getGroups = (boardId) => {
-  return api.get(endpoints.group.getAll, {
-    params: { board: boardId }, // Agar API query params orqali boardId kutsa
-  });
+  // Agar boardId mavjud bo'lsa, query params orqali filter qiling
+  if (boardId) {
+    return api.get(`${endpoints.group.getAll}?board=${boardId}`);
+  }
+  return api.get(endpoints.group.getAll);
+};
+
+// Alternative method - agar API query params ni qo'llab-quvvatlamasa
+export const getGroupsByBoard = async (boardId) => {
+  try {
+    const response = await api.get(endpoints.group.getAll);
+    
+    // Frontend da filter qilish
+    if (boardId && response.data && Array.isArray(response.data)) {
+      const filteredGroups = response.data.filter(group => group.board === boardId);
+      return { ...response, data: filteredGroups };
+    }
+    
+    return response;
+  } catch (error) {
+    console.error("Error fetching groups:", error);
+    throw error;
+  }
 };
 
 // ID bo'yicha group olish (boardId bilan tekshirish mumkin)
