@@ -308,13 +308,13 @@ const Profile = () => {
             </div>
           )}
           {/* Add refresh button */}
-            <button
-              onClick={() => setRefreshTrigger(prev => prev + 1)}
-              className="hidden justify-center rounded-[14px] items-center gap-2 text-sm md:text-[16px] font-bold text-[#1F2937] hover:text-[#6b82a8] shadow bg-white w-[40px] md:w-[48px] h-[40px] md:h-[48px] cursor-pointer"
-              title="Refresh data"
-            >
-              <RefreshCw size={16} className="md:size-5" />
-            </button>
+          <button
+            onClick={() => setRefreshTrigger(prev => prev + 1)}
+            className="hidden justify-center rounded-[14px] items-center gap-2 text-sm md:text-[16px] font-bold text-[#1F2937] hover:text-[#6b82a8] shadow bg-white w-[40px] md:w-[48px] h-[40px] md:h-[48px] cursor-pointer"
+            title="Refresh data"
+          >
+            <RefreshCw size={16} className="md:size-5" />
+          </button>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
@@ -498,7 +498,7 @@ const Profile = () => {
                                   {employee.tg_username}
                                 </a>
                               ) : item.name === "status" && employee.status ? (
-                                  employee.status === "on_leave" ? "On Leave" : employee.status
+                                employee.status === "on_leave" ? "On Leave" : employee.status
                               ) : item.isSelect ? (
                                 item.name === 'department'
                                   ? employee.department?.name || `No ${item.label.toLowerCase()} selected`
@@ -541,8 +541,8 @@ const Profile = () => {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex-1 sm:flex-none px-3 sm:px-4 md:px-6 lg:px-[40px] xl:px-[56px] py-1 md:py-2 text-xs md:text-sm lg:text-base font-medium rounded-full transition-all duration-200 ${activeTab === tab.id
-                        ? "bg-[#0061fe] text-white shadow-sm"
-                        : "text-[#0061fe] hover:bg-gray-200"
+                      ? "bg-[#0061fe] text-white shadow-sm"
+                      : "text-[#0061fe] hover:bg-gray-200"
                       }`}
                   >
                     {tab.label}

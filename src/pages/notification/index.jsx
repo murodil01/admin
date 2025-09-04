@@ -443,6 +443,29 @@ useEffect(() => {
     setIsModalOpen(true);
   };
 
+  // This function handles the "View" button click in each notification
+  const handleViewNotification = (e, item) => {
+    e.stopPropagation();
+
+    // Close the notification modal
+    if (onCloseNotificationModal) {
+      onCloseNotificationModal();
+    }
+
+    // Navigate based on notification type
+    if (item.notification_type === "task" || item.notification_type === "task_assigned") {
+      // For task notifications, navigate to tasks/:projectID
+      // You might need to adjust this based on your data structure
+      // If the notification doesn't have project_id, you might need to fetch it or adjust your API
+      const projectId = item.get_instance_id;
+      navigate(`/tasks/${projectId}`);
+    } else if (item.notification_type === "project" || item.notification_type === "project_created" || item.notification_type === "project_assigned") {
+      navigate(`/tasks`);
+    } else if (item.notification_type === "event" || item.notification_type === "event_created" || item.notification_type === "event_updated" || item.notification_type === "event_cancelled") {
+      navigate(`/calendar`);
+    }
+  };
+
   const handleModalMarkAsRead = async (id) => {
     try {
       await markNotificationAsRead(id);
@@ -674,23 +697,7 @@ useEffect(() => {
                       {/* Right action button */}
                       <div className="flex-shrink-0">
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-
-                            // Close the notification modal
-                            if (onCloseNotificationModal) {
-                              onCloseNotificationModal();
-                            }
-
-                            // Navigate based on notification type
-                            if (item.notification_type === "task" || item.notification_type === "task_assigned") {
-                              navigate(`/tasks/${item.id}`);
-                            } else if (item.notification_type === "project" || item.notification_type === "project_created" || item.notification_type === "project_assigned") {
-                              navigate(`/tasks`);
-                            } else if (item.notification_type === "event" || item.notification_type === "event_created" || item.notification_type === "event_updated" || item.notification_type === "event_cancelled") {
-                              navigate(`/calendar`);
-                            }
-                          }}
+                          onClick={(e) => handleViewNotification(e, item)}
                           className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap min-w-[32px] sm:min-w-[auto] ${item.notification_type === "task" || item.notification_type === "task_assigned"
                             ? "bg-green-100 text-green-600 hover:bg-green-200"
                             : item.notification_type === "project" || item.notification_type === "project_created" || item.notification_type === "project_assigned"
