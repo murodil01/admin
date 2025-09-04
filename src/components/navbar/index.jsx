@@ -463,14 +463,14 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
           <div className="fixed inset-0 z-50 flex items-center justify-end bg-opacity-50">
             <div
               ref={notifRef}
-              className="bg-white rounded-l-[25px] w-[500px] max-w-[95%] p-[30px] relative transform transition-all duration-300 ease-out shadow-2xl"
+              className="bg-white rounded-l-[25px] w-[440px] max-w-[95%] p-[30px] relative transform transition-all duration-300 ease-out shadow-2xl"
               style={{
                 animation: "slideInRight 0.3s ease-out",
               }}
             >
               <button
                 onClick={handleNotificationClose}
-                className="absolute top-7 right-10 text-black transition-colors p-1"
+                className="absolute sm:top-8 right-5 top-7 text-gray-500 transition-colors p-1"
               >
                 <X size={30} />
               </button>
