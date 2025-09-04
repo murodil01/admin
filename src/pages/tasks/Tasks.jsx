@@ -733,7 +733,7 @@ const Projects = () => {
         return (
           <div className="flex flex-col gap-5 text-sm text-gray-700">
             <h1 className="text-[#0A1629] text-[22px] font-bold mb-3">
-              Project Details
+              Project info
             </h1>
             <div className="grid grid-cols-3 w-full">
               <p className="text-gray-400 font-medium">Task name</p>
