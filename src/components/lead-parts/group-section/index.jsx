@@ -627,7 +627,7 @@ const PersonDropdown = ({ value, onChange, onSave, groupId, leadId }) => {
 };
 
 // Main Table Component
-const Table = () => {
+const Table = ({ groupLeads = [], groupId, onLeadsUpdate }) => {
   const [hoveredRow, setHoveredRow] = useState(null);
   const [selectedRows, setSelectedRows] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -656,7 +656,6 @@ const Table = () => {
     group: null,
     link: ''
   });
-
   // Selection functions
   const handleSelectAll = () => {
     const totalItems = filteredTasks.length;
@@ -724,7 +723,9 @@ const Table = () => {
         }
       }
       
-      await loadLeadsFromAPI();
+      if (onLeadsUpdate) {
+        onLeadsUpdate(); // Let parent component handle the refresh
+      }
       setSelectedItems([]);
       toast.success(`${selectedItems.length} ta lead nusxalandi`);
     } catch (error) {
@@ -1091,7 +1092,9 @@ const Table = () => {
       
       console.log("New lead created successfully");
       
-      await loadLeadsFromAPI();
+      if (onLeadsUpdate) {
+        onLeadsUpdate(); // Let parent component handle the refresh
+      }
       
       // Reset the form
       setNewLeadData({
@@ -1145,9 +1148,6 @@ const Table = () => {
     }
   };
 
-  useEffect(() => {
-    loadLeadsFromAPI();
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -1163,7 +1163,7 @@ const Table = () => {
     }
   }, [openStatusDropdown]);
 
-  const displayTasks = convertApiLeadsToTasks(apiLeads);
+  const displayTasks = convertApiLeadsToTasks(groupLeads); // Use passed leads instead of apiLeads
 
   const handleDragStart = (e, index) => {
     setDraggedItem(index);

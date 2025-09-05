@@ -1,24 +1,47 @@
-// leadsService.js - Optimallashtirilgan versiya
 import api from "../base";
 import endpoints from "../endpoint";
 
-// Lead yaratish - faqat create operation kerak
+// Barcha leadlarni olish (agar groupId berilsa, shu groupga tegishlilarni oladi)
+export const getLeads = (groupId) => {
+  let url = endpoints.leads.getAll || 'board/leads/';
+  if (groupId) {
+    url += `?group=${groupId}`;
+  }
+  return api.get(url);
+};
+
+// Lead yaratish
 export const createLeads = (data) => {
   return api.post(endpoints.leads.create, data);
 };
 
-// Lead yangilash
+// Lead yangilash - optimallashtirilgan versiya
 export const updateLeads = async (leadId, data) => {
   try {
-    // normalize data
-    if (data.status && typeof data.status === "object") data.status = data.status.id ?? data.status;
-    if (data.person && typeof data.person === "object") data.person = data.person.id ?? data.person;
-
-    const url = `board/leads/${leadId}/`;
-    console.log("Updating lead:", url, data);
+    // Ma'lumotlarni normalizatsiya qilish
+    const normalizedData = { ...data };
     
-    const res = await api.patch(url, data);
-    return res.data;
+    // Status obyekt bo'lsa, id ni olish
+    if (normalizedData.status && typeof normalizedData.status === "object") {
+      normalizedData.status = normalizedData.status.id ?? normalizedData.status;
+    }
+    
+    // Person_detail obyekt bo'lsa, id ni olish
+    if (normalizedData.person_detail && typeof normalizedData.person_detail === "object") {
+      normalizedData.person_detail = normalizedData.person_detail.id ?? normalizedData.person_detail;
+    }
+    
+    // Person obyekt bo'lsa, id ni olish (agar kerak bo'lsa)
+    if (normalizedData.person && typeof normalizedData.person === "object") {
+      normalizedData.person = normalizedData.person.id ?? normalizedData.person;
+    }
+    
+    // URL ni to'g'ri tuzish - faqat leadId kerak
+    const url = `board/leads/${leadId}/`;
+    console.log("Updating lead:", url, normalizedData);
+    
+    const response = await api.patch(url, normalizedData);
+    return response.data;
   } catch (err) {
     console.error("Error updating lead:", err?.response?.status, err?.response?.data || err.message);
     throw err;
