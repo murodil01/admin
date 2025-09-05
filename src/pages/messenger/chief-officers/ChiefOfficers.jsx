@@ -125,7 +125,7 @@ const OfficerCard = ({ officer, professionsData }) => {
   
 
   return (
-    <div className="flex flex-col justify-between p-4 bg-white rounded-3xl shadow-md hover:shadow-xl transition duration-300 w-full max-w-[290px] mx-auto h-full">
+    <div className="flex flex-col justify-between p-4 bg-white rounded-3xl shadow-md hover:shadow-xl transition duration-300 w-full max-w-[300px] mx-auto h-full">
       <div className="flex flex-col items-center text-center">
         <img
           loading="lazy"

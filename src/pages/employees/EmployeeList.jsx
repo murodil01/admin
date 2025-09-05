@@ -124,14 +124,21 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
         navigate(`/profile/${validId}`);
     };
 
+    // Format phone number for tel: link
+    const formatPhoneNumber = (phone) => {
+        if (!phone) return null;
+        // Remove all non-digit characters
+        return phone.replace(/\D/g, '');
+    };
+
     return (
         <div className="bg-white border border-gray-200 rounded-lg shadow hover:shadow-md transition p-4 grid grid-cols-1 gap-3 lg:grid-cols-17 lg:items-center">
             {/* Mobile View - Top Section */}
             <div
                 onClick={(e) => {
-                        e.stopPropagation();
-                        setIsMobileModalOpen(true);
-                    }}
+                    e.stopPropagation();
+                    setIsMobileModalOpen(true);
+                }}
                 className="flex justify-between items-center lg:hidden">
                 <div className="flex items-center gap-3">
                     <img
@@ -256,9 +263,16 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
                                     <div className="flex flex-col items-start gap-4">
                                         <div>
                                             <p className="text-xs text-gray-500 mb-1">Phone Number</p>
-                                            <p className="text-sm font-medium">
-                                                {emp.phone_number || <span className="text-gray-400">-</span>}
-                                            </p>
+                                            {emp.phone_number ? (
+                                                <a
+                                                    href={`tel:${formatPhoneNumber(emp.phone_number)}`}
+                                                    className="text-sm font-medium text-blue-500 hover:text-blue-700 hover:underline"
+                                                >
+                                                    {emp.phone_number}
+                                                </a>
+                                            ) : (
+                                                <span className="text-gray-400">-</span>
+                                            )}
                                         </div>
                                         <div>
                                             <p className="text-xs text-gray-500 mb-1">Projects</p>
@@ -333,8 +347,17 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
                 {emp.department}
             </div>
 
-            <div className="hidden lg:block lg:col-span-4 text-center text-gray-600">
-                {emp.phone_number}
+            <div className="hidden lg:block lg:col-span-4 text-center">
+                {emp.phone_number ? (
+                    <a
+                        href={`tel:${formatPhoneNumber(emp.phone_number)}`}
+                        className="hover:underline"
+                    >
+                        {emp.phone_number}
+                    </a>
+                ) : (
+                    <span className="text-gray-400">-</span>
+                )}
             </div>
 
             <div className="hidden lg:block lg:col-span-2 text-center text-gray-600">
