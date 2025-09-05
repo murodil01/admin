@@ -28,11 +28,10 @@ const CategoryDetailsPage = () => {
     try {
       setDataLoading(true);
       setError(null);
-      const res = await api.get(`/library/categories/${id}/items`);
+      const res = await api.get(`/library/categories/${id}/`);
       const data = res.data;
       console.log('API Response:', data);
 
-      // Calculate category-level statistics
       const foldersCount = (data.folders || []).length;
       const totalFilesCount = (data.folders || []).reduce((sum, folder) => sum + (folder.files_count || 0), 0) +
                              (data.libraries || []).filter(lib => !lib.folder).length;
@@ -41,7 +40,7 @@ const CategoryDetailsPage = () => {
 
       setCategory({
         ...data,
-        name: data.folders?.[0]?.category?.name || 'Policies', // Fallback to 'Policies' if name is missing
+        name: data.folders?.[0]?.category?.name || 'Policies',
         created_by: data.folders?.[0]?.created_by || data.libraries?.[0]?.created_by || null,
         created_at: data.folders?.[0]?.created_at || data.libraries?.[0]?.created_at || null,
         folders_count: foldersCount,
@@ -49,17 +48,8 @@ const CategoryDetailsPage = () => {
         total_files_size: totalFilesSize
       });
 
-      const folders = (data.folders || []).map(f => ({
-        ...f,
-        type: 'folder',
-        file_count: f.files_count || 0,
-        folder_size_mb: f.total_files_size_mb || 0
-      }));
-      const files = (data.libraries || []).map(f => ({
-        ...f,
-        type: 'file'
-      }));
-
+      const folders = (data.folders || []).map(f => ({...f,type: 'folder',file_count: f.files_count || 0,folder_size_mb: f.total_files_size_mb || 0}));
+      const files = (data.libraries || []).map(f => ({...f,type: 'file'}));
       setItems([...folders, ...files]);
     } catch (err) {
       setError('Ma\'lumotlarni yuklashda xatolik yuz berdi.');
