@@ -97,6 +97,7 @@ const Projects = () => {
     }
   };
   
+  
   fetchTotalDepartments();
 }, []);
 
