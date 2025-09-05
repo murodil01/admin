@@ -1,6 +1,7 @@
-// main-lead/index.jsx - Optimallashtirilgan versiya
+// main-lead/index.jsx - To'g'ri versiya
 import { useState, useEffect, useRef } from "react";
-import GroupSection from "../group-section";
+// import GroupSection from "../group-section";
+import GroupSection from "../group-section/GroupSection.jsx";
 import { CiExport } from "react-icons/ci";
 import { BiArchiveIn } from "react-icons/bi";
 import { ArrowRight, Trash2, Copy, Plus, X, Edit, ChevronDown, ChevronRight, MoreVertical } from "lucide-react";
@@ -14,6 +15,7 @@ import {
 } from "../../../api/services/groupService";
 import { getBoards } from "../../../api/services/boardService";
 import {
+  getLeads,
   createLeads,
   updateLeads,
   deleteLeads,
@@ -23,6 +25,7 @@ const MainLead = () => {
   const { boardId } = useParams();
   const navigate = useNavigate();
   const [groups, setGroups] = useState([]);
+  const [allLeads, setAllLeads] = useState([]); // Barcha leadlar
   const [expandedGroups, setExpandedGroups] = useState({});
   const [selectedItems, setSelectedItems] = useState([]);
   const [addingGroup, setAddingGroup] = useState(false);
@@ -46,50 +49,59 @@ const MainLead = () => {
     fetchBoards();
   }, []);
 
-  // BoardId bo'yicha guruhlarni va leadlarni yuklash - OPTIMALLASHTIRILGAN
+  // Groups va Leads ni alohida yuklash
   useEffect(() => {
     if (!boardId) {
       setLoading(false);
       return;
     }
 
-    const fetchGroups = async () => {
+    const fetchGroupsAndLeads = async () => {
       setLoading(true);
       try {
-        // Faqat groups endpointidan data olish - bu yerda allaqachon leads_group mavjud
-        const res = await getGroups(boardId);
+        // 1. Avval grouplarni olish
+        const groupsRes = await getGroups(boardId);
         
-        console.log("API dan kelgan groups:", res.data);
+        // 2. Keyin barcha leadlarni olish
+        const leadsRes = await getLeads();
         
-        // Data strukturasini formatlash
-        const formatted = res.data
-          .filter(group => group.board === boardId) // Faqat kerakli board uchun
+        console.log("Groups response:", groupsRes.data);
+        console.log("Leads response:", leadsRes.data);
+        
+        // Groups ni format qilish
+        const formattedGroups = groupsRes.data
+          .filter(group => group.board === boardId)
           .map((group) => ({
             id: group.id,
             title: group.name || "Untitled Group",
-            items: group.leads_group || [], // Bu yerda allaqachon leadlar bor
             boardId: group.board
           }));
 
-        setGroups(formatted);
+        setGroups(formattedGroups);
+        setAllLeads(leadsRes.data || []);
         
         // Birinchi guruhni avtomatik ochish
-        if (formatted.length > 0) {
-          setExpandedGroups({ [formatted[0].id]: true });
+        if (formattedGroups.length > 0) {
+          setExpandedGroups({ [formattedGroups[0].id]: true });
         }
         
-        console.log("Formatted groups:", formatted);
       } catch (err) {
-        console.error("getGroups xatosi:", err);
-        toast.error("Guruhlarni yuklashda xato");
+        console.error("Ma'lumotlarni yuklashda xato:", err);
+        toast.error("Ma'lumotlarni yuklashda xato");
         setGroups([]);
+        setAllLeads([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchGroups();
+    fetchGroupsAndLeads();
   }, [boardId]);
+
+  // Guruh uchun tegishli leadlarni olish funksiyasi
+  const getLeadsForGroup = (groupId) => {
+    return allLeads.filter(lead => lead.group === groupId);
+  };
 
   // Guruh qo'shish
   const addGroup = async (title) => {
@@ -108,7 +120,6 @@ const MainLead = () => {
         { 
           id: res.data.id, 
           title: res.data.name, 
-          items: [],
           boardId: boardId 
         },
       ]);
@@ -116,9 +127,6 @@ const MainLead = () => {
     } catch (err) {
       console.error("createGroup xatosi:", err.response?.data || err);
       toast.error("Guruh yaratishda xatolik");
-      if (err.response?.status === 400 && err.response.data?.board) {
-        setShowBoardSelector(true);
-      }
     }
 
     setAddingGroup(false);
@@ -132,11 +140,11 @@ const MainLead = () => {
     try {
       await deleteGroup(groupId, boardId);
       
-      // Guruhni o'chirishdan oldin selection larni tozalash
-      setSelectedItems((prev) => prev.filter((s) => s.groupId !== groupId));
-      
       // Guruhni state dan o'chirish
       setGroups((prev) => prev.filter((g) => g.id !== groupId));
+      
+      // Guruhga tegishli leadlarni olib tashlash
+      setAllLeads((prev) => prev.filter((lead) => lead.group !== groupId));
       
       // Expanded state ni tozalash
       setExpandedGroups((prev) => {
@@ -144,6 +152,9 @@ const MainLead = () => {
         delete copy[groupId];
         return copy;
       });
+      
+      // Selection larni tozalash
+      setSelectedItems((prev) => prev.filter((s) => s.groupId !== groupId));
       
       // Menu ni yopish
       setGroupMenuOpen(prev => ({ ...prev, [groupId]: false }));
@@ -184,33 +195,31 @@ const MainLead = () => {
     }
   };
 
-  // Lead qo'shish
+  // Lead qo'shish - optimallashtirilgan
   const addItemToGroup = async (groupId, newItem) => {
     try {
       console.log("Adding new lead to group:", groupId, newItem);
       const res = await createLeads({ ...newItem, group: groupId });
       
-      setGroups((prev) =>
-        prev.map((g) =>
-          g.id === groupId ? { ...g, items: [...g.items, res.data] } : g
-        )
-      );
+      // AllLeads ga qo'shish
+      setAllLeads((prev) => [...prev, res.data]);
+      
       toast.success("Lead qo'shildi");
+      
+      // Response qaytarish (GroupSection uchun)
+      return res;
     } catch (err) {
       console.error("createLeads xatosi:", err);
       toast.error("Lead qo'shishda xato");
+      throw err;
     }
   };
 
-  // Lead yangilash
+  // Lead yangilash - to'g'rilangan versiya
   const updateItemInGroup = async (groupId, itemIndex, updatedItem) => {
-    const group = groups.find((g) => g.id === groupId);
-    if (!group) {
-      toast.error("Group topilmadi!");
-      return;
-    }
-
-    const oldItem = group.items[itemIndex];
+    const groupLeads = getLeadsForGroup(groupId);
+    const oldItem = groupLeads[itemIndex];
+    
     if (!oldItem) {
       toast.error("Lead topilmadi!");
       return;
@@ -218,54 +227,35 @@ const MainLead = () => {
 
     const leadId = oldItem.id;
 
-    // Optimistic update
-    setGroups((prev) =>
-      prev.map((g) =>
-        g.id === groupId
-          ? {
-              ...g,
-              items: g.items.map((item, idx) =>
-                idx === itemIndex ? { ...item, ...updatedItem } : item
-              ),
-            }
-          : g
+    // Optimistic update - allLeads ni yangilash
+    setAllLeads((prev) =>
+      prev.map((lead) =>
+        lead.id === leadId ? { ...lead, ...updatedItem } : lead
       )
     );
 
     try {
       console.log("Updating lead:", leadId, updatedItem);
+      
+      // updateLeads ni to'g'ri ishlatish - faqat leadId va data
       const res = await updateLeads(leadId, updatedItem);
 
       // Server javobini yangilash
-      setGroups((prev) =>
-        prev.map((g) =>
-          g.id === groupId
-            ? {
-                ...g,
-                items: g.items.map((item, idx) =>
-                  idx === itemIndex ? res.data : item
-                ),
-              }
-            : g
+      setAllLeads((prev) =>
+        prev.map((lead) =>
+          lead.id === leadId ? { ...lead, ...res } : lead
         )
       );
 
-      toast.success("Lead yangilandi");
+      console.log("Lead yangilandi");
     } catch (err) {
       console.error("updateLeads xatosi:", err.response?.data || err);
       toast.error("Lead yangilashda xato");
       
       // Rollback qilish
-      setGroups((prev) =>
-        prev.map((g) =>
-          g.id === groupId
-            ? {
-                ...g,
-                items: g.items.map((item, idx) =>
-                  idx === itemIndex ? oldItem : item
-                ),
-              }
-            : g
+      setAllLeads((prev) =>
+        prev.map((lead) =>
+          lead.id === leadId ? oldItem : lead
         )
       );
     }
@@ -273,22 +263,16 @@ const MainLead = () => {
 
   // Lead o'chirish
   const deleteItemFromGroup = async (groupId, itemIndex) => {
-    const group = groups.find((g) => g.id === groupId);
-    if (!group) return;
-
-    const item = group.items[itemIndex];
+    const groupLeads = getLeadsForGroup(groupId);
+    const item = groupLeads[itemIndex];
+    
     if (!item) return;
 
     try {
       await deleteLeads(item.group, item.id);
       
-      setGroups((prev) =>
-        prev.map((g) =>
-          g.id === groupId
-            ? { ...g, items: g.items.filter((_, idx) => idx !== itemIndex) }
-            : g
-        )
-      );
+      // AllLeads dan o'chirish
+      setAllLeads((prev) => prev.filter((lead) => lead.id !== item.id));
       
       // Selection dan o'chirish
       setSelectedItems((prev) =>
@@ -358,9 +342,9 @@ const MainLead = () => {
 
   const handleDuplicateSelected = () => {
     selectedItems.forEach(({ groupId, itemIndex }) => {
-      const group = groups.find((g) => g.id === groupId);
-      if (group) {
-        const item = group.items[itemIndex];
+      const groupLeads = getLeadsForGroup(groupId);
+      const item = groupLeads[itemIndex];
+      if (item) {
         addItemToGroup(groupId, { ...item, name: `${item.name} copy` });
       }
     });
@@ -370,8 +354,8 @@ const MainLead = () => {
   const handleExportSelected = () => {
     const data = selectedItems
       .map(({ groupId, itemIndex }) => {
-        const group = groups.find((g) => g.id === groupId);
-        return group ? group.items[itemIndex] : null;
+        const groupLeads = getLeadsForGroup(groupId);
+        return groupLeads[itemIndex] || null;
       })
       .filter(Boolean);
     console.log("Exported data:", data);
@@ -471,7 +455,9 @@ const MainLead = () => {
 
             const groupId = group.id;
             const groupTitle = String(group.title || "Untitled Group");
-            const groupItems = Array.isArray(group.items) ? group.items : [];
+            const groupLeads = getLeadsForGroup(groupId);
+
+            console.log(`Group ${groupTitle} (${groupId}) has ${groupLeads.length} leads:`, groupLeads);
 
             return (
               <div key={groupId} className="bg-white rounded-lg shadow-sm">
@@ -500,7 +486,7 @@ const MainLead = () => {
                     )}
                     
                     <span className="text-sm text-gray-500 ml-2">
-                      ({groupItems.length} items)
+                      ({groupLeads.length} items)
                     </span>
                   </div>
 
@@ -536,9 +522,9 @@ const MainLead = () => {
                 {expandedGroups[groupId] && (
                   <div className="p-4">
                     <GroupSection
-                      key={`group-${groupId}-${groupItems.length}`}
+                      key={`group-${groupId}-${groupLeads.length}`}
                       id={groupId}
-                      items={groupItems}
+                      items={groupLeads}
                       title={groupTitle}
                       expanded={true}
                       onToggleExpanded={() => {}}
