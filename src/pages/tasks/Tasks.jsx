@@ -736,21 +736,21 @@ const Projects = () => {
               Project info
             </h1>
             <div className="grid grid-cols-3 w-full">
-              <p className="text-gray-400 font-medium">Task name</p>
+              <p className="text-gray-400 font-medium">Project name</p>
               <p className="text-gray-900 font-medium col-span-2">
                 {selectedTask.name}
               </p>
             </div>
 
             <div className="grid grid-cols-3 w-full">
-              <p className="text-gray-400 font-medium">Task Creation Date</p>
+              <p className="text-gray-400 font-medium">Project Creation Date</p>
               <p className="text-gray-900 font-medium col-span-2">
                 {formatDate(selectedTask.created_at)}
               </p>
             </div>
 
             <div className="grid grid-cols-3 w-full">
-              <p className="text-gray-400 font-medium">Task's deadline</p>
+              <p className="text-gray-400 font-medium">Project's deadline</p>
               <p className="text-gray-900 font-medium col-span-2">
                 {selectedTask.deadline
                   ? formatDate(selectedTask.deadline)
