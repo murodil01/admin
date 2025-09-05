@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { message } from "antd";
 import { Archive, MoreVertical, Paperclip, Search } from "lucide-react";
-import { Modal, Input, Dropdown } from "antd";
+import { Modal, Input, Dropdown, Pagination } from "antd";
 import pencil from "../../assets/icons/pencil.svg";
 import info from "../../assets/icons/info.svg";
 import trash from "../../assets/icons/trash.svg";
@@ -20,7 +20,6 @@ import { useSidebar } from "../../context";
 import { Permission } from "../../components/Permissions";
 import { useAuth } from "../../hooks/useAuth";
 import { ROLES } from "../../components/constants/roles";
-
 
 const Projects = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -43,7 +42,12 @@ const Projects = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const [filteredUsers, setFilteredUsers] = useState([]);
-  const [projects, setProjects] = useState([]);
+  const [projectsData, setProjectsData] = useState({
+    results: [],
+    count: 0,
+    next: null,
+    previous: null,
+  });
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
@@ -55,7 +59,9 @@ const Projects = () => {
   const [allDepartmentsSelected, setAllDepartmentsSelected] = useState(false);
   const [totalDepartmentsCount, setTotalDepartmentsCount] = useState(0);
   const [deptModalFilteredUsers, setDeptModalFilteredUsers] = useState([]);
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
+   
   const filteredUsersBySearch = useMemo(() => {
     if (!searchTerm.trim()) return deptModalFilteredUsers;
 
@@ -76,12 +82,24 @@ const Projects = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // const justifyClass =
-  //   collapsed && !isSmallScreen ? "justify-start" : "justify-start";
-
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+
+  const fetchTotalDepartments = async () => {
+    try {
+      const response = await getDepartments();
+      setTotalDepartmentsCount(response.length);
+      console.log('Total departments from API:', response.length);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      setTotalDepartmentsCount(4);
+    }
+  };
+  
+  fetchTotalDepartments();
+}, []);
+
     const fetchTotalDepartments = async () => {
       try {
         const response = await getDepartments();
@@ -97,24 +115,15 @@ const Projects = () => {
     fetchTotalDepartments();
   }, []);
 
+
   useEffect(() => {
-    loadProjects();
-    loadUsers();
+    const fetchInitialData = async () => {
+      await loadProjects(1);
+      await loadUsers();
+      setDataLoading(false);
+    };
+    fetchInitialData();
   }, []);
-
-  // useEffect(() => {
-  //   const fetchDepartmentsCount = async () => {
-  //     try {
-  //       const response = await getDepartments(); 
-  //       setTotalDepartmentsCount(response.length);
-  //     } catch (error) {
-  //       console.error("Error fetching departments count:", error);
-  //     }
-  //   };
-
-  //   fetchDepartmentsCount();
-  // }, []);
-
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -211,23 +220,29 @@ const Projects = () => {
     }
   }, [modalType, selectedTask, allUsers, filteredUsers]);
 
-  const loadProjects = async () => {
-    try {
-      const data = await getProjects();
-      setProjects(data.results);
-    } catch (error) {
-      console.error("Error fetching projects:", error);
-    } finally {
-      setLoading(false);
+  const loadProjects = async (page = 1) => {
+  setLoading(true);
+  try {
+    console.log(`Loading page ${page} with pageSize ${pageSize}`);
+    const data = await getProjects(page, pageSize);
+    console.log("Received data:", data);
+    
+    // Make sure we're getting the expected number of results
+    if (data.results && data.results.length > 0) {
+      setProjectsData(data);
+      setCurrentPage(page);
+    } else if (page > 1) {
+      // If we requested a page with no results, go back to previous page
+      await loadProjects(page - 1);
     }
-  };
-
-  useEffect(() => {
-    loadProjects();
-    loadUsers();
-  }, []);
-
-  if (loading)
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    message.error("Loyihalarni yuklashda xatolik");
+  } finally {
+    setLoading(false);
+  }
+};
+  if (isLoading)
     return (
       <div className="flex justify-center items-center h-[100vh]">
         <span className="loader"></span>
@@ -370,6 +385,18 @@ const Projects = () => {
   };
 
   const handleAddTask = async () => {
+    
+ await createProject(formData);
+    message.success("✅ Task created successfully");
+    
+    // Agar joriy sahifa to'lib ketgan bo'lsa, oxirgi sahifaga o'tish
+    const totalPages = Math.ceil((projectsData.count + 1) / pageSize);
+    if (currentPage < totalPages) {
+        await loadProjects(currentPage);
+    } else {
+        await loadProjects(totalPages);
+    }
+    handleAddClose();
     if (!taskName.trim()) {
       return message.error("Task name kiritilishi kerak!");
     }
@@ -377,7 +404,6 @@ const Projects = () => {
     if (selectedDepartments.length === 0) {
       return message.error("Kamida bitta department tanlang!");
     }
-
     try {
       const formData = new FormData();
       formData.append("name", taskName);
@@ -413,7 +439,7 @@ const Projects = () => {
       await createProject(formData);
       message.success("✅ Task created successfully");
 
-      await loadProjects();
+      await loadProjects(currentPage); // joriy sahifani yangilash
       handleAddClose();
     } catch (error) {
       console.error("❌ Task yaratishda xatolik:", error);
@@ -466,7 +492,7 @@ const Projects = () => {
       await updateProject(selectedTask.id, formData);
       message.success("✅ Task updated successfully");
 
-      await loadProjects();
+      await loadProjects(currentPage); // joriy sahifani yangilash
       handleActionClose();
     } catch (error) {
       console.error("❌ Task yangilashda xatolik:", error);
@@ -479,7 +505,7 @@ const Projects = () => {
       await deleteProject(selectedTask.id);
       message.success("✅ Task deleted successfully");
 
-      await loadProjects();
+      await loadProjects(currentPage); // joriy sahifani yangilash
       handleActionClose();
     } catch (error) {
       console.error("❌ Task o'chirishda xatolik:", error);
@@ -938,8 +964,9 @@ const Projects = () => {
         </Permission>
       </div>
       {/* Tasks Grid - Responsive Grid Layout */}
+   
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2">
-        {projects.map((project) => (
+        {projectsData.results.map((project) => (
           <div
             key={project.id}
             className=" border-2 border-[#EFEFEF] rounded-[14px] p-3 bg-white relative group flex flex-col gap-3 cursor-pointer hover:shadow-lg transition-shadow duration-200"
@@ -982,6 +1009,96 @@ const Projects = () => {
             </button>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1 flex-1 min-w-0">
+                <div className="flex items-center relative w-auto h-8 flex-shrink-0">                   
+          
+
+{project.departments?.length > 0 ? (
+  <div className="flex items-center -space-x-2">
+    {(() => {
+      const totalDepts = project.departments.length;
+      
+      let isAllDepartments = false;
+      
+      if (allDepartments && allDepartments.length > 0) {
+        const isAllSelected = totalDepts === allDepartments.length;
+        isAllDepartments = isAllSelected;
+      } else {
+        const isAllByCount = totalDepts === totalDepartmentsCount && totalDepartmentsCount > 0;
+        const hasAllFlag = project.isAllDepartments === true || 
+                          project.allSelected === true ||
+                          project.selectAll === true;
+        isAllDepartments = isAllByCount || hasAllFlag;
+      }
+      
+      if (isAllDepartments) {
+        return (
+          <div className="relative">
+            <img
+              src={allDepartmentsIcon}
+              alt="All Departments"
+              className="w-7 h-7 rounded-full border-2 border-white shadow-sm object-cover"
+              onError={(e) => {
+                console.log('Image load failed, using fallback');
+                const fallbackDiv = document.createElement('div');
+                fallbackDiv.className = 'w-7 h-7 border-2 border-white rounded-full bg-blue-500 flex items-center justify-center shadow-sm text-white font-bold text-sm';
+                fallbackDiv.innerHTML = 'M';
+                e.target.parentNode.replaceChild(fallbackDiv, e.target);
+              }}
+            />
+          </div>
+        );
+      } else {
+        const maxVisible = 2;
+        const visibleDepts = project.departments.slice(0, maxVisible);
+        const remainingCount = totalDepts - maxVisible;
+        
+        return (
+          <div className="flex items-center w-auto">
+            {visibleDepts.map((dept, index) => (
+              <div
+                key={dept.id}
+                className="relative w-[25px] flex items-center"
+                style={{
+                  marginLeft: index > 0 ? '-8px' : '0',
+                }}
+              >
+                {dept.photo ? (
+                  <img
+                    src={dept.photo}
+                    alt={`Department ${dept.name || dept.id}`}
+                    className="w-7 h-7 border-2 border-white rounded-full object-cover hover:opacity-80 transition cursor-pointer shadow-sm"
+                  />
+                ) : (
+                  <div className="w-7 h-7 bg-gray-200 border-2 border-white rounded-full flex items-center justify-center shadow-sm">
+                    <span className="text-xs font-medium">
+                      {dept.name ? dept.name.charAt(0).toUpperCase() : 'D'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            ))}
+            {remainingCount > 0 && (
+              <div
+                className="relative flex items-center bg-blue-100 border-2 border-white rounded-full w-7 h-7 shadow-sm"
+                style={{
+                  marginLeft: '-8px',
+                  zIndex: 0
+                }}
+              >
+                <span className="text-xs font-medium text-blue-600 w-full text-center">
+                  +{remainingCount}
+                </span>
+              </div>
+            )}
+          </div>
+        );
+      }
+    })()}
+  </div>
+) : (
+  <span className="text-gray-400">-</span>
+)}
+=======
                 <div className="flex items-center relative w-auto h-8 flex-shrink-0">
 
 
@@ -1134,7 +1251,23 @@ const Projects = () => {
           </div>
         ))}
       </div>
-
+      {projectsData.count > pageSize && (
+  <div className="flex justify-center mt-10 mb-10">
+    <Pagination
+      current={currentPage}
+      pageSize={pageSize}
+      total={projectsData.count}
+      onChange={(page) => {
+        console.log("Changing to page:", page);
+        setCurrentPage(page);
+        loadProjects(page);
+      }}
+      showSizeChanger={false}
+      showQuickJumper={false}
+      className="custom-pagination"
+    />
+  </div>
+)}
       {/* Add Task Modal */}
       <Modal
         open={isAddModalOpen}
@@ -1229,7 +1362,7 @@ const Projects = () => {
                     </div>
                   </div>
                 </div>
-              )}
+                )}
             </div>
 
             {/* Department */}
@@ -1386,8 +1519,7 @@ const Projects = () => {
                       {searchTerm && (
                         <button
                           onClick={() => setSearchTerm('')}
-                          className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                        >
+                          className="absolute inset-y-0 right-0 pr-3 flex items">
                           <svg className="w-4 h-4 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
@@ -1403,9 +1535,6 @@ const Projects = () => {
                       ? "Deselect All Users"
                       : "Select All Users"}
                   </button>
-
-
-
                 </div>
                 <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-[14px] p-4">
                   <div className="grid grid-cols-1 gap-3">
@@ -1481,7 +1610,7 @@ const Projects = () => {
         className="custom-modal"
         style={modalType === "edit" ? { top: 0 } : {}}>
         {renderModalContent()}
-      </Modal>
+      </Modal>   
     </div>
   );
 };
