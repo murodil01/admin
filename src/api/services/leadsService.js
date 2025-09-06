@@ -18,32 +18,32 @@ export const createLeads = (data) => {
 // Lead yangilash - optimallashtirilgan versiya
 export const updateLeads = async (leadId, data) => {
   try {
-    // Ma'lumotlarni normalizatsiya qilish
     const normalizedData = { ...data };
     
-    // Status obyekt bo'lsa, id ni olish
-    if (normalizedData.status && typeof normalizedData.status === "object") {
-      normalizedData.status = normalizedData.status.id ?? normalizedData.status;
+    // Status uchun aniq konvertatsiya
+    if (normalizedData.status !== undefined && normalizedData.status !== null) {
+      if (typeof normalizedData.status === "object") {
+        // Agar obyekt bo'lsa, id ni string sifatida olish
+        normalizedData.status = normalizedData.status.id ? String(normalizedData.status.id) : null;
+      } else {
+        // Agar string bo'lsa, string sifatida qoldirish
+        normalizedData.status = String(normalizedData.status);
+      }
     }
     
-    // Person_detail obyekt bo'lsa, id ni olish
+    // Person_detail uchun ham xuddi shunday
     if (normalizedData.person_detail && typeof normalizedData.person_detail === "object") {
-      normalizedData.person_detail = normalizedData.person_detail.id ?? normalizedData.person_detail;
+      normalizedData.person_detail = normalizedData.person_detail.id ? String(normalizedData.person_detail.id) : null;
     }
     
-    // Person obyekt bo'lsa, id ni olish (agar kerak bo'lsa)
-    if (normalizedData.person && typeof normalizedData.person === "object") {
-      normalizedData.person = normalizedData.person.id ?? normalizedData.person;
-    }
-    
-    // URL ni to'g'ri tuzish - faqat leadId kerak
     const url = `board/leads/${leadId}/`;
-    console.log("Updating lead:", url, normalizedData);
+    console.log("📤 Sending to backend:", url, JSON.stringify(normalizedData, null, 2));
     
     const response = await api.patch(url, normalizedData);
+    console.log("✅ Backend response:", response.data);
     return response.data;
   } catch (err) {
-    console.error("Error updating lead:", err?.response?.status, err?.response?.data || err.message);
+    console.error("❌ Error updating lead:", err?.response?.status, err?.response?.data || err.message);
     throw err;
   }
 };

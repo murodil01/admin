@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import {X} from "lucide-react";
+import { X } from "lucide-react";
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { getLeads, updateLeads } from "../../../api/services/leadsService";
@@ -234,7 +234,14 @@ const GroupSection = ({
         phone: item.phone || null,
         link: item.link || null,
         person_detail: item.person_detail || null,
-        status: item.status || { name: "No Status", color: "" },
+        // Status ni to'g'ri formatlash
+        status: item.status
+          ? {
+              id: item.status.id || item.status,
+              name: item.status.name || "Unknown Status",
+              color: item.status.color || "#808080",
+            }
+          : null,
         notes: item.notes || "",
         potential_value: item.potential_value || 0,
         group: item.group || id,
@@ -250,7 +257,7 @@ const GroupSection = ({
         order: item.order || 1,
         updated_at: item.updated_at,
       }));
-      
+
       console.log("Formatted items for group", id, ":", formattedItems);
       setLocalItems(formattedItems);
     }
@@ -273,15 +280,23 @@ const GroupSection = ({
     if (!editingCell) return;
     const { row, field } = editingCell;
     const item = localItems[row];
-    
+
     if (!item) {
       console.error("Item not found at row:", row);
       return;
     }
 
+    // STATUS uchun maxsus ishlov berish
+    if (field === "status") {
+      // Status uchun StatusDropdown o'zi backend ga so'rov yuboradi
+      // Shu sababli bu yerda hech narsa qilmaslik kerak
+      cancelEditCell();
+      return;
+    }
+
     let val = item[field];
-    
-    // Field type bo'yicha validatsiya
+
+    // Qolgan fieldlar uchun ishlov berish
     if (typeof val === "string") val = val.trim();
     if (val === "" && field !== "notes") val = null;
 
@@ -303,20 +318,27 @@ const GroupSection = ({
     try {
       // Backend ga so'rov yuborish
       await updateLeads(item.id, updateData);
-      
+
       // Local state ni yangilash
-      setLocalItems(prev => 
-        prev.map(prevItem => 
-          prevItem.id === item.id 
+      setLocalItems((prev) =>
+        prev.map((prevItem) =>
+          prevItem.id === item.id
             ? { ...prevItem, ...updateData, [field]: val }
             : prevItem
         )
       );
 
       // Parent component ga xabar berish
-      const updatedItem = { ...item, ...updateData, [field]: val };
-      updateItem(id, row, updatedItem);
-      
+      const changeSet = {};
+      if (field === "timeline") {
+        changeSet.timeline_start = val?.start || null;
+        changeSet.timeline_end = val?.end || null;
+      } else {
+        changeSet[field] = val;
+      }
+
+      updateItem(id, row, changeSet);
+
       console.log("Lead updated successfully");
     } catch (err) {
       console.error(`Failed to update ${field}:`, err);
@@ -333,7 +355,7 @@ const GroupSection = ({
       phone: null,
       link: null,
       person_detail: null,
-      status: null,
+      status: undefined,
       notes: "",
       potential_value: 0,
       timeline_start: null,
@@ -346,7 +368,7 @@ const GroupSection = ({
     try {
       // Backend ga yangi lead yaratish
       const response = await addItem(id, newItem);
-      
+
       // Local state ga qo'shish - response qaytishi kerak
       if (response && response.data) {
         const createdItem = {
@@ -354,11 +376,11 @@ const GroupSection = ({
           timeline: {
             start: response.data.timeline_start,
             end: response.data.timeline_end,
-          }
+          },
         };
-        setLocalItems(prev => [...prev, createdItem]);
+        setLocalItems((prev) => [...prev, createdItem]);
       }
-      
+
       setNewItemName("");
       setAddingItem(false);
       console.log("New lead created successfully");
@@ -496,9 +518,7 @@ const GroupSection = ({
                 {localItems.map((item, itemIndex) => (
                   <tr
                     key={item.id}
-                    className={
-                      itemIndex % 2 === 0 ? "bg-gray-50" : ""
-                    }
+                    className={itemIndex % 2 === 0 ? "bg-gray-50" : ""}
                   >
                     <td
                       className="border border-gray-300 text-center p-2"
@@ -528,6 +548,7 @@ const GroupSection = ({
                               boardId={boardId}
                               value={item.status}
                               onChange={(val) => {
+                                // FAQAT local state ni yangilash, backend ga yuborish StatusDropdown da amalga oshiriladi
                                 setLocalItems((prev) => {
                                   const copy = [...prev];
                                   copy[itemIndex] = {
@@ -537,7 +558,10 @@ const GroupSection = ({
                                   return copy;
                                 });
                               }}
-                              onSave={saveEditCell}
+                              onSave={() => {
+                                // Edit rejimini tugatish
+                                cancelEditCell();
+                              }}
                               onCancel={cancelEditCell}
                             />
                           ) : (
@@ -546,14 +570,26 @@ const GroupSection = ({
                               style={{ minHeight: "36px" }}
                               onClick={() => startEditCell(itemIndex, col.key)}
                             >
-                              {item.status?.name || "No Status"}
+                              <div className="flex items-center gap-2">
+                                {item.status?.color && (
+                                  <div
+                                    className="w-3 h-3 rounded-full"
+                                    style={{
+                                      backgroundColor: item.status.color,
+                                    }}
+                                  />
+                                )}
+                                <span>{item.status?.name || "No Status"}</span>
+                              </div>
                             </div>
                           )
                         ) : col.key === "timeline" ? (
                           editingCell?.row === itemIndex &&
                           editingCell?.field === col.key ? (
                             <DateRangePickerCell
-                              value={item.timeline || { start: null, end: null }}
+                              value={
+                                item.timeline || { start: null, end: null }
+                              }
                               onChange={(val) => {
                                 setLocalItems((prev) => {
                                   const copy = [...prev];
@@ -573,8 +609,10 @@ const GroupSection = ({
                               style={{ minHeight: "36px" }}
                               onClick={() => startEditCell(itemIndex, col.key)}
                             >
-                              {item.timeline?.start || item.timeline?.end 
-                                ? `${item.timeline.start || ''} - ${item.timeline.end || ''}` 
+                              {item.timeline?.start || item.timeline?.end
+                                ? `${item.timeline.start || ""} - ${
+                                    item.timeline.end || ""
+                                  }`
                                 : "Set Timeline"}
                             </div>
                           )
@@ -587,7 +625,8 @@ const GroupSection = ({
                               value={item[col.key] || ""}
                               onChange={(e) => {
                                 const value = e.target.value;
-                                const newVal = value === "" ? 0 : parseInt(value, 10) || 0;
+                                const newVal =
+                                  value === "" ? 0 : parseInt(value, 10) || 0;
                                 setLocalItems((prev) => {
                                   const copy = [...prev];
                                   copy[itemIndex] = {
@@ -668,40 +707,38 @@ const GroupSection = ({
                               {item[col.key]?.name || "Select Owner"}
                             </div>
                           )
-                        ) : (
-                          // Boshqa fieldlar uchun oddiy input
-                          editingCell?.row === itemIndex &&
+                        ) : // Boshqa fieldlar uchun oddiy input
+                        editingCell?.row === itemIndex &&
                           editingCell?.field === col.key ? (
-                            <input
-                              autoFocus
-                              value={item[col.key] || ""}
-                              onChange={(e) => {
-                                setLocalItems((prev) => {
-                                  const copy = [...prev];
-                                  copy[itemIndex] = {
-                                    ...copy[itemIndex],
-                                    [col.key]: e.target.value,
-                                  };
-                                  return copy;
-                                });
-                              }}
-                              onBlur={saveEditCell}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") saveEditCell();
-                                if (e.key === "Escape") cancelEditCell();
-                              }}
-                              className="w-full text-center focus:outline-none bg-transparent px-2 py-1"
-                              placeholder={col.label}
-                            />
-                          ) : (
-                            <div
-                              className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-100"
-                              style={{ minHeight: "36px" }}
-                              onClick={() => startEditCell(itemIndex, col.key)}
-                            >
-                              {item[col.key] || `Add ${col.label}`}
-                            </div>
-                          )
+                          <input
+                            autoFocus
+                            value={item[col.key] || ""}
+                            onChange={(e) => {
+                              setLocalItems((prev) => {
+                                const copy = [...prev];
+                                copy[itemIndex] = {
+                                  ...copy[itemIndex],
+                                  [col.key]: e.target.value,
+                                };
+                                return copy;
+                              });
+                            }}
+                            onBlur={saveEditCell}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") saveEditCell();
+                              if (e.key === "Escape") cancelEditCell();
+                            }}
+                            className="w-full text-center focus:outline-none bg-transparent px-2 py-1"
+                            placeholder={col.label}
+                          />
+                        ) : (
+                          <div
+                            className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-100"
+                            style={{ minHeight: "36px" }}
+                            onClick={() => startEditCell(itemIndex, col.key)}
+                          >
+                            {item[col.key] || `Add ${col.label}`}
+                          </div>
                         )}
                       </td>
                     ))}
@@ -779,13 +816,6 @@ const GroupSection = ({
 };
 
 export default GroupSection;
-
-
-
-
-
-
-
 
 // import { useState, useEffect, useRef } from "react";
 // import {X} from "lucide-react";
