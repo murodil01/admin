@@ -1,4 +1,4 @@
-// StatusDropdown.jsx - Updated version
+// StatusDropdown.jsx - To'g'rilangan versiya
 import { useState, useEffect, useRef } from "react";
 import { Trash2, Plus, X } from "lucide-react";
 import api from "../../../../api/base";
@@ -48,7 +48,7 @@ const StatusDropdown = ({
       try {
         setLoading(true);
         const response = await api.get(`/board/status/${boardId}/`);
-        
+
         if (response.data && Array.isArray(response.data)) {
           setStatusOptions(response.data);
         } else {
@@ -71,48 +71,72 @@ const StatusDropdown = ({
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false);
       }
-      if (modalRef.current && !modalRef.current.contains(event.target) && showAddModal) {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target) &&
+        showAddModal
+      ) {
         setShowAddModal(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showAddModal]);
 
+  // TO'G'RILANGAN handleStatusSelect funksiyasi
   const handleStatusSelect = async (status) => {
     try {
-      // Update local state
-      onChange(status);
-      
-      // Update lead status in backend if itemId exists
+      // Avval backend ga so'rov yuborish
       if (itemId) {
-        await updateLeads(itemId, { status: status.id });
+        const statusId = status ? String(status.id) : null;
+        console.log("🔤 Updating status to:", statusId);
+
+        // Backend ga so'rov
+        await updateLeads(itemId, { status: statusId });
+
+        console.log("✅ Status successfully updated in backend");
       }
-      
+
+      // Backend muvaffaqiyatli bo'lgandan keyin local state ni yangilash
+      onChange(status);
       setIsDropdownOpen(false);
-      onSave();
+
+      // Parent component ga xabar berish
+      if (onSave) {
+        onSave();
+      }
     } catch (err) {
-      console.error("Failed to update lead status:", err);
+      console.error("❌ Failed to update lead status:", err);
+      // Xatolik bo'lsa dropdown ni yopmaslik va holatni o'zgartirmaslik
+      alert("Status o'zgartirishda xatolik yuz berdi");
     }
   };
 
   const handleDeleteStatus = async (statusId, event) => {
     event.stopPropagation();
-    
-    const confirmDelete = window.confirm("Are you sure you want to delete this status?");
+
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this status?"
+    );
     if (!confirmDelete) return;
 
     try {
       await api.delete(`/board/status/${statusId}/`);
-      
+
       // Remove from local state
-      setStatusOptions(prev => prev.filter(status => status.id !== statusId));
-      
+      setStatusOptions((prev) =>
+        prev.filter((status) => status.id !== statusId)
+      );
+
       // If current selected status is being deleted, reset to null
       if (value?.id === statusId) {
+        // Backend ga ham null yuborish
+        if (itemId) {
+          await updateLeads(itemId, { status: null });
+        }
         onChange(null);
       }
     } catch (err) {
@@ -127,12 +151,12 @@ const StatusDropdown = ({
     try {
       const response = await api.post(`/board/status/${boardId}/`, {
         name: newStatusName.trim(),
-        color: selectedColor
+        color: selectedColor,
       });
 
       // Add to local state
-      setStatusOptions(prev => [...prev, response.data]);
-      
+      setStatusOptions((prev) => [...prev, response.data]);
+
       // Reset form
       setNewStatusName("");
       setSelectedColor("#008000");
@@ -160,7 +184,7 @@ const StatusDropdown = ({
         >
           <div className="flex items-center gap-2">
             {value?.color && (
-              <div 
+              <div
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: value.color }}
               />
@@ -187,7 +211,7 @@ const StatusDropdown = ({
                 onClick={() => handleStatusSelect(status)}
               >
                 <div className="flex items-center gap-2">
-                  <div 
+                  <div
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: status.color }}
                   />
@@ -219,7 +243,10 @@ const StatusDropdown = ({
       {/* Add Status Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
-          <div className="bg-white rounded-lg p-6 w-96 max-w-[90vw]" ref={modalRef}>
+          <div
+            className="bg-white rounded-lg p-6 w-96 max-w-[90vw]"
+            ref={modalRef}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Add New Status</h3>
               <button
@@ -254,9 +281,9 @@ const StatusDropdown = ({
                     <button
                       key={color}
                       className={`w-10 h-10 rounded-md border-2 ${
-                        selectedColor === color 
-                          ? 'border-gray-800 shadow-md' 
-                          : 'border-gray-300 hover:border-gray-400'
+                        selectedColor === color
+                          ? "border-gray-800 shadow-md"
+                          : "border-gray-300 hover:border-gray-400"
                       }`}
                       style={{ backgroundColor: color }}
                       onClick={() => setSelectedColor(color)}
