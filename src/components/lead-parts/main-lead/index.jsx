@@ -1,11 +1,8 @@
-// main-lead/index.jsx - To'g'ri versiya
 import { useState, useEffect, useRef } from "react";
 // import GroupSection from "../group-section";
 import GroupSection from "../group-section/GroupSection.jsx";
-import { CiExport } from "react-icons/ci";
 import { BiArchiveIn } from "react-icons/bi";
 import {
-  ArrowRight,
   Trash2,
   Copy,
   Plus,
@@ -14,21 +11,24 @@ import {
   ChevronDown,
   ChevronRight,
   MoreVertical,
+  Move,
+  UploadIcon,
 } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { getBoards, exportExcelFile } from "../../../api/services/boardService";
 import {
   getGroups,
   createGroup,
   deleteGroup,
   updateGroup,
 } from "../../../api/services/groupService";
-import { getBoards } from "../../../api/services/boardService";
 import {
   getLeads,
   createLeads,
   updateLeads,
   deleteLeads,
+  moveLeadsToGroup,
 } from "../../../api/services/leadsService";
 
 const MainLead = () => {
@@ -44,7 +44,8 @@ const MainLead = () => {
   const [availableBoards, setAvailableBoards] = useState([]);
   const [groupMenuOpen, setGroupMenuOpen] = useState({});
   const [editingGroup, setEditingGroup] = useState(null);
-
+  const [showMoveDropdown, setShowMoveDropdown] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
   // Boardlarni yuklash
   useEffect(() => {
     const fetchBoards = async () => {
@@ -177,6 +178,61 @@ const MainLead = () => {
     }
   };
 
+  // Leadlarni boshqa groupga ko'chirish
+  const handleMoveSelected = async (targetGroupId) => {
+    if (selectedItems.length === 0) {
+      toast.error("Hech qanday element tanlanmagan");
+      return;
+    }
+
+    setIsMoving(true);
+
+    try {
+      // Tanlangan itemlardan lead ID larini olish
+      const leadIds = [];
+
+      selectedItems.forEach(({ groupId, itemIndex }) => {
+        const groupLeads = getLeadsForGroup(groupId);
+        const lead = groupLeads[itemIndex];
+        if (lead && lead.id) {
+          leadIds.push(lead.id);
+        }
+      });
+
+      if (leadIds.length === 0) {
+        toast.error("Ko'chirilishi mumkin bo'lgan elementlar topilmadi");
+        return;
+      }
+
+      // Backend ga so'rov yuborish
+      const result = await moveLeadsToGroup(targetGroupId, leadIds);
+
+      // Muvaffaqiyat xabari
+      if (result.message) {
+        toast.success(result.message);
+      } else {
+        toast.success(`${leadIds.length} ta lead muvaffaqiyatli ko'chirildi`);
+      }
+
+      // Ma'lumotlarni qayta yuklash
+      window.location.reload(); // yoki state ni yangilash
+
+      // Selection ni tozalash
+      setSelectedItems([]);
+      setShowMoveDropdown(false);
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Leadlarni ko'chirishda xatolik yuz berdi";
+
+      toast.error(errorMessage);
+      console.error("Move error:", error);
+    } finally {
+      setIsMoving(false);
+    }
+  };
+
   // Guruh nomini yangilash
   const updateGroupTitle = async (groupId, newTitle) => {
     const cleanTitle = String(newTitle || "").trim();
@@ -226,7 +282,8 @@ const MainLead = () => {
     }
   };
 
-  // Lead yangilash - to'g'rilangan versiya
+  // Lead yangilash
+  // ✅ updateItemInGroup - real-time state sync
   const updateItemInGroup = async (groupId, itemIndex, updatedItem) => {
     const groupLeads = getLeadsForGroup(groupId);
     const oldItem = groupLeads[itemIndex];
@@ -238,34 +295,59 @@ const MainLead = () => {
 
     const leadId = oldItem.id;
 
-    // Optimistic update - allLeads ni yangilash
+    // ✅ DARHOL allLeads state ni yangilash (optimistic update)
     setAllLeads((prev) =>
-      prev.map((lead) =>
-        lead.id === leadId ? { ...lead, ...updatedItem } : lead
-      )
+      prev.map((lead) => {
+        if (lead.id === leadId) {
+          const updatedLead = { ...lead, ...updatedItem };
+          console.log(
+            "🔄 MainLead updating lead:",
+            leadId,
+            updatedItem,
+            "Result:",
+            updatedLead
+          );
+          return updatedLead;
+        }
+        return lead;
+      })
     );
 
+    // ✅ Backend ga saqlash faqat kerakli fieldlar uchun
     try {
-      console.log("Updating lead:", leadId, updatedItem);
+      console.log(
+        "📤 MainLead sending update to backend:",
+        leadId,
+        updatedItem
+      );
 
-      // MUHIM: Faqat o'zgargan ma'lumotlarni yuborish
       const updatePayload = {};
 
-      // Har bir fieldni alohida tekshirish
+      // Har bir fieldni alohida tekshirish va format qilish
       Object.keys(updatedItem).forEach((key) => {
-        if (key === "status" && updatedItem[key]) {
-          // Status uchun faqat ID yuborish
-          if (typeof updatedItem[key] === "object" && updatedItem[key].id) {
+        if (key === "status" && updatedItem[key] !== undefined) {
+          // Status uchun - agar object bo'lsa ID ni olish
+          if (updatedItem[key] === null) {
+            updatePayload.status = null;
+          } else if (
+            typeof updatedItem[key] === "object" &&
+            updatedItem[key].id
+          ) {
             updatePayload.status = updatedItem[key].id;
           } else {
             updatePayload.status = updatedItem[key];
           }
-        } else if (key === "person_detail" && updatedItem[key]) {
-          // Person detail uchun faqat ID yuborish
-          if (typeof updatedItem[key] === "object" && updatedItem[key].id) {
-            updatePayload.person_detail = updatedItem[key].id;
+        } else if (key === "person_detail" && updatedItem[key] !== undefined) {
+          // Person detail uchun - faqat ID yuborish
+          if (updatedItem[key] === null) {
+            updatePayload.person = null;
+          } else if (
+            typeof updatedItem[key] === "object" &&
+            updatedItem[key].id
+          ) {
+            updatePayload.person = updatedItem[key].id;
           } else {
-            updatePayload.person_detail = updatedItem[key];
+            updatePayload.person = updatedItem[key];
           }
         } else if (
           [
@@ -281,24 +363,27 @@ const MainLead = () => {
           // Boshqa fieldlar uchun to'g'ridan-to'g'ri yuborish
           updatePayload[key] = updatedItem[key];
         }
-        // id, group, timeline, custom_fields kabi fieldlarni yubormaslik
       });
 
-      console.log("Final payload:", updatePayload);
+      console.log("📋 Final backend payload:", updatePayload);
 
+      // Backend ga so'rov yuborish (GroupSection allaqachon yuborib bo'lgani uchun bu ikki marta bo'ladi - bu normal)
       const res = await updateLeads(leadId, updatePayload);
+
+      console.log("✅ MainLead backend update successful:", res);
 
       // Server javobini yangilash
       setAllLeads((prev) =>
         prev.map((lead) => (lead.id === leadId ? { ...lead, ...res } : lead))
       );
-
-      console.log("Lead yangilandi");
     } catch (err) {
-      console.error("updateLeads xatosi:", err.response?.data || err);
+      console.error(
+        "❌ MainLead backend update failed:",
+        err.response?.data || err
+      );
       toast.error("Lead yangilashda xato");
 
-      // Rollback qilish
+      // ✅ ROLLBACK - xatolik bo'lsa eski holatga qaytarish
       setAllLeads((prev) =>
         prev.map((lead) => (lead.id === leadId ? oldItem : lead))
       );
@@ -395,16 +480,92 @@ const MainLead = () => {
     setSelectedItems([]);
   };
 
-  const handleExportSelected = () => {
-    const data = selectedItems
-      .map(({ groupId, itemIndex }) => {
+  //  handleExportSelected funksiyasi tanlangan leads ni export qilish uchun
+
+  const handleExportSelected = async () => {
+    if (selectedItems.length === 0) {
+      toast.error("Hech qanday element tanlanmagan");
+      return;
+    }
+
+    try {
+      // Loading toast ko'rsatish
+      toast.loading("Excel fayl tayyorlanmoqda...", { id: "export-loading" });
+
+      // Tanlangan itemlarni group bo'yicha guruhlash
+      const groupedSelections = {};
+
+      selectedItems.forEach(({ groupId, itemIndex }) => {
+        if (!groupedSelections[groupId]) {
+          groupedSelections[groupId] = [];
+        }
+
         const groupLeads = getLeadsForGroup(groupId);
-        return groupLeads[itemIndex] || null;
-      })
-      .filter(Boolean);
-    console.log("Exported data:", data);
-    toast.success("Items exported to console");
-    setSelectedItems([]);
+        const lead = groupLeads[itemIndex];
+        if (lead && lead.id) {
+          groupedSelections[groupId].push(lead.id);
+        }
+      });
+
+      // Har bir group uchun export qilish
+      const exportPromises = Object.entries(groupedSelections).map(
+        async ([groupId, leadIds]) => {
+          if (leadIds.length === 0) return null;
+
+          return await exportExcelFile(boardId, groupId, leadIds);
+        }
+      );
+
+      const responses = await Promise.all(exportPromises);
+
+      // Fayllarni download qilish
+      responses.forEach((response, index) => {
+        if (!response) return;
+
+        const groupId = Object.keys(groupedSelections)[index];
+        const groupName =
+          groups.find((g) => g.id == groupId)?.title || `Group_${groupId}`;
+
+        // Blob dan fayl yaratish
+        const blob = new Blob([response.data], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+
+        // Fayl nomini yaratish
+        const fileName = `${groupName}_leads_export_${new Date()
+          .toISOString()
+          .slice(0, 10)}.xlsx`;
+
+        // Faylni download qilish
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      });
+
+      toast.dismiss("export-loading");
+      toast.success(
+        `${selectedItems.length} ta element Excel faylga export qilindi`
+      );
+
+      // Selectionni tozalash
+      setSelectedItems([]);
+    } catch (error) {
+      toast.dismiss("export-loading");
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Excel export qilishda xatolik yuz berdi";
+
+      toast.error(errorMessage);
+
+      console.error("Export error:", error);
+    }
   };
 
   const handleArchiveSelected = () => {
@@ -412,19 +573,25 @@ const MainLead = () => {
     setSelectedItems([]);
   };
 
-  // Click outside handler for group menus
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest(".group-menu-container")) {
-        setGroupMenuOpen({});
-      }
-    };
+ // Click outside handler for group menus and move dropdown
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    // Group menu uchun
+    if (!event.target.closest(".group-menu-container")) {
+      setGroupMenuOpen({});
+    }
+    
+    // Move dropdown uchun
+    if (showMoveDropdown && !event.target.closest(".move-dropdown-container")) {
+      setShowMoveDropdown(false);
+    }
+  };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, [showMoveDropdown]); // showMoveDropdown ni dependency ga qo'shing
 
   if (loading) {
     return (
@@ -550,7 +717,7 @@ const MainLead = () => {
                       </button>
 
                       {groupMenuOpen[groupId] && (
-                        <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 min-w-[120px]">
+                        <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-60 min-w-[120px]">
                           <button
                             onClick={() => startEditingGroup(groupId)}
                             className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-100 text-sm"
@@ -610,7 +777,7 @@ const MainLead = () => {
       ) : groups.length > 0 ? (
         <button
           onClick={() => setAddingGroup(true)}
-          className="mt-5 flex items-center justify-center gap-2 bg-[#7D8592] hover:bg-gray-600 text-white px-5 py-[6px] text-[16px] rounded-[8px] font-medium transition-colors"
+          className="my-5  flex items-center justify-center gap-2 bg-[#7D8592] hover:bg-gray-600 text-white px-5 py-[6px] text-[16px] rounded-[8px] font-medium transition-colors"
         >
           <Plus className="w-5 h-5" /> Add new group
         </button>
@@ -642,9 +809,69 @@ const MainLead = () => {
                 className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-gray-50 p-2 rounded-md transition-colors"
                 title="Export selected items"
               >
-                <CiExport size={16} />
+                <UploadIcon size={16} />
                 <span className="text-xs sm:text-sm">Export</span>
               </button>
+
+              <div className="relative move-dropdown-container">
+                <button
+                  onClick={() => setShowMoveDropdown(!showMoveDropdown)}
+                  className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-gray-50 p-2 rounded-md transition-colors"
+                  title="Move selected items to another group"
+                  disabled={isMoving}
+                >
+                  <Move size={16} />
+                  <span className="text-xs sm:text-sm">
+                    {isMoving ? "Moving..." : "Move To"}
+                  </span>
+                </button>
+
+                {/* Move Dropdown */}
+                {showMoveDropdown && (
+                  <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-white border border-gray-200 rounded-md shadow-lg z-50 min-w-[180px] max-h-60 overflow-y-auto">
+                    <div className="p-2 text-sm font-medium text-gray-700 border-b">
+                      Select destination group:
+                    </div>
+
+                    {groups
+                      .filter((group) => {
+                        // Faqat boshqa grouplarni ko'rsatish (hozirgi group tanlangan bo'lsa)
+                        const currentGroupIds = selectedItems.map(
+                          (item) => item.groupId
+                        );
+                        return !currentGroupIds.includes(group.id);
+                      })
+                      .map((group) => (
+                        <button
+                          key={group.id}
+                          onClick={() => handleMoveSelected(group.id)}
+                          disabled={isMoving}
+                          className="w-full px-3 py-2 text-left hover:bg-gray-100 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <div className="font-medium">{group.title}</div>
+                          <div className="text-xs text-gray-500">
+                            {getLeadsForGroup(group.id).length} leads
+                          </div>
+                        </button>
+                      ))}
+
+                    {groups.length <= 1 && (
+                      <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                        No other groups available
+                      </div>
+                    )}
+
+                    <div className="border-t p-2">
+                      <button
+                        onClick={() => setShowMoveDropdown(false)}
+                        className="w-full px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <button
                 onClick={handleArchiveSelected}

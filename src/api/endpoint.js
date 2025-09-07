@@ -74,6 +74,8 @@ const endpoints = {
     getById: (id) => `board/board/${id}/`,    // board detail/list uchun
     update: (id) => `board/board/${id}/`,
     delete: (id) => `board/board/${id}/`,
+    uploadExcel: "board/upload-excel/",
+    exportExcel: "board/export-excel/"
   },
 
   group: {
@@ -91,6 +93,7 @@ const endpoints = {
     // createStatus: (id) => `board/leads/${id}/`,
     update: (groupId, leadId) => `board/leads/${leadId}/?group=${groupId}`,
     delete: (groupId, leadId) => `board/leads/${leadId}/?group=${groupId}`,
+    moveTo: "board/leads/move-to/",
   },
 
   status: {
