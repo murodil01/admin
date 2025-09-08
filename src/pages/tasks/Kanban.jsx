@@ -1360,7 +1360,7 @@ const closeImageModal = () => {
                   key: "edit",
                   label: (
                     <Permission
-                      anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}
+                      anyOf={[ROLES.FOUNDER, ROLES.DEP_MANAGER, ROLES.MANAGER, ROLES.HEADS]}
                     >
                       <span>Edit</span>
                     </Permission>
@@ -1399,7 +1399,7 @@ const closeImageModal = () => {
                   key: "delete",
                   label: (
                     <Permission
-                      anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}
+                      anyOf={[ROLES.FOUNDER, ROLES.DEP_MANAGER, ROLES.MANAGER, ROLES.HEADS]}
                     >
                       <span>Delete</span>
                     </Permission>
@@ -1483,7 +1483,7 @@ const closeImageModal = () => {
             top: 30, // px qiymati, modal yuqoriga yaqinlashadi
           }}
           footer={[
-            <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+            <Permission anyOf={[ROLES.FOUNDER, ROLES.DEP_MANAGER, ROLES.MANAGER, ROLES.HEADS]}>
               <Button
                 key="edit"
                 onClick={() => {
@@ -2364,7 +2364,7 @@ const AddCard = ({ column, setCards }) => {
       </div>
     </motion.form>
   ) : (
-    <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+    <Permission anyOf={[ROLES.FOUNDER, ROLES.DEP_MANAGER, ROLES.MANAGER, ROLES.HEADS]}>
       <motion.button
         layout
         onClick={() => setAdding(true)}
