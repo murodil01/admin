@@ -492,11 +492,31 @@ const Projects = () => {
     }
   };
 
+<<<<<<< HEAD
+  const dropdownItems = (task) => [
+    {
+      key: "edit",
+      label: (
+        <Permission anyOf={[ROLES.FOUNDER, ROLES.DEP_MANAGER, ROLES.MANAGER, ROLES.HEADS]}>
+          <button
+            onClick={() => handleActionOpen(task, "edit")}
+            className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer"
+          >
+            <img src={pencil} alt="" /> <span>Edit</span>
+          </button>
+        </Permission>
+      ),
+    },
+    {
+      key: "info",
+      label: (
+=======
  const dropdownItems = (task) => [
   {
     key: "edit",
     label: (
       <Permission anyOf={[ROLES.FOUNDER,ROLES.MANAGER,ROLES.HEADS]}>
+>>>>>>> 69e4bb7dc50af292e39fa35f7287e4918cd97b71
         <button
           onClick={() => handleActionOpen(task, "edit")}
           className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer"
@@ -932,6 +952,17 @@ const Projects = () => {
         <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
           Project
         </h3>
+<<<<<<< HEAD
+        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.DEP_MANAGER, ROLES.HEADS]}>
+          <button
+            onClick={handleAddOpen}
+            className="capitalize w-full sm:max-w-[172px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
+          >
+            <span className="text-[22px]">+</span>
+            <span>Add Project</span>
+          </button>
+        </Permission>
+=======
         <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
            <button
           onClick={handleAddOpen}
@@ -941,6 +972,7 @@ const Projects = () => {
           <span>Add Project</span>
         </button>
        </Permission>
+>>>>>>> 69e4bb7dc50af292e39fa35f7287e4918cd97b71
       </div>
       {/* Tasks Grid - Responsive Grid Layout */}
    

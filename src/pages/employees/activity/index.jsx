@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { getActivities } from "../../../api/services/activityService";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Pagination } from "antd";
 
-const Activity = () => {
+const Activity = ({ onTotalActivitiesChange }) => {
   const [searchParams] = useSearchParams();
   const [activity, setActivity] = useState([]);
   const [totalActivities, setTotalActivities] = useState(0);
@@ -11,7 +12,8 @@ const Activity = () => {
   const navigate = useNavigate();
 
   // Get current page from URL
-  const currentPage = parseInt(searchParams.get('page_num') || '1', 10);
+  const currentPage = parseInt(searchParams.get("page_num") || "1", 10);
+  const itemsPerPage = 12; // API page size
 
   const fetchActivities = async (page = 1) => {
     setLoading(true);
@@ -20,6 +22,11 @@ const Activity = () => {
       const res = await getActivities(page);
       setActivity(res.results || []);
       setTotalActivities(res.count || 0);
+
+      // Notify parent component about the total count
+      if (onTotalActivitiesChange) {
+        onTotalActivitiesChange(res.count || 0);
+      }
     } catch (err) {
       console.error("Error fetching activities:", err);
       setError("Failed to load activities. Please try again.");
@@ -28,27 +35,24 @@ const Activity = () => {
     }
   };
 
-  // Only fetch when searchParams change
+  // Fetch activities whenever page changes
   useEffect(() => {
     fetchActivities(currentPage);
   }, [currentPage]);
 
-  const handlePageChange = (newPage) => {
-    // Only update URL - the useEffect will handle fetching
+  // Handle page change (update search params)
+  const handlePageChange = (page) => {
     const params = new URLSearchParams(searchParams);
-    params.set('page_num', newPage);
+    params.set("page_num", page);
     navigate(`?${params.toString()}`, { replace: true });
   };
-
-  // Calculate pagination info
-  const itemsPerPage = 20; // Adjust based on your API
-  const totalPages = Math.ceil(totalActivities / itemsPerPage);
 
   if (loading) return <p className="text-center">Loading...</p>;
   if (error) return <p className="text-red-500 text-center">{error}</p>;
 
   return (
     <div className="w-full">
+      {/* Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[25px] w-full py-6">
         {activity.map((user) => (
           <div
@@ -70,7 +74,7 @@ const Activity = () => {
               </p>
               <span
                 className={`font-semibold text-[12px] text-[#7D8592] px-2 py-[2px] rounded-lg
-    ${user.level === "none" ? "bg-[#E3EDFA]" : "bg-white"}`}
+                  ${user.level === "none" ? "bg-[#E3EDFA]" : "bg-white"}`}
               >
                 {user.level === "none" ? "\u00A0" : user.level}
               </span>
@@ -111,28 +115,17 @@ const Activity = () => {
         ))}
       </div>
 
-      {/* Pagination Controls */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 mt-6">
-          <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage <= 1}
-            className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            Previous
-          </button>
-
-          <span className="px-4 py-2">
-            Page {currentPage} of {totalPages}
-          </span>
-
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage >= totalPages}
-            className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            Next
-          </button>
+      {/* Pagination (AntD style like EmployeeList) */}
+      {totalActivities > 0 && (
+        <div className="flex justify-center py-6 border-t border-gray-200">
+          <Pagination
+            current={currentPage}
+            total={totalActivities}
+            pageSize={itemsPerPage}
+            onChange={handlePageChange}
+            showSizeChanger={false}
+            showQuickJumper={false}
+          />
         </div>
       )}
     </div>

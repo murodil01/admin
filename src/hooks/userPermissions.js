@@ -19,6 +19,7 @@ export const usePermissions = () => {
         hasAnyRole,
         isFounder: hasRole(ROLES.FOUNDER),
         isManager: hasRole(ROLES.MANAGER),
+        isDepManager: hasRole(ROLES.DEP_MANAGER),
         isHeads: hasRole(ROLES.HEADS),
         isEmployee: hasRole(ROLES.EMPLOYEE),
         ROLES

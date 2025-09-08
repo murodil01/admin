@@ -457,8 +457,27 @@ useEffect(() => {
       // For task notifications, navigate to tasks/:projectID
       // You might need to adjust this based on your data structure
       // If the notification doesn't have project_id, you might need to fetch it or adjust your API
-      const projectId = item.get_instance_id;
-      navigate(`/tasks/${projectId}`);
+      const projectId = item.project_id ||
+        item.get_instance_id ||
+        item.instance_id ||
+        item.task_project_id ||
+        item.related_project_id;
+
+      const taskId = item.task_id ||
+        item.id ||
+        item.instance_id;
+
+      if (projectId) {
+        // Navigate to specific project's tasks
+        navigate(`/tasks/${String(projectId)}/`);
+      } else if (taskId) {
+        // Fallback: navigate to tasks with task ID as query parameter
+        navigate(`/tasks?task_id=${String(taskId)}`);
+      } else {
+        // Last fallback: navigate to general tasks page
+        console.warn('No project_id or task_id found in notification:', item);
+        navigate('/tasks');
+      }
     } else if (item.notification_type === "project" || item.notification_type === "project_created" || item.notification_type === "project_assigned") {
       navigate(`/tasks`);
     } else if (item.notification_type === "event" || item.notification_type === "event_created" || item.notification_type === "event_updated" || item.notification_type === "event_cancelled") {

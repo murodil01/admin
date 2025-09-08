@@ -49,6 +49,9 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
         { value: 'none', label: 'None' }
     ];
 
+    // Check if current user is a department manager
+    const isDepartmentManager = user?.role === 'dep_manager';
+
     // Reset form when modal closes
     useEffect(() => {
         if (!visible) {
@@ -87,7 +90,26 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                 const departmentsData = response.results || response.data || response;
 
                 if (Array.isArray(departmentsData)) {
-                    setDepartments(departmentsData);
+                    // If user is a department manager, only show their department
+                    if (isDepartmentManager) {
+                        const userDepartmentId = user.department?.id || user.department;
+                        const userDepartment = departmentsData.find(dept => dept.id === userDepartmentId);
+
+                        if (userDepartment) {
+                            setDepartments([userDepartment]);
+                            // Auto-select the department manager's department
+                            setFormData(prev => ({
+                                ...prev,
+                                department: userDepartment.id.toString(),
+                                department_name: userDepartment.name
+                            }));
+                            setSelectedDepartment(userDepartment);
+                        } else {
+                            console.error('Department manager department not found');
+                        }
+                    } else {
+                        setDepartments(departmentsData);
+                    }
                 } else {
                     console.error('Invalid departments data format:', departmentsData);
                     message.error('Failed to load departments - invalid data format');
@@ -101,7 +123,7 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
         };
 
         fetchDepartments();
-    }, [visible, departments.length]);
+    }, [visible, departments.length, isDepartmentManager, user]);
 
     // Email validation function
     const validateEmail = async (email) => {
@@ -352,6 +374,12 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                     message.error(`${label} is required`);
                     return;
                 }
+            }
+
+            // For department managers, ensure department is set
+            if (isDepartmentManager && !formData.department) {
+                message.error('Department is required');
+                return;
             }
 
             // Validate email
@@ -615,37 +643,57 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                                     <option value="founder">Founder</option>
                                     <option value="manager">Manager</option>
                                 </Permission>
-                                <option value="heads">Chief Officer</option>
-                                <option value="employee">Member</option>
+                                <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+                                    <option value="heads">Chief Officer</option>
+                                </Permission>
+                                <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+                                    <option value="heads">Department Manager</option>
+                                /</Permission>
+                                    <option value="employee">Member</option>
                             </select>
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700">
-                                Department {!['founder', 'manager'].includes(formData.role) && '*'}
+                                Department {!['founder', 'manager'].includes(formData.role) && !isDepartmentManager && '*'}
+                                {isDepartmentManager && ' (Auto-selected)'}
                             </label>
-                            <select
-                                name="department"
-                                value={formData.department || ''}
-                                onChange={handleDepartmentChange}
-                                className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 focus:outline-none focus:border-blue-500"
-                                disabled={loadingDepartments || isSubmitting}
-                                required={!['founder', 'manager'].includes(formData.role)}
-                            >
-                                <option value="">
-                                    {['founder', 'manager'].includes(formData.role)
-                                        ? 'Select department (optional)'
-                                        : 'Select department'
-                                    }
-                                </option>
-                                {departments.map(dept => (
-                                    <option key={dept.id} value={dept.id}>
-                                        {dept.name}
+                            {isDepartmentManager ? (
+                                <input
+                                    type="text"
+                                    className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 bg-gray-100"
+                                    value={selectedDepartment?.name || 'Your Department'}
+                                    disabled
+                                />
+                            ) : (
+                                <select
+                                    name="department"
+                                    value={formData.department || ''}
+                                    onChange={handleDepartmentChange}
+                                    className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 focus:outline-none focus:border-blue-500"
+                                    disabled={loadingDepartments || isSubmitting || isDepartmentManager}
+                                    required={!['founder', 'manager'].includes(formData.role) && !isDepartmentManager}
+                                >
+                                    <option value="">
+                                        {['founder', 'manager'].includes(formData.role)
+                                            ? 'Select department (optional)'
+                                            : 'Select department'
+                                        }
                                     </option>
-                                ))}
-                            </select>
+                                    {departments.map(dept => (
+                                        <option key={dept.id} value={dept.id}>
+                                            {dept.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
                             {loadingDepartments && (
                                 <span className="text-sm text-gray-500">Loading departments...</span>
+                            )}
+                            {isDepartmentManager && (
+                                <p className="text-sm text-blue-600 mt-1">
+                                    As a department manager, you can only add members to your department.
+                                </p>
                             )}
                         </div>
 
