@@ -374,7 +374,7 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
         <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
           {projectName || "Loading..."}
         </h3>
-        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+        <Permission anyOf={[ROLES.FOUNDER, ROLES.DEP_MANAGER, ROLES.MANAGER, ROLES.HEADS]}>
           <button
             onClick={showModal}
             className="capitalize w-full sm:max-w-[172px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"

@@ -15,13 +15,14 @@ import { getDepartments } from "../../api/services/departmentService";
 import { Permission } from "../../components/Permissions";
 import { useAuth } from "../../hooks/useAuth";
 import { ROLES } from "../../components/constants/roles";
-import { message, Pagination, Modal } from "antd";
+import { message, Modal } from "antd";
 
 const InnerCircle = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const itemsPerPage = 12;
     const [employees, setEmployees] = useState([]);
     const [totalEmployees, setTotalEmployees] = useState(0);
+    const [totalActivities, setTotalActivities] = useState(0); // Add state for activities count
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState(
         localStorage.getItem("innerCircleTab") || "list"
@@ -33,7 +34,6 @@ const InnerCircle = () => {
     const [departments, setDepartments] = useState([]);
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    // const navigate = useNavigate();
 
     // Initialize filters from URL parameters or localStorage
     const initializeFilters = () => {
@@ -74,7 +74,6 @@ const InnerCircle = () => {
     // Enhanced filter handler
     const handleFilter = (filters) => {
         setCurrentFilters(filters);
-        // const currentPage = parseInt(searchParams.get("page_num") || "1", 10);
         updateUrlParams(1, filters); // Reset to page 1 when filtering
         fetchEmployees(1, filters);
     };
@@ -123,7 +122,6 @@ const InnerCircle = () => {
         setLoading(true);
 
         try {
-
             const res = await getEmployees(page, filtersToUse, departments);
 
             setEmployees(res.results || []);
@@ -322,6 +320,11 @@ const InnerCircle = () => {
         localStorage.setItem("innerCircleTab", tab);
     };
 
+    // Function to get the total count based on active tab
+    const getTotalCount = () => {
+        return activeTab === "list" ? totalEmployees : totalActivities;
+    };
+
     if (isLoading) {
         return <div className="flex justify-center items-center h-[100vh]">Loading...</div>;
     }
@@ -338,7 +341,7 @@ const InnerCircle = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mt-6 mb-6 gap-4">
                 <h1 className="text-[#1F2937] font-bold text-2xl sm:text-3xl xl:text-4xl text-center md:text-left">
-                    Inner Circle ({totalEmployees})
+                    Inner Circle ({getTotalCount()})
                 </h1>
 
                 {/* Tabs */}
@@ -377,7 +380,7 @@ const InnerCircle = () => {
                     </Permission>
 
                     {/* Add Button */}
-                    <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+                    <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS, ROLES.DEP_MANAGER]}>
                         {!loading && (
                             <div className="flex justify-center lg:justify-end">
                                 {/* Desktop Button - faqat lg: dan boshlab */}
@@ -408,6 +411,11 @@ const InnerCircle = () => {
                     loading={loading}
                     onDelete={showDeleteModal}
                     onStatusUpdate={handleStatusUpdate}
+                    // Pagination props
+                    currentPage={parseInt(searchParams.get("page_num") || "1", 10)}
+                    totalEmployees={totalEmployees}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={handlePageChange}
                 />
             )}
 
@@ -423,7 +431,11 @@ const InnerCircle = () => {
             >
                 <p>This action cannot be undone.</p>
             </Modal>
-            {activeTab === "activity" && <Activity />}
+            {activeTab === "activity" && (
+                <Activity 
+                    onTotalActivitiesChange={setTotalActivities} // Pass callback to update total activities
+                />
+            )}
 
             {/* Modal */}
             <AddEmployeeModal
@@ -431,17 +443,6 @@ const InnerCircle = () => {
                 onClose={() => setIsAddModalOpen(false)}
                 onSubmit={handleAddEmployee}
             />
-
-            {/* Pagination */}
-            <div className="flex justify-center my-10">
-                <Pagination
-                    current={parseInt(searchParams.get("page_num") || "1", 10)}
-                    total={totalEmployees}
-                    pageSize={itemsPerPage}
-                    onChange={handlePageChange}
-                    showSizeChanger={false}
-                />
-            </div>
         </div>
     );
 };
