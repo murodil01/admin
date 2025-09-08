@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { message } from "antd";
-import { Archive, MoreVertical, Paperclip, Search } from "lucide-react";
+import { Archive, Filter, MoreVertical, Paperclip, Search } from "lucide-react";
 import { Modal, Input, Dropdown, Pagination } from "antd";
 import pencil from "../../assets/icons/pencil.svg";
 import info from "../../assets/icons/info.svg";
@@ -409,7 +409,7 @@ const Projects = () => {
     }
     
     await createProject(formData);
-    message.success("✅ Task created successfully");
+    message.success("Task created successfully");
     
     // Calculate if we need to change page
     const totalPages = Math.ceil((projectsData.count + 1) / pageSize);
@@ -480,18 +480,37 @@ const Projects = () => {
   };
 
   const handleDeleteTask = async () => {
-    try {
-      await deleteProject(selectedTask.id);
-      message.success("✅ Task deleted successfully");
-
-      await loadProjects(currentPage); // joriy sahifani yangilash
-      handleActionClose();
-    } catch (error) {
-      console.error("❌ Task o'chirishda xatolik:", error);
-      message.error("Failed to delete task");
+  try {
+    // First, delete from server
+    await deleteProject(selectedTask.id);
+    
+    // Show success message
+    message.success(" Task deleted successfully");
+    
+    // Close modal first
+    handleActionClose();
+    
+    // Then reload data to ensure consistency
+    const currentResults = projectsData.results;
+    const itemsOnCurrentPage = currentResults.length;
+    
+    // If this was the last item on the current page and we're not on page 1
+    if (itemsOnCurrentPage === 1 && currentPage > 1) {
+      // Go to previous page
+      const newPage = currentPage - 1;
+      setCurrentPage(newPage);
+      await loadProjects(newPage);
+    } else {
+      // Reload current page
+      await loadProjects(currentPage);
     }
-  };
-
+    
+  } catch (error) {
+    console.error("❌ Task o'chirishda xatolik:", error);
+    message.error("Failed to delete task");
+    // Don't need to reload on error since nothing was actually deleted
+  }
+};
  const dropdownItems = (task) => [
   {
     key: "edit",
@@ -928,19 +947,34 @@ const Projects = () => {
   return (
     <div className=" pt-5">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
+      <div className=" justify-between flex w-full  flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
         <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
           Project
         </h3>
+        <div className=" flex items-center gap-5">
+        <button className="capitalize h-11 p-3 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[3px] shadow shadow-blue-300 cursor-pointer">
+        <label for="cars">
+          <Filter className=" size-4"/>
+        </label>
+      <select id="cars" name="cars" className="custom-select">
+        <option value="bmw">Name</option>
+        <option value="audi">Department</option>
+        <option value="mercedes">Created</option>
+        <option value="mercedes">Deadline</option>
+        <option value="tesla">Progress</option>
+        <option value="tesla">Ordering</option>
+      </select>
+        </button>
         <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
            <button
           onClick={handleAddOpen}
-          className="capitalize w-full sm:max-w-[172px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
+          className=" p-4 capitalize w-full sm:max-w-[172px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
         >
           <span className="text-[22px]">+</span>
           <span>Add Project</span>
         </button>
        </Permission>
+      </div>
       </div>
       {/* Tasks Grid - Responsive Grid Layout */}
    
