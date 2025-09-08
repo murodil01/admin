@@ -369,67 +369,62 @@ const Projects = () => {
   };
 
   const handleAddTask = async () => {
+  if (!taskName.trim()) {
+    return message.error("Task name kiritilishi kerak!");
+  }
+  
+  if (selectedDepartments.length === 0) {
+    return message.error("Kamida bitta department tanlang!");
+  }
+  
+  try {
+    const formData = new FormData();
+    formData.append("name", taskName);
+    formData.append("description", description);
     
- await createProject(formData);
+    if (deadline) {
+      formData.append("deadline", deadline);
+    }
+    
+    const isAllDepartmentsSelected = selectedDepartments.includes("all") ||
+      (selectedDepartments.length === allDepartments.length && !selectedDepartments.includes("none"));
+    formData.append("is_all_departments", isAllDepartmentsSelected);
+    
+    if (selectedDepartments.includes("all")) {
+      allDepartments.forEach((dept) => {
+        formData.append("department_ids", dept.id);
+      });
+    } else if (!selectedDepartments.includes("none")) {
+      selectedDepartments.forEach((id) => {
+        if (id !== "none" && id !== "all") {
+          formData.append("department_ids", id);
+        }
+      });
+    }
+    
+    selectedUsers.forEach((id) => formData.append("assigned", id));
+    
+    if (imageFile) {
+      formData.append("image", imageFile);
+    }
+    
+    await createProject(formData);
     message.success("✅ Task created successfully");
     
-    // Agar joriy sahifa to'lib ketgan bo'lsa, oxirgi sahifaga o'tish
+    // Calculate if we need to change page
     const totalPages = Math.ceil((projectsData.count + 1) / pageSize);
     if (currentPage < totalPages) {
-        await loadProjects(currentPage);
+      await loadProjects(currentPage);
     } else {
-        await loadProjects(totalPages);
+      await loadProjects(totalPages);
     }
+    
     handleAddClose();
-    if (!taskName.trim()) {
-      return message.error("Task name kiritilishi kerak!");
-    }
-
-    if (selectedDepartments.length === 0) {
-      return message.error("Kamida bitta department tanlang!");
-    }
-    try {
-      const formData = new FormData();
-      formData.append("name", taskName);
-      formData.append("description", description);
-
-      if (deadline) {
-        formData.append("deadline", deadline);
-      }
-
-      const isAllDepartmentsSelected = selectedDepartments.includes("all") ||
-        (selectedDepartments.length === allDepartments.length && !selectedDepartments.includes("none"));
-
-      formData.append("is_all_departments", isAllDepartmentsSelected);
-
-      if (selectedDepartments.includes("all")) {
-        allDepartments.forEach((dept) => {
-          formData.append("department_ids", dept.id);
-        });
-      } else if (!selectedDepartments.includes("none")) {
-        selectedDepartments.forEach((id) => {
-          if (id !== "none" && id !== "all") {
-            formData.append("department_ids", id);
-          }
-        });
-      }
-
-      selectedUsers.forEach((id) => formData.append("assigned", id));
-
-      if (imageFile) {
-        formData.append("image", imageFile);
-      }
-
-      await createProject(formData);
-      message.success("✅ Task created successfully");
-
-      await loadProjects(currentPage); // joriy sahifani yangilash
-      handleAddClose();
-    } catch (error) {
-      console.error("❌ Task yaratishda xatolik:", error);
-      message.error("Failed to create task");
-    }
-  };
+  } catch (error) {
+    console.error("❌ Task yaratishda xatolik:", error);
+    message.error("Failed to create task");
+  }
+};
 
   const handleEditTask = async () => {
     if (!taskName.trim()) {
