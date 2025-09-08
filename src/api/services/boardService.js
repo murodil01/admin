@@ -81,3 +81,67 @@ export const deleteStatus = async (id) => {
     throw err;
   }
 };
+
+// Excel fayl yuklash yani import funksiyasi
+export const uploadExcelFile = async (boardId, file) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('board', boardId);
+    
+    const response = await api.post(endpoints.boards.uploadExcel, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      }
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Excel upload error:', error);
+    throw error;
+  }
+};
+
+// Excel export funksiyasi
+export const exportExcelFile = async (boardId, groupId, leadIds) => {
+  try {
+    const payload = {
+      board: boardId,
+      group: groupId,
+      leads: leadIds
+    };
+
+    const response = await api.post(endpoints.boards.exportExcel, payload, {
+      responseType: 'blob', // Excel fayl uchun blob format
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    return response;
+  } catch (error) {
+    console.error('Excel export error:', error);
+    throw error;
+  }
+};
+
+// Barcha board ma'lumotlarini export qilish funksiyasi
+export const exportBoardData = async (boardId) => {
+  try {
+    const payload = {
+      board: boardId
+    };
+
+    const response = await api.post(endpoints.boards.exportExcel, payload, {
+      responseType: 'blob', // Excel fayl uchun blob format
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    return response;
+  } catch (error) {
+    console.error('Board export error:', error);
+    throw error;
+  }
+};
