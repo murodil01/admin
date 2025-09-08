@@ -49,8 +49,8 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
         { value: 'none', label: 'None' }
     ];
 
-    // Check if current user is a department manager
-    const isDepartmentManager = user?.role === 'dep_manager';
+    // Check if current user is a department manager or heads (both can only add to their department)
+    const isDepartmentRestricted = user?.role === 'dep_manager' || user?.role === 'heads';
 
     // Reset form when modal closes
     useEffect(() => {
@@ -90,14 +90,14 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                 const departmentsData = response.results || response.data || response;
 
                 if (Array.isArray(departmentsData)) {
-                    // If user is a department manager, only show their department
-                    if (isDepartmentManager) {
+                    // If user is a department manager or heads, only show their department
+                    if (isDepartmentRestricted) {
                         const userDepartmentId = user.department?.id || user.department;
                         const userDepartment = departmentsData.find(dept => dept.id === userDepartmentId);
 
                         if (userDepartment) {
                             setDepartments([userDepartment]);
-                            // Auto-select the department manager's department
+                            // Auto-select the user's department
                             setFormData(prev => ({
                                 ...prev,
                                 department: userDepartment.id.toString(),
@@ -105,7 +105,7 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                             }));
                             setSelectedDepartment(userDepartment);
                         } else {
-                            console.error('Department manager department not found');
+                            console.error('User department not found');
                         }
                     } else {
                         setDepartments(departmentsData);
@@ -123,7 +123,7 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
         };
 
         fetchDepartments();
-    }, [visible, departments.length, isDepartmentManager, user]);
+    }, [visible, departments.length, isDepartmentRestricted, user]);
 
     // Email validation function
     const validateEmail = async (email) => {
@@ -364,8 +364,8 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                 level: 'Level'
             };
 
-            // Department is required only for non-founder/manager roles
-            if (!['founder', 'manager'].includes(formData.role)) {
+            // Department is required only for non-founder/manager roles and non-restricted users
+            if (!['founder', 'manager'].includes(formData.role) && !isDepartmentRestricted) {
                 requiredFields.department = 'Department';
             }
 
@@ -374,12 +374,6 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                     message.error(`${label} is required`);
                     return;
                 }
-            }
-
-            // For department managers, ensure department is set
-            if (isDepartmentManager && !formData.department) {
-                message.error('Department is required');
-                return;
             }
 
             // Validate email
@@ -647,22 +641,22 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                                     <option value="heads">Chief Officer</option>
                                 </Permission>
                                 <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
-                                    <option value="heads">Department Manager</option>
-                                /</Permission>
-                                    <option value="employee">Member</option>
+                                    <option value="dep_manager">Department Manager</option>
+                                </Permission>
+                                <option value="employee">Member</option>
                             </select>
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700">
-                                Department {!['founder', 'manager'].includes(formData.role) && !isDepartmentManager && '*'}
-                                {isDepartmentManager && ' (Auto-selected)'}
+                                Department {!['founder', 'manager'].includes(formData.role) && !isDepartmentRestricted && '*'}
+                                {isDepartmentRestricted && ' (Auto-selected)'}
                             </label>
-                            {isDepartmentManager ? (
+                            {isDepartmentRestricted ? (
                                 <input
                                     type="text"
                                     className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 bg-gray-100"
-                                    value={selectedDepartment?.name || 'Your Department'}
+                                    value={selectedDepartment?.name || ''}
                                     disabled
                                 />
                             ) : (
@@ -671,8 +665,8 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                                     value={formData.department || ''}
                                     onChange={handleDepartmentChange}
                                     className="w-full border border-[#DBDBDB] rounded-[14px] px-3 py-2 mt-1 focus:outline-none focus:border-blue-500"
-                                    disabled={loadingDepartments || isSubmitting || isDepartmentManager}
-                                    required={!['founder', 'manager'].includes(formData.role) && !isDepartmentManager}
+                                    disabled={loadingDepartments || isSubmitting || isDepartmentRestricted}
+                                    required={!['founder', 'manager'].includes(formData.role) && !isDepartmentRestricted}
                                 >
                                     <option value="">
                                         {['founder', 'manager'].includes(formData.role)
@@ -690,9 +684,9 @@ const AddEmployeeModal = ({ visible, onClose, onSubmit }) => {
                             {loadingDepartments && (
                                 <span className="text-sm text-gray-500">Loading departments...</span>
                             )}
-                            {isDepartmentManager && (
+                            {isDepartmentRestricted && (
                                 <p className="text-sm text-blue-600 mt-1">
-                                    As a department manager, you can only add members to your department.
+                                    You can only add members to your own department.
                                 </p>
                             )}
                         </div>

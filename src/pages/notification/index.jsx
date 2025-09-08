@@ -98,15 +98,37 @@ const NotificationDetailModal = ({ notification, isOpen, onClose, onMarkAsRead }
               <div className="flex items-center gap-2">
                 <Calendar size={16} />
                 <span>
-                  Event date: {notification.event_time || notification.event_at
-                    ? new Date(notification.event_time || notification.event_at).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "long",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit"
-                    })
-                    : "Unknown"}
+                  {notification.notification_type?.includes("event") ? (
+                    <>
+                      Event date:{" "}
+                      {notification.event_time || notification.event_at ? (
+                        new Date(notification.event_time || notification.event_at).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      ) : (
+                        "Unknown"
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      Deadline:{" "}
+                      {notification.deadline_time || notification.deadline_at ? (
+                        new Date(notification.deadline_time || notification.deadline_at).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      ) : (
+                        "No deadline"
+                      )}
+                    </>
+                  )}
                 </span>
               </div>
 
@@ -671,7 +693,7 @@ useEffect(() => {
                         <img
                           src={item.display_image || "https://coffective.com/wp-content/uploads/2018/06/default-featured-image.png.jpg"}
                           alt="Notification"
-                          className="w-10 h-10 sm:w-15 sm:h-15 object-cover rounded-xl"
+                          className="w-15 h-15 object-cover rounded-xl"
                         />
                       </div>
 
@@ -698,46 +720,45 @@ useEffect(() => {
 
                       {/* Right action button */}
                       <div className="flex-shrink-0">
-                        <button
-                          onClick={(e) => handleViewNotification(e, item)}
-                          className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap min-w-[32px] sm:min-w-[auto] ${item.is_read
-                              ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                              : item.notification_type === "task" || item.notification_type === "task_assigned"
-                                ? "bg-green-100 text-green-600 hover:bg-green-200"
-                                : item.notification_type === "project" || item.notification_type === "project_created" || item.notification_type === "project_assigned"
-                                  ? "bg-blue-100 text-blue-600 hover:bg-blue-200"
-                                  : item.notification_type === "event" || item.notification_type === "event_created" || item.notification_type === "event_updated" || item.notification_type === "event_cancelled"
-                                    ? "bg-orange-100 text-orange-600 hover:bg-orange-200"
-                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                            }`}
-                        >
-                          <div className="group flex items-center gap-1 cursor-pointer">
-                            <span className="text-[12px] font-medium">
-                              View
-                            </span>
-                            <span className="sm:hidden text-sm font-bold">
-                              {item.is_read
-                                ? ""
+                        <div className="flex-shrink-0">
+                          <button
+                            onClick={(e) => handleViewNotification(e, item)}
+                            className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap min-w-[32px] sm:min-w-[auto] ${item.is_read
+                                ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
                                 : item.notification_type === "task" || item.notification_type === "task_assigned"
-                                  ? <svg width="15" height="15" className="sm:w-8 sm:h-8" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M22 27.1798L19.41 24.5898L18 25.9998L22 29.9998L30 21.9998L28.59 20.5898L22 27.1798Z" fill="#00C300" />
-                                    <path d="M25 5H22V4C21.9984 3.47005 21.7872 2.96227 21.4125 2.58753C21.0377 2.2128 20.5299 2.00158 20 2H12C11.4701 2.00158 10.9623 2.2128 10.5875 2.58753C10.2128 2.96227 10.0016 3.47005 10 4V5H7C6.47005 5.00158 5.96227 5.2128 5.58753 5.58753C5.2128 5.96227 5.00158 6.47005 5 7V28C5.00158 28.5299 5.2128 29.0377 5.58753 29.4125C5.96227 29.7872 6.47005 29.9984 7 30H16V28H7V7H10V10H22V7H25V18H27V7C26.9984 6.47005 26.7872 5.96227 26.4125 5.58753C26.0377 5.2128 25.5299 5.00158 25 5ZM20 8H12V4H20V8Z" fill="#00C300" />
-                                  </svg>
-                                  : item.notification_type === "event" || item.notification_type === "event_created" || item.notification_type === "event_updated" || item.notification_type === "event_cancelled"
+                                  ? "bg-green-100 text-green-600 hover:bg-green-200"
+                                  : item.notification_type === "project" || item.notification_type === "project_created" || item.notification_type === "project_assigned"
+                                    ? "bg-blue-100 text-blue-600 hover:bg-blue-200"
+                                    : item.notification_type === "event" || item.notification_type === "event_created" || item.notification_type === "event_updated" || item.notification_type === "event_cancelled"
+                                      ? "bg-orange-100 text-orange-600 hover:bg-orange-200"
+                                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                              }`}
+                          >
+                            <div className="group flex items-center gap-1 cursor-pointer">
+                              <span className="text-[12px] font-medium">
+                                View
+                              </span>
+                              <span className="sm:hidden text-sm font-bold">
+                                {item.is_read
+                                  ? ""
+                                  : item.notification_type === "task" || item.notification_type === "task_assigned"
                                     ? <svg width="15" height="15" className="sm:w-8 sm:h-8" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                      <path d="M21.3333 2.66602V7.99935M10.6667 2.66602V7.99935M4 13.3327H28M6.66667 5.33268H25.3333C26.8061 5.33268 28 6.52659 28 7.99935V26.666C28 28.1388 26.8061 29.3327 25.3333 29.3327H6.66667C5.19391 29.3327 4 28.1388 4 26.666V7.99935C4 6.52659 5.19391 5.33268 6.66667 5.33268Z" stroke="#D37B14" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                                      <path d="M22 27.1798L19.41 24.5898L18 25.9998L22 29.9998L30 21.9998L28.59 20.5898L22 27.1798Z" fill="#00C300" />
+                                      <path d="M25 5H22V4C21.9984 3.47005 21.7872 2.96227 21.4125 2.58753C21.0377 2.2128 20.5299 2.00158 20 2H12C11.4701 2.00158 10.9623 2.2128 10.5875 2.58753C10.2128 2.96227 10.0016 3.47005 10 4V5H7C6.47005 5.00158 5.96227 5.2128 5.58753 5.58753C5.2128 5.96227 5.00158 6.47005 5 7V28C5.00158 28.5299 5.2128 29.0377 5.58753 29.4125C5.96227 29.7872 6.47005 29.9984 7 30H16V28H7V7H10V10H22V7H25V18H27V7C26.9984 6.47005 26.7872 5.96227 26.4125 5.58753C26.0377 5.2128 25.5299 5.00158 25 5ZM20 8H12V4H20V8Z" fill="#00C300" />
                                     </svg>
-                                    : item.notification_type === "project" || item.notification_type === "project_created" || item.notification_type === "project_assigned"
-                                      ? <svg width="15" height="15" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M1 19L6 14M11.259 16.871C7.515 16.021 3.979 12.485 3.129 8.74105C2.994 8.14905 2.927 7.85305 3.122 7.37205C3.316 6.89205 3.555 6.74205 4.031 6.44505C5.107 5.77305 6.273 5.55905 7.482 5.66505C9.179 5.81605 10.028 5.89105 10.452 5.67005C10.875 5.45005 11.162 4.93405 11.738 3.90305L12.466 2.59605C12.946 1.73605 13.186 1.30505 13.751 1.10205C14.316 0.899049 14.656 1.02205 15.336 1.26805C16.1175 1.54866 16.8272 1.99865 17.4143 2.58577C18.0014 3.17288 18.4514 3.8826 18.732 4.66405C18.978 5.34405 19.101 5.68405 18.898 6.24905C18.695 6.81305 18.265 7.05305 17.404 7.53405L16.067 8.27905C15.037 8.85305 14.523 9.14105 14.302 9.56805C14.082 9.99605 14.162 10.826 14.322 12.486C14.44 13.706 14.237 14.88 13.556 15.97C13.258 16.446 13.109 16.684 12.628 16.879C12.148 17.073 11.852 17.006 11.259 16.871Z" stroke="#1974FD" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    : item.notification_type === "event" || item.notification_type === "event_created" || item.notification_type === "event_updated" || item.notification_type === "event_cancelled"
+                                      ? <svg width="15" height="15" className="sm:w-8 sm:h-8" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M21.3333 2.66602V7.99935M10.6667 2.66602V7.99935M4 13.3327H28M6.66667 5.33268H25.3333C26.8061 5.33268 28 6.52659 28 7.99935V26.666C28 28.1388 26.8061 29.3327 25.3333 29.3327H6.66667C5.19391 29.3327 4 28.1388 4 26.666V7.99935C4 6.52659 5.19391 5.33268 6.66667 5.33268Z" stroke="#D37B14" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                                       </svg>
-                                      : ""
-                              }
-                            </span>
-                            <span className="hidden sm:inline">
-                              {item.is_read
-                                ? ""
-                                : item.notification_type === "task" || item.notification_type === "task_assigned"
+                                      : item.notification_type === "project" || item.notification_type === "project_created" || item.notification_type === "project_assigned"
+                                        ? <svg width="15" height="15" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                          <path d="M1 19L6 14M11.259 16.871C7.515 16.021 3.979 12.485 3.129 8.74105C2.994 8.14905 2.927 7.85305 3.122 7.37205C3.316 6.89205 3.555 6.74205 4.031 6.44505C5.107 5.77305 6.273 5.55905 7.482 5.66505C9.179 5.81605 10.028 5.89105 10.452 5.67005C10.875 5.45005 11.162 4.93405 11.738 3.90305L12.466 2.59605C12.946 1.73605 13.186 1.30505 13.751 1.10205C14.316 0.899049 14.656 1.02205 15.336 1.26805C16.1175 1.54866 16.8272 1.99865 17.4143 2.58577C18.0014 3.17288 18.4514 3.8826 18.732 4.66405C18.978 5.34405 19.101 5.68405 18.898 6.24905C18.695 6.81305 18.265 7.05305 17.404 7.53405L16.067 8.27905C15.037 8.85305 14.523 9.14105 14.302 9.56805C14.082 9.99605 14.162 10.826 14.322 12.486C14.44 13.706 14.237 14.88 13.556 15.97C13.258 16.446 13.109 16.684 12.628 16.879C12.148 17.073 11.852 17.006 11.259 16.871Z" stroke="#1974FD" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                        : "V"
+                                }
+                              </span>
+                              <span className="hidden sm:inline">
+                                {item.notification_type === "task" || item.notification_type === "task_assigned"
                                   ? <svg width="15" height="15" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M14.5 13.2L12.9 11.6L12 12.5L14.5 15L19 10.5L18.1 9.6L14.5 13.2Z" fill={item.is_read ? "#6B7280" : "#00C300"} />
                                     <path d="M16 3H14V2.5C14 2.22 13.78 2 13.5 2H6.5C6.22 2 6 2.22 6 2.5V3H4C3.45 3 3 3.45 3 4V17C3 17.55 3.45 18 4 18H9V16H4V4H6V6H14V4H16V11H18V4C18 3.45 17.55 3 16 3ZM13 5H7V2.5H13V5Z" fill={item.is_read ? "#6B7280" : "#00C300"} />
@@ -751,10 +772,11 @@ useEffect(() => {
                                         <path d="M1 19L6 14M11.259 16.871C7.515 16.021 3.979 12.485 3.129 8.74105C2.994 8.14905 2.927 7.85305 3.122 7.37205C3.316 6.89205 3.555 6.74205 4.031 6.44505C5.107 5.77305 6.273 5.55905 7.482 5.66505C9.179 5.81605 10.028 5.89105 10.452 5.67005C10.875 5.45005 11.162 4.93405 11.738 3.90305L12.466 2.59605C12.946 1.73605 13.186 1.30505 13.751 1.10205C14.316 0.899049 14.656 1.02205 15.336 1.26805C16.1175 1.54866 16.8272 1.99865 17.4143 2.58577C18.0014 3.17288 18.4514 3.8826 18.732 4.66405C18.978 5.34405 19.101 5.68405 18.898 6.24905C18.695 6.81305 18.265 7.05305 17.404 7.53405L16.067 8.27905C15.037 8.85305 14.523 9.14105 14.302 9.56805C14.082 9.99605 14.162 10.826 14.322 12.486C14.44 13.706 14.237 14.88 13.556 15.97C13.258 16.446 13.109 16.684 12.628 16.879C12.148 17.073 11.852 17.006 11.259 16.871Z" stroke={item.is_read ? "#6B7280" : "#1974FD"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                                       </svg>
                                       : ""
-                              }
-                            </span>
-                          </div>
-                        </button>
+                                }
+                              </span>
+                            </div>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}
