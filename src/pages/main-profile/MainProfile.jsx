@@ -385,7 +385,7 @@ const MainProfile = () => {
               </span>
               <div className="flex flex-wrap gap-2">
                 <Tag color="blue" className="rounded-full text-xs sm:text-sm px-2 sm:px-3 capitalize">
-                  {user.role}
+                  {user.role === "dep_manager" ? "Department Manager" : user.role}
                 </Tag>
                 {user.level && user.level !== "none" && (
                   <Tag color="purple" className="rounded-full text-xs sm:text-sm px-2 sm:px-3 capitalize">
