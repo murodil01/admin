@@ -35,7 +35,7 @@ const Projects = () => {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [deadline, setDeadline] = useState("");
   const allDepartmentsIcon = '/M2.png';
-  const { user, loading: authLoading } = useAuth(); 
+  const { user, loading: authLoading } = useAuth();
   const [dataLoading, setDataLoading] = useState(true);
   const isLoading = authLoading || dataLoading;
 
@@ -61,7 +61,7 @@ const Projects = () => {
   const [deptModalFilteredUsers, setDeptModalFilteredUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
-   
+
   const filteredUsersBySearch = useMemo(() => {
     if (!searchTerm.trim()) return deptModalFilteredUsers;
 
@@ -83,22 +83,22 @@ const Projects = () => {
   }, []);
 
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
-  const fetchTotalDepartments = async () => {
-    try {
-      const response = await getDepartments();
-      setTotalDepartmentsCount(response.length);
-      console.log('Total departments from API:', response.length);
-    } catch (error) {
-      console.error('Error fetching departments:', error);
-      setTotalDepartmentsCount(4);
-    }
-  };
-  
-  
-  fetchTotalDepartments();
-}, []);
+    const fetchTotalDepartments = async () => {
+      try {
+        const response = await getDepartments();
+        setTotalDepartmentsCount(response.length);
+        console.log('Total departments from API:', response.length);
+      } catch (error) {
+        console.error('Error fetching departments:', error);
+        setTotalDepartmentsCount(4);
+      }
+    };
+
+
+    fetchTotalDepartments();
+  }, []);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -205,27 +205,27 @@ const Projects = () => {
   }, [modalType, selectedTask, allUsers, filteredUsers]);
 
   const loadProjects = async (page = 1) => {
-  setLoading(true);
-  try {
-    console.log(`Loading page ${page} with pageSize ${pageSize}`);
-    const data = await getProjects(page, pageSize);
-    console.log("Received data:", data);
-    
-    // Make sure we're getting the expected number of results
-    if (data.results && data.results.length > 0) {
-      setProjectsData(data);
-      setCurrentPage(page);
-    } else if (page > 1) {
-      // If we requested a page with no results, go back to previous page
-      await loadProjects(page - 1);
+    setLoading(true);
+    try {
+      console.log(`Loading page ${page} with pageSize ${pageSize}`);
+      const data = await getProjects(page, pageSize);
+      console.log("Received data:", data);
+
+      // Make sure we're getting the expected number of results
+      if (data.results && data.results.length > 0) {
+        setProjectsData(data);
+        setCurrentPage(page);
+      } else if (page > 1) {
+        // If we requested a page with no results, go back to previous page
+        await loadProjects(page - 1);
+      }
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+      message.error("Loyihalarni yuklashda xatolik");
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Error fetching projects:", error);
-    message.error("Loyihalarni yuklashda xatolik");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
   if (isLoading)
     return (
       <div className="flex justify-center items-center h-[100vh]">
@@ -369,62 +369,62 @@ const Projects = () => {
   };
 
   const handleAddTask = async () => {
-  if (!taskName.trim()) {
-    return message.error("Task name kiritilishi kerak!");
-  }
-  
-  if (selectedDepartments.length === 0) {
-    return message.error("Kamida bitta department tanlang!");
-  }
-  
-  try {
-    const formData = new FormData();
-    formData.append("name", taskName);
-    formData.append("description", description);
-    
-    if (deadline) {
-      formData.append("deadline", deadline);
+    if (!taskName.trim()) {
+      return message.error("Task name kiritilishi kerak!");
     }
-    
-    const isAllDepartmentsSelected = selectedDepartments.includes("all") ||
-      (selectedDepartments.length === allDepartments.length && !selectedDepartments.includes("none"));
-    formData.append("is_all_departments", isAllDepartmentsSelected);
-    
-    if (selectedDepartments.includes("all")) {
-      allDepartments.forEach((dept) => {
-        formData.append("department_ids", dept.id);
-      });
-    } else if (!selectedDepartments.includes("none")) {
-      selectedDepartments.forEach((id) => {
-        if (id !== "none" && id !== "all") {
-          formData.append("department_ids", id);
-        }
-      });
+
+    if (selectedDepartments.length === 0) {
+      return message.error("Kamida bitta department tanlang!");
     }
-    
-    selectedUsers.forEach((id) => formData.append("assigned", id));
-    
-    if (imageFile) {
-      formData.append("image", imageFile);
+
+    try {
+      const formData = new FormData();
+      formData.append("name", taskName);
+      formData.append("description", description);
+
+      if (deadline) {
+        formData.append("deadline", deadline);
+      }
+
+      const isAllDepartmentsSelected = selectedDepartments.includes("all") ||
+        (selectedDepartments.length === allDepartments.length && !selectedDepartments.includes("none"));
+      formData.append("is_all_departments", isAllDepartmentsSelected);
+
+      if (selectedDepartments.includes("all")) {
+        allDepartments.forEach((dept) => {
+          formData.append("department_ids", dept.id);
+        });
+      } else if (!selectedDepartments.includes("none")) {
+        selectedDepartments.forEach((id) => {
+          if (id !== "none" && id !== "all") {
+            formData.append("department_ids", id);
+          }
+        });
+      }
+
+      selectedUsers.forEach((id) => formData.append("assigned", id));
+
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
+
+      await createProject(formData);
+      message.success("✅ Task created successfully");
+
+      // Calculate if we need to change page
+      const totalPages = Math.ceil((projectsData.count + 1) / pageSize);
+      if (currentPage < totalPages) {
+        await loadProjects(currentPage);
+      } else {
+        await loadProjects(totalPages);
+      }
+
+      handleAddClose();
+    } catch (error) {
+      console.error("❌ Task yaratishda xatolik:", error);
+      message.error("Failed to create task");
     }
-    
-    await createProject(formData);
-    message.success("✅ Task created successfully");
-    
-    // Calculate if we need to change page
-    const totalPages = Math.ceil((projectsData.count + 1) / pageSize);
-    if (currentPage < totalPages) {
-      await loadProjects(currentPage);
-    } else {
-      await loadProjects(totalPages);
-    }
-    
-    handleAddClose();
-  } catch (error) {
-    console.error("❌ Task yaratishda xatolik:", error);
-    message.error("Failed to create task");
-  }
-};
+  };
 
   const handleEditTask = async () => {
     if (!taskName.trim()) {
@@ -492,7 +492,6 @@ const Projects = () => {
     }
   };
 
-<<<<<<< HEAD
   const dropdownItems = (task) => [
     {
       key: "edit",
@@ -510,58 +509,38 @@ const Projects = () => {
     {
       key: "info",
       label: (
-=======
- const dropdownItems = (task) => [
-  {
-    key: "edit",
-    label: (
-      <Permission anyOf={[ROLES.FOUNDER,ROLES.MANAGER,ROLES.HEADS]}>
->>>>>>> 69e4bb7dc50af292e39fa35f7287e4918cd97b71
         <button
-          onClick={() => handleActionOpen(task, "edit")}
+          onClick={() => handleActionOpen(task, "info")}
           className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer"
         >
-          <img src={pencil} alt="" /> <span>Edit</span>
+          <img src={info} alt="" /> <span>Info</span>
         </button>
-      </Permission>
-    ),
-  },
-  {
-    key: "info",
-    label: (
-      <button
-        onClick={() => handleActionOpen(task, "info")}
-        className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer"
-      >
-        <img src={info} alt="" /> <span>Info</span>
-      </button>
-    ),
-  },
-  {
-    key: "Archive",
-    label: (
-       <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
-      <button className=" flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer">
-       <FaArchive  className=" text-black"/> <span>Archive</span>
-      </button>
-      </Permission>
-    ),
-  },
-  {
-    key: "delete",
-    label: (
-      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
-        <button
-          onClick={() => handleActionOpen(task, "delete")}
-          className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer"
-        >
-          <img src={trash} alt="" /> <span>Delete</span>
-        </button>
-      </Permission>
-    ),
-  },
-];
-
+      ),
+    },
+    {
+      key: "Archive",
+      label: (
+        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+          <button className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer">
+            <FaArchive className="text-black" /> <span>Archive</span>
+          </button>
+        </Permission>
+      ),
+    },
+    {
+      key: "delete",
+      label: (
+        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+          <button
+            onClick={() => handleActionOpen(task, "delete")}
+            className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer"
+          >
+            <img src={trash} alt="" /> <span>Delete</span>
+          </button>
+        </Permission>
+      ),
+    },
+  ];
 
   const formatDate2 = (dateStr) => {
     if (!dateStr) return "N/A";
@@ -629,28 +608,28 @@ const Projects = () => {
                 </label>
                 {selectedImage && (
                   <>
-                  <div className="flex items-baseline  gap-2">
-                   <img
-                    src={selectedImage}
-                    alt="Selected"
-                    className="mt-2 w-20 h-20 object-cover rounded"
-                    
-                  />
-                    <div className="mt-2">
-                      <button
-                        className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-md"
-                        onClick={() => {
-                          setImageFile(null);
-                          setSelectedImage(null);
-                        }}
-                      >
-                        Remove
-                      </button>
+                    <div className="flex items-baseline  gap-2">
+                      <img
+                        src={selectedImage}
+                        alt="Selected"
+                        className="mt-2 w-20 h-20 object-cover rounded"
+
+                      />
+                      <div className="mt-2">
+                        <button
+                          className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-md"
+                          onClick={() => {
+                            setImageFile(null);
+                            setSelectedImage(null);
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
-                     </div>
                   </>
-                 
-                 
+
+
                 )}
               </div>
 
@@ -758,7 +737,7 @@ const Projects = () => {
         return (
           <div className="flex flex-col gap-5 text-sm text-gray-700">
             <h1 className="text-[#0A1629] text-[22px] font-bold mb-3">
-            Project info 
+              Project info
             </h1>
             <div className="grid grid-cols-3 w-full">
               <p className="text-gray-400 font-medium">Project name</p>
@@ -789,8 +768,8 @@ const Projects = () => {
                 <div className="flex flex-wrap gap-2">
                   {selectedTask.departments?.length > 0 ? (
                     selectedTask.departments.map((dept) => (
-                      <div 
-                        key={dept.id} 
+                      <div
+                        key={dept.id}
                         className="flex items-center justify-center flex-shrink-0"
                       >
                         {dept.photo ? (
@@ -952,7 +931,6 @@ const Projects = () => {
         <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
           Project
         </h3>
-<<<<<<< HEAD
         <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.DEP_MANAGER, ROLES.HEADS]}>
           <button
             onClick={handleAddOpen}
@@ -962,207 +940,200 @@ const Projects = () => {
             <span>Add Project</span>
           </button>
         </Permission>
-=======
-        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
-           <button
-          onClick={handleAddOpen}
-          className="capitalize w-full sm:max-w-[172px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
-        >
-          <span className="text-[22px]">+</span>
-          <span>Add Project</span>
-        </button>
-       </Permission>
->>>>>>> 69e4bb7dc50af292e39fa35f7287e4918cd97b71
-      </div>
+      </div >
       {/* Tasks Grid - Responsive Grid Layout */}
-   
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2">
-        {projectsData.results.map((project) => (
-          <div
-            key={project.id}
-            className=" border-2 border-[#EFEFEF] rounded-[14px] p-3 bg-white relative group flex flex-col gap-3 cursor-pointer hover:shadow-lg transition-shadow duration-200"
-          >
-            {project.image ? (
-              <button
-                onClick={() => navigate(`/tasks/${project.id}`)}
-                className="cursor-pointer w-full"
-              >
-                <img
-                  onClick={() => navigate(`/tasks/${project.id}`)}
-                  src={project.image}
-                  alt="Task image"
-                  className="h-[134px] w-full object-cover rounded-[14px]"
-                />
-              </button>
-            ) : (
-              <button
-                onClick={() => navigate(`/tasks/${project.id}`)}
-                className="h-[134px] w-full rounded-[14px] mb-2 overflow-hidden bg-gray-200 flex items-center justify-center cursor-pointer"
-              >
-                <span className="text-gray-500 text-sm">No Image</span>
-              </button>
-            )}
-            <button
-              onClick={() => navigate(`/tasks/${project.id}`)}
-              className="flex items-center gap-1 mb-2 cursor-pointer w-full"
-            >
-              <span className="text-xs font-bold text-gray-600 whitespace-nowrap flex-shrink-0">
-                {project?.progress}%
-              </span>
-              <div className="flex-1 h-2 bg-gray-300 rounded">
-                <div
-                  className="h-full bg-blue-500 rounded"
-                  style={{ width: `${project?.progress}%` }}
-                  
-                ></div>
-              </div>
-              
-            </button> 
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1 flex-1 min-w-0">
-                <div className="flex items-center relative w-auto h-8 flex-shrink-0">                   
-          
 
-{project.departments?.length > 0 ? (
-  <div className="flex items-center -space-x-2">
-    {(() => {
-      const totalDepts = project.departments.length;
-      
-      let isAllDepartments = false;
-      
-      if (allDepartments && allDepartments.length > 0) {
-        const isAllSelected = totalDepts === allDepartments.length;
-        isAllDepartments = isAllSelected;
-      } else {
-        const isAllByCount = totalDepts === totalDepartmentsCount && totalDepartmentsCount > 0;
-        const hasAllFlag = project.isAllDepartments === true || 
-                          project.allSelected === true ||
-                          project.selectAll === true;
-        isAllDepartments = isAllByCount || hasAllFlag;
-      }
-      
-      if (isAllDepartments) {
-        return (
-          <div className="relative">
-            <img
-              src={allDepartmentsIcon}
-              alt="All Departments"
-              className="w-7 h-7 rounded-full border-2 border-white shadow-sm object-cover"
-              onError={(e) => {
-                console.log('Image load failed, using fallback');
-                const fallbackDiv = document.createElement('div');
-                fallbackDiv.className = 'w-7 h-7 border-2 border-white rounded-full bg-blue-500 flex items-center justify-center shadow-sm text-white font-bold text-sm';
-                fallbackDiv.innerHTML = 'M';
-                e.target.parentNode.replaceChild(fallbackDiv, e.target);
-              }}
-            />
-          </div>
-        );
-      } else {
-        const maxVisible = 2;
-        const visibleDepts = project.departments.slice(0, maxVisible);
-        const remainingCount = totalDepts - maxVisible;
-        
-        return (
-          <div className="flex items-center w-auto">
-            {visibleDepts.map((dept, index) => (
-              <div
-                key={dept.id}
-                className="relative w-[25px] flex items-center"
-                style={{
-                  marginLeft: index > 0 ? '-8px' : '0',
-                }}
-              >
-                {dept.photo ? (
-                  <img
-                    src={dept.photo}
-                    alt={`Department ${dept.name || dept.id}`}
-                    className="w-7 h-7 border-2 border-white rounded-full object-cover hover:opacity-80 transition cursor-pointer shadow-sm"
-                  />
-                ) : (
-                  <div className="w-7 h-7 bg-gray-200 border-2 border-white rounded-full flex items-center justify-center shadow-sm">
-                    <span className="text-xs font-medium">
-                      {dept.name ? dept.name.charAt(0).toUpperCase() : 'D'}
-                    </span>
-                  </div>
-                )}
-              </div>
-            ))}
-            {remainingCount > 0 && (
-              <div
-                className="relative flex items-center bg-blue-100 border-2 border-white rounded-full w-7 h-7 shadow-sm"
-                style={{
-                  marginLeft: '-8px',
-                  zIndex: 0
-                }}
-              >
-                <span className="text-xs font-medium text-blue-600 w-full text-center">
-                  +{remainingCount}
-                </span>
-              </div>
-            )}
-          </div>
-        );
-      }
-    })()}
-  </div>
-) : (
-  <span className="text-gray-400">-</span>
-)}
-                </div>
+      < div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2" >
+        {
+          projectsData.results.map((project) => (
+            <div
+              key={project.id}
+              className=" border-2 border-[#EFEFEF] rounded-[14px] p-3 bg-white relative group flex flex-col gap-3 cursor-pointer hover:shadow-lg transition-shadow duration-200"
+            >
+              {project.image ? (
                 <button
                   onClick={() => navigate(`/tasks/${project.id}`)}
-                  className="font-bold ml-3 text-lg cursor-pointer truncate flex-1 text-left"
-                  title={project.name}
+                  className="cursor-pointer w-full"
                 >
-                  {project.name}
+                  <img
+                    onClick={() => navigate(`/tasks/${project.id}`)}
+                    src={project.image}
+                    alt="Task image"
+                    className="h-[134px] w-full object-cover rounded-[14px]"
+                  />
                 </button>
-              </div>
-
-              <Dropdown
-                menu={{ items: dropdownItems(project) }}
-                trigger={["click"]}
-                placement="bottomRight"
-                overlayClassName="w-[260px] rounded-lg shadow-lg border border-gray-200"
+              ) : (
+                <button
+                  onClick={() => navigate(`/tasks/${project.id}`)}
+                  className="h-[134px] w-full rounded-[14px] mb-2 overflow-hidden bg-gray-200 flex items-center justify-center cursor-pointer"
+                >
+                  <span className="text-gray-500 text-sm">No Image</span>
+                </button>
+              )}
+              <button
+                onClick={() => navigate(`/tasks/${project.id}`)}
+                className="flex items-center gap-1 mb-2 cursor-pointer w-full"
               >
-                <button className="flex-shrink-0 p-1">
-                  <MoreVertical className="w-5 h-5 text-gray-600 hover:text-black cursor-pointer" />
-                </button>
-              </Dropdown>
-            </div>
+                <span className="text-xs font-bold text-gray-600 whitespace-nowrap flex-shrink-0">
+                  {project?.progress}%
+                </span>
+                <div className="flex-1 h-2 bg-gray-300 rounded">
+                  <div
+                    className="h-full bg-blue-500 rounded"
+                    style={{ width: `${project?.progress}%` }}
 
-            <div className="flex mt-1 justify-between text-sm gap-2">
-              <div className="flex-1">
-                <span className="text-gray-900 font-medium text-xs sm:text-sm">
-                  {formatDate2(project?.created_at)}
-                </span>
+                  ></div>
+                </div>
+
+              </button>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1 flex-1 min-w-0">
+                  <div className="flex items-center relative w-auto h-8 flex-shrink-0">
+
+
+                    {project.departments?.length > 0 ? (
+                      <div className="flex items-center -space-x-2">
+                        {(() => {
+                          const totalDepts = project.departments.length;
+
+                          let isAllDepartments = false;
+
+                          if (allDepartments && allDepartments.length > 0) {
+                            const isAllSelected = totalDepts === allDepartments.length;
+                            isAllDepartments = isAllSelected;
+                          } else {
+                            const isAllByCount = totalDepts === totalDepartmentsCount && totalDepartmentsCount > 0;
+                            const hasAllFlag = project.isAllDepartments === true ||
+                              project.allSelected === true ||
+                              project.selectAll === true;
+                            isAllDepartments = isAllByCount || hasAllFlag;
+                          }
+
+                          if (isAllDepartments) {
+                            return (
+                              <div className="relative">
+                                <img
+                                  src={allDepartmentsIcon}
+                                  alt="All Departments"
+                                  className="w-7 h-7 rounded-full border-2 border-white shadow-sm object-cover"
+                                  onError={(e) => {
+                                    console.log('Image load failed, using fallback');
+                                    const fallbackDiv = document.createElement('div');
+                                    fallbackDiv.className = 'w-7 h-7 border-2 border-white rounded-full bg-blue-500 flex items-center justify-center shadow-sm text-white font-bold text-sm';
+                                    fallbackDiv.innerHTML = 'M';
+                                    e.target.parentNode.replaceChild(fallbackDiv, e.target);
+                                  }}
+                                />
+                              </div>
+                            );
+                          } else {
+                            const maxVisible = 2;
+                            const visibleDepts = project.departments.slice(0, maxVisible);
+                            const remainingCount = totalDepts - maxVisible;
+
+                            return (
+                              <div className="flex items-center w-auto">
+                                {visibleDepts.map((dept, index) => (
+                                  <div
+                                    key={dept.id}
+                                    className="relative w-[25px] flex items-center"
+                                    style={{
+                                      marginLeft: index > 0 ? '-8px' : '0',
+                                    }}
+                                  >
+                                    {dept.photo ? (
+                                      <img
+                                        src={dept.photo}
+                                        alt={`Department ${dept.name || dept.id}`}
+                                        className="w-7 h-7 border-2 border-white rounded-full object-cover hover:opacity-80 transition cursor-pointer shadow-sm"
+                                      />
+                                    ) : (
+                                      <div className="w-7 h-7 bg-gray-200 border-2 border-white rounded-full flex items-center justify-center shadow-sm">
+                                        <span className="text-xs font-medium">
+                                          {dept.name ? dept.name.charAt(0).toUpperCase() : 'D'}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                                {remainingCount > 0 && (
+                                  <div
+                                    className="relative flex items-center bg-blue-100 border-2 border-white rounded-full w-7 h-7 shadow-sm"
+                                    style={{
+                                      marginLeft: '-8px',
+                                      zIndex: 0
+                                    }}
+                                  >
+                                    <span className="text-xs font-medium text-blue-600 w-full text-center">
+                                      +{remainingCount}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+                        })()}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => navigate(`/tasks/${project.id}`)}
+                    className="font-bold ml-3 text-lg cursor-pointer truncate flex-1 text-left"
+                    title={project.name}
+                  >
+                    {project.name}
+                  </button>
+                </div>
+
+                <Dropdown
+                  menu={{ items: dropdownItems(project) }}
+                  trigger={["click"]}
+                  placement="bottomRight"
+                  overlayClassName="w-[260px] rounded-lg shadow-lg border border-gray-200"
+                >
+                  <button className="flex-shrink-0 p-1">
+                    <MoreVertical className="w-5 h-5 text-gray-600 hover:text-black cursor-pointer" />
+                  </button>
+                </Dropdown>
               </div>
-              <div className="flex-1 text-right">
-                <span className="text-gray-900 font-medium text-xs sm:text-sm">
-                  {formatDate2(project?.deadline)}
-                </span>
+
+              <div className="flex mt-1 justify-between text-sm gap-2">
+                <div className="flex-1">
+                  <span className="text-gray-900 font-medium text-xs sm:text-sm">
+                    {formatDate2(project?.created_at)}
+                  </span>
+                </div>
+                <div className="flex-1 text-right">
+                  <span className="text-gray-900 font-medium text-xs sm:text-sm">
+                    {formatDate2(project?.deadline)}
+                  </span>
+                </div>
               </div>
             </div>
+          ))
+        }
+      </div >
+      {
+        projectsData.count > pageSize && (
+          <div className="flex justify-center mt-10 mb-10">
+            <Pagination
+              current={currentPage}
+              pageSize={pageSize}
+              total={projectsData.count}
+              onChange={(page) => {
+                console.log("Changing to page:", page);
+                setCurrentPage(page);
+                loadProjects(page);
+              }}
+              showSizeChanger={false}
+              showQuickJumper={false}
+              className="custom-pagination"
+            />
           </div>
-        ))}
-      </div>
-      {projectsData.count > pageSize && (
-  <div className="flex justify-center mt-10 mb-10">
-    <Pagination
-      current={currentPage}
-      pageSize={pageSize}
-      total={projectsData.count}
-      onChange={(page) => {
-        console.log("Changing to page:", page);
-        setCurrentPage(page);
-        loadProjects(page);
-      }}
-      showSizeChanger={false}
-      showQuickJumper={false}
-      className="custom-pagination"
-    />
-  </div>
-)}
+        )
+      }
       {/* Add Task Modal */}
       <Modal
         open={isAddModalOpen}
@@ -1170,10 +1141,10 @@ const Projects = () => {
         onOk={handleAddTask}
         okText="Add Task"
         cancelText="none"
-              style={{
-              padding: "10px",
-              top:0,  
-            }}
+        style={{
+          padding: "10px",
+          top: 0,
+        }}
         footer={[
           <button
             key="submit"
@@ -1257,7 +1228,7 @@ const Projects = () => {
                     </div>
                   </div>
                 </div>
-                )}
+              )}
             </div>
 
             {/* Department */}
@@ -1336,13 +1307,13 @@ const Projects = () => {
                 Deadline
               </label>
               <div className="flex items-center relative">
-              <input
-                type="date"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
-                className="mt-1 w-full h-[50px] border border-gray-300 rounded-[14px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <div className=" absolute right-3"></div>
+                <input
+                  type="date"
+                  value={deadline}
+                  onChange={(e) => setDeadline(e.target.value)}
+                  className="mt-1 w-full h-[50px] border border-gray-300 rounded-[14px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <div className=" absolute right-3"></div>
               </div>
             </div>
 
@@ -1360,9 +1331,9 @@ const Projects = () => {
             </div>
           </div>
         </div>
-        
+
       </Modal>
-  
+
       {/* Department tanlash modal - YANGILANGAN */}
       <Modal
         open={isDeptModalOpen}
@@ -1384,12 +1355,12 @@ const Projects = () => {
             <div className="flex justify-between items-center mb-3">
               <h4 className="text-lg font-semibold">Select Departments</h4>
             </div>
-            <DepartmentsSelector 
+            <DepartmentsSelector
               selectedIds={selectedDepartments}
               onChange={(ids) => setSelectedDepartments(ids)}
               onDataLoaded={(data) => setAllDepartments(data)}
             />
-            
+
           </div>
 
           {/* Users ro'yxati - Department modal ichida */}
@@ -1430,9 +1401,9 @@ const Projects = () => {
                       ? "Deselect All Users"
                       : "Select All Users"}
                   </button>
-                  
-                  
-                
+
+
+
                 </div>
                 <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-[14px] p-4">
                   <div className="grid grid-cols-1 gap-3">
@@ -1498,7 +1469,7 @@ const Projects = () => {
       </Modal>
 
       {/* Action Modal (Edit / Info / Delete) */}
-      
+
       <Modal
         open={isActionModalOpen}
         onCancel={handleActionClose}
@@ -1508,8 +1479,8 @@ const Projects = () => {
         className="custom-modal"
         style={modalType === "edit" ? { top: 0 } : {}}>
         {renderModalContent()}
-      </Modal>   
-    </div>
+      </Modal>
+    </div >
   );
 };
 
