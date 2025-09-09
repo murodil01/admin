@@ -48,7 +48,7 @@ const Projects = () => {
     next: null,
     previous: null,
   });
-  const [name, setName] = useState("");
+  // const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
@@ -56,7 +56,7 @@ const Projects = () => {
   const [allDepartments, setAllDepartments] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
-  const [allDepartmentsSelected, setAllDepartmentsSelected] = useState(false);
+  // const [allDepartmentsSelected, setAllDepartmentsSelected] = useState(false);
   const [totalDepartmentsCount, setTotalDepartmentsCount] = useState(0);
   const [deptModalFilteredUsers, setDeptModalFilteredUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -977,6 +977,13 @@ const Projects = () => {
               <p className="text-gray-400 font-medium">Description</p>
               <p className="text-gray-700 leading-relaxed col-span-2">
                 {selectedTask.description || "No description provided."}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-3 w-full">
+              <p className="text-gray-400 font-medium">Created by</p>
+              <p className="text-gray-700 leading-relaxed col-span-2">
+                {selectedTask.created_by}
               </p>
             </div>
           </div>
