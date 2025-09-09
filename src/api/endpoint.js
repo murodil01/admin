@@ -39,7 +39,6 @@ const endpoints = {
     getTaskInstructionsByTask: (taskId) =>
       `project/task-instructions/${taskId}`,
     getTaskCommentsByTask: (taskId) => `project/task-comments/${taskId}`,
-    // Instructions endpoint larini to'g'irlang
     getTaskInstructions: "project/instructions/",
     createTaskInstructions: "project/instructions/",
     updateInstruction: (id) => `project/instructions/${id}/`,
@@ -119,12 +118,6 @@ const endpoints = {
     getById: "user-activities/{id}/",
     create: "users/",
   },
-
-  // controlData: {
-  //   getByUserId: (userId) => `control-data/?user_id=${userId}/`,
-  //   createForUser: (userId) => `control-data/?user_id=${userId}/`, // Faqat o'sha user uchun yaratish
-  //   update: (userId) => `control-data/?user_id=${userId}`,
-  // },
 
   controlData: {
     getAll: "control-data/",
