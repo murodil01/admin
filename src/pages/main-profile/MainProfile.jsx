@@ -90,76 +90,79 @@ const ProjectCard = ({ project }) => {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-all duration-300 hover:scale-[1.02]">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        {/* Left Section - Project Info */}
-        <div className="flex items-center gap-4 flex-1">
-          {project.image ? (
-            <img
-              className="w-20 h-20 rounded-xl object-cover shadow-lg"
-              src={project.image}
-              alt={project.name || "Project"}
-              onError={(e) => {
-                // Agar rasm yuklanmasa, default icon ko'rsatish
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
-              }}
-            />
-          ) : null}
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 md:p-4 hover:shadow-md transition-all duration-300 hover:scale-[1.01] max-w-full">
+  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 md:gap-4">
+    {/* Left Section - Project Info */}
+    <div className="flex items-center gap-3 flex-1 min-w-0">
+      {project.image ? (
+        <img
+          className="w-16 h-16 md:w-18 md:h-18 lg:w-20 lg:h-20 rounded-lg object-cover shadow-md flex-shrink-0"
+          src={project.image}
+          alt={project.name || "Project"}
+          onError={(e) => {
+            // Agar rasm yuklanmasa, default icon ko'rsatish
+            e.target.style.display = 'none';
+            e.target.nextSibling.style.display = 'flex';
+          }}
+        />
+      ) : null}
 
-          {/* Default icon (ko'rsatiladi agar rasm bo'lmasa yoki yuklanmasa) */}
-          <div style={{ display: project.image ? 'none' : 'flex' }}>
-            {getProjectIcon(project.name)}
+      {/* Default icon (ko'rsatiladi agar rasm bo'lmasa yoki yuklanmasa) */}
+      <div 
+        className="flex-shrink-0" 
+        style={{ display: project.image ? 'none' : 'flex' }}
+      >
+        {getProjectIcon(project.name)}
+      </div>
+
+      <div className="flex-1 min-w-0 overflow-hidden">
+        <h3 className="text-sm md:text-base lg:text-lg font-semibold text-gray-900 mb-1 truncate leading-tight">
+          {project.name || "Unnamed Project"}
+        </h3>
+        <div className="flex items-center gap-2 text-gray-500 text-xs md:text-sm">
+          <CalendarDays size={12} className="md:w-3.5 md:h-3.5 lg:w-4 lg:h-4 flex-shrink-0" />
+          <span className="truncate">Created {formatDate(project.created_at)}</span>
+        </div>
+      </div>
+    </div>
+
+    {/* Right Section - Project Statistics */}
+    <div className="flex-shrink-0 lg:ml-6">
+      <h4 className="text-xs md:text-sm font-semibold text-gray-900 mb-2 md:mb-3 text-center lg:text-center">
+        Project Data
+      </h4>
+
+      <div className="grid grid-cols-3 gap-3 md:gap-4 lg:gap-5">
+        <div className="text-center">
+          <div className="text-xs text-gray-500 mb-0.5 md:mb-1 font-medium">
+            Total
           </div>
-
-          <div className="flex-1 min-w-0"> {/* min-w-0 text overflow uchun */}
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 truncate">
-              {project.name || "Unnamed Project"}
-            </h3>
-            <div className="flex items-center gap-2 text-gray-500 text-xs sm:text-sm">
-              <CalendarDays size={14} className="sm:w-4 sm:h-4 flex-shrink-0" />
-              <span className="truncate">Created {formatDate(project.created_at)}</span>
-            </div>
+          <div className="text-lg md:text-xl lg:text-2xl font-bold text-blue-600 leading-none">
+            {project.all_tasks ?? 0}
           </div>
         </div>
 
-        {/* Right Section - Project Statistics */}
-        <div className="sm:ml-8 flex-shrink-0">
-          <h4 className="text-sm font-semibold text-gray-900 mb-3 sm:mb-4 text-center">
-            Project Data
-          </h4>
+        <div className="text-center">
+          <div className="text-xs text-gray-500 mb-0.5 md:mb-1 font-medium">
+            Active
+          </div>
+          <div className="text-lg md:text-xl lg:text-2xl font-bold text-green-600 leading-none">
+            {project.active_tasks ?? 0}
+          </div>
+        </div>
 
-          <div className="grid grid-cols-3 gap-4 sm:gap-6">
-            <div className="text-center">
-              <div className="text-xs sm:text-sm text-gray-500 mb-1 font-medium">
-                Total
-              </div>
-              <div className="text-xl sm:text-2xl font-bold text-blue-600">
-                {project.all_tasks ?? 0}
-              </div>
-            </div>
-
-            <div className="text-center">
-              <div className="text-xs sm:text-sm text-gray-500 mb-1 font-medium">
-                Active
-              </div>
-              <div className="text-xl sm:text-2xl font-bold text-green-600">
-                {project.active_tasks ?? 0}
-              </div>
-            </div>
-
-            <div className="text-center">
-              <div className="text-xs sm:text-sm text-gray-500 mb-1 font-medium">
-                Dropped
-              </div>
-              <div className="text-xl sm:text-2xl font-bold text-red-600">
-                {project.dropped_count ?? 0}
-              </div>
-            </div>
+        <div className="text-center">
+          <div className="text-xs text-gray-500 mb-0.5 md:mb-1 font-medium">
+            Dropped
+          </div>
+          <div className="text-lg md:text-xl lg:text-2xl font-bold text-red-600 leading-none">
+            {project.dropped_count ?? 0}
           </div>
         </div>
       </div>
     </div>
+  </div>
+</div>
   );
 };
 
@@ -306,7 +309,7 @@ const Projects = () => {
   }
 
   return (
-    <div className="bg-gray-50 sm:p-6">
+    <div>
       <div className="mx-auto space-y-6">
         {/* Header */}
         <div className="text-center mb-8">
@@ -336,7 +339,7 @@ const Projects = () => {
         ) : (
           <>
             {/* Projects list */}
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-10 sm:grid-cols-2">
               {paginationData.paginatedProjects.map((project) => (
                 <ProjectCard key={`project-${project.id}`} project={project} />
               ))}
