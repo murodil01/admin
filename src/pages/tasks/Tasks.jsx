@@ -546,7 +546,7 @@ const Projects = () => {
     if (!dateStr) return "N/A";
     const date = new Date(dateStr);
     return date.toLocaleDateString("en-US", {
-      month: "long",
+      month: "short",
       day: "numeric",
     });
   };
@@ -556,7 +556,7 @@ const Projects = () => {
     const date = new Date(dateStr);
     return date.toLocaleDateString("en-US", {
       year: "numeric",
-      month: "long",
+      month: "short",
       day: "numeric",
     });
   };

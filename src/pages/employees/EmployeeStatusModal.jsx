@@ -8,23 +8,32 @@ const EmployeeStatusModal = ({ employeeId, currentStatus, visible, onClose, onSu
 
     const handleSave = async () => {
         if (!status) {
-            message.warning('Please, select a status');
+            message.warning("Please, select a status");
             return;
         }
 
         setLoading(true);
         try {
             await updateEmployeeStatus(employeeId, status);
-            message.success('Status updated successfully');
+            message.success("Status updated successfully");
             onSuccess(status);
             onClose();
         } catch (error) {
-            console.error('Error during updating status', error);
-            message.error('Error during updating status');
+            console.error("Error during updating status", error);
+
+            // Backend xabarini chiqarish
+            const backendMessage =
+                error.response?.data?.message ||
+                error.response?.data?.detail ||
+                error.message ||
+                "Error during updating status";
+
+            message.error(backendMessage);
         } finally {
             setLoading(false);
         }
     };
+
 
     return (
         <Modal
