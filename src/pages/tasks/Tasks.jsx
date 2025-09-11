@@ -1,18 +1,12 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { message } from "antd";
-import { Archive, Filter, MoreVertical, Paperclip, Search } from "lucide-react";
-import { Modal, Input, Dropdown, Pagination } from "antd";
+import { message, Modal, Input, Dropdown, Pagination, Drawer, Select, DatePicker, Slider } from "antd";
+import { Archive, Filter, MoreVertical, Paperclip, Search, ChevronDown } from "lucide-react";
 import pencil from "../../assets/icons/pencil.svg";
 import info from "../../assets/icons/info.svg";
 import trash from "../../assets/icons/trash.svg";
 import { useNavigate } from "react-router-dom";
 import DepartmentsSelector from "../../components/calendar/DepartmentsSelector";
-import {
-  getProjects,
-  createProject,
-  updateProject,
-  deleteProject,
-} from "../../api/services/projectService";
+import { getProjects, createProject, updateProject, deleteProject } from "../../api/services/projectService";
 import { getDepartments } from "../../api/services/departmentService";
 import { FaArchive } from "react-icons/fa";
 import { getUsers } from "../../api/services/userService";
@@ -20,6 +14,9 @@ import { useSidebar } from "../../context";
 import { Permission } from "../../components/Permissions";
 import { useAuth } from "../../hooks/useAuth";
 import { ROLES } from "../../components/constants/roles";
+
+const { Option } = Select;
+const { RangePicker } = DatePicker;
 
 const Projects = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -38,9 +35,7 @@ const Projects = () => {
   const { user, loading: authLoading } = useAuth();
   const [dataLoading, setDataLoading] = useState(true);
   const isLoading = authLoading || dataLoading;
-
   const [searchTerm, setSearchTerm] = useState('');
-
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [projectsData, setProjectsData] = useState({
     results: [],
@@ -61,6 +56,17 @@ const Projects = () => {
   const [deptModalFilteredUsers, setDeptModalFilteredUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
+  const [loading, setLoading] = useState(true);
+
+  // Filter state
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [nameFilter, setNameFilter] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState([]);
+  const [dateFilter, setDateFilter] = useState([]);
+  const [deadFilter, setdeadFilter] = useState([]);
+  const [progressFilter, setProgressFilter] = useState([0, 100]);
+  const [filteredProjects, setFilteredProjects] = useState([]);
+  const [isFilterActive, setIsFilterActive] = useState(false);
 
   const filteredUsersBySearch = useMemo(() => {
     if (!searchTerm.trim()) return deptModalFilteredUsers;
@@ -72,6 +78,49 @@ const Projects = () => {
     );
   }, [deptModalFilteredUsers, searchTerm]);
 
+  const getAPIFilters = () => {
+  const filters = {};
+  
+  // Append name filter
+  if (nameFilter) {
+    filters.name = nameFilter;
+  }
+  
+  // Append department filter - send as array (not comma-separated)
+  if (departmentFilter.length > 0) {
+    const departmentNames = departmentFilter.map(id => {
+      const dept = allDepartments.find(d => d.id === id);
+      return dept ? dept.name : null;
+    }).filter(name => name !== null);
+    
+    // Send as array instead of comma-separated string
+    if (departmentNames.length > 0) {
+      filters.department_name = departmentNames;
+    }
+  }
+  
+  // Date filter (created_at)
+  if (dateFilter && dateFilter.length === 2) {
+    filters.created_at__gte = dateFilter[0].format('YYYY-MM-DD');
+    filters.created_at__lte = dateFilter[1].format('YYYY-MM-DD');
+  }
+
+  // Deadline filter
+  if (deadFilter && deadFilter.length === 2) {
+    filters.deadline__gte = deadFilter[0].format('YYYY-MM-DD');
+    filters.deadline__lte = deadFilter[1].format('YYYY-MM-DD');
+  }
+  
+  // Progress filter
+  if (progressFilter[0] > 0 || progressFilter[1] < 100) {
+    filters.progress__gte = progressFilter[0];
+    filters.progress__lte = progressFilter[1];
+  }
+  
+  console.log('Generated filters:', filters); // Debug uchun
+  return filters;
+};
+
   useEffect(() => {
     const handleResize = () => {
       setIsSmallScreen(window.innerWidth < 768);
@@ -82,20 +131,18 @@ const Projects = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     const fetchTotalDepartments = async () => {
       try {
         const response = await getDepartments();
         setTotalDepartmentsCount(response.length);
+        setAllDepartments(response);
         console.log('Total departments from API:', response.length);
       } catch (error) {
         console.error('Error fetching departments:', error);
         setTotalDepartmentsCount(4);
       }
     };
-
 
     fetchTotalDepartments();
   }, []);
@@ -204,28 +251,115 @@ const Projects = () => {
     }
   }, [modalType, selectedTask, allUsers, filteredUsers]);
 
-  const loadProjects = async (page = 1) => {
-    setLoading(true);
-    try {
-      console.log(`Loading page ${page} with pageSize ${pageSize}`);
-      const data = await getProjects(page, pageSize);
-      console.log("Received data:", data);
+  const loadProjects = async (page = 1, filters = {}) => {
+  setLoading(true);
+  try {
+    console.log(`Loading page ${page} with filters:`, filters);
+    const data = await getProjects(page, filters);
+    console.log("Received data:", data);
 
-      // Make sure we're getting the expected number of results
-      if (data.results && data.results.length > 0) {
-        setProjectsData(data);
-        setCurrentPage(page);
-      } else if (page > 1) {
-        // If we requested a page with no results, go back to previous page
-        await loadProjects(page - 1);
+    if (data.results && data.results.length > 0) {
+      setProjectsData(data);
+      setCurrentPage(page);
+      // Apply filters if any are active
+      if (Object.keys(filters).length > 0) {
+        setFilteredProjects(data.results);
+        setIsFilterActive(true);
+      } else {
+        setIsFilterActive(false);
+        setFilteredProjects([]);
       }
-    } catch (error) {
-      console.error("Error fetching projects:", error);
-      message.error("Loyihalarni yuklashda xatolik");
-    } finally {
-      setLoading(false);
+    } else if (page > 1) {
+      await loadProjects(page - 1, filters);
+    } else {
+      // No results even on first page
+      setProjectsData(prev => ({ ...prev, results: [] }));
+      setFilteredProjects([]);
     }
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    message.error("Loyihalarni yuklashda xatolik");
+  } finally {
+    setLoading(false);
+  }
+};
+
+  // Apply filters to projects
+  const applyFilters = (projects = projectsData.results) => {
+    let filtered = [...projects];
+    
+    // Name filter
+    if (nameFilter) {
+      filtered = filtered.filter(project => 
+        project.name.toLowerCase().includes(nameFilter.toLowerCase())
+      );
+    }
+    
+    // Department filter
+    if (departmentFilter.length > 0) {
+      filtered = filtered.filter(project => {
+        const projectDeptIds = project.departments.map(dept => dept.id);
+        return departmentFilter.some(deptId => projectDeptIds.includes(deptId));
+      });
+    }
+    
+    // Date filter
+    if (dateFilter && dateFilter.length === 2) {
+      const startDate = new Date(dateFilter[0]);
+      const endDate = new Date(dateFilter[1]);
+      filtered = filtered.filter(project => {
+        const projectDate = new Date(project.created_at);
+        return projectDate >= startDate && projectDate <= endDate;
+      });
+    }
+    // Deadline Date
+    if(deadFilter && deadFilter.length === 2){
+      const startDate = new Date(deadFilter[0]);
+      const endDate = new Date(deadFilter[1])
+      filtered = filtered.filter(project => {
+        const projectDate = new Date(project.deadline__gte)
+        return projectDate >= startDate && projectDate <= endDate
+      })
+    }
+    
+    // Progress filter
+    if (progressFilter[0] > 0 || progressFilter[1] < 100) {
+      filtered = filtered.filter(project => 
+        project.progress >= progressFilter[0] && project.progress <= progressFilter[1]
+      );
+    }
+    
+    setFilteredProjects(filtered);
+    setIsFilterActive(
+      !!nameFilter || 
+      departmentFilter.length > 0 || 
+      (dateFilter && dateFilter.length === 2) || 
+      progressFilter[0] > 0 || 
+      progressFilter[1] < 100 
+      || deadline && deadline.length === 2
+    );
   };
+
+  // Reset all filters
+  const resetFilters = () => {
+  setNameFilter('');
+  setDepartmentFilter([]);
+  setDateFilter([]);
+  setdeadFilter([])
+  setProgressFilter([0, 100]);
+  setIsFilterActive(false);
+  setFilteredProjects([]);
+  // Also reload without filters
+  loadProjects(1);
+};
+
+  // Handle applying filters
+ const handleApplyFilters = () => {
+  const filters = getAPIFilters();
+  loadProjects(1, filters);
+  setIsFilterModalOpen(false);
+};
+
   if (isLoading)
     return (
       <div className="flex justify-center items-center h-[100vh]">
@@ -369,62 +503,6 @@ const Projects = () => {
   };
 
   const handleAddTask = async () => {
-  if (!taskName.trim()) {
-    return message.error("Task name kiritilishi kerak!");
-  }
-  
-  if (selectedDepartments.length === 0) {
-    return message.error("Kamida bitta department tanlang!");
-  }
-  
-  try {
-    const formData = new FormData();
-    formData.append("name", taskName);
-    formData.append("description", description);
-    
-    if (deadline) {
-      formData.append("deadline", deadline);
-    }
-    
-    const isAllDepartmentsSelected = selectedDepartments.includes("all") ||
-      (selectedDepartments.length === allDepartments.length && !selectedDepartments.includes("none"));
-    formData.append("is_all_departments", isAllDepartmentsSelected);
-    
-    if (selectedDepartments.includes("all")) {
-      allDepartments.forEach((dept) => {
-        formData.append("department_ids", dept.id);
-      });
-    } else if (!selectedDepartments.includes("none")) {
-      selectedDepartments.forEach((id) => {
-        if (id !== "none" && id !== "all") {
-          formData.append("department_ids", id);
-        }
-      });
-    }
-    
-    selectedUsers.forEach((id) => formData.append("assigned", id));
-    
-    if (imageFile) {
-      formData.append("image", imageFile);
-    }
-    
-    await createProject(formData);
-    message.success("Task created successfully");
-    
-    // Calculate if we need to change page
-    const totalPages = Math.ceil((projectsData.count + 1) / pageSize);
-    if (currentPage < totalPages) {
-      await loadProjects(currentPage);
-    } else {
-      await loadProjects(totalPages);
-    }
-    
-    handleAddClose();
-  } catch (error) {
-    console.error("❌ Task yaratishda xatolik:", error);
-    message.error("Failed to create task");
-  }
-};
     if (!taskName.trim()) {
       return message.error("Task name kiritilishi kerak!");
     }
@@ -467,7 +545,6 @@ const Projects = () => {
       await createProject(formData);
       message.success("✅ Task created successfully");
 
-      // Calculate if we need to change page
       const totalPages = Math.ceil((projectsData.count + 1) / pageSize);
       if (currentPage < totalPages) {
         await loadProjects(currentPage);
@@ -527,7 +604,7 @@ const Projects = () => {
       await updateProject(selectedTask.id, formData);
       message.success("✅ Task updated successfully");
 
-      await loadProjects(currentPage); // joriy sahifani yangilash
+      await loadProjects(currentPage);
       handleActionClose();
     } catch (error) {
       console.error("❌ Task yangilashda xatolik:", error);
@@ -536,92 +613,11 @@ const Projects = () => {
   };
 
   const handleDeleteTask = async () => {
-  try {
-    // First, delete from server
-    await deleteProject(selectedTask.id);
-    
-    // Show success message
-    message.success(" Task deleted successfully");
-    
-    // Close modal first
-    handleActionClose();
-    
-    // Then reload data to ensure consistency
-    const currentResults = projectsData.results;
-    const itemsOnCurrentPage = currentResults.length;
-    
-    // If this was the last item on the current page and we're not on page 1
-    if (itemsOnCurrentPage === 1 && currentPage > 1) {
-      // Go to previous page
-      const newPage = currentPage - 1;
-      setCurrentPage(newPage);
-      await loadProjects(newPage);
-    } else {
-      // Reload current page
-      await loadProjects(currentPage);
-    }
-    
-  } catch (error) {
-    console.error("❌ Task o'chirishda xatolik:", error);
-    message.error("Failed to delete task");
-    // Don't need to reload on error since nothing was actually deleted
-  }
-};
- const dropdownItems = (task) => [
-  {
-    key: "edit",
-    label: (
-      <Permission anyOf={[ROLES.FOUNDER,ROLES.MANAGER,ROLES.HEADS]}>
-        <button
-          onClick={() => handleActionOpen(task, "edit")}
-          className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer"
-        >
-          <img src={pencil} alt="" /> <span>Edit</span>
-        </button>
-      </Permission>
-    ),
-  },
-  {
-    key: "info",
-    label: (
-      <button
-        onClick={() => handleActionOpen(task, "info")}
-        className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer"
-      >
-        <img src={info} alt="" /> <span>Info</span>
-      </button>
-    ),
-  },
-  {
-    key: "Archive",
-    label: (
-       <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
-      <button className=" flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer">
-       <FaArchive  className=" text-black"/> <span>Archive</span>
-      </button>
-      </Permission>
-    ),
-  },
-  {
-    key: "delete",
-    label: (
-      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
-        <button
-          onClick={() => handleActionOpen(task, "delete")}
-          className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer"
-        >
-          <img src={trash} alt="" /> <span>Delete</span>
-        </button>
-      </Permission>
-    ),
-  },
-];
-
     try {
       await deleteProject(selectedTask.id);
       message.success("✅ Task deleted successfully");
 
-      await loadProjects(currentPage); // joriy sahifani yangilash
+      await loadProjects(currentPage);
       handleActionClose();
     } catch (error) {
       console.error("❌ Task o'chirishda xatolik:", error);
@@ -765,8 +761,6 @@ const Projects = () => {
                       </div>
                     </div>
                   </>
-
-
                 )}
               </div>
 
@@ -874,7 +868,6 @@ const Projects = () => {
         return (
           <div className="flex flex-col gap-5 text-sm text-gray-700">
             <h1 className="text-[#0A1629] text-[22px] font-bold mb-3">
-              Project Details
               Project info
             </h1>
             <div className="grid grid-cols-3 w-full">
@@ -972,7 +965,12 @@ const Projects = () => {
                 )}
               </div>
             </div>
-
+              <div className="grid grid-cols-3 w-full">
+              <p className="text-gray-400 font-medium">created by</p>
+              <p className="text-gray-700 leading-relaxed col-span-2">
+                {selectedTask.created_by || "No creator"}
+              </p>
+            </div>
             <div className="grid grid-cols-3 w-full">
               <p className="text-gray-400 font-medium">Description</p>
               <p className="text-gray-700 leading-relaxed col-span-2">
@@ -1069,56 +1067,164 @@ const Projects = () => {
     }
   };
 
+  // Determine which projects to display
+  const displayProjects = isFilterActive ? filteredProjects : projectsData.results;
+
   return (
-    <div className=" pt-5">
+    <div className="pt-5">
       {/* Header */}
-      <div className=" justify-between flex w-full  flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
-        <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
+        
+        <h3 className= "  text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
           Project
         </h3>
-        <div className=" flex items-center gap-5">
-        <button className="capitalize h-11 p-3 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[3px] shadow shadow-blue-300 cursor-pointer">
-        <label for="cars">
-          <Filter className=" size-4"/>
-        </label>
-      <select id="cars" name="cars" className="custom-select">
-        <option value="bmw">Name</option>
-        <option value="audi">Department</option>
-        <option value="mercedes">Created</option>
-        <option value="mercedes">Deadline</option>
-        <option value="tesla">Progress</option>
-        <option value="tesla">Ordering</option>
-      </select>
-        </button>
-        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
-           <button
-          onClick={handleAddOpen}
-          className=" p-4 capitalize w-full sm:max-w-[172px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
-        >
-          <span className="text-[22px]">+</span>
-          <span>Add Project</span>
-        </button>
-       </Permission>
-      </div>
-      </div>
-        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.DEP_MANAGER, ROLES.HEADS]}>
-          <button
-            onClick={handleAddOpen}
-            className="capitalize w-full sm:max-w-[172px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
+    
+        <div className="flex items-center gap-5">
+         <div 
+            className=" hover:bg-blue-100 transition-[1]  capitalize h-11 bg-[#ffffff] rounded-2xl text-white flex items-center justify-center gap-[3px] shadow shadow-blue-300 cursor-pointer p-4"
+            onClick={() => setIsFilterModalOpen(true)}
           >
-            <span className="text-[22px]">+</span>
-            <span>Add Project</span>
-          </button>
-        </Permission>
-      </div >
-      {/* Tasks Grid - Responsive Grid Layout */}
+            <Filter className="size-4.5 text-black" />
+           
+            {isFilterActive && (
+              <span className="ml-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            )}
+          </div>
+     
+          <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.DEP_MANAGER, ROLES.HEADS]}>
+            <button
+              onClick={handleAddOpen}
+              className=" p-4 capitalize w-[172px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
+            >
+              <span className="text-[22px]">+</span>
+              <span>Add Project</span>
+            </button>
+          </Permission>
+        </div>
+    </div>
 
-      < div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2" >
-        {
-          projectsData.results.map((project) => (
+      {/* Filter Modal */}
+      <div className="">
+      <Drawer    
+        title="Filter Projects"
+        placement="right"
+        onClose={() => setIsFilterModalOpen(false)}
+        open={isFilterModalOpen}
+        width={400}    // margin o'rniga top bilan boshqar
+        className="Drawer"
+      >
+        <div className="space-y-6 ">
+          {/* Name Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Name
+            </label>
+            <Input
+              className="input_Drawer"
+              placeholder="Search by project name"
+              value={nameFilter}
+              onChange={(e) => setNameFilter(e.target.value)}
+              prefix={<Search size={16} />}
+            />
+          </div>
+
+          {/* Department Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Department
+            </label>
+            <Select
+              className="input_Drawer"
+              mode="multiple"
+              placeholder="Select departments"
+              value={departmentFilter}
+              onChange={setDepartmentFilter}
+              style={{ width: '100%', height:'47px'}}
+              allowClear
+            >
+              {allDepartments.map(dept => (
+                <Option key={dept.id} value={dept.id}>
+                  <div className=" flex items-center">
+                    <img 
+                      src={dept.photo || allDepartmentsIcon} 
+                      alt={dept.name} 
+                      className="w-5 h-5 rounded-full mr-2" 
+                    />
+                    {dept.name}
+                  </div>
+                </Option>
+              ))}
+            </Select>
+          </div>
+          {/* {order} */}
+          {/* <div>
+            <input type="text" placeholder="" />
+          </div> */}
+          {/* Created Date Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Created Date
+            </label>
+            <RangePicker
+              className="input_Drawer"
+              style={{ width: '100%' }}
+              value={dateFilter}
+              onChange={setDateFilter}
+            />
+          </div>
+             {/* deadline Date Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Deadline Date
+            </label>
+            <RangePicker
+              className="input_Drawer"
+              style={{ width: '100%' }}
+              value={deadFilter}
+              onChange={setdeadFilter}
+            />
+          </div>
+
+          {/* Progress Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Progress: {progressFilter[0]}% - {progressFilter[1]}%
+            </label>
+            <Slider
+              className="input_Drawer"
+              range
+              min={0}
+              max={100}
+              value={progressFilter}
+              onChange={setProgressFilter}
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2 mt-8">
+            <button
+              className="flex-1 py-2 bg-gray-200 rounded-md text-gray-700 hover:bg-gray-300"
+              onClick={resetFilters}
+            >
+              Reset
+            </button>
+            <button
+              className="flex-1 py-2 bg-blue-600 rounded-md text-white hover:bg-blue-700"
+              onClick={handleApplyFilters}
+            >
+              Apply Filters
+            </button>
+          </div>
+        </div>
+      </Drawer>
+</div>
+      {/* Tasks Grid - Responsive Grid Layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2" >
+        {displayProjects.length > 0 ? (
+          displayProjects.map((project) => (
             <div
               key={project.id}
-              className=" border-2 border-[#EFEFEF] rounded-[14px] p-3 bg-white relative group flex flex-col gap-3 cursor-pointer hover:shadow-lg transition-shadow duration-200"
+              className="border-2 border-[#EFEFEF] rounded-[14px] p-3 bg-white relative group flex flex-col gap-3 cursor-pointer hover:shadow-lg transition-shadow duration-200"
             >
               {project.image ? (
                 <button
@@ -1151,21 +1257,16 @@ const Projects = () => {
                   <div
                     className="h-full bg-blue-500 rounded"
                     style={{ width: `${project?.progress}%` }}
-
                   ></div>
                 </div>
-
               </button>
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1 flex-1 min-w-0">
                   <div className="flex items-center relative w-auto h-8 flex-shrink-0">
-
-
                     {project.departments?.length > 0 ? (
                       <div className="flex items-center -space-x-2">
                         {(() => {
                           const totalDepts = project.departments.length;
-
                           let isAllDepartments = false;
 
                           if (allDepartments && allDepartments.length > 0) {
@@ -1283,27 +1384,40 @@ const Projects = () => {
               </div>
             </div>
           ))
-        }
-      </div >
-      {
-        projectsData.count > pageSize && (
-          <div className="flex justify-center mt-10 mb-10">
-            <Pagination
-              current={currentPage}
-              pageSize={pageSize}
-              total={projectsData.count}
-              onChange={(page) => {
-                console.log("Changing to page:", page);
-                setCurrentPage(page);
-                loadProjects(page);
-              }}
-              showSizeChanger={false}
-              showQuickJumper={false}
-              className="custom-pagination"
-            />
+        ) : (
+          <div className="col-span-full text-center py-10">
+            <p className="text-gray-500 text-lg">No projects found</p>
+            {isFilterActive && (
+              <button 
+                className="mt-4 text-blue-600 hover:text-blue-800"
+                onClick={resetFilters}
+              >
+                Clear filters
+              </button>
+            )}
           </div>
-        )
-      }
+        )}
+      </div>
+
+      {/* Pagination */}
+      {projectsData.count > pageSize && !isFilterActive && (
+        <div className="flex justify-center mt-10 mb-10">
+          <Pagination
+            current={currentPage}
+            pageSize={pageSize}
+            total={projectsData.count}
+            onChange={(page) => {
+              console.log("Changing to page:", page);
+              setCurrentPage(page);
+              loadProjects(page);
+            }}
+            showSizeChanger={false}
+            showQuickJumper={false}
+            className="custom-pagination"
+          />
+        </div>
+      )}
+
       {/* Add Task Modal */}
       <Modal
         open={isAddModalOpen}
@@ -1501,7 +1615,6 @@ const Projects = () => {
             </div>
           </div>
         </div>
-
       </Modal>
 
       {/* Department tanlash modal - YANGILANGAN */}
@@ -1530,16 +1643,15 @@ const Projects = () => {
               onChange={(ids) => setSelectedDepartments(ids)}
               onDataLoaded={(data) => setAllDepartments(data)}
             />
-
           </div>
 
           {/* Users ro'yxati - Department modal ichida */}
           {selectedDepartments.length > 0 &&
             deptModalFilteredUsers.length > 0 && (
               <div>
-                <div className=" flex flex-col sm:flex-row  sm:items-center  mb-3">
-                  <div className="  flex-2/5 flex">
-                    <div className="relative  w-full max-w-md bg-white rounded-xl border border-gray-300 sm:border-0 flex items-center">
+                <div className="flex flex-col sm:flex-row sm:items-center mb-3">
+                  <div className="flex-2/5 flex">
+                    <div className="relative w-full max-w-md bg-white rounded-xl border border-gray-300 sm:border-0 flex items-center">
                       {/* Search icon */}
                       <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search className="w-5 h-5 text-[#0A1629]" />
@@ -1550,7 +1662,7 @@ const Projects = () => {
                         placeholder="Search..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="flex-1 py-[7px]   bg-gray-100 pr-4 pl-10 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 py-[7px] bg-gray-100 pr-4 pl-10 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       {searchTerm && (
                         <button
@@ -1565,15 +1677,12 @@ const Projects = () => {
                   </div>
                   <button
                     onClick={handleSelectAllUsers}
-                    className="h-[39px]   flex-1 px-9 cursor-pointer flex items-center justify-center rounded-xl max-sm:mt-2 max-sm:py-1 text-white bg-[#1677FF] whitespace-nowrap "
+                    className="h-[39px] flex-1 px-9 cursor-pointer flex items-center justify-center rounded-xl max-sm:mt-2 max-sm:py-1 text-white bg-[#1677FF] whitespace-nowrap "
                   >
                     {deptModalFilteredUsers.every(user => selectedUsers.includes(user.id))
                       ? "Deselect All Users"
                       : "Select All Users"}
                   </button>
-
-
-
                 </div>
                 <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-[14px] p-4">
                   <div className="grid grid-cols-1 gap-3">
@@ -1582,7 +1691,6 @@ const Projects = () => {
                         key={user.id}
                         className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 rounded-lg border border-gray-100"
                       >
-
                         <input
                           type="checkbox"
                           checked={selectedUsers.includes(user.id)}
@@ -1601,7 +1709,6 @@ const Projects = () => {
                               <span className="text-sm font-medium">
                                 {user.first_name?.[0] || "U"}
                               </span>
-
                             </div>
                           )}
                           <div className="flex flex-col min-w-0">
@@ -1639,7 +1746,6 @@ const Projects = () => {
       </Modal>
 
       {/* Action Modal (Edit / Info / Delete) */}
-
       <Modal
         open={isActionModalOpen}
         onCancel={handleActionClose}
@@ -1647,10 +1753,11 @@ const Projects = () => {
         title={getModalTitle()}
         footer={getModalFooter()}
         className="custom-modal"
-        style={modalType === "edit" ? { top: 0 } : {}}>
+        style={modalType === "edit" ? { top: 0 } : {}}
+      >
         {renderModalContent()}
       </Modal>
-    </div >
+    </div>
   );
 };
 
