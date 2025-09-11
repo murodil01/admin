@@ -606,7 +606,7 @@ const GroupSection = ({
     } else {
       setLocalItems([]);
     }
-  }, [items, id]); // ✅ items va id dependency sifatida qoldirildi
+  }, [items]); // ✅ items va id dependency sifatida qoldirildi
 
   useEffect(() => {
     const handleClickOutside = (e) => {
