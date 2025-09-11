@@ -13,6 +13,7 @@ import {
   MoreVertical,
   Move,
   UploadIcon,
+  Search,
 } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -30,6 +31,7 @@ import {
   deleteLeads,
   moveLeadsToGroup,
 } from "../../../api/services/leadsService";
+import FilterPanel from "../filters/FilterPanel.jsx";
 
 const MainLead = () => {
   const { boardId } = useParams();
@@ -46,6 +48,86 @@ const MainLead = () => {
   const [editingGroup, setEditingGroup] = useState(null);
   const [showMoveDropdown, setShowMoveDropdown] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
+// YANGI: Filter states
+const [searchQuery, setSearchQuery] = useState('');
+const [filterBy, setFilterBy] = useState({
+  status: null,
+  owner: null,
+  source: null,
+  dateRange: null
+});
+const [showFilterPanel, setShowFilterPanel] = useState(false);
+
+// YANGI: Filtered leads funksiyasi
+const getFilteredLeads = (groupId) => {
+  let leads = allLeads.filter(lead => lead.group === groupId);
+  
+  // Search bo'yicha filter
+  if (searchQuery.trim()) {
+    const query = searchQuery.toLowerCase();
+    leads = leads.filter(lead => 
+      (lead.name && lead.name.toLowerCase().includes(query)) ||
+      (lead.phone && lead.phone.toLowerCase().includes(query)) ||
+      (lead.notes && lead.notes.toLowerCase().includes(query))
+    );
+  }
+
+  // Status bo'yicha filter
+  if (filterBy.status) {
+    leads = leads.filter(lead => lead.status?.id === filterBy.status);
+  }
+
+  // Owner bo'yicha filter
+  if (filterBy.owner) {
+    leads = leads.filter(lead => lead.person_detail?.id === filterBy.owner);
+  }
+
+  // Source bo'yicha filter
+  if (filterBy.source) {
+    leads = leads.filter(lead => lead.link === filterBy.source);
+  }
+
+  // Date range bo'yicha filter
+  if (filterBy.dateRange?.start || filterBy.dateRange?.end) {
+    leads = leads.filter(lead => {
+      if (!lead.timeline_start) return false;
+      const leadDate = new Date(lead.timeline_start);
+      
+      if (filterBy.dateRange.start && leadDate < new Date(filterBy.dateRange.start)) {
+        return false;
+      }
+      if (filterBy.dateRange.end && leadDate > new Date(filterBy.dateRange.end)) {
+        return false;
+      }
+      return true;
+    });
+  }
+
+  return leads;
+};
+
+// Filter reset funksiyasi
+const resetFilters = () => {
+  setSearchQuery('');
+  setFilterBy({
+    status: null,
+    owner: null,
+    source: null,
+    dateRange: null
+  });
+};
+
+// YANGI: Filter count hisoblovchi funksiya
+const getActiveFiltersCount = () => {
+  let count = 0;
+  if (searchQuery.trim()) count++;
+  if (filterBy.status) count++;
+  if (filterBy.owner) count++;
+  if (filterBy.source) count++;
+  if (filterBy.dateRange?.start || filterBy.dateRange?.end) count++;
+  return count;
+};
+
   // Boardlarni yuklash
   useEffect(() => {
     const fetchBoards = async () => {
@@ -617,6 +699,35 @@ useEffect(() => {
 
   return (
     <div className="bg-gray-50 py-2 px-4 sm:px-6 lg:px-8 rounded-b-[8px] overflow-x">
+         {/* YANGI: Filter Panel */}
+         {showFilterPanel && (
+        <FilterPanel 
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          filterBy={filterBy}
+          setFilterBy={setFilterBy}
+          onClose={() => setShowFilterPanel(false)}
+          onReset={resetFilters}
+          boardId={boardId}
+          allLeads={allLeads}
+        />
+      )}
+
+      {/* Active filters indicator */}
+      {getActiveFiltersCount() > 0 && (
+        <div className="mb-4 flex items-center gap-2">
+          <span className="text-sm text-gray-600">
+            {getActiveFiltersCount()} filter(s) active
+          </span>
+          <button
+            onClick={resetFilters}
+            className="text-sm text-blue-600 hover:text-blue-800"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
+
       {/* Board selector modal */}
       {showBoardSelector && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -659,23 +770,19 @@ useEffect(() => {
           </div>
         ) : (
           groups
-            .map((group) => {
-              if (!group || typeof group !== "object") {
-                console.error("Invalid group object:", group);
+          .map((group) => {
+            const groupId = group.id; // BU QATORNI QOSHISH KERAK
+            const groupTitle = String(group.title || "Untitled Group"); // BU HAM
+            
+            const groupLeads = getFilteredLeads(groupId);
+              
+              // Agar filter natijasida lead yo'q bo'lsa, guruhni yashirish
+              if (groupLeads.length === 0 && getActiveFiltersCount() > 0) {
                 return null;
               }
 
-              const groupId = group.id;
-              const groupTitle = String(group.title || "Untitled Group");
-              const groupLeads = getLeadsForGroup(groupId);
-
-              console.log(
-                `Group ${groupTitle} (${groupId}) has ${groupLeads.length} leads:`,
-                groupLeads
-              );
-
               return (
-                <div key={groupId} className="bg-white rounded-lg shadow-sm">
+                <div key={group.id} className="bg-white rounded-lg shadow-sm">
                   <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-t-lg">
                     <div className="flex items-center gap-2 flex-1">
                       <button
@@ -737,13 +844,13 @@ useEffect(() => {
                     </div>
                   </div>
 
-                  {expandedGroups[groupId] && (
+                  {expandedGroups[group.id] && (
                     <div className="p-4">
                       <GroupSection
-                        key={`group-${groupId}-${groupLeads.length}`}
-                        id={groupId}
+                        key={`group-${group.id}-${groupLeads.length}`}
+                        id={group.id}
                         items={groupLeads}
-                        title={groupTitle}
+                        title={group.title}
                         expanded={true}
                         onToggleExpanded={() => {}}
                         updateTitle={updateGroupTitle}
@@ -767,6 +874,20 @@ useEffect(() => {
             .filter(Boolean)
         )}
       </div>
+
+
+        {/* Search va filter tugmasi uchun floating button */}
+        <button
+        onClick={() => setShowFilterPanel(true)}
+        className="fixed bottom-20 right-4 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 z-30"
+      >
+        <Search size={20} />
+        {getActiveFiltersCount() > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {getActiveFiltersCount()}
+          </span>
+        )}
+      </button>
 
       {/* Add Group Input */}
       {addingGroup ? (
