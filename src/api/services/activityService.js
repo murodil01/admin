@@ -1,16 +1,60 @@
 import api from "../base";
 import endpoints from "../endpoint";
 
-export const getActivities = async (page = 1) => {
+export const getActivities = async (page = 1, filters = {}) => {
     try {
-        const res = await api.get(endpoints.activities.getAll, {
-            params: {
-                page_num: page // Backend 'page' parametrini kutayotgan bo'lishi mumkin
+        const params = {
+            page_num: page
+        };
+
+        if (filters) {
+            // Department filter
+            if (filters.selectedDepartments && filters.selectedDepartments.length > 0) {
+                params["department__name"] = filters.selectedDepartments.join(",");
             }
+
+            // Status filter
+            if (filters.status && filters.status !== '') {
+                params.status = filters.status;
+            }
+
+            // Task count filters
+            if (filters.taskFilters) {
+                const { taskFilters } = filters;
+
+                // Active tasks filter
+                if (taskFilters.activeMin !== '') {
+                    params.active_min = taskFilters.activeMin;
+                }
+                if (taskFilters.activeMax !== '') {
+                    params.active_max = taskFilters.activeMax;
+                }
+
+                // Review tasks filter
+                if (taskFilters.reviewMin !== '') {
+                    params.review_min = taskFilters.reviewMin;
+                }
+                if (taskFilters.reviewMax !== '') {
+                    params.review_max = taskFilters.reviewMax;
+                }
+
+                // Completed tasks filter
+                if (taskFilters.completedMin !== '') {
+                    params.completed_min = taskFilters.completedMin;
+                }
+                if (taskFilters.completedMax !== '') {
+                    params.completed_max = taskFilters.completedMax;
+                }
+            }
+        }
+
+        const res = await api.get(endpoints.activities.getAll, {
+            params: params
         });
+
         return res.data;
     } catch (error) {
-        console.error('Xodimlarni olishda xato:', error);
+        console.error('Error fetching activities:', error);
         throw error;
     }
 };

@@ -79,47 +79,47 @@ const Projects = () => {
   }, [deptModalFilteredUsers, searchTerm]);
 
   const getAPIFilters = () => {
-  const filters = {};
-  
-  // Append name filter
-  if (nameFilter) {
-    filters.name = nameFilter;
-  }
-  
-  // Append department filter - send as array (not comma-separated)
-  if (departmentFilter.length > 0) {
-    const departmentNames = departmentFilter.map(id => {
-      const dept = allDepartments.find(d => d.id === id);
-      return dept ? dept.name : null;
-    }).filter(name => name !== null);
-    
-    // Send as array instead of comma-separated string
-    if (departmentNames.length > 0) {
-      filters.department_name = departmentNames;
-    }
-  }
-  
-  // Date filter (created_at)
-  if (dateFilter && dateFilter.length === 2) {
-    filters.created_at__gte = dateFilter[0].format('YYYY-MM-DD');
-    filters.created_at__lte = dateFilter[1].format('YYYY-MM-DD');
-  }
+    const filters = {};
 
-  // Deadline filter
-  if (deadFilter && deadFilter.length === 2) {
-    filters.deadline__gte = deadFilter[0].format('YYYY-MM-DD');
-    filters.deadline__lte = deadFilter[1].format('YYYY-MM-DD');
-  }
-  
-  // Progress filter
-  if (progressFilter[0] > 0 || progressFilter[1] < 100) {
-    filters.progress__gte = progressFilter[0];
-    filters.progress__lte = progressFilter[1];
-  }
-  
-  console.log('Generated filters:', filters); // Debug uchun
-  return filters;
-};
+    // Append name filter
+    if (nameFilter) {
+      filters.name = nameFilter;
+    }
+
+    // Append department filter - send as array (not comma-separated)
+    if (departmentFilter.length > 0) {
+      const departmentNames = departmentFilter.map(id => {
+        const dept = allDepartments.find(d => d.id === id);
+        return dept ? dept.name : null;
+      }).filter(name => name !== null);
+
+      // Send as array instead of comma-separated string
+      if (departmentNames.length > 0) {
+        filters.department_name = departmentNames;
+      }
+    }
+
+    // Date filter (created_at)
+    if (dateFilter && dateFilter.length === 2) {
+      filters.created_at__gte = dateFilter[0].format('YYYY-MM-DD');
+      filters.created_at__lte = dateFilter[1].format('YYYY-MM-DD');
+    }
+
+    // Deadline filter
+    if (deadFilter && deadFilter.length === 2) {
+      filters.deadline__gte = deadFilter[0].format('YYYY-MM-DD');
+      filters.deadline__lte = deadFilter[1].format('YYYY-MM-DD');
+    }
+
+    // Progress filter
+    if (progressFilter[0] > 0 || progressFilter[1] < 100) {
+      filters.progress__gte = progressFilter[0];
+      filters.progress__lte = progressFilter[1];
+    }
+
+    console.log('Generated filters:', filters); // Debug uchun
+    return filters;
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -252,49 +252,49 @@ const Projects = () => {
   }, [modalType, selectedTask, allUsers, filteredUsers]);
 
   const loadProjects = async (page = 1, filters = {}) => {
-  setLoading(true);
-  try {
-    console.log(`Loading page ${page} with filters:`, filters);
-    const data = await getProjects(page, filters);
-    console.log("Received data:", data);
+    setLoading(true);
+    try {
+      console.log(`Loading page ${page} with filters:`, filters);
+      const data = await getProjects(page, filters);
+      console.log("Received data:", data);
 
-    if (data.results && data.results.length > 0) {
-      setProjectsData(data);
-      setCurrentPage(page);
-      // Apply filters if any are active
-      if (Object.keys(filters).length > 0) {
-        setFilteredProjects(data.results);
-        setIsFilterActive(true);
+      if (data.results && data.results.length > 0) {
+        setProjectsData(data);
+        setCurrentPage(page);
+        // Apply filters if any are active
+        if (Object.keys(filters).length > 0) {
+          setFilteredProjects(data.results);
+          setIsFilterActive(true);
+        } else {
+          setIsFilterActive(false);
+          setFilteredProjects([]);
+        }
+      } else if (page > 1) {
+        await loadProjects(page - 1, filters);
       } else {
-        setIsFilterActive(false);
+        // No results even on first page
+        setProjectsData(prev => ({ ...prev, results: [] }));
         setFilteredProjects([]);
       }
-    } else if (page > 1) {
-      await loadProjects(page - 1, filters);
-    } else {
-      // No results even on first page
-      setProjectsData(prev => ({ ...prev, results: [] }));
-      setFilteredProjects([]);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+      message.error("Loyihalarni yuklashda xatolik");
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Error fetching projects:", error);
-    message.error("Loyihalarni yuklashda xatolik");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   // Apply filters to projects
   const applyFilters = (projects = projectsData.results) => {
     let filtered = [...projects];
-    
+
     // Name filter
     if (nameFilter) {
-      filtered = filtered.filter(project => 
+      filtered = filtered.filter(project =>
         project.name.toLowerCase().includes(nameFilter.toLowerCase())
       );
     }
-    
+
     // Department filter
     if (departmentFilter.length > 0) {
       filtered = filtered.filter(project => {
@@ -302,7 +302,7 @@ const Projects = () => {
         return departmentFilter.some(deptId => projectDeptIds.includes(deptId));
       });
     }
-    
+
     // Date filter
     if (dateFilter && dateFilter.length === 2) {
       const startDate = new Date(dateFilter[0]);
@@ -313,7 +313,7 @@ const Projects = () => {
       });
     }
     // Deadline Date
-    if(deadFilter && deadFilter.length === 2){
+    if (deadFilter && deadFilter.length === 2) {
       const startDate = new Date(deadFilter[0]);
       const endDate = new Date(deadFilter[1])
       filtered = filtered.filter(project => {
@@ -321,44 +321,44 @@ const Projects = () => {
         return projectDate >= startDate && projectDate <= endDate
       })
     }
-    
+
     // Progress filter
     if (progressFilter[0] > 0 || progressFilter[1] < 100) {
-      filtered = filtered.filter(project => 
+      filtered = filtered.filter(project =>
         project.progress >= progressFilter[0] && project.progress <= progressFilter[1]
       );
     }
-    
+
     setFilteredProjects(filtered);
     setIsFilterActive(
-      !!nameFilter || 
-      departmentFilter.length > 0 || 
-      (dateFilter && dateFilter.length === 2) || 
-      progressFilter[0] > 0 || 
-      progressFilter[1] < 100 
+      !!nameFilter ||
+      departmentFilter.length > 0 ||
+      (dateFilter && dateFilter.length === 2) ||
+      progressFilter[0] > 0 ||
+      progressFilter[1] < 100
       || deadline && deadline.length === 2
     );
   };
 
   // Reset all filters
   const resetFilters = () => {
-  setNameFilter('');
-  setDepartmentFilter([]);
-  setDateFilter([]);
-  setdeadFilter([])
-  setProgressFilter([0, 100]);
-  setIsFilterActive(false);
-  setFilteredProjects([]);
-  // Also reload without filters
-  loadProjects(1);
-};
+    setNameFilter('');
+    setDepartmentFilter([]);
+    setDateFilter([]);
+    setdeadFilter([])
+    setProgressFilter([0, 100]);
+    setIsFilterActive(false);
+    setFilteredProjects([]);
+    // Also reload without filters
+    loadProjects(1);
+  };
 
   // Handle applying filters
- const handleApplyFilters = () => {
-  const filters = getAPIFilters();
-  loadProjects(1, filters);
-  setIsFilterModalOpen(false);
-};
+  const handleApplyFilters = () => {
+    const filters = getAPIFilters();
+    loadProjects(1, filters);
+    setIsFilterModalOpen(false);
+  };
 
   if (isLoading)
     return (
@@ -607,8 +607,13 @@ const Projects = () => {
       await loadProjects(currentPage);
       handleActionClose();
     } catch (error) {
-      console.error("❌ Task yangilashda xatolik:", error);
-      message.error("Failed to update task");
+      const backendMessage =
+        error.response?.data?.message ||
+        error.response?.data?.detail ||
+        error.message ||
+        "Error during updating project";
+
+      message.error(backendMessage);
     }
   };
 
@@ -620,8 +625,13 @@ const Projects = () => {
       await loadProjects(currentPage);
       handleActionClose();
     } catch (error) {
-      console.error("❌ Task o'chirishda xatolik:", error);
-      message.error("Failed to delete task");
+      const backendMessage =
+        error.response?.data?.message ||
+        error.response?.data?.detail ||
+        error.message ||
+        "Error during deleting project";
+
+      message.error(backendMessage);
     }
   };
 
@@ -965,7 +975,7 @@ const Projects = () => {
                 )}
               </div>
             </div>
-              <div className="grid grid-cols-3 w-full">
+            <div className="grid grid-cols-3 w-full">
               <p className="text-gray-400 font-medium">Created by</p>
               <p className="text-gray-700 leading-relaxed col-span-2">
                 {selectedTask.created_by || "No creator"}
@@ -1067,23 +1077,23 @@ const Projects = () => {
     <div className="pt-5">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
-        
-        <h3 className= "  text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
+
+        <h3 className="  text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
           Project
         </h3>
-    
+
         <div className="flex items-center gap-5">
-         <div 
+          <div
             className=" hover:bg-blue-100 transition-[1]  capitalize h-11 bg-[#ffffff] rounded-2xl text-white flex items-center justify-center gap-[3px] shadow shadow-blue-300 cursor-pointer p-4"
             onClick={() => setIsFilterModalOpen(true)}
           >
             <Filter className="size-4.5 text-black" />
-           
+
             {isFilterActive && (
               <span className="ml-1 w-2 h-2 bg-red-500 rounded-full"></span>
             )}
           </div>
-     
+
           <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.DEP_MANAGER, ROLES.HEADS]}>
             <button
               onClick={handleAddOpen}
@@ -1094,123 +1104,123 @@ const Projects = () => {
             </button>
           </Permission>
         </div>
-    </div>
+      </div>
 
       {/* Filter Modal */}
       <div className="">
-      <Drawer    
-        title="Filter Projects"
-        placement="right"
-        onClose={() => setIsFilterModalOpen(false)}
-        open={isFilterModalOpen}
-        width={400}    // margin o'rniga top bilan boshqar
-        className="Drawer"
-      >
-        <div className="space-y-6 ">
-          {/* Name Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Name
-            </label>
-            <Input
-              className="input_Drawer"
-              placeholder="Search by project name"
-              value={nameFilter}
-              onChange={(e) => setNameFilter(e.target.value)}
-              prefix={<Search size={16} />}
-            />
-          </div>
+        <Drawer
+          title="Filter Projects"
+          placement="right"
+          onClose={() => setIsFilterModalOpen(false)}
+          open={isFilterModalOpen}
+          width={400}    // margin o'rniga top bilan boshqar
+          className="Drawer"
+        >
+          <div className="space-y-6 ">
+            {/* Name Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Name
+              </label>
+              <Input
+                className="input_Drawer"
+                placeholder="Search by project name"
+                value={nameFilter}
+                onChange={(e) => setNameFilter(e.target.value)}
+                prefix={<Search size={16} />}
+              />
+            </div>
 
-          {/* Department Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Department
-            </label>
-            <Select
-              className="input_Drawer"
-              mode="multiple"
-              placeholder="Select departments"
-              value={departmentFilter}
-              onChange={setDepartmentFilter}
-              style={{ width: '100%', height:'47px'}}
-              allowClear
-            >
-              {allDepartments.map(dept => (
-                <Option key={dept.id} value={dept.id}>
-                  <div className=" flex items-center">
-                    <img 
-                      src={dept.photo || allDepartmentsIcon} 
-                      alt={dept.name} 
-                      className="w-5 h-5 rounded-full mr-2" 
-                    />
-                    {dept.name}
-                  </div>
-                </Option>
-              ))}
-            </Select>
-          </div>
-          {/* {order} */}
-          {/* <div>
+            {/* Department Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Department
+              </label>
+              <Select
+                className="input_Drawer"
+                mode="multiple"
+                placeholder="Select departments"
+                value={departmentFilter}
+                onChange={setDepartmentFilter}
+                style={{ width: '100%', height: '47px' }}
+                allowClear
+              >
+                {allDepartments.map(dept => (
+                  <Option key={dept.id} value={dept.id}>
+                    <div className=" flex items-center">
+                      <img
+                        src={dept.photo || allDepartmentsIcon}
+                        alt={dept.name}
+                        className="w-5 h-5 rounded-full mr-2"
+                      />
+                      {dept.name}
+                    </div>
+                  </Option>
+                ))}
+              </Select>
+            </div>
+            {/* {order} */}
+            {/* <div>
             <input type="text" placeholder="" />
           </div> */}
-          {/* Created Date Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Created Date
-            </label>
-            <RangePicker
-              className="input_Drawer"
-              style={{ width: '100%' }}
-              value={dateFilter}
-              onChange={setDateFilter}
-            />
-          </div>
-             {/* deadline Date Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Deadline Date
-            </label>
-            <RangePicker
-              className="input_Drawer"
-              style={{ width: '100%' }}
-              value={deadFilter}
-              onChange={setdeadFilter}
-            />
-          </div>
+            {/* Created Date Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Created Date
+              </label>
+              <RangePicker
+                className="input_Drawer"
+                style={{ width: '100%' }}
+                value={dateFilter}
+                onChange={setDateFilter}
+              />
+            </div>
+            {/* deadline Date Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Deadline Date
+              </label>
+              <RangePicker
+                className="input_Drawer"
+                style={{ width: '100%' }}
+                value={deadFilter}
+                onChange={setdeadFilter}
+              />
+            </div>
 
-          {/* Progress Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Progress: {progressFilter[0]}% - {progressFilter[1]}%
-            </label>
-            <Slider
-              className="input_Drawer"
-              range
-              min={0}
-              max={100}
-              value={progressFilter}
-              onChange={setProgressFilter}
-            />
-          </div>
+            {/* Progress Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Progress: {progressFilter[0]}% - {progressFilter[1]}%
+              </label>
+              <Slider
+                className="input_Drawer"
+                range
+                min={0}
+                max={100}
+                value={progressFilter}
+                onChange={setProgressFilter}
+              />
+            </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-2 mt-8">
-            <button
-              className="flex-1 py-2 bg-gray-200 rounded-md text-gray-700 hover:bg-gray-300"
-              onClick={resetFilters}
-            >
-              Reset
-            </button>
-            <button
-              className="flex-1 py-2 bg-blue-600 rounded-md text-white hover:bg-blue-700"
-              onClick={handleApplyFilters}
-            >
-              Apply Filters
-            </button>
+            {/* Action Buttons */}
+            <div className="flex gap-2 mt-8">
+              <button
+                className="flex-1 py-2 bg-gray-200 rounded-md text-gray-700 hover:bg-gray-300"
+                onClick={resetFilters}
+              >
+                Reset
+              </button>
+              <button
+                className="flex-1 py-2 bg-blue-600 rounded-md text-white hover:bg-blue-700"
+                onClick={handleApplyFilters}
+              >
+                Apply Filters
+              </button>
+            </div>
           </div>
-        </div>
-      </Drawer>
-</div>
+        </Drawer>
+      </div>
       {/* Tasks Grid - Responsive Grid Layout */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2" >
         {displayProjects.length > 0 ? (
@@ -1381,7 +1391,7 @@ const Projects = () => {
           <div className="col-span-full text-center py-10">
             <p className="text-gray-500 text-lg">No projects found</p>
             {isFilterActive && (
-              <button 
+              <button
                 className="mt-4 text-blue-600 hover:text-blue-800"
                 onClick={resetFilters}
               >
@@ -1646,11 +1656,11 @@ const Projects = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center mb-3">
                   <div className="flex-2/5 flex">
                     <div className="relative w-full max-w-md bg-white rounded-xl border border-gray-300 sm:border-0 flex items-center">
-                     
+
                       <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search className="w-5 h-5 text-[#0A1629]" />
                       </span>
-                     
+
                       <input
                         type="text"
                         placeholder="Search..."
