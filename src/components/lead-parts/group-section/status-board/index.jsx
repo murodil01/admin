@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Trash2, Plus, X } from "lucide-react";
 import api from "../../../../api/base";
 import { updateLeads } from "../../../../api/services/leadsService";
+import { message } from "antd";
 
 const StatusDropdown = ({
   groupId,
@@ -110,7 +111,7 @@ const StatusDropdown = ({
       console.log("🎉 Status dropdown completed successfully");
     } catch (err) {
       console.error("❌ Status dropdown error:", err);
-      alert("Status o'zgartirishda xatolik yuz berdi.");
+      message("Status o'zgartirishda xatolik yuz berdi.");
     } finally {
       setIsUpdating(false);
     }
@@ -125,7 +126,7 @@ const StatusDropdown = ({
     if (!confirmDelete) return;
 
     try {
-      await api.delete(`/board/status/${statusId}/`);
+      await api.delete(`/board/status/${statusId}/delete/`);
 
       // Remove from local state
       setStatusOptions((prev) =>
@@ -142,13 +143,13 @@ const StatusDropdown = ({
       }
     } catch (err) {
       console.error("Failed to delete status:", err);
-      alert("Failed to delete status. It might be in use or you don't have permission.");
+      message.error("Failed to delete status. It might be in use or you don't have permission.");
     }
   };
 
   const handleAddStatus = async () => {
     if (!newStatusName.trim()) {
-      alert("Please enter a status name");
+      message("Please enter a status name");
       return;
     }
 
@@ -169,7 +170,7 @@ const StatusDropdown = ({
       console.log("✅ New status created successfully");
     } catch (err) {
       console.error("Failed to create status:", err);
-      alert("Failed to create status. Please try again.");
+      message.error("Failed to create status. Please try again.");
     }
   };
 
