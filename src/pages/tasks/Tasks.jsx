@@ -966,7 +966,7 @@ const Projects = () => {
               </div>
             </div>
               <div className="grid grid-cols-3 w-full">
-              <p className="text-gray-400 font-medium">created by</p>
+              <p className="text-gray-400 font-medium">Created by</p>
               <p className="text-gray-700 leading-relaxed col-span-2">
                 {selectedTask.created_by || "No creator"}
               </p>
@@ -975,13 +975,6 @@ const Projects = () => {
               <p className="text-gray-400 font-medium">Description</p>
               <p className="text-gray-700 leading-relaxed col-span-2">
                 {selectedTask.description || "No description provided."}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-3 w-full">
-              <p className="text-gray-400 font-medium">Created by</p>
-              <p className="text-gray-700 leading-relaxed col-span-2">
-                {selectedTask.created_by}
               </p>
             </div>
           </div>
