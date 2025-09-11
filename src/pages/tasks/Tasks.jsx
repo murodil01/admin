@@ -1,18 +1,12 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { message } from "antd";
-import { Archive, MoreVertical, Paperclip, Search } from "lucide-react";
-import { Modal, Input, Dropdown, Pagination } from "antd";
+import { message, Modal, Input, Dropdown, Pagination, Drawer, Select, DatePicker, Slider } from "antd";
+import { Archive, Filter, MoreVertical, Paperclip, Search, ChevronDown } from "lucide-react";
 import pencil from "../../assets/icons/pencil.svg";
 import info from "../../assets/icons/info.svg";
 import trash from "../../assets/icons/trash.svg";
 import { useNavigate } from "react-router-dom";
 import DepartmentsSelector from "../../components/calendar/DepartmentsSelector";
-import {
-  getProjects,
-  createProject,
-  updateProject,
-  deleteProject,
-} from "../../api/services/projectService";
+import { getProjects, createProject, updateProject, deleteProject } from "../../api/services/projectService";
 import { getDepartments } from "../../api/services/departmentService";
 import { FaArchive } from "react-icons/fa";
 import { getUsers } from "../../api/services/userService";
@@ -20,6 +14,9 @@ import { useSidebar } from "../../context";
 import { Permission } from "../../components/Permissions";
 import { useAuth } from "../../hooks/useAuth";
 import { ROLES } from "../../components/constants/roles";
+
+const { Option } = Select;
+const { RangePicker } = DatePicker;
 
 const Projects = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -35,12 +32,10 @@ const Projects = () => {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const [deadline, setDeadline] = useState("");
   const allDepartmentsIcon = '/M2.png';
-  const { user, loading: authLoading } = useAuth(); 
+  const { user, loading: authLoading } = useAuth();
   const [dataLoading, setDataLoading] = useState(true);
   const isLoading = authLoading || dataLoading;
-
   const [searchTerm, setSearchTerm] = useState('');
-
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [projectsData, setProjectsData] = useState({
     results: [],
@@ -48,7 +43,7 @@ const Projects = () => {
     next: null,
     previous: null,
   });
-  const [name, setName] = useState("");
+  // const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
@@ -56,12 +51,23 @@ const Projects = () => {
   const [allDepartments, setAllDepartments] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
-  const [allDepartmentsSelected, setAllDepartmentsSelected] = useState(false);
+  // const [allDepartmentsSelected, setAllDepartmentsSelected] = useState(false);
   const [totalDepartmentsCount, setTotalDepartmentsCount] = useState(0);
   const [deptModalFilteredUsers, setDeptModalFilteredUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
-   
+  const [loading, setLoading] = useState(true);
+
+  // Filter state
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [nameFilter, setNameFilter] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState([]);
+  const [dateFilter, setDateFilter] = useState([]);
+  const [deadFilter, setdeadFilter] = useState([]);
+  const [progressFilter, setProgressFilter] = useState([0, 100]);
+  const [filteredProjects, setFilteredProjects] = useState([]);
+  const [isFilterActive, setIsFilterActive] = useState(false);
+
   const filteredUsersBySearch = useMemo(() => {
     if (!searchTerm.trim()) return deptModalFilteredUsers;
 
@@ -71,6 +77,49 @@ const Projects = () => {
         .includes(searchTerm.toLowerCase())
     );
   }, [deptModalFilteredUsers, searchTerm]);
+
+  const getAPIFilters = () => {
+  const filters = {};
+  
+  // Append name filter
+  if (nameFilter) {
+    filters.name = nameFilter;
+  }
+  
+  // Append department filter - send as array (not comma-separated)
+  if (departmentFilter.length > 0) {
+    const departmentNames = departmentFilter.map(id => {
+      const dept = allDepartments.find(d => d.id === id);
+      return dept ? dept.name : null;
+    }).filter(name => name !== null);
+    
+    // Send as array instead of comma-separated string
+    if (departmentNames.length > 0) {
+      filters.department_name = departmentNames;
+    }
+  }
+  
+  // Date filter (created_at)
+  if (dateFilter && dateFilter.length === 2) {
+    filters.created_at__gte = dateFilter[0].format('YYYY-MM-DD');
+    filters.created_at__lte = dateFilter[1].format('YYYY-MM-DD');
+  }
+
+  // Deadline filter
+  if (deadFilter && deadFilter.length === 2) {
+    filters.deadline__gte = deadFilter[0].format('YYYY-MM-DD');
+    filters.deadline__lte = deadFilter[1].format('YYYY-MM-DD');
+  }
+  
+  // Progress filter
+  if (progressFilter[0] > 0 || progressFilter[1] < 100) {
+    filters.progress__gte = progressFilter[0];
+    filters.progress__lte = progressFilter[1];
+  }
+  
+  console.log('Generated filters:', filters); // Debug uchun
+  return filters;
+};
 
   useEffect(() => {
     const handleResize = () => {
@@ -82,23 +131,21 @@ const Projects = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const [loading, setLoading] = useState(true);
-  
   useEffect(() => {
-  const fetchTotalDepartments = async () => {
-    try {
-      const response = await getDepartments();
-      setTotalDepartmentsCount(response.length);
-      console.log('Total departments from API:', response.length);
-    } catch (error) {
-      console.error('Error fetching departments:', error);
-      setTotalDepartmentsCount(4);
-    }
-  };
-  
-  
-  fetchTotalDepartments();
-}, []);
+    const fetchTotalDepartments = async () => {
+      try {
+        const response = await getDepartments();
+        setTotalDepartmentsCount(response.length);
+        setAllDepartments(response);
+        console.log('Total departments from API:', response.length);
+      } catch (error) {
+        console.error('Error fetching departments:', error);
+        setTotalDepartmentsCount(4);
+      }
+    };
+
+    fetchTotalDepartments();
+  }, []);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -204,20 +251,30 @@ const Projects = () => {
     }
   }, [modalType, selectedTask, allUsers, filteredUsers]);
 
-  const loadProjects = async (page = 1) => {
+  const loadProjects = async (page = 1, filters = {}) => {
   setLoading(true);
   try {
-    console.log(`Loading page ${page} with pageSize ${pageSize}`);
-    const data = await getProjects(page, pageSize);
+    console.log(`Loading page ${page} with filters:`, filters);
+    const data = await getProjects(page, filters);
     console.log("Received data:", data);
-    
-    // Make sure we're getting the expected number of results
+
     if (data.results && data.results.length > 0) {
       setProjectsData(data);
       setCurrentPage(page);
+      // Apply filters if any are active
+      if (Object.keys(filters).length > 0) {
+        setFilteredProjects(data.results);
+        setIsFilterActive(true);
+      } else {
+        setIsFilterActive(false);
+        setFilteredProjects([]);
+      }
     } else if (page > 1) {
-      // If we requested a page with no results, go back to previous page
-      await loadProjects(page - 1);
+      await loadProjects(page - 1, filters);
+    } else {
+      // No results even on first page
+      setProjectsData(prev => ({ ...prev, results: [] }));
+      setFilteredProjects([]);
     }
   } catch (error) {
     console.error("Error fetching projects:", error);
@@ -226,6 +283,83 @@ const Projects = () => {
     setLoading(false);
   }
 };
+
+  // Apply filters to projects
+  const applyFilters = (projects = projectsData.results) => {
+    let filtered = [...projects];
+    
+    // Name filter
+    if (nameFilter) {
+      filtered = filtered.filter(project => 
+        project.name.toLowerCase().includes(nameFilter.toLowerCase())
+      );
+    }
+    
+    // Department filter
+    if (departmentFilter.length > 0) {
+      filtered = filtered.filter(project => {
+        const projectDeptIds = project.departments.map(dept => dept.id);
+        return departmentFilter.some(deptId => projectDeptIds.includes(deptId));
+      });
+    }
+    
+    // Date filter
+    if (dateFilter && dateFilter.length === 2) {
+      const startDate = new Date(dateFilter[0]);
+      const endDate = new Date(dateFilter[1]);
+      filtered = filtered.filter(project => {
+        const projectDate = new Date(project.created_at);
+        return projectDate >= startDate && projectDate <= endDate;
+      });
+    }
+    // Deadline Date
+    if(deadFilter && deadFilter.length === 2){
+      const startDate = new Date(deadFilter[0]);
+      const endDate = new Date(deadFilter[1])
+      filtered = filtered.filter(project => {
+        const projectDate = new Date(project.deadline__gte)
+        return projectDate >= startDate && projectDate <= endDate
+      })
+    }
+    
+    // Progress filter
+    if (progressFilter[0] > 0 || progressFilter[1] < 100) {
+      filtered = filtered.filter(project => 
+        project.progress >= progressFilter[0] && project.progress <= progressFilter[1]
+      );
+    }
+    
+    setFilteredProjects(filtered);
+    setIsFilterActive(
+      !!nameFilter || 
+      departmentFilter.length > 0 || 
+      (dateFilter && dateFilter.length === 2) || 
+      progressFilter[0] > 0 || 
+      progressFilter[1] < 100 
+      || deadline && deadline.length === 2
+    );
+  };
+
+  // Reset all filters
+  const resetFilters = () => {
+  setNameFilter('');
+  setDepartmentFilter([]);
+  setDateFilter([]);
+  setdeadFilter([])
+  setProgressFilter([0, 100]);
+  setIsFilterActive(false);
+  setFilteredProjects([]);
+  // Also reload without filters
+  loadProjects(1);
+};
+
+  // Handle applying filters
+ const handleApplyFilters = () => {
+  const filters = getAPIFilters();
+  loadProjects(1, filters);
+  setIsFilterModalOpen(false);
+};
+
   if (isLoading)
     return (
       <div className="flex justify-center items-center h-[100vh]">
@@ -369,18 +503,6 @@ const Projects = () => {
   };
 
   const handleAddTask = async () => {
-    
- await createProject(formData);
-    message.success("✅ Task created successfully");
-    
-    // Agar joriy sahifa to'lib ketgan bo'lsa, oxirgi sahifaga o'tish
-    const totalPages = Math.ceil((projectsData.count + 1) / pageSize);
-    if (currentPage < totalPages) {
-        await loadProjects(currentPage);
-    } else {
-        await loadProjects(totalPages);
-    }
-    handleAddClose();
     if (!taskName.trim()) {
       return message.error("Task name kiritilishi kerak!");
     }
@@ -388,6 +510,7 @@ const Projects = () => {
     if (selectedDepartments.length === 0) {
       return message.error("Kamida bitta department tanlang!");
     }
+
     try {
       const formData = new FormData();
       formData.append("name", taskName);
@@ -399,7 +522,6 @@ const Projects = () => {
 
       const isAllDepartmentsSelected = selectedDepartments.includes("all") ||
         (selectedDepartments.length === allDepartments.length && !selectedDepartments.includes("none"));
-
       formData.append("is_all_departments", isAllDepartmentsSelected);
 
       if (selectedDepartments.includes("all")) {
@@ -423,7 +545,13 @@ const Projects = () => {
       await createProject(formData);
       message.success("✅ Task created successfully");
 
-      await loadProjects(currentPage); // joriy sahifani yangilash
+      const totalPages = Math.ceil((projectsData.count + 1) / pageSize);
+      if (currentPage < totalPages) {
+        await loadProjects(currentPage);
+      } else {
+        await loadProjects(totalPages);
+      }
+
       handleAddClose();
     } catch (error) {
       console.error("❌ Task yaratishda xatolik:", error);
@@ -476,7 +604,7 @@ const Projects = () => {
       await updateProject(selectedTask.id, formData);
       message.success("✅ Task updated successfully");
 
-      await loadProjects(currentPage); // joriy sahifani yangilash
+      await loadProjects(currentPage);
       handleActionClose();
     } catch (error) {
       console.error("❌ Task yangilashda xatolik:", error);
@@ -489,7 +617,7 @@ const Projects = () => {
       await deleteProject(selectedTask.id);
       message.success("✅ Task deleted successfully");
 
-      await loadProjects(currentPage); // joriy sahifani yangilash
+      await loadProjects(currentPage);
       handleActionClose();
     } catch (error) {
       console.error("❌ Task o'chirishda xatolik:", error);
@@ -497,62 +625,61 @@ const Projects = () => {
     }
   };
 
- const dropdownItems = (task) => [
-  {
-    key: "edit",
-    label: (
-      <Permission anyOf={[ROLES.FOUNDER,ROLES.MANAGER,ROLES.HEADS]}>
+  const dropdownItems = (task) => [
+    {
+      key: "edit",
+      label: (
+        <Permission anyOf={[ROLES.FOUNDER, ROLES.DEP_MANAGER, ROLES.MANAGER, ROLES.HEADS]}>
+          <button
+            onClick={() => handleActionOpen(task, "edit")}
+            className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer"
+          >
+            <img src={pencil} alt="" /> <span>Edit</span>
+          </button>
+        </Permission>
+      ),
+    },
+    {
+      key: "info",
+      label: (
         <button
-          onClick={() => handleActionOpen(task, "edit")}
+          onClick={() => handleActionOpen(task, "info")}
           className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer"
         >
-          <img src={pencil} alt="" /> <span>Edit</span>
+          <img src={info} alt="" /> <span>Info</span>
         </button>
-      </Permission>
-    ),
-  },
-  {
-    key: "info",
-    label: (
-      <button
-        onClick={() => handleActionOpen(task, "info")}
-        className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer"
-      >
-        <img src={info} alt="" /> <span>Info</span>
-      </button>
-    ),
-  },
-  {
-    key: "Archive",
-    label: (
-       <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
-      <button className=" flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer">
-       <FaArchive  className=" text-black"/> <span>Archive</span>
-      </button>
-      </Permission>
-    ),
-  },
-  {
-    key: "delete",
-    label: (
-      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
-        <button
-          onClick={() => handleActionOpen(task, "delete")}
-          className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer"
-        >
-          <img src={trash} alt="" /> <span>Delete</span>
-        </button>
-      </Permission>
-    ),
-  },
-];
-
+      ),
+    },
+    {
+      key: "Archive",
+      label: (
+        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+          <button className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer">
+            <FaArchive className="text-black" /> <span>Archive</span>
+          </button>
+        </Permission>
+      ),
+    },
+    {
+      key: "delete",
+      label: (
+        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+          <button
+            onClick={() => handleActionOpen(task, "delete")}
+            className="flex items-center gap-2 text-sm text-gray-800 w-full text-left px-2 py-1 cursor-pointer"
+          >
+            <img src={trash} alt="" /> <span>Delete</span>
+          </button>
+        </Permission>
+      ),
+    },
+  ];
 
   const formatDate2 = (dateStr) => {
     if (!dateStr) return "N/A";
     const date = new Date(dateStr);
     return date.toLocaleDateString("en-US", {
-      month: "long",
+      month: "short",
       day: "numeric",
     });
   };
@@ -562,7 +689,7 @@ const Projects = () => {
     const date = new Date(dateStr);
     return date.toLocaleDateString("en-US", {
       year: "numeric",
-      month: "long",
+      month: "short",
       day: "numeric",
     });
   };
@@ -614,28 +741,26 @@ const Projects = () => {
                 </label>
                 {selectedImage && (
                   <>
-                  <div className="flex items-baseline  gap-2">
-                   <img
-                    src={selectedImage}
-                    alt="Selected"
-                    className="mt-2 w-20 h-20 object-cover rounded"
-                    
-                  />
-                    <div className="mt-2">
-                      <button
-                        className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-md"
-                        onClick={() => {
-                          setImageFile(null);
-                          setSelectedImage(null);
-                        }}
-                      >
-                        Remove
-                      </button>
+                    <div className="flex items-baseline  gap-2">
+                      <img
+                        src={selectedImage}
+                        alt="Selected"
+                        className="mt-2 w-20 h-20 object-cover rounded"
+
+                      />
+                      <div className="mt-2">
+                        <button
+                          className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 rounded-md"
+                          onClick={() => {
+                            setImageFile(null);
+                            setSelectedImage(null);
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
-                     </div>
                   </>
-                 
-                 
                 )}
               </div>
 
@@ -743,7 +868,7 @@ const Projects = () => {
         return (
           <div className="flex flex-col gap-5 text-sm text-gray-700">
             <h1 className="text-[#0A1629] text-[22px] font-bold mb-3">
-            Project info 
+              Project info
             </h1>
             <div className="grid grid-cols-3 w-full">
               <p className="text-gray-400 font-medium">Project name</p>
@@ -774,8 +899,8 @@ const Projects = () => {
                 <div className="flex flex-wrap gap-2">
                   {selectedTask.departments?.length > 0 ? (
                     selectedTask.departments.map((dept) => (
-                      <div 
-                        key={dept.id} 
+                      <div
+                        key={dept.id}
                         className="flex items-center justify-center flex-shrink-0"
                       >
                         {dept.photo ? (
@@ -840,7 +965,12 @@ const Projects = () => {
                 )}
               </div>
             </div>
-
+              <div className="grid grid-cols-3 w-full">
+              <p className="text-gray-400 font-medium">Created by</p>
+              <p className="text-gray-700 leading-relaxed col-span-2">
+                {selectedTask.created_by || "No creator"}
+              </p>
+            </div>
             <div className="grid grid-cols-3 w-full">
               <p className="text-gray-400 font-medium">Description</p>
               <p className="text-gray-700 leading-relaxed col-span-2">
@@ -930,212 +1060,357 @@ const Projects = () => {
     }
   };
 
+  // Determine which projects to display
+  const displayProjects = isFilterActive ? filteredProjects : projectsData.results;
+
   return (
-    <div className=" pt-5">
+    <div className="pt-5">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
-        <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
+        
+        <h3 className= "  text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
           Project
         </h3>
-        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER,ROLES.HEADS]}>
-           <button
-          onClick={handleAddOpen}
-          className="capitalize w-full sm:max-w-[172px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
-        >
-          <span className="text-[22px]">+</span>
-          <span>Add Project</span>
-        </button>
-       </Permission>
-      </div>
-      {/* Tasks Grid - Responsive Grid Layout */}
-   
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2">
-        {projectsData.results.map((project) => (
-          <div
-            key={project.id}
-            className=" border-2 border-[#EFEFEF] rounded-[14px] p-3 bg-white relative group flex flex-col gap-3 cursor-pointer hover:shadow-lg transition-shadow duration-200"
+    
+        <div className="flex items-center gap-5">
+         <div 
+            className=" hover:bg-blue-100 transition-[1]  capitalize h-11 bg-[#ffffff] rounded-2xl text-white flex items-center justify-center gap-[3px] shadow shadow-blue-300 cursor-pointer p-4"
+            onClick={() => setIsFilterModalOpen(true)}
           >
-            {project.image ? (
-              <button
-                onClick={() => navigate(`/tasks/${project.id}`)}
-                className="cursor-pointer w-full"
-              >
-                <img
-                  onClick={() => navigate(`/tasks/${project.id}`)}
-                  src={project.image}
-                  alt="Task image"
-                  className="h-[134px] w-full object-cover rounded-[14px]"
-                />
-              </button>
-            ) : (
-              <button
-                onClick={() => navigate(`/tasks/${project.id}`)}
-                className="h-[134px] w-full rounded-[14px] mb-2 overflow-hidden bg-gray-200 flex items-center justify-center cursor-pointer"
-              >
-                <span className="text-gray-500 text-sm">No Image</span>
-              </button>
+            <Filter className="size-4.5 text-black" />
+           
+            {isFilterActive && (
+              <span className="ml-1 w-2 h-2 bg-red-500 rounded-full"></span>
             )}
+          </div>
+     
+          <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.DEP_MANAGER, ROLES.HEADS]}>
             <button
-              onClick={() => navigate(`/tasks/${project.id}`)}
-              className="flex items-center gap-1 mb-2 cursor-pointer w-full"
+              onClick={handleAddOpen}
+              className=" p-4 capitalize w-[172px] h-11 bg-[#0061fe] rounded-2xl text-white flex items-center justify-center gap-[10px] shadow shadow-blue-300 cursor-pointer"
             >
-              <span className="text-xs font-bold text-gray-600 whitespace-nowrap flex-shrink-0">
-                {project?.progress}%
-              </span>
-              <div className="flex-1 h-2 bg-gray-300 rounded">
-                <div
-                  className="h-full bg-blue-500 rounded"
-                  style={{ width: `${project?.progress}%` }}
-                  
-                ></div>
-              </div>
-              
-            </button> 
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1 flex-1 min-w-0">
-                <div className="flex items-center relative w-auto h-8 flex-shrink-0">                   
-          
+              <span className="text-[22px]">+</span>
+              <span>Add Project</span>
+            </button>
+          </Permission>
+        </div>
+    </div>
 
-{project.departments?.length > 0 ? (
-  <div className="flex items-center -space-x-2">
-    {(() => {
-      const totalDepts = project.departments.length;
-      
-      let isAllDepartments = false;
-      
-      if (allDepartments && allDepartments.length > 0) {
-        const isAllSelected = totalDepts === allDepartments.length;
-        isAllDepartments = isAllSelected;
-      } else {
-        const isAllByCount = totalDepts === totalDepartmentsCount && totalDepartmentsCount > 0;
-        const hasAllFlag = project.isAllDepartments === true || 
-                          project.allSelected === true ||
-                          project.selectAll === true;
-        isAllDepartments = isAllByCount || hasAllFlag;
-      }
-      
-      if (isAllDepartments) {
-        return (
-          <div className="relative">
-            <img
-              src={allDepartmentsIcon}
-              alt="All Departments"
-              className="w-7 h-7 rounded-full border-2 border-white shadow-sm object-cover"
-              onError={(e) => {
-                console.log('Image load failed, using fallback');
-                const fallbackDiv = document.createElement('div');
-                fallbackDiv.className = 'w-7 h-7 border-2 border-white rounded-full bg-blue-500 flex items-center justify-center shadow-sm text-white font-bold text-sm';
-                fallbackDiv.innerHTML = 'M';
-                e.target.parentNode.replaceChild(fallbackDiv, e.target);
-              }}
+      {/* Filter Modal */}
+      <div className="">
+      <Drawer    
+        title="Filter Projects"
+        placement="right"
+        onClose={() => setIsFilterModalOpen(false)}
+        open={isFilterModalOpen}
+        width={400}    // margin o'rniga top bilan boshqar
+        className="Drawer"
+      >
+        <div className="space-y-6 ">
+          {/* Name Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Name
+            </label>
+            <Input
+              className="input_Drawer"
+              placeholder="Search by project name"
+              value={nameFilter}
+              onChange={(e) => setNameFilter(e.target.value)}
+              prefix={<Search size={16} />}
             />
           </div>
-        );
-      } else {
-        const maxVisible = 2;
-        const visibleDepts = project.departments.slice(0, maxVisible);
-        const remainingCount = totalDepts - maxVisible;
-        
-        return (
-          <div className="flex items-center w-auto">
-            {visibleDepts.map((dept, index) => (
-              <div
-                key={dept.id}
-                className="relative w-[25px] flex items-center"
-                style={{
-                  marginLeft: index > 0 ? '-8px' : '0',
-                }}
-              >
-                {dept.photo ? (
-                  <img
-                    src={dept.photo}
-                    alt={`Department ${dept.name || dept.id}`}
-                    className="w-7 h-7 border-2 border-white rounded-full object-cover hover:opacity-80 transition cursor-pointer shadow-sm"
-                  />
-                ) : (
-                  <div className="w-7 h-7 bg-gray-200 border-2 border-white rounded-full flex items-center justify-center shadow-sm">
-                    <span className="text-xs font-medium">
-                      {dept.name ? dept.name.charAt(0).toUpperCase() : 'D'}
-                    </span>
+
+          {/* Department Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Department
+            </label>
+            <Select
+              className="input_Drawer"
+              mode="multiple"
+              placeholder="Select departments"
+              value={departmentFilter}
+              onChange={setDepartmentFilter}
+              style={{ width: '100%', height:'47px'}}
+              allowClear
+            >
+              {allDepartments.map(dept => (
+                <Option key={dept.id} value={dept.id}>
+                  <div className=" flex items-center">
+                    <img 
+                      src={dept.photo || allDepartmentsIcon} 
+                      alt={dept.name} 
+                      className="w-5 h-5 rounded-full mr-2" 
+                    />
+                    {dept.name}
                   </div>
-                )}
-              </div>
-            ))}
-            {remainingCount > 0 && (
-              <div
-                className="relative flex items-center bg-blue-100 border-2 border-white rounded-full w-7 h-7 shadow-sm"
-                style={{
-                  marginLeft: '-8px',
-                  zIndex: 0
-                }}
-              >
-                <span className="text-xs font-medium text-blue-600 w-full text-center">
-                  +{remainingCount}
-                </span>
-              </div>
-            )}
+                </Option>
+              ))}
+            </Select>
           </div>
-        );
-      }
-    })()}
-  </div>
-) : (
-  <span className="text-gray-400">-</span>
-)}
-                </div>
+          {/* {order} */}
+          {/* <div>
+            <input type="text" placeholder="" />
+          </div> */}
+          {/* Created Date Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Created Date
+            </label>
+            <RangePicker
+              className="input_Drawer"
+              style={{ width: '100%' }}
+              value={dateFilter}
+              onChange={setDateFilter}
+            />
+          </div>
+             {/* deadline Date Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Deadline Date
+            </label>
+            <RangePicker
+              className="input_Drawer"
+              style={{ width: '100%' }}
+              value={deadFilter}
+              onChange={setdeadFilter}
+            />
+          </div>
+
+          {/* Progress Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Progress: {progressFilter[0]}% - {progressFilter[1]}%
+            </label>
+            <Slider
+              className="input_Drawer"
+              range
+              min={0}
+              max={100}
+              value={progressFilter}
+              onChange={setProgressFilter}
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2 mt-8">
+            <button
+              className="flex-1 py-2 bg-gray-200 rounded-md text-gray-700 hover:bg-gray-300"
+              onClick={resetFilters}
+            >
+              Reset
+            </button>
+            <button
+              className="flex-1 py-2 bg-blue-600 rounded-md text-white hover:bg-blue-700"
+              onClick={handleApplyFilters}
+            >
+              Apply Filters
+            </button>
+          </div>
+        </div>
+      </Drawer>
+</div>
+      {/* Tasks Grid - Responsive Grid Layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2" >
+        {displayProjects.length > 0 ? (
+          displayProjects.map((project) => (
+            <div
+              key={project.id}
+              className="border-2 border-[#EFEFEF] rounded-[14px] p-3 bg-white relative group flex flex-col gap-3 cursor-pointer hover:shadow-lg transition-shadow duration-200"
+            >
+              {project.image ? (
                 <button
                   onClick={() => navigate(`/tasks/${project.id}`)}
-                  className="font-bold ml-3 text-lg cursor-pointer truncate flex-1 text-left"
-                  title={project.name}
+                  className="cursor-pointer w-full"
                 >
-                  {project.name}
+                  <img
+                    onClick={() => navigate(`/tasks/${project.id}`)}
+                    src={project.image}
+                    alt="Task image"
+                    className="h-[134px] w-full object-cover rounded-[14px]"
+                  />
                 </button>
-              </div>
-
-              <Dropdown
-                menu={{ items: dropdownItems(project) }}
-                trigger={["click"]}
-                placement="bottomRight"
-                overlayClassName="w-[260px] rounded-lg shadow-lg border border-gray-200"
+              ) : (
+                <button
+                  onClick={() => navigate(`/tasks/${project.id}`)}
+                  className="h-[134px] w-full rounded-[14px] mb-2 overflow-hidden bg-gray-200 flex items-center justify-center cursor-pointer"
+                >
+                  <span className="text-gray-500 text-sm">No Image</span>
+                </button>
+              )}
+              <button
+                onClick={() => navigate(`/tasks/${project.id}`)}
+                className="flex items-center gap-1 mb-2 cursor-pointer w-full"
               >
-                <button className="flex-shrink-0 p-1">
-                  <MoreVertical className="w-5 h-5 text-gray-600 hover:text-black cursor-pointer" />
-                </button>
-              </Dropdown>
-            </div>
+                <span className="text-xs font-bold text-gray-600 whitespace-nowrap flex-shrink-0">
+                  {project?.progress}%
+                </span>
+                <div className="flex-1 h-2 bg-gray-300 rounded">
+                  <div
+                    className="h-full bg-blue-500 rounded"
+                    style={{ width: `${project?.progress}%` }}
+                  ></div>
+                </div>
+              </button>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1 flex-1 min-w-0">
+                  <div className="flex items-center relative w-auto h-8 flex-shrink-0">
+                    {project.departments?.length > 0 ? (
+                      <div className="flex items-center -space-x-2">
+                        {(() => {
+                          const totalDepts = project.departments.length;
+                          let isAllDepartments = false;
 
-            <div className="flex mt-1 justify-between text-sm gap-2">
-              <div className="flex-1">
-                <span className="text-gray-900 font-medium text-xs sm:text-sm">
-                  {formatDate2(project?.created_at)}
-                </span>
+                          if (allDepartments && allDepartments.length > 0) {
+                            const isAllSelected = totalDepts === allDepartments.length;
+                            isAllDepartments = isAllSelected;
+                          } else {
+                            const isAllByCount = totalDepts === totalDepartmentsCount && totalDepartmentsCount > 0;
+                            const hasAllFlag = project.isAllDepartments === true ||
+                              project.allSelected === true ||
+                              project.selectAll === true;
+                            isAllDepartments = isAllByCount || hasAllFlag;
+                          }
+
+                          if (isAllDepartments) {
+                            return (
+                              <div className="relative">
+                                <img
+                                  src={allDepartmentsIcon}
+                                  alt="All Departments"
+                                  className="w-7 h-7 rounded-full border-2 border-white shadow-sm object-cover"
+                                  onError={(e) => {
+                                    console.log('Image load failed, using fallback');
+                                    const fallbackDiv = document.createElement('div');
+                                    fallbackDiv.className = 'w-7 h-7 border-2 border-white rounded-full bg-blue-500 flex items-center justify-center shadow-sm text-white font-bold text-sm';
+                                    fallbackDiv.innerHTML = 'M';
+                                    e.target.parentNode.replaceChild(fallbackDiv, e.target);
+                                  }}
+                                />
+                              </div>
+                            );
+                          } else {
+                            const maxVisible = 2;
+                            const visibleDepts = project.departments.slice(0, maxVisible);
+                            const remainingCount = totalDepts - maxVisible;
+
+                            return (
+                              <div className="flex items-center w-auto">
+                                {visibleDepts.map((dept, index) => (
+                                  <div
+                                    key={dept.id}
+                                    className="relative w-[25px] flex items-center"
+                                    style={{
+                                      marginLeft: index > 0 ? '-8px' : '0',
+                                    }}
+                                  >
+                                    {dept.photo ? (
+                                      <img
+                                        src={dept.photo}
+                                        alt={`Department ${dept.name || dept.id}`}
+                                        className="w-7 h-7 border-2 border-white rounded-full object-cover hover:opacity-80 transition cursor-pointer shadow-sm"
+                                      />
+                                    ) : (
+                                      <div className="w-7 h-7 bg-gray-200 border-2 border-white rounded-full flex items-center justify-center shadow-sm">
+                                        <span className="text-xs font-medium">
+                                          {dept.name ? dept.name.charAt(0).toUpperCase() : 'D'}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                                {remainingCount > 0 && (
+                                  <div
+                                    className="relative flex items-center bg-blue-100 border-2 border-white rounded-full w-7 h-7 shadow-sm"
+                                    style={{
+                                      marginLeft: '-8px',
+                                      zIndex: 0
+                                    }}
+                                  >
+                                    <span className="text-xs font-medium text-blue-600 w-full text-center">
+                                      +{remainingCount}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          }
+                        })()}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => navigate(`/tasks/${project.id}`)}
+                    className="font-bold ml-3 text-lg cursor-pointer truncate flex-1 text-left"
+                    title={project.name}
+                  >
+                    {project.name}
+                  </button>
+                </div>
+
+                <Dropdown
+                  menu={{ items: dropdownItems(project) }}
+                  trigger={["click"]}
+                  placement="bottomRight"
+                  overlayClassName="w-[260px] rounded-lg shadow-lg border border-gray-200"
+                >
+                  <button className="flex-shrink-0 p-1">
+                    <MoreVertical className="w-5 h-5 text-gray-600 hover:text-black cursor-pointer" />
+                  </button>
+                </Dropdown>
               </div>
-              <div className="flex-1 text-right">
-                <span className="text-gray-900 font-medium text-xs sm:text-sm">
-                  {formatDate2(project?.deadline)}
-                </span>
+
+              <div className="flex mt-1 justify-between text-sm gap-2">
+                <div className="flex-1">
+                  <span className="text-gray-900 font-medium text-xs sm:text-sm">
+                    {formatDate2(project?.created_at)}
+                  </span>
+                </div>
+                <div className="flex-1 text-right">
+                  <span className="text-gray-900 font-medium text-xs sm:text-sm">
+                    {formatDate2(project?.deadline)}
+                  </span>
+                </div>
               </div>
             </div>
+          ))
+        ) : (
+          <div className="col-span-full text-center py-10">
+            <p className="text-gray-500 text-lg">No projects found</p>
+            {isFilterActive && (
+              <button 
+                className="mt-4 text-blue-600 hover:text-blue-800"
+                onClick={resetFilters}
+              >
+                Clear filters
+              </button>
+            )}
           </div>
-        ))}
+        )}
       </div>
-      {projectsData.count > pageSize && (
-  <div className="flex justify-center mt-10 mb-10">
-    <Pagination
-      current={currentPage}
-      pageSize={pageSize}
-      total={projectsData.count}
-      onChange={(page) => {
-        console.log("Changing to page:", page);
-        setCurrentPage(page);
-        loadProjects(page);
-      }}
-      showSizeChanger={false}
-      showQuickJumper={false}
-      className="custom-pagination"
-    />
-  </div>
-)}
+
+      {/* Pagination */}
+      {projectsData.count > pageSize && !isFilterActive && (
+        <div className="flex justify-center mt-10 mb-10">
+          <Pagination
+            current={currentPage}
+            pageSize={pageSize}
+            total={projectsData.count}
+            onChange={(page) => {
+              console.log("Changing to page:", page);
+              setCurrentPage(page);
+              loadProjects(page);
+            }}
+            showSizeChanger={false}
+            showQuickJumper={false}
+            className="custom-pagination"
+          />
+        </div>
+      )}
+
       {/* Add Task Modal */}
       <Modal
         open={isAddModalOpen}
@@ -1143,10 +1418,10 @@ const Projects = () => {
         onOk={handleAddTask}
         okText="Add Task"
         cancelText="none"
-              style={{
-              padding: "10px",
-              top:0,  
-            }}
+        style={{
+          padding: "10px",
+          top: 0,
+        }}
         footer={[
           <button
             key="submit"
@@ -1230,7 +1505,7 @@ const Projects = () => {
                     </div>
                   </div>
                 </div>
-                )}
+              )}
             </div>
 
             {/* Department */}
@@ -1309,13 +1584,13 @@ const Projects = () => {
                 Deadline
               </label>
               <div className="flex items-center relative">
-              <input
-                type="date"
-                value={deadline}
-                onChange={(e) => setDeadline(e.target.value)}
-                className="mt-1 w-full h-[50px] border border-gray-300 rounded-[14px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <div className=" absolute right-3"></div>
+                <input
+                  type="date"
+                  value={deadline}
+                  onChange={(e) => setDeadline(e.target.value)}
+                  className="mt-1 w-full h-[50px] border border-gray-300 rounded-[14px] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <div className=" absolute right-3"></div>
               </div>
             </div>
 
@@ -1333,9 +1608,8 @@ const Projects = () => {
             </div>
           </div>
         </div>
-        
       </Modal>
-  
+
       {/* Department tanlash modal - YANGILANGAN */}
       <Modal
         open={isDeptModalOpen}
@@ -1357,32 +1631,32 @@ const Projects = () => {
             <div className="flex justify-between items-center mb-3">
               <h4 className="text-lg font-semibold">Select Departments</h4>
             </div>
-            <DepartmentsSelector 
+            <DepartmentsSelector
               selectedIds={selectedDepartments}
               onChange={(ids) => setSelectedDepartments(ids)}
               onDataLoaded={(data) => setAllDepartments(data)}
             />
-            
           </div>
+
 
           {/* Users ro'yxati - Department modal ichida */}
           {selectedDepartments.length > 0 &&
             deptModalFilteredUsers.length > 0 && (
               <div>
-                <div className=" flex flex-col sm:flex-row  sm:items-center  mb-3">
-                  <div className="  flex-2/5 flex">
-                    <div className="relative  w-full max-w-md bg-white rounded-xl border border-gray-300 sm:border-0 flex items-center">
-                      {/* Search icon */}
+                <div className="flex flex-col sm:flex-row sm:items-center mb-3">
+                  <div className="flex-2/5 flex">
+                    <div className="relative w-full max-w-md bg-white rounded-xl border border-gray-300 sm:border-0 flex items-center">
+                     
                       <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search className="w-5 h-5 text-[#0A1629]" />
                       </span>
-                      {/* Input */}
+                     
                       <input
                         type="text"
                         placeholder="Search..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="flex-1 py-[7px]   bg-gray-100 pr-4 pl-10 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 py-[7px] bg-gray-100 pr-4 pl-10 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       {searchTerm && (
                         <button
@@ -1397,15 +1671,12 @@ const Projects = () => {
                   </div>
                   <button
                     onClick={handleSelectAllUsers}
-                    className="h-[39px]   flex-1 px-9 cursor-pointer flex items-center justify-center rounded-xl max-sm:mt-2 max-sm:py-1 text-white bg-[#1677FF] whitespace-nowrap "
+                    className="h-[39px] flex-1 px-9 cursor-pointer flex items-center justify-center rounded-xl max-sm:mt-2 max-sm:py-1 text-white bg-[#1677FF] whitespace-nowrap "
                   >
                     {deptModalFilteredUsers.every(user => selectedUsers.includes(user.id))
                       ? "Deselect All Users"
                       : "Select All Users"}
                   </button>
-                  
-                  
-                
                 </div>
                 <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-[14px] p-4">
                   <div className="grid grid-cols-1 gap-3">
@@ -1414,7 +1685,6 @@ const Projects = () => {
                         key={user.id}
                         className="flex items-center gap-3 p-3 cursor-pointer hover:bg-gray-50 rounded-lg border border-gray-100"
                       >
-
                         <input
                           type="checkbox"
                           checked={selectedUsers.includes(user.id)}
@@ -1433,7 +1703,6 @@ const Projects = () => {
                               <span className="text-sm font-medium">
                                 {user.first_name?.[0] || "U"}
                               </span>
-
                             </div>
                           )}
                           <div className="flex flex-col min-w-0">
@@ -1471,7 +1740,6 @@ const Projects = () => {
       </Modal>
 
       {/* Action Modal (Edit / Info / Delete) */}
-      
       <Modal
         open={isActionModalOpen}
         onCancel={handleActionClose}
@@ -1479,9 +1747,10 @@ const Projects = () => {
         title={getModalTitle()}
         footer={getModalFooter()}
         className="custom-modal"
-        style={modalType === "edit" ? { top: 0 } : {}}>
+        style={modalType === "edit" ? { top: 0 } : {}}
+      >
         {renderModalContent()}
-      </Modal>   
+      </Modal>
     </div>
   );
 };
