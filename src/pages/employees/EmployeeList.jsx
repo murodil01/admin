@@ -152,7 +152,7 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
     const formatPhoneNumber = (phone) => {
         if (!phone) return null;
         // Remove all non-digit characters
-        return phone.replace(/\D/g, '');
+        return phone.replace(/\D/g, '+');
     };
 
     return (

@@ -5,31 +5,27 @@ import { AiOutlineClose } from "react-icons/ai";
 import { createPortal } from "react-dom";
 import { getDepartments } from "../../api/services/departmentService";
 
-const FilterModal = ({ onFilter, onClearFilters, currentFilters }) => {
+const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters = false }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [departments, setDepartments] = useState([]);
     const [filters, setFilters] = useState({
         selectedDepartments: [],
         selectedRoles: [],
-        status: ''
+        status: '',
+        taskFilters: {
+            activeMin: '',
+            activeMax: '',
+            reviewMin: '',
+            reviewMax: '',
+            completedMin: '',
+            completedMax: ''
+        }
     });
     const [showAllDepartments, setShowAllDepartments] = useState(false);
-    const [showAllRoles, setShowAllRoles] = useState(false);
 
     const visibleDepartments = showAllDepartments
         ? departments
         : departments.slice(0, 3);
-
-    // Role options
-    const roleOptions = [
-        { value: 'manager', label: 'Manager' },
-        { value: 'heads', label: 'Chief Officer' },
-        { value: 'employee', label: 'Member' },
-    ];
-
-    const visibleRoles = showAllRoles
-        ? roleOptions
-        : roleOptions.slice(0, 3);
 
     const statusOptions = [
         { value: '', label: 'All Statuses' },
@@ -46,7 +42,15 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters }) => {
             setFilters({
                 selectedDepartments: currentFilters.selectedDepartments || [],
                 selectedRoles: currentFilters.selectedRoles || [],
-                status: currentFilters.status || ''
+                status: currentFilters.status || '',
+                taskFilters: currentFilters.taskFilters || {
+                    activeMin: '',
+                    activeMax: '',
+                    reviewMin: '',
+                    reviewMax: '',
+                    completedMin: '',
+                    completedMax: ''
+                }
             });
         }
     }, [isModalOpen, currentFilters]);
@@ -99,19 +103,20 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters }) => {
         }));
     }, []);
 
-    const handleRoleToggle = useCallback((roleValue) => {
-        setFilters(prev => ({
-            ...prev,
-            selectedRoles: prev.selectedRoles.includes(roleValue)
-                ? prev.selectedRoles.filter(role => role !== roleValue)
-                : [...prev.selectedRoles, roleValue]
-        }));
-    }, []);
-
     const handleStatusChange = useCallback((value) => {
         setFilters(prev => ({
             ...prev,
             status: value
+        }));
+    }, []);
+
+    const handleTaskFilterChange = useCallback((filterType, value) => {
+        setFilters(prev => ({
+            ...prev,
+            taskFilters: {
+                ...prev.taskFilters,
+                [filterType]: value
+            }
         }));
     }, []);
 
@@ -124,22 +129,40 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters }) => {
         const clearedFilters = {
             selectedDepartments: [],
             selectedRoles: [],
-            status: ''
+            status: '',
+            taskFilters: {
+                activeMin: '',
+                activeMax: '',
+                reviewMin: '',
+                reviewMax: '',
+                completedMin: '',
+                completedMax: ''
+            }
         };
         setFilters(clearedFilters);
         onClearFilters?.();
     };
 
     const hasActiveFilters = () => {
-        return filters.selectedDepartments.length > 0 ||
+        const hasBasicFilters = filters.selectedDepartments.length > 0 ||
             filters.selectedRoles.length > 0 ||
             filters.status;
+
+        const hasTaskFilters = showTaskFilters && Object.values(filters.taskFilters).some(val => val !== '');
+
+        return hasBasicFilters || hasTaskFilters;
     };
 
     const getActiveFilterCount = () => {
-        return filters.selectedDepartments.length +
+        let count = filters.selectedDepartments.length +
             filters.selectedRoles.length +
             (filters.status ? 1 : 0);
+
+        if (showTaskFilters) {
+            count += Object.values(filters.taskFilters).filter(val => val !== '').length;
+        }
+
+        return count;
     };
 
     // Modal Component
@@ -182,8 +205,8 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters }) => {
                                         <label
                                             key={dept.id}
                                             className={`flex items-center space-x-3 cursor-pointer p-3 rounded-lg transition-all duration-200 border ${isSelected
-                                                    ? 'bg-blue-50 border-blue-200 hover:bg-blue-100'
-                                                    : 'hover:bg-gray-50 border-transparent hover:border-gray-200'
+                                                ? 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+                                                : 'hover:bg-gray-50 border-transparent hover:border-gray-200'
                                                 }`}
                                         >
                                             <input
@@ -210,7 +233,7 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters }) => {
                                 })}
                             </div>
 
-                            {/* Show More/Less Button - Improved Design */}
+                            {/* Show More/Less Button */}
                             {departments.length > 3 && (
                                 <div className="mt-4 flex justify-center">
                                     <button
@@ -238,64 +261,6 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters }) => {
                             )}
                         </div>
 
-                        {/* Roles Filter - Also improved */}
-                        {/* <div>
-                            <label className="block text-sm font-semibold text-gray-800 mb-3">
-                                Roles
-                            </label>
-                            <div className="space-y-2">
-                                {visibleRoles.map((role) => {
-                                    const isSelected = filters.selectedRoles.includes(role.value);
-                                    return (
-                                        <label
-                                            key={role.value}
-                                            className={`flex items-center space-x-3 cursor-pointer p-3 rounded-lg transition-all duration-200 border ${isSelected
-                                                    ? 'bg-blue-50 border-blue-200 hover:bg-blue-100'
-                                                    : 'hover:bg-gray-50 border-transparent hover:border-gray-200'
-                                                }`}
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={isSelected}
-                                                onChange={() => handleRoleToggle(role.value)}
-                                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                                            />
-                                            <span className={`font-medium ${isSelected ? 'text-blue-700' : 'text-gray-700'}`}>
-                                                {role.label}
-                                            </span>
-                                        </label>
-                                    );
-                                })}
-                            </div> */}
-
-                            {/* Show More/Less for Roles */}
-                            {/* {roleOptions.length > 3 && (
-                                <div className="mt-4 flex justify-center">
-                                    <button
-                                        className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full border border-blue-200 transition-all duration-200 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
-                                        onClick={() => setShowAllRoles(!showAllRoles)}
-                                        aria-expanded={showAllRoles}
-                                    >
-                                        {showAllRoles ? (
-                                            <>
-                                                <span>Show Less</span>
-                                                <svg className="w-4 h-4 transition-transform duration-200 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                </svg>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <span>Show {roleOptions.length - 3} More</span>
-                                                <svg className="w-4 h-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                </svg>
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
-                            )}
-                        </div> */}
-
                         {/* Status Filter */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-800 mb-3">
@@ -320,6 +285,101 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters }) => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Task Filters - Only show if showTaskFilters is true */}
+                        {showTaskFilters && (
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-800 mb-3">
+                                    Task Count Filters
+                                </label>
+                                <div className="space-y-4">
+                                    {/* Active Tasks Filter */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-600 mb-2">
+                                            Active Tasks
+                                        </label>
+                                        <div className="flex items-center space-x-2">
+                                            <input
+                                                type="number"
+                                                placeholder="Min"
+                                                value={filters.taskFilters.activeMin}
+                                                onChange={(e) => handleTaskFilterChange('activeMin', e.target.value)}
+                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+                                                min="0"
+                                                // Add key to force re-render without losing focus
+                                                key={`activeMin-${filters.taskFilters.activeMin}`}
+                                            />
+                                            <span className="text-gray-400">-</span>
+                                            <input
+                                                type="number"
+                                                placeholder="Max"
+                                                value={filters.taskFilters.activeMax}
+                                                onChange={(e) => handleTaskFilterChange('activeMax', e.target.value)}
+                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+                                                min="0"
+                                                key={`activeMax-${filters.taskFilters.activeMax}`}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Review Tasks Filter */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-600 mb-2">
+                                            Review Tasks
+                                        </label>
+                                        <div className="flex items-center space-x-2">
+                                            <input
+                                                type="number"
+                                                placeholder="Min"
+                                                value={filters.taskFilters.reviewMin}
+                                                onChange={(e) => handleTaskFilterChange('reviewMin', e.target.value)}
+                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+                                                min="0"
+                                                key={`reviewMin-${filters.taskFilters.reviewMin}`}
+                                            />
+                                            <span className="text-gray-400">-</span>
+                                            <input
+                                                type="number"
+                                                placeholder="Max"
+                                                value={filters.taskFilters.reviewMax}
+                                                onChange={(e) => handleTaskFilterChange('reviewMax', e.target.value)}
+                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+                                                min="0"
+                                                key={`reviewMax-${filters.taskFilters.reviewMax}`}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Completed Tasks Filter */}
+                                    <div>
+                                        <label className="block text-xs font-medium text-gray-600 mb-2">
+                                            Approved Tasks
+                                        </label>
+                                        <div className="flex items-center space-x-2">
+                                            <input
+                                                type="number"
+                                                placeholder="Min"
+                                                value={filters.taskFilters.completedMin}
+                                                onChange={(e) => handleTaskFilterChange('completedMin', e.target.value)}
+                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+                                                min="0"
+                                                key={`completedMin-${filters.taskFilters.completedMin}`}
+                                            />
+                                            <span className="text-gray-400">-</span>
+                                            <input
+                                                type="number"
+                                                placeholder="Max"
+                                                value={filters.taskFilters.completedMax}
+                                                onChange={(e) => handleTaskFilterChange('completedMax', e.target.value)}
+                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+                                                min="0"
+                                                key={`completedMax-${filters.taskFilters.completedMax}`}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Footer */}

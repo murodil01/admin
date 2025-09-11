@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { getActivities } from "../../../api/services/activityService";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Pagination } from "antd";
+// Remove FilterModal import
 
-const Activity = ({ onTotalActivitiesChange }) => {
+const Activity = ({ onTotalActivitiesChange, currentFilters,}) => {
   const [searchParams] = useSearchParams();
   const [activity, setActivity] = useState([]);
   const [totalActivities, setTotalActivities] = useState(0);
@@ -15,17 +16,42 @@ const Activity = ({ onTotalActivitiesChange }) => {
   const currentPage = parseInt(searchParams.get("page_num") || "1", 10);
   const itemsPerPage = 12; // API page size
 
-  const fetchActivities = async (page = 1) => {
+  const fetchActivities = async (page = 1, filters = null) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await getActivities(page);
-      setActivity(res.results || []);
-      setTotalActivities(res.count || 0);
+      const res = await getActivities(page, filters);
+      let filteredActivities = res.results || [];
+
+      // Client-side task count filtering
+      if (filters && filters.taskFilters) {
+        const { activeMin, activeMax, reviewMin, reviewMax, completedMin, completedMax } = filters.taskFilters;
+
+        filteredActivities = filteredActivities.filter(user => {
+          let passesFilter = true;
+
+          // Active tasks filter
+          if (activeMin !== '' && user.active_tasks < parseInt(activeMin)) passesFilter = false;
+          if (activeMax !== '' && user.active_tasks > parseInt(activeMax)) passesFilter = false;
+
+          // Review tasks filter
+          if (reviewMin !== '' && user.tasks_in_review < parseInt(reviewMin)) passesFilter = false;
+          if (reviewMax !== '' && user.tasks_in_review > parseInt(reviewMax)) passesFilter = false;
+
+          // Completed tasks filter
+          if (completedMin !== '' && user.completed_tasks < parseInt(completedMin)) passesFilter = false;
+          if (completedMax !== '' && user.completed_tasks > parseInt(completedMax)) passesFilter = false;
+
+          return passesFilter;
+        });
+      }
+
+      setActivity(filteredActivities);
+      setTotalActivities(filteredActivities.length || res.count || 0);
 
       // Notify parent component about the total count
       if (onTotalActivitiesChange) {
-        onTotalActivitiesChange(res.count || 0);
+        onTotalActivitiesChange(filteredActivities.length || res.count || 0);
       }
     } catch (err) {
       console.error("Error fetching activities:", err);
@@ -35,10 +61,10 @@ const Activity = ({ onTotalActivitiesChange }) => {
     }
   };
 
-  // Fetch activities whenever page changes
+  // Fetch activities whenever page changes or filters change
   useEffect(() => {
-    fetchActivities(currentPage);
-  }, [currentPage]);
+    fetchActivities(currentPage, currentFilters);
+  }, [currentPage, currentFilters]);
 
   // Handle page change (update search params)
   const handlePageChange = (page) => {
@@ -47,11 +73,16 @@ const Activity = ({ onTotalActivitiesChange }) => {
     navigate(`?${params.toString()}`, { replace: true });
   };
 
+  // Remove the local handleFilter and handleClearFilters functions
+  // as they're now passed from the parent component
+
   if (loading) return <p className="text-center">Loading...</p>;
   if (error) return <p className="text-red-500 text-center">{error}</p>;
 
   return (
     <div className="w-full">
+      {/* Remove the FilterModal from here - it's now in the parent */}
+
       {/* Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-[25px] w-full py-6">
         {activity.map((user) => (
@@ -60,7 +91,7 @@ const Activity = ({ onTotalActivitiesChange }) => {
             className="bg-white rounded-[24px] shadow-md px-[8px] pt-[10px] pb-[25px] flex flex-col gap-[10px] justify-center items-center"
           >
             {/* User Info */}
-            <div className="bg-[#E3EDFA] py-4 px-4 flex flex-col items-center gap-2 rounded-[24px] w-full">
+            <div className="bg-[#E3EDFA] py-4 px-4 flex flex-col items-center gap-2 rounded-[24px] w-full h-43">
               <img
                 className="w-[50px] h-[50px] rounded-full object-cover"
                 src={user.profile_picture}
@@ -115,7 +146,7 @@ const Activity = ({ onTotalActivitiesChange }) => {
         ))}
       </div>
 
-      {/* Pagination (AntD style like EmployeeList) */}
+      {/* Pagination */}
       {totalActivities > 0 && (
         <div className="flex justify-center py-6 border-t border-gray-200">
           <Pagination

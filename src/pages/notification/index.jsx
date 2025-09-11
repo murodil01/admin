@@ -202,98 +202,98 @@ const Notification = ({ onNotificationUpdate, onCloseNotificationModal }) => {
 
   // Notifications ma'lumotlarini olish
   // Notifications ma'lumotlarini olish
-useEffect(() => {
-  let isMounted = true;
+  useEffect(() => {
+    let isMounted = true;
 
-  const fetchNotificationStats = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (user && user.id && token && !loading) {
-        // Use getNotificationsStats for unread count
-        const response = await getNotificationsStats();
+    const fetchNotificationStats = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (user && user.id && token && !loading) {
+          // Use getNotificationsStats for unread count
+          const response = await getNotificationsStats();
 
-        // Extract unread count from response
-        let unreadCount = 0;
+          // Extract unread count from response
+          let unreadCount = 0;
 
-        if (response?.unread_count !== undefined) {
-          unreadCount = response.unread_count;
-        } else if (response?.data?.unread_count !== undefined) {
-          unreadCount = response.data.unread_count;
-        } else if (response?.stats?.unread_count !== undefined) {
-          unreadCount = response.stats.unread_count;
-        } else {
-          console.warn("Unread count not found in stats response:", response);
-          // Fallback to the old method if stats don't work
-          const allNotificationsResponse = await getNotificationsAll();
-          let notifications = [];
+          if (response?.unread_count !== undefined) {
+            unreadCount = response.unread_count;
+          } else if (response?.data?.unread_count !== undefined) {
+            unreadCount = response.data.unread_count;
+          } else if (response?.stats?.unread_count !== undefined) {
+            unreadCount = response.stats.unread_count;
+          } else {
+            console.warn("Unread count not found in stats response:", response);
+            // Fallback to the old method if stats don't work
+            const allNotificationsResponse = await getNotificationsAll();
+            let notifications = [];
 
-          if (allNotificationsResponse?.data && Array.isArray(allNotificationsResponse.data)) {
-            notifications = allNotificationsResponse.data;
-          } else if (allNotificationsResponse?.results && Array.isArray(allNotificationsResponse.results)) {
-            notifications = allNotificationsResponse.results;
-          } else if (Array.isArray(allNotificationsResponse)) {
-            notifications = allNotificationsResponse;
+            if (allNotificationsResponse?.data && Array.isArray(allNotificationsResponse.data)) {
+              notifications = allNotificationsResponse.data;
+            } else if (allNotificationsResponse?.results && Array.isArray(allNotificationsResponse.results)) {
+              notifications = allNotificationsResponse.results;
+            } else if (Array.isArray(allNotificationsResponse)) {
+              notifications = allNotificationsResponse;
+            }
+
+            unreadCount = calculateUnreadCount(notifications);
           }
 
-          unreadCount = calculateUnreadCount(notifications);
-        }
-
-        // Only update if component is still mounted
-        if (isMounted) {
-          setNotificationCount(unreadCount);
-        }
-      } else if (isMounted) {
-        setNotificationCount(0);
-      }
-    } catch (error) {
-      console.error("Notification stats fetch error:", error);
-
-      if (!isMounted) return;
-
-      // Fallback to old method on error
-      try {
-        const fallbackResponse = await getNotificationsAll();
-        let notifications = [];
-
-        if (fallbackResponse?.data && Array.isArray(fallbackResponse.data)) {
-          notifications = fallbackResponse.data;
-        } else if (fallbackResponse?.results && Array.isArray(fallbackResponse.results)) {
-          notifications = fallbackResponse.results;
-        } else if (Array.isArray(fallbackResponse)) {
-          notifications = fallbackResponse;
-        }
-
-        const unreadCount = calculateUnreadCount(notifications);
-        if (isMounted) {
-          setNotificationCount(unreadCount);
-        }
-      } catch (fallbackError) {
-        console.error("Fallback notification fetch also failed:", fallbackError);
-        if (isMounted) {
+          // Only update if component is still mounted
+          if (isMounted) {
+            setNotificationCount(unreadCount);
+          }
+        } else if (isMounted) {
           setNotificationCount(0);
         }
+      } catch (error) {
+        console.error("Notification stats fetch error:", error);
+
+        if (!isMounted) return;
+
+        // Fallback to old method on error
+        try {
+          const fallbackResponse = await getNotificationsAll();
+          let notifications = [];
+
+          if (fallbackResponse?.data && Array.isArray(fallbackResponse.data)) {
+            notifications = fallbackResponse.data;
+          } else if (fallbackResponse?.results && Array.isArray(fallbackResponse.results)) {
+            notifications = fallbackResponse.results;
+          } else if (Array.isArray(fallbackResponse)) {
+            notifications = fallbackResponse;
+          }
+
+          const unreadCount = calculateUnreadCount(notifications);
+          if (isMounted) {
+            setNotificationCount(unreadCount);
+          }
+        } catch (fallbackError) {
+          console.error("Fallback notification fetch also failed:", fallbackError);
+          if (isMounted) {
+            setNotificationCount(0);
+          }
+        }
       }
+    };
+
+    // Only fetch when user is available and not loading
+    if (user && user.id && !loading) {
+      fetchNotificationStats();
+
+      // Refresh every 60 seconds
+      const interval = setInterval(fetchNotificationStats, 60000);
+      return () => {
+        isMounted = false;
+        clearInterval(interval);
+      };
+    } else if (isMounted) {
+      setNotificationCount(0);
     }
-  };
 
-  // Only fetch when user is available and not loading
-  if (user && user.id && !loading) {
-    fetchNotificationStats();
-
-    // Refresh every 60 seconds
-    const interval = setInterval(fetchNotificationStats, 60000);
     return () => {
       isMounted = false;
-      clearInterval(interval);
     };
-  } else if (isMounted) {
-    setNotificationCount(0);
-  }
-
-  return () => {
-    isMounted = false;
-  };
-}, [user, loading, calculateUnreadCount]); // notificationCount ni dependency dan olib tashlang
+  }, [user, loading, calculateUnreadCount]); // notificationCount ni dependency dan olib tashlang
 
   // // Improved notification update handler
   // const handleNotificationUpdate = useCallback((updatedNotifications) => {
@@ -466,8 +466,45 @@ useEffect(() => {
   };
 
   // This function handles the "View" button click in each notification
-  const handleViewNotification = (e, item) => {
+  const handleViewNotification = async (e, item) => {
     e.stopPropagation();
+
+    // Mark as read if unread BEFORE navigation
+    if (item.is_read === false || item.read === false || item.status === "unread") {
+      try {
+        await markNotificationAsRead(item.id);
+        const updated = notifications.map((notification) =>
+          notification.id === item.id ? { ...notification, is_read: true } : notification
+        );
+        setNotifications(updated);
+
+        // Update filtered notifications
+        const filteredUpdated = filterNotifications(updated, activeTab);
+        setFilteredNotifications(filteredUpdated);
+
+        setHasUnread(updated.some(
+          (notification) =>
+            notification.is_read === false ||
+            notification.read === false ||
+            !notification.is_read ||
+            !notification.read ||
+            notification.status === "unread"
+        ));
+
+        // Update notification count
+        setNotificationCount(prev => prev - 1);
+
+        // Notify parent (Navbar) immediately
+        if (onNotificationUpdate) {
+          onNotificationUpdate(updated);
+        }
+
+        toast.success("Notification marked as read!");
+      } catch (error) {
+        console.error("Failed to mark notification as read:", error);
+        toast.error("Failed to mark notification as read!");
+      }
+    }
 
     // Close the notification modal
     if (onCloseNotificationModal) {
@@ -477,8 +514,6 @@ useEffect(() => {
     // Navigate based on notification type
     if (item.notification_type === "task" || item.notification_type === "task_assigned") {
       // For task notifications, navigate to tasks/:projectID
-      // You might need to adjust this based on your data structure
-      // If the notification doesn't have project_id, you might need to fetch it or adjust your API
       const projectId = item.project_id ||
         item.get_instance_id ||
         item.instance_id ||
@@ -724,14 +759,14 @@ useEffect(() => {
                           <button
                             onClick={(e) => handleViewNotification(e, item)}
                             className={`flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium transition-colors cursor-pointer whitespace-nowrap min-w-[32px] sm:min-w-[auto] ${item.is_read
-                                ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                : item.notification_type === "task" || item.notification_type === "task_assigned"
-                                  ? "bg-green-100 text-green-600 hover:bg-green-200"
-                                  : item.notification_type === "project" || item.notification_type === "project_created" || item.notification_type === "project_assigned"
-                                    ? "bg-blue-100 text-blue-600 hover:bg-blue-200"
-                                    : item.notification_type === "event" || item.notification_type === "event_created" || item.notification_type === "event_updated" || item.notification_type === "event_cancelled"
-                                      ? "bg-orange-100 text-orange-600 hover:bg-orange-200"
-                                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                              ? "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                              : item.notification_type === "task" || item.notification_type === "task_assigned"
+                                ? "bg-green-100 text-green-600 hover:bg-green-200"
+                                : item.notification_type === "project" || item.notification_type === "project_created" || item.notification_type === "project_assigned"
+                                  ? "bg-blue-100 text-blue-600 hover:bg-blue-200"
+                                  : item.notification_type === "event" || item.notification_type === "event_created" || item.notification_type === "event_updated" || item.notification_type === "event_cancelled"
+                                    ? "bg-orange-100 text-orange-600 hover:bg-orange-200"
+                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                               }`}
                           >
                             <div className="group flex items-center gap-1 cursor-pointer">
