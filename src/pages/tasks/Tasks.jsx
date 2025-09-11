@@ -43,7 +43,7 @@ const Projects = () => {
     next: null,
     previous: null,
   });
-  const [name, setName] = useState("");
+  // const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [isDeptModalOpen, setIsDeptModalOpen] = useState(false);
@@ -51,7 +51,7 @@ const Projects = () => {
   const [allDepartments, setAllDepartments] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
-  const [allDepartmentsSelected, setAllDepartmentsSelected] = useState(false);
+  // const [allDepartmentsSelected, setAllDepartmentsSelected] = useState(false);
   const [totalDepartmentsCount, setTotalDepartmentsCount] = useState(0);
   const [deptModalFilteredUsers, setDeptModalFilteredUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -679,7 +679,7 @@ const Projects = () => {
     if (!dateStr) return "N/A";
     const date = new Date(dateStr);
     return date.toLocaleDateString("en-US", {
-      month: "long",
+      month: "short",
       day: "numeric",
     });
   };
@@ -689,7 +689,7 @@ const Projects = () => {
     const date = new Date(dateStr);
     return date.toLocaleDateString("en-US", {
       year: "numeric",
-      month: "long",
+      month: "short",
       day: "numeric",
     });
   };
@@ -975,6 +975,13 @@ const Projects = () => {
               <p className="text-gray-400 font-medium">Description</p>
               <p className="text-gray-700 leading-relaxed col-span-2">
                 {selectedTask.description || "No description provided."}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-3 w-full">
+              <p className="text-gray-400 font-medium">Created by</p>
+              <p className="text-gray-700 leading-relaxed col-span-2">
+                {selectedTask.created_by}
               </p>
             </div>
           </div>
@@ -1638,6 +1645,7 @@ const Projects = () => {
             />
           </div>
 
+
           {/* Users ro'yxati - Department modal ichida */}
           {selectedDepartments.length > 0 &&
             deptModalFilteredUsers.length > 0 && (
@@ -1645,11 +1653,11 @@ const Projects = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center mb-3">
                   <div className="flex-2/5 flex">
                     <div className="relative w-full max-w-md bg-white rounded-xl border border-gray-300 sm:border-0 flex items-center">
-                      {/* Search icon */}
+                     
                       <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search className="w-5 h-5 text-[#0A1629]" />
                       </span>
-                      {/* Input */}
+                     
                       <input
                         type="text"
                         placeholder="Search..."

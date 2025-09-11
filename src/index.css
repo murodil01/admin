@@ -213,6 +213,17 @@ body {
   animation: prixClipFix 2s infinite linear;
 }
 
+  .custom-select {
+    background: none;     /* orqa fon yo‘q */
+    border: none;         /* border yo‘q */
+    outline: none;        /* tanlaganda ko‘rinadigan chiziq yo‘q */
+    appearance: none;     /* browser default style yo‘q */
+    -webkit-appearance: none; 
+    -moz-appearance: none;
+    padding: 5px;
+    font-size: 16px;
+  }
+
 @keyframes prixClipFix {
   0% {
     clip-path: polygon(50% 50%, 0 0, 0 0, 0 0, 0 0, 0 0);
