@@ -1645,6 +1645,7 @@ const Projects = () => {
             />
           </div>
 
+
           {/* Users ro'yxati - Department modal ichida */}
           {selectedDepartments.length > 0 &&
             deptModalFilteredUsers.length > 0 && (
@@ -1652,11 +1653,11 @@ const Projects = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center mb-3">
                   <div className="flex-2/5 flex">
                     <div className="relative w-full max-w-md bg-white rounded-xl border border-gray-300 sm:border-0 flex items-center">
-                      {/* Search icon */}
+                     
                       <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search className="w-5 h-5 text-[#0A1629]" />
                       </span>
-                      {/* Input */}
+                     
                       <input
                         type="text"
                         placeholder="Search..."
