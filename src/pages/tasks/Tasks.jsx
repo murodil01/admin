@@ -37,6 +37,7 @@ const Projects = () => {
   const isLoading = authLoading || dataLoading;
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredUsers, setFilteredUsers] = useState([]);
+  const [selectedCaptainName, setSelectedCaptainName] = useState([]);
   const [projectsData, setProjectsData] = useState({
     results: [],
     count: 0,
@@ -89,6 +90,7 @@ const Projects = () => {
     // Append department filter - send as array (not comma-separated)
     if (departmentFilter.length > 0) {
       const departmentNames = departmentFilter.map(id => {
+        console.log("allDepartments:", allDepartments);
         const dept = allDepartments.find(d => d.id === id);
         return dept ? dept.name : null;
       }).filter(name => name !== null);
@@ -152,21 +154,6 @@ const Projects = () => {
   }, []);
 
   useEffect(() => {
-    const fetchTotalDepartments = async () => {
-      try {
-        const response = await getDepartments();
-        setTotalDepartmentsCount(response.length);
-        setAllDepartments(response);
-      } catch (error) {
-        console.error('Error fetching departments:', error);
-        setTotalDepartmentsCount(4);
-      }
-    };
-
-    fetchTotalDepartments();
-  }, []);
-
-  useEffect(() => {
     const fetchInitialData = async () => {
       await loadProjects(1);
       await loadUsers();
@@ -221,11 +208,13 @@ const Projects = () => {
     if (selectedDepartments.length > 0 && allUsers.length > 0) {
       if (selectedDepartments.includes("none")) {
         setFilteredUsers([]);
+        setSelectedCaptainName([]);
         return;
       }
 
       if (selectedDepartments.includes("all")) {
         setFilteredUsers(allUsers);
+        setSelectedCaptainName(allUsers);
         return;
       }
 
@@ -235,8 +224,10 @@ const Projects = () => {
           selectedDepartments.includes(user.department_id)
       );
       setFilteredUsers(filtered);
+      setSelectedCaptainName(filtered);
     } else {
       setFilteredUsers([]);
+      setSelectedCaptainName([]);
     }
   }, [selectedDepartments, allUsers]);
 
@@ -247,8 +238,10 @@ const Projects = () => {
 
       if (allSelected) {
         setSelectedUsers(prev => prev.filter(id => !allFilteredUserIds.includes(id)));
+        setSelectedCaptainName(prev => prev.filter(id => !allFilteredUserIds.includes(id)));
       } else {
         setSelectedUsers(prev => [...new Set([...prev, ...allFilteredUserIds])]);
+        setSelectedCaptainName(prev => [...new Set([...prev, ...allFilteredUserIds])]);
       }
     }
   };
@@ -393,6 +386,7 @@ const Projects = () => {
     setDeadline("");
     setSelectedDepartments([]);
     setSelectedUsers([]);
+    setSelectedCaptainName([]);
     setImageFile(null);
     setSelectedImage(null);
   };
@@ -407,6 +401,14 @@ const Projects = () => {
       setTaskName(task.name);
       setDescription(task.description || "");
       setSelectedImage(task.image || null);
+
+      if (task.captain) {
+        // Agar captain object bo'lsa, undan ID ni olamiz
+        const captainId = typeof task.captain === 'object' ? task.captain.id : task.captain;
+        setSelectedCaptainName([captainId]);
+      } else {
+        setSelectedCaptainName([]);
+      }
 
       if (task.deadline) {
         const deadlineDate = new Date(task.deadline);
@@ -432,6 +434,7 @@ const Projects = () => {
     setDescription("");
     setDeadline("");
     setSelectedDepartments([]);
+    setSelectedCaptainName([]);
     setSelectedUsers([]);
     setImageFile(null);
     setSelectedImage(null);
@@ -451,6 +454,17 @@ const Projects = () => {
         ? prev.filter((id) => id !== userId)
         : [...prev, userId]
     );
+  };
+
+  const toggleCaptainSelection = (captainId) => {
+    // Only one captain can be selected at a time
+    if (selectedCaptainName.includes(captainId)) {
+      // If already selected, unselect
+      setSelectedCaptainName([]);
+    } else {
+      // Otherwise, select the new captain
+      setSelectedCaptainName([captainId]);
+    }
   };
 
   const renderAssignedUsers = () => {
@@ -519,6 +533,66 @@ const Projects = () => {
     );
   };
 
+  const captainRender = () => {
+    if (modalType !== "edit") return null;
+
+    return (
+      <div>
+        <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
+          Current Captain
+        </label>
+        <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-[14px] min-h-[50px]">
+          {selectedTask.captain ? (
+            (() => {
+              // Captain ma'lumotini olish
+              const captainObj = typeof selectedTask.captain === "object"
+                ? selectedTask.captain
+                : allUsers.find((u) => u.id === selectedTask.captain);
+
+              if (!captainObj) return null;
+
+              return (
+                <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full border">
+                  {captainObj.profile_picture ? (
+                    <img
+                      src={captainObj.profile_picture}
+                      alt={`${captainObj.first_name} ${captainObj.last_name}`}
+                      className="w-6 h-6 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-medium">
+                        {captainObj.first_name?.[0] || "U"}
+                      </span>
+                    </div>
+                  )}
+                  <span className="text-sm">
+                    {captainObj.first_name} {captainObj.last_name}
+                  </span>
+                  <button
+                    onClick={() => {
+                      // Captain ni o'chirish
+                      setSelectedTask({
+                        ...selectedTask,
+                        captain: null,
+                      });
+                      setSelectedCaptainName([]);
+                    }}
+                    className="text-red-500 hover:text-red-700 ml-1"
+                  >
+                    ×
+                  </button>
+                </div>
+              );
+            })()
+          ) : (
+            <span className="text-gray-400 text-sm">No captain assigned</span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const handleAddTask = async () => {
     if (!taskName.trim()) {
       return message.error("Task name kiritilishi kerak!");
@@ -535,6 +609,10 @@ const Projects = () => {
 
       if (deadline) {
         formData.append("deadline", deadline);
+      }
+
+      if (selectedCaptainName.length > 0) {
+        formData.append("captain", selectedCaptainName[0]);
       }
 
       const isAllDepartmentsSelected = selectedDepartments.includes("all") ||
@@ -594,6 +672,10 @@ const Projects = () => {
         formData.append("deadline", deadline);
       }
 
+      if (selectedCaptainName.length > 0) {
+        formData.append("captain", selectedCaptainName[0]);
+      }
+
       const isAllDepartmentsSelected = selectedDepartments.includes("all") ||
         (selectedDepartments.length === allDepartments.length && !selectedDepartments.includes("none"));
 
@@ -623,6 +705,12 @@ const Projects = () => {
 
       await loadProjects(currentPage);
       handleActionClose();
+
+      console.log("Captain data:", selectedCaptainName);
+      console.log("FormData contents:");
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
     } catch (error) {
       const backendMessage =
         error.response?.data?.message ||
@@ -862,6 +950,51 @@ const Projects = () => {
                 </div>
               )}
 
+              {captainRender()}
+
+              {selectedDepartments.length > 0 && filteredUsers.length > 0 && (
+                <div>
+                  <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
+                    Change Captain
+                  </label>
+                  <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-[14px] p-3">
+                    {filteredUsers.map((user) => (
+                      <label
+                        key={user.id}
+                        className="flex items-center gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded"
+                      >
+                        {/* Radio button ishlatamiz, checkbox emas */}
+                        <input
+                          type="radio"
+                          name="captain"
+                          checked={selectedCaptainName.includes(user.id)}
+                          onChange={() => toggleCaptainSelection(user.id)}
+                          className="w-4 h-4 accent-blue-600"
+                        />
+                        <div className="flex items-center gap-2">
+                          {user.profile_picture ? (
+                            <img
+                              src={user.profile_picture}
+                              alt={`${user.first_name} ${user.last_name}`}
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                              <span className="text-xs font-medium">
+                                {user.first_name?.[0] || "U"}
+                              </span>
+                            </div>
+                          )}
+                          <span className="text-sm font-medium">
+                            {user.first_name} {user.last_name}
+                          </span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Deadline */}
               <div>
                 <label className="block text-[14px] font-bold text-[#7D8592]">
@@ -953,6 +1086,40 @@ const Projects = () => {
             </div>
 
             <div className="grid grid-cols-3 w-full">
+              <p className="text-gray-400 font-medium">Created by</p>
+              <div className="flex items-center gap-2">
+                {selectedTask.created_by_image && (
+                  <img width={20} height={20} src={selectedTask.created_by_image} alt="" />
+                )}
+                <p className="text-gray-700 leading-relaxed col-span-2">
+                  {selectedTask.created_by || "No creator"}
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 w-full">
+              <p className="text-gray-400 font-medium">Captain</p>
+              <div className="flex items-center gap-2 col-span-2">
+                {selectedTask.captain && (
+                  <>
+                    {selectedTask.captain_image && (
+                      <img width={20} height={20} src={selectedTask.captain_image} alt="" />
+                    )}
+                    <p className="text-gray-700 leading-relaxed">
+                      {/* Captain object yoki ID bo'lishi mumkin */}
+                      {typeof selectedTask.captain === 'object'
+                        ? selectedTask.captain.name
+                        : allUsers.find(u => u.id === selectedTask.captain)?.first_name + " " +
+                        allUsers.find(u => u.id === selectedTask.captain)?.last_name
+                      }
+                    </p>
+                  </>
+                )}
+                {!selectedTask.captain && (
+                  <p className="text-gray-500">No captain</p>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-3 w-full">
               <p className="text-gray-400 font-medium">Assigned Users</p>
               <div className="col-span-2">
                 {selectedTask.assigned?.length > 0 ? (
@@ -991,12 +1158,6 @@ const Projects = () => {
                   <span className="text-gray-500">No users assigned</span>
                 )}
               </div>
-            </div>
-            <div className="grid grid-cols-3 w-full">
-              <p className="text-gray-400 font-medium">Created by</p>
-              <p className="text-gray-700 leading-relaxed col-span-2">
-                {selectedTask.created_by || "No creator"}
-              </p>
             </div>
             <div className="grid grid-cols-3 w-full">
               <p className="text-gray-400 font-medium">Description</p>
@@ -1077,7 +1238,7 @@ const Projects = () => {
           <button
             key="close"
             onClick={handleActionClose}
-            className="bg-gray-500 hover:bg-gray-600 text-white rounded-[15px] px-[20px] py-[12px] text-base font-bold transition"
+            className="bg-blue-500 hover:bg-blue-600 text-white rounded-[15px] px-[20px] py-[12px] text-base font-bold transition cursor-pointer"
           >
             Close
           </button>,
@@ -1625,6 +1786,57 @@ const Projects = () => {
                 <div className=" absolute right-3"></div>
               </div>
             </div>
+
+            {/* Captain */}
+            {selectedDepartments.length > 0 && filteredUsers.length > 0 && (
+              <div>
+                <label className="block text-[14px] font-bold text-[#7D8592]">
+                  Captain (only one)
+                </label>
+                {selectedDepartments.length > 0 && filteredUsers.length > 0 && (
+                  <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-[14px] p-3 mt-2">
+                    {filteredUsers.map((user) => (
+                      <label
+                        key={user.id}
+                        className="flex items-center gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded"
+                      >
+                        {/* Radio button ishlatamiz, checkbox emas */}
+                        <input
+                          type="radio"
+                          name="captain"
+                          checked={selectedCaptainName.includes(user.id)}
+                          onChange={() => toggleCaptainSelection(user.id)}
+                          className="w-4 h-4 accent-blue-600"
+                        />
+                        <div className="flex items-center gap-2">
+                          {user.profile_picture ? (
+                            <img
+                              src={user.profile_picture}
+                              alt={`${user.first_name} ${user.last_name}`}
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                              <span className="text-xs font-medium">
+                                {user.first_name?.[0] || "U"}
+                              </span>
+                            </div>
+                          )}
+                          <span className="text-sm font-medium">
+                            {user.first_name} {user.last_name}
+                          </span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
+                {selectedCaptainName.length > 0 && (
+                  <p className="text-sm text-green-600 mt-2">
+                    Selected captain: {allUsers.find(u => u.id === selectedCaptainName[0])?.first_name}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Description */}
             <div>
