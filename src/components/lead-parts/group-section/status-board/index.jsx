@@ -143,7 +143,7 @@ const StatusDropdown = ({
       }
     } catch (err) {
       console.error("Failed to delete status:", err);
-      message.error("Failed to delete status. It might be in use or you don't have permission.");
+      // message.error("Failed to delete status. It might be in use or you don't have permission.");
     }
   };
 

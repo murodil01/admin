@@ -144,7 +144,7 @@ const LeadNavbar = ({
       </button>
 
       {/* YANGI: Search Button */}
-      <button 
+      {/* <button 
         onClick={onToggleSearch}
         className={`w-full md:w-auto px-4 py-2 rounded-[8px] flex items-center justify-center gap-1 font-medium transition-colors text-center relative ${
           searchQuery 
@@ -160,7 +160,7 @@ const LeadNavbar = ({
         {searchQuery && (
           <div className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full"></div>
         )}
-      </button>
+      </button> */}
 
       {/* YANGI: Filter Button - active filters count bilan */}
       <button 
