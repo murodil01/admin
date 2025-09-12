@@ -360,7 +360,7 @@ const Navbar = ({ onToggleDesktop, onToggleMobile }) => {
         {/* Bell with notification count - only show count if > 0 */}
         <button
           onClick={handleNotificationClick}
-          className="relative w-12 h-[45px] bg-white rounded-[14px] flex items-center justify-center transition sm:shadow"
+          className="notification-bell relative w-12 h-[45px] bg-white rounded-[14px] flex items-center justify-center transition sm:shadow"
           disabled={!user || !user.id}
         >
           <Bell
