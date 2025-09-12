@@ -33,11 +33,16 @@ const InnerCircle = () => {
     const [departments, setDepartments] = useState([]);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-    // Initialize filters from URL parameters or localStorage
+    // Initialize filters from URL parameters
     const initializeFilters = () => {
         const urlFilters = {
             selectedDepartments: searchParams.get('departments')
-                ? searchParams.get('departments').split(',').map(n => parseInt(n, 10)).filter(Boolean)
+                ? searchParams.get('departments').split(',')
+                    .map(n => {
+                        const parsed = parseInt(n, 10);
+                        return isNaN(parsed) ? n : parsed;  // Keep as string if not a valid number
+                    })
+                    .filter(id => id !== null && id !== undefined && id !== '')
                 : [],
             status: searchParams.get('status') || '',
             taskFilters: {
@@ -49,6 +54,8 @@ const InnerCircle = () => {
                 completedMax: searchParams.get('completed_max') || ''
             }
         };
+        
+        console.log('Initialized filters from URL:', urlFilters); // Debug log
         return urlFilters;
     };
 
@@ -60,9 +67,22 @@ const InnerCircle = () => {
 
         // Always set page
         params.set("page_num", page.toString());
+        
+        // Only set department params if there are selected departments
         if (filters.selectedDepartments.length > 0) {
-            params.set("departments", filters.selectedDepartments.join(','));
+            // Ensure all department IDs are properly formatted
+            const cleanDepartmentIds = filters.selectedDepartments
+                .filter(id => id !== null && id !== undefined && id !== '')
+                .map(id => {
+                    // Convert to string for URL parameters
+                    return String(id);
+                });
+            
+            if (cleanDepartmentIds.length > 0) {
+                params.set("departments", cleanDepartmentIds.join(','));
+            }
         }
+        
         if (filters.status) params.set("status", filters.status);
 
         // Set task filter params only if they have values
@@ -73,6 +93,8 @@ const InnerCircle = () => {
         if (filters.taskFilters.completedMin) params.set("completed_min", filters.taskFilters.completedMin);
         if (filters.taskFilters.completedMax) params.set("completed_max", filters.taskFilters.completedMax);
 
+        console.log('Updating URL with params:', params.toString()); // Debug log
+
         // Update URL without causing navigation
         setSearchParams(params, { replace: true });
 
@@ -82,6 +104,8 @@ const InnerCircle = () => {
 
     // Enhanced filter handler
     const handleFilter = useCallback((filters) => {
+        console.log('Applying filters in InnerCircle:', filters); // Debug log
+        
         setCurrentFilters(filters);
         // ALWAYS reset to page 1 when applying new filters
         updateUrlParams(1, filters);
@@ -139,6 +163,7 @@ const InnerCircle = () => {
         const fetchDepartments = async () => {
             try {
                 const deptData = await getDepartments();
+                console.log('Fetched departments:', deptData); // Debug log
                 setDepartments(deptData);
             } catch (error) {
                 console.error("Error fetching departments:", error);
@@ -150,10 +175,24 @@ const InnerCircle = () => {
     // Enhanced fetchEmployees function to handle multiple filters
     const fetchEmployees = async (page = 1, filters = null, updateUrl = true) => {
         const filtersToUse = filters || currentFilters;
+        console.log('Fetching employees with filters:', filtersToUse, 'page:', page); // Debug log
         setLoading(true);
 
         try {
-            const res = await getEmployees(page, filtersToUse, departments);
+            // Create a clean filter object for the API call
+            const apiFilters = {
+                ...filtersToUse,
+                // Ensure selectedDepartments contains only valid IDs
+                selectedDepartments: filtersToUse.selectedDepartments
+                    .filter(id => id !== null && id !== undefined && id !== '')
+                    .map(id => {
+                        // Ensure ID is properly formatted
+                        const numId = parseInt(id, 10);
+                        return isNaN(numId) ? String(id) : numId;
+                    })
+            };
+
+            const res = await getEmployees(page, apiFilters, departments);
 
             setEmployees(res.results || []);
             setTotalEmployees(res.count || 0);
@@ -189,7 +228,12 @@ const InnerCircle = () => {
         const pageFromUrl = parseInt(searchParams.get("page_num") || "1", 10);
         const urlFilters = {
             selectedDepartments: searchParams.get('departments')
-                ? searchParams.get('departments').split(',').map(n => parseInt(n, 10)).filter(Boolean)
+                ? searchParams.get('departments').split(',')
+                    .map(n => {
+                        const parsed = parseInt(n, 10);
+                        return isNaN(parsed) ? n : parsed;
+                    })
+                    .filter(id => id !== null && id !== undefined && id !== '')
                 : [],
             status: searchParams.get('status') || '',
             taskFilters: {
