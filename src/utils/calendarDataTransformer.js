@@ -31,7 +31,7 @@ export const enrichDepartmentsWithLocalData = (
 
   return apiDepartments.map((apiDept) => {
     // allDepartments dan avatar va boshqa ma'lumotlarni topish
-    const localDept = allDepartments.results.find((local) => local.id === apiDept.id);
+    const localDept = allDepartments.find((local) => local.id === apiDept.id);
 
     return {
       id: apiDept.id,

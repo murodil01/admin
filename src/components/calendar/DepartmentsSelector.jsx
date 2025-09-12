@@ -26,8 +26,8 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
           apiDepartments = apiResponse;
         } else if (apiResponse && Array.isArray(apiResponse.data)) {
           apiDepartments = apiResponse.data;
-        } else if (apiResponse && Array.isArray(apiResponse.results)) {
-          apiDepartments = apiResponse.results;
+        } else if (apiResponse && Array.isArray(apiResponse)) {
+          apiDepartments = apiResponse;
         } else if (apiResponse && typeof apiResponse === 'object') {
           // If it's an object, try to extract the array from common properties
           if (apiResponse.departments && Array.isArray(apiResponse.departments)) {
