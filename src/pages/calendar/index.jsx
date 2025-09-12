@@ -35,7 +35,7 @@ function CalendarPage() {
 
         // Transform each event asynchronously
         const transformedEvents = await Promise.all(
-          apiEvents.map((event) => transformApiEventToFrontend(event))
+          apiEvents?.results.map((event) => transformApiEventToFrontend(event))
         );
 
         setEvents(transformedEvents);
