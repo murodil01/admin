@@ -1,15 +1,29 @@
-import { FiSearch } from "react-icons/fi";
 import { FiBell } from "react-icons/fi";
 import { useState, useEffect, useCallback } from "react";
-import { Calendar, CheckCircle, X, Eye } from "lucide-react";
+import { Calendar, X, Eye } from "lucide-react";
 import { getNotificationsAll, markAllRead, markNotificationAsRead, getNotificationsStats } from "../../api/services/notificationsService";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import AuthContext from "../../context/AuthContext.jsx";
 import { useContext } from "react";
 
-// Notification Detail Modal Component
-const NotificationDetailModal = ({ notification, isOpen, onClose, onMarkAsRead }) => {
+const NotificationDetailModal = ({
+  notification,
+  isOpen,
+  onClose,
+  onMarkAsRead,
+  onNotificationUpdate,
+  notifications,
+  setNotifications,
+  setFilteredNotifications,
+  filterNotifications,
+  activeTab,
+  setHasUnread,
+  setNotificationCount,
+  onCloseNotificationModal
+}) => {
+  const navigate = useNavigate();
+
   if (!isOpen || !notification) return null;
 
   const handleBackdropClick = (e) => {
@@ -24,9 +38,125 @@ const NotificationDetailModal = ({ notification, isOpen, onClose, onMarkAsRead }
     }
   };
 
+  const handleDetailsClick = async () => {
+  // Mark as read if unread BEFORE navigation
+  if (notification.is_read === false || notification.read === false || notification.status === "unread") {
+    try {
+      await onMarkAsRead(notification.id);
+
+      // Update notifications state if provided
+      if (notifications && setNotifications) {
+        const updated = notifications.map((notif) =>
+          notif.id === notification.id ? { ...notif, is_read: true } : notif
+        );
+        setNotifications(updated);
+
+        // Update filtered notifications if provided
+        if (setFilteredNotifications && filterNotifications && activeTab) {
+          const filteredUpdated = filterNotifications(updated, activeTab);
+          setFilteredNotifications(filteredUpdated);
+        }
+
+        // Update unread status if provided
+        if (setHasUnread) {
+          setHasUnread(updated.some(
+            (notif) =>
+              notif.is_read === false ||
+              notif.read === false ||
+              !notif.is_read ||
+              !notif.read ||
+              notif.status === "unread"
+          ));
+        }
+
+        // Update notification count if provided
+        if (setNotificationCount) {
+          setNotificationCount(prev => prev - 1);
+        }
+
+        // Notify parent if provided
+        if (onNotificationUpdate) {
+          onNotificationUpdate(updated);
+        }
+      }
+
+      toast.success("Notification marked as read!");
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
+      toast.error("Failed to mark notification as read!");
+    }
+  }
+
+  // Close the notification detail modal
+  onClose();
+  
+  // ADDED: Close the notification panel modal as well
+  if (onCloseNotificationModal) {
+    onCloseNotificationModal();
+  }
+
+  // Navigate based on notification type
+  if (notification.notification_type === "task" || notification.notification_type === "task_assigned") {
+    // For task notifications, navigate to tasks/:projectID
+    const projectId = notification.project_id ||
+      notification.get_instance_id ||
+      notification.instance_id ||
+      notification.task_project_id ||
+      notification.related_project_id;
+
+    const taskId = notification.task_id ||
+      notification.id ||
+      notification.instance_id;
+
+    if (projectId) {
+      // Navigate to specific project's tasks
+      navigate(`/tasks/${String(projectId)}/`);
+    } else if (taskId) {
+      // Fallback: navigate to tasks with task ID as query parameter
+      navigate(`/tasks?task_id=${String(taskId)}`);
+    } else {
+      // Last fallback: navigate to general tasks page
+      console.warn('No project_id or task_id found in notification:', notification);
+      navigate('/tasks');
+    }
+  } else if (notification.notification_type === "project" || notification.notification_type === "project_created" || notification.notification_type === "project_assigned") {
+    navigate(`/tasks`);
+  } else if (notification.notification_type === "event" || notification.notification_type === "event_created" || notification.notification_type === "event_updated" || notification.notification_type === "event_cancelled") {
+    navigate(`/calendar`);
+  } else if (notification.notification_type === "meeting_scheduled") {
+    navigate(`/calendar`);
+  } else if (notification.notification_type === "document_shared") {
+    navigate(`/documents`);
+  } else if (notification.notification_type === "deadline_reminder") {
+    // Check if it's task deadline or project deadline
+    const projectId = notification.project_id || notification.related_project_id;
+    if (projectId) {
+      navigate(`/tasks/${String(projectId)}/`);
+    } else {
+      navigate(`/tasks`);
+    }
+  } else {
+    // Default fallback - navigate to dashboard or relevant page
+    console.warn('Unknown notification type:', notification.notification_type);
+    navigate('/dashboard');
+  }
+};
+
+  const notificationTypeMap = {
+    event_created: "Event Created",
+    event_updated: "Event Updated",
+    event_cancelled: "Event Cancelled",
+    task_assigned: "Task Assigned",
+    project_created: "Project Created",
+    project_assigned: "Project Assigned",
+    meeting_scheduled: "Meeting Scheduled",
+    document_shared: "Document Shared",
+    deadline_reminder: "Deadline Reminder",
+  };
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-transparent"
+      className="fixed inset-0 z-50 flex items-center justify-center "
       onClick={handleBackdropClick}
     >
       <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden mx-4">
@@ -136,7 +266,7 @@ const NotificationDetailModal = ({ notification, isOpen, onClose, onMarkAsRead }
                 <div className="flex items-center gap-2">
                   <span className="font-medium">Type:</span>
                   <span className="px-2 py-1 bg-gray-100 rounded-md text-xs">
-                    {notification.notification_type}
+                    {notificationTypeMap[notification.notification_type] || notification.notification_type}
                   </span>
                 </div>
               )}
@@ -158,11 +288,16 @@ const NotificationDetailModal = ({ notification, isOpen, onClose, onMarkAsRead }
         <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+            className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors cursor-pointer"
           >
             Close
           </button>
-          {/* You can add more action buttons here if needed */}
+          <button
+            onClick={handleDetailsClick}
+            className="px-4 py-2 text-white transition-colors cursor-pointer bg-blue-500 hover:bg-blue-600 rounded-lg flex items-center gap-2"
+          >
+            View Details
+          </button>
         </div>
       </div>
     </div>
@@ -293,25 +428,7 @@ const Notification = ({ onNotificationUpdate, onCloseNotificationModal }) => {
     return () => {
       isMounted = false;
     };
-  }, [user, loading, calculateUnreadCount]); // notificationCount ni dependency dan olib tashlang
-
-  // // Improved notification update handler
-  // const handleNotificationUpdate = useCallback((updatedNotifications) => {
-  //   if (!updatedNotifications || !Array.isArray(updatedNotifications)) {
-  //     return;
-  //   }
-
-  //   // Calculate unread count from updated notifications
-  //   const unreadCount = calculateUnreadCount(updatedNotifications);
-
-  //   // Only update if count actually changed
-  //   setNotificationCount(prev => {
-  //     if (prev !== unreadCount) {
-  //       return unreadCount;
-  //     }
-  //     return prev;
-  //   });
-  // }, [calculateUnreadCount]);
+  }, [user, loading, calculateUnreadCount]);
 
   // Get formatted date title
   const getDateTitle = (dateString) => {
@@ -847,8 +964,17 @@ const Notification = ({ onNotificationUpdate, onCloseNotificationModal }) => {
       <NotificationDetailModal
         notification={selectedNotification}
         isOpen={isModalOpen}
-        onClose={closeModal}
-        onMarkAsRead={handleModalMarkAsRead}
+        onClose={() => setIsModalOpen(false)}
+        onMarkAsRead={markNotificationAsRead}
+        onNotificationUpdate={onNotificationUpdate}
+        notifications={notifications}
+        setNotifications={setNotifications}
+        setFilteredNotifications={setFilteredNotifications}
+        filterNotifications={filterNotifications}
+        activeTab={activeTab}
+        setHasUnread={setHasUnread}
+        setNotificationCount={setNotificationCount}
+        onCloseNotificationModal={onCloseNotificationModal}
       />
     </>
   );

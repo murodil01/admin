@@ -69,8 +69,8 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
                     departmentList = res.results;
                 }
 
-                const normalizedDepartments = departmentList.map(dept => ({
-                    id: dept.id || dept.value || Math.random().toString(36).substr(2, 9),
+                const normalizedDepartments = departmentList.map((dept, index) => ({
+                    id: dept.id || index + 1,
                     name: dept.name || 'Unnamed Department',
                     photo: dept.photo || '/default-department.png'
                 }));
@@ -94,12 +94,12 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
         }
     }, [isModalOpen]);
 
-    const handleDepartmentToggle = useCallback((deptIndex) => {
+    const handleDepartmentToggle = useCallback((deptId) => {
         setFilters(prev => ({
             ...prev,
-            selectedDepartments: prev.selectedDepartments.includes(deptIndex)
-                ? prev.selectedDepartments.filter(i => i !== deptIndex)
-                : [...prev.selectedDepartments, deptIndex]
+            selectedDepartments: prev.selectedDepartments.includes(deptId)
+                ? prev.selectedDepartments.filter(id => id !== deptId)
+                : [...prev.selectedDepartments, deptId]
         }));
     }, []);
 
@@ -111,17 +111,43 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
     }, []);
 
     const handleTaskFilterChange = useCallback((filterType, value) => {
+        // Ensure value is a string and handle empty values
+        const sanitizedValue = value === null || value === undefined ? '' : String(value);
+
         setFilters(prev => ({
             ...prev,
             taskFilters: {
                 ...prev.taskFilters,
-                [filterType]: value
+                [filterType]: sanitizedValue
             }
         }));
     }, []);
 
     const applyFilters = () => {
-        onFilter?.(filters);
+        // Validate task filters before applying
+        const validatedFilters = {
+            ...filters,
+            taskFilters: {
+                ...filters.taskFilters
+            }
+        };
+
+        // Ensure min is not greater than max for each filter type
+        const taskTypes = ['active', 'review', 'completed'];
+        taskTypes.forEach(type => {
+            const minKey = `${type}Min`;
+            const maxKey = `${type}Max`;
+            const minVal = validatedFilters.taskFilters[minKey];
+            const maxVal = validatedFilters.taskFilters[maxKey];
+
+            if (minVal !== '' && maxVal !== '' && parseInt(minVal) > parseInt(maxVal)) {
+                // Swap values if min > max
+                validatedFilters.taskFilters[minKey] = maxVal;
+                validatedFilters.taskFilters[maxKey] = minVal;
+            }
+        });
+
+        onFilter?.(validatedFilters);
         setIsModalOpen(false);
     };
 
@@ -141,6 +167,7 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
         };
         setFilters(clearedFilters);
         onClearFilters?.();
+        setIsModalOpen(false);
     };
 
     const hasActiveFilters = () => {
@@ -198,9 +225,8 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
                                 Departments
                             </label>
                             <div className={`space-y-2 transition-all duration-300 ease-in-out ${showAllDepartments ? 'max-h-60' : 'max-h-40'} overflow-y-auto`}>
-                                {visibleDepartments.map((dept, index) => {
-                                    const deptIndex = index + 1; // start from 1
-                                    const isSelected = filters.selectedDepartments.includes(deptIndex);
+                                {visibleDepartments.map((dept) => {
+                                    const isSelected = filters.selectedDepartments.includes(dept.id);
                                     return (
                                         <label
                                             key={dept.id}
@@ -212,7 +238,7 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
                                             <input
                                                 type="checkbox"
                                                 checked={isSelected}
-                                                onChange={() => handleDepartmentToggle(deptIndex)}
+                                                onChange={() => handleDepartmentToggle(dept.id)}
                                                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                                             />
                                             <div className="flex items-center space-x-3 flex-1">
@@ -306,8 +332,6 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
                                                 onChange={(e) => handleTaskFilterChange('activeMin', e.target.value)}
                                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
                                                 min="0"
-                                                // Add key to force re-render without losing focus
-                                                key={`activeMin-${filters.taskFilters.activeMin}`}
                                             />
                                             <span className="text-gray-400">-</span>
                                             <input
@@ -317,7 +341,6 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
                                                 onChange={(e) => handleTaskFilterChange('activeMax', e.target.value)}
                                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
                                                 min="0"
-                                                key={`activeMax-${filters.taskFilters.activeMax}`}
                                             />
                                         </div>
                                     </div>
@@ -335,7 +358,6 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
                                                 onChange={(e) => handleTaskFilterChange('reviewMin', e.target.value)}
                                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
                                                 min="0"
-                                                key={`reviewMin-${filters.taskFilters.reviewMin}`}
                                             />
                                             <span className="text-gray-400">-</span>
                                             <input
@@ -345,7 +367,6 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
                                                 onChange={(e) => handleTaskFilterChange('reviewMax', e.target.value)}
                                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
                                                 min="0"
-                                                key={`reviewMax-${filters.taskFilters.reviewMax}`}
                                             />
                                         </div>
                                     </div>
@@ -363,7 +384,6 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
                                                 onChange={(e) => handleTaskFilterChange('completedMin', e.target.value)}
                                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
                                                 min="0"
-                                                key={`completedMin-${filters.taskFilters.completedMin}`}
                                             />
                                             <span className="text-gray-400">-</span>
                                             <input
@@ -373,7 +393,6 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
                                                 onChange={(e) => handleTaskFilterChange('completedMax', e.target.value)}
                                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
                                                 min="0"
-                                                key={`completedMax-${filters.taskFilters.completedMax}`}
                                             />
                                         </div>
                                     </div>
@@ -412,7 +431,7 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
             <div className="hidden lg:block">
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className={`p-3 bg-white rounded-lg shadow-md flex items-center gap-1.5 transition-all duration-200 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasActiveFilters()
+                    className={`p-3 bg-white rounded-lg shadow-md flex items-center gap-1.5 transition-all duration-200 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 border ${hasActiveFilters()
                         ? 'border-blue-500 bg-blue-50 text-blue-700'
                         : 'border-gray-300 text-gray-700'
                         }`}
@@ -430,7 +449,7 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
             {/* Mobile Filter Button */}
             <button
                 onClick={() => setIsModalOpen(true)}
-                className={`lg:hidden fixed bottom-6 left-5 w-14 h-14 rounded-full text-white flex items-center justify-center shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasActiveFilters() ? 'bg-blue-500' : 'bg-blue-600'
+                className={`lg:hidden fixed z-999 bottom-6 left-5 w-14 h-14 rounded-full text-white flex items-center justify-center shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasActiveFilters() ? 'bg-blue-500' : 'bg-blue-600'
                     }`}
                 aria-label={`Open filters ${hasActiveFilters() ? `(${getActiveFilterCount()} active)` : ''}`}
             >

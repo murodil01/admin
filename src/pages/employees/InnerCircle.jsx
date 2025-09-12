@@ -83,19 +83,17 @@ const InnerCircle = () => {
     // Enhanced filter handler
     const handleFilter = useCallback((filters) => {
         setCurrentFilters(filters);
-        updateUrlParams(1, filters); // Reset to page 1 when filtering
+        // ALWAYS reset to page 1 when applying new filters
+        updateUrlParams(1, filters);
 
-        // Fetch data based on active tab
+        // Fetch data based on active tab - start from page 1
         if (activeTab === "list") {
             fetchEmployees(1, filters);
         } else if (activeTab === "activity") {
-            // For activity tab, we need to trigger a refetch
-            // The Activity component will handle the actual filtering
-            const currentPage = parseInt(searchParams.get("page_num") || "1", 10);
-            // This will trigger the Activity component's useEffect
-            updateUrlParams(currentPage, filters);
+            // For activity tab, URL update will trigger useEffect in Activity component
+            // The Activity component will automatically fetch from page 1 with new filters
         }
-    }, [activeTab, updateUrlParams, searchParams]);
+    }, [activeTab, updateUrlParams]);
 
     // Enhanced clear filters handler
     const handleClearFilters = useCallback(() => {
@@ -112,20 +110,19 @@ const InnerCircle = () => {
             }
         };
         setCurrentFilters(clearedFilters);
+        // ALWAYS reset to page 1 when clearing filters
         updateUrlParams(1, clearedFilters);
 
-        // Clear data based on active tab
+        // Fetch data from page 1
         if (activeTab === "list") {
             fetchEmployees(1, clearedFilters);
         } else if (activeTab === "activity") {
-            // For activity tab, trigger refetch
-            const currentPage = parseInt(searchParams.get("page_num") || "1", 10);
-            updateUrlParams(currentPage, clearedFilters);
+            // Activity component will handle the refetch automatically via useEffect
         }
 
         // Clear from localStorage
         localStorage.removeItem('innerCircleFilters');
-    }, [activeTab, updateUrlParams, searchParams]);
+    }, [activeTab, updateUrlParams]);
 
     const handleStatusUpdate = (employeeId, newStatus) => {
         setEmployees(prevEmployees =>
@@ -359,7 +356,7 @@ const InnerCircle = () => {
         setActiveTab(tab);
         localStorage.setItem("innerCircleTab", tab);
 
-        // Reset filters when switching tabs to avoid confusion
+        // Reset filters when switching tabs AND reset to page 1
         const clearedFilters = {
             selectedDepartments: [],
             status: '',
@@ -373,7 +370,7 @@ const InnerCircle = () => {
             }
         };
         setCurrentFilters(clearedFilters);
-        updateUrlParams(1, clearedFilters);
+        updateUrlParams(1, clearedFilters); // Reset to page 1
     };
 
     // Function to get the total count based on active tab
@@ -393,7 +390,7 @@ const InnerCircle = () => {
         );
 
     return (
-        <div className="w-full max-w-screen-xl mx-auto">
+        <div className="w-full max-w-screen-2xl mx-auto">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mt-6 mb-6 gap-4">
                 <h1 className="text-[#1F2937] font-bold text-2xl sm:text-3xl xl:text-4xl text-center md:text-left">
