@@ -33,7 +33,16 @@ import {
 } from "../../../api/services/leadsService";
 import FilterPanel from "../filters/FilterPanel.jsx";
 
-const MainLead = () => {
+const MainLead = ({
+  showFilterPanel ,
+  setShowFilterPanel,
+  searchQuery,
+  setSearchQuery,
+  filterBy,
+  setFilterBy,
+  showSearchPanel ,
+  setSearchSearchPanel
+}) => {
   const { boardId } = useParams();
   const navigate = useNavigate();
   const [groups, setGroups] = useState([]);
@@ -49,14 +58,14 @@ const MainLead = () => {
   const [showMoveDropdown, setShowMoveDropdown] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
 // YANGI: Filter states
-const [searchQuery, setSearchQuery] = useState('');
-const [filterBy, setFilterBy] = useState({
-  status: null,
-  owner: null,
-  source: null,
-  dateRange: null
-});
-const [showFilterPanel, setShowFilterPanel] = useState(false);
+// const [searchQuery, setSearchQuery] = useState('');
+// const [filterBy, setFilterBy] = useState({
+//   status: null,
+//   owner: null,
+//   source: null,
+//   dateRange: null
+// });
+// const [showFilterPanel, setShowFilterPanel] = useState(false);
 
 // YANGI: Filtered leads funksiyasi
 const getFilteredLeads = (groupId) => {
@@ -158,18 +167,18 @@ const getActiveFiltersCount = () => {
         // 2. Keyin barcha leadlarni olish
         const leadsRes = await getLeads();
 
-        console.log("Groups response:", groupsRes.data?.results);
-        console.log("Leads response:", leadsRes.data?.results);
+        console.log("Groups response:", groupsRes.data);
+        console.log("Leads response:", leadsRes.data);
 
         // Groups ni format qilish
-        const formattedGroups = groupsRes.data?.results || []
+        const formattedGroups = groupsRes.data || []
           .filter((group) => group.board === boardId)
           .map((group) => ({
             id: group.id,
             title: group.name || "Untitled Group",
             boardId: group.board,
           }));
-        setAllLeads(leadsRes.data?.results || []);
+        setAllLeads(leadsRes.data || []);
         setGroups(formattedGroups);
 
         // Birinchi guruhni avtomatik ochish
@@ -877,7 +886,7 @@ useEffect(() => {
 
 
         {/* Search va filter tugmasi uchun floating button */}
-        <button
+        {/* <button
         onClick={() => setShowFilterPanel(true)}
         className="fixed bottom-20 right-4 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 z-30"
       >
@@ -887,7 +896,7 @@ useEffect(() => {
             {getActiveFiltersCount()}
           </span>
         )}
-      </button>
+      </button> */}
 
       {/* Add Group Input */}
       {addingGroup ? (
