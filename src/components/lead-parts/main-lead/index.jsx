@@ -158,22 +158,22 @@ const getActiveFiltersCount = () => {
         // 2. Keyin barcha leadlarni olish
         const leadsRes = await getLeads();
 
-        console.log("Groups response:", groupsRes.data);
-        console.log("Leads response:", leadsRes.data);
+        console.log("Groups response:", groupsRes.data?.results);
+        console.log("Leads response:", leadsRes.data?.results);
 
         // Groups ni format qilish
-        const formattedGroups = groupsRes.data
+        const formattedGroups = groupsRes.data?.results || []
           .filter((group) => group.board === boardId)
           .map((group) => ({
             id: group.id,
             title: group.name || "Untitled Group",
             boardId: group.board,
           }));
-
+        setAllLeads(leadsRes.data?.results || []);
         setGroups(formattedGroups);
-        setAllLeads(leadsRes.data || []);
 
         // Birinchi guruhni avtomatik ochish
+
         if (formattedGroups.length > 0) {
           setExpandedGroups({ [formattedGroups[0].id]: true });
         }
