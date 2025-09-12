@@ -544,10 +544,11 @@ const getColumnWidth = (columnKey) => {
 };
 
 const GroupSection = ({
-  id, title, items, expanded, onToggleExpanded, updateTitle, addItem, updateItem, deleteGroup, selected, onToggleSelect, boardId,
+  id, items, expanded, addItem, updateItem, selected, onToggleSelect, boardId,
+  // id, title, items, expanded, onToggleExpanded, updateTitle, addItem, updateItem, deleteGroup, selected, onToggleSelect, boardId,
 }) => {
-  const [editingTitle, setEditingTitle] = useState(false);
-  const [titleValue, setTitleValue] = useState(title);
+  // const [editingTitle, setEditingTitle] = useState(false);
+  // const [titleValue, setTitleValue] = useState(title);
   const [localItems, setLocalItems] = useState([]);
   const [editingCell, setEditingCell] = useState(null);
   const [addingItem, setAddingItem] = useState(false);
@@ -801,7 +802,7 @@ const GroupSection = ({
         <div className="bg-white">
           <div className="px-4 pb-4 mt-2 overflow-x-auto relative" style={{ maxHeight: 'calc(100vh - 250px)', minHeight: '400px' }}>
             <table className="table-auto absolute border-collapse font-normal border border-gray-300 text-sm">
-              <thead className="bg-blue-200 sticky top-0 z-10"> {/* sticky qo'shildi */}
+              <thead className="bg-blue-200 sticky top-0 z-10">
                 <tr>
                   <th className="border border-gray-400 p-6" style={{ width: "48px", minWidth: "48px" }}></th>
                   {columns.map((col) => (
