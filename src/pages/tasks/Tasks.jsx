@@ -116,8 +116,6 @@ const Projects = () => {
       filters.progress__gte = progressFilter[0];
       filters.progress__lte = progressFilter[1];
     }
-
-    console.log('Generated filters:', filters); // Debug uchun
     return filters;
   };
 
@@ -125,7 +123,6 @@ const Projects = () => {
     const fetchTotalDepartments = async () => {
       try {
         const response = await getDepartments();
-        console.log('Departments API response:', response); // Debug log
 
         // Handle different response structures
         let departmentsArray = [];
@@ -136,7 +133,6 @@ const Projects = () => {
           departmentsArray = response.data;
         } else if (response && Array.isArray(response.results)) {
           departmentsArray = response.results;
-          console.log('Departments from results:', departmentsArray);
         } else if (response && typeof response === 'object') {
           // If it's an object with departments data, convert to array
           departmentsArray = Object.values(response);
@@ -144,7 +140,6 @@ const Projects = () => {
 
         setAllDepartments(departmentsArray);
         setTotalDepartmentsCount(departmentsArray.length);
-        console.log('Processed departments:', departmentsArray);
 
       } catch (error) {
         console.error('Error fetching departments:', error);
@@ -162,7 +157,6 @@ const Projects = () => {
         const response = await getDepartments();
         setTotalDepartmentsCount(response.length);
         setAllDepartments(response);
-        console.log('Total departments from API:', response.results.length);
       } catch (error) {
         console.error('Error fetching departments:', error);
         setTotalDepartmentsCount(4);
@@ -279,9 +273,7 @@ const Projects = () => {
   const loadProjects = async (page = 1, filters = {}) => {
     setLoading(true);
     try {
-      console.log(`Loading page ${page} with filters:`, filters);
       const data = await getProjects(page, filters);
-      console.log("Received data:", data);
 
       if (data.results && data.results.length > 0) {
         setProjectsData(data);
@@ -1254,7 +1246,7 @@ const Projects = () => {
         </Drawer>
       </div>
       {/* Tasks Grid - Responsive Grid Layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 space-y-2" >
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 space-y-2" >
         {displayProjects.length > 0 ? (
           displayProjects.map((project) => (
             <div
@@ -1323,7 +1315,6 @@ const Projects = () => {
                                   alt="All Departments"
                                   className="w-7 h-7 rounded-full border-2 border-white shadow-sm object-cover"
                                   onError={(e) => {
-                                    console.log('Image load failed, using fallback');
                                     const fallbackDiv = document.createElement('div');
                                     fallbackDiv.className = 'w-7 h-7 border-2 border-white rounded-full bg-blue-500 flex items-center justify-center shadow-sm text-white font-bold text-sm';
                                     fallbackDiv.innerHTML = 'M';
@@ -1442,7 +1433,6 @@ const Projects = () => {
             pageSize={pageSize}
             total={projectsData.count}
             onChange={(page) => {
-              console.log("Changing to page:", page);
               setCurrentPage(page);
               loadProjects(page);
             }}
