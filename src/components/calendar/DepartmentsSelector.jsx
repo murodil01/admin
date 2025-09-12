@@ -16,36 +16,40 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const apiDepartments = await getDepartments();
+        const apiResponse = await getDepartments();
+        console.log("Fetched departments:", apiResponse);
+
+        // Handle different response structures
+        let apiDepartments = [];
+
+        if (Array.isArray(apiResponse)) {
+          apiDepartments = apiResponse;
+        } else if (apiResponse && Array.isArray(apiResponse.data)) {
+          apiDepartments = apiResponse.data;
+        } else if (apiResponse && Array.isArray(apiResponse.results)) {
+          apiDepartments = apiResponse.results;
+        } else if (apiResponse && typeof apiResponse === 'object') {
+          // If it's an object, try to extract the array from common properties
+          if (apiResponse.departments && Array.isArray(apiResponse.departments)) {
+            apiDepartments = apiResponse.departments;
+          } else if (apiResponse.items && Array.isArray(apiResponse.items)) {
+            apiDepartments = apiResponse.items;
+          } else {
+            // Convert object values to array if it's an object of departments
+            apiDepartments = Object.values(apiResponse);
+          }
+        }
+
+        console.log('Processed departments:', apiDepartments); // Debug log
+
         let fetched = apiDepartments.map((d) => ({
           id: d.id,
           name: d.name,
-          avatar: d.photo || '/default-avatar.png', // API dan photo field
+          avatar: d.photo || d.avatar || '/default-avatar.png',
           description: d.description,
           head: d.head,
           isSelected: selectedIds.includes(d.id),
         }));
-
-        // Check if user has permission to see "All" and "None" options
-        const hasPermission = user && [ROLES.FOUNDER, ROLES.MANAGER].includes(user.role);
-        
-        if (hasPermission) {
-          // Add "All" option at the beginning
-          fetched.unshift({
-            id: "all",
-            name: "All",
-            avatar: null,
-            isSelected: selectedIds.includes("all"),
-          });
-
-          // Add "None" option at the end
-          fetched.push({
-            id: "none",
-            name: "None",
-            avatar: null,
-            isSelected: selectedIds.includes("none"),
-          });
-        }
 
         setDepartments(fetched);
 
@@ -110,9 +114,8 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
     if (dept.id === "all") {
       return (
         <div
-          className={`${baseClasses} ${
-            isSelected ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-600"
-          }`}
+          className={`${baseClasses} ${isSelected ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-600"
+            }`}
         >
           <img
             src="/M2.png"
@@ -122,9 +125,8 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
               e.target.style.display = "none";
               // e.target.nextSibling?.remove(); // Remove any existing fallback //////////////remove if it should be
               const fallbackSpan = document.createElement("span");
-              fallbackSpan.className = `text-sm font-bold ${
-                isSelected ? "text-white" : "text-gray-600"
-              }`;
+              fallbackSpan.className = `text-sm font-bold ${isSelected ? "text-white" : "text-gray-600"
+                }`;
               // fallbackSpan.textContent = "M";
               fallbackSpan.textContent = "All";
               e.target.parentNode.appendChild(fallbackSpan);
@@ -137,11 +139,10 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
     if (dept.id === "none") {
       return (
         <div
-          className={`${baseClasses} ${
-            isSelected
+          className={`${baseClasses} ${isSelected
               ? "bg-red-100 text-red-700"
               : "bg-gray-100 text-gray-600"
-          } text-xs`}
+            } text-xs`}
         >
           None
         </div>
@@ -151,11 +152,10 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
     if (!dept.avatar || dept.avatar === '/default-avatar.png') {
       return (
         <div
-          className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${
-            isSelected
+          className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold transition-colors duration-200 ${isSelected
               ? "bg-blue-500 text-white border-2 border-blue-300"
               : "bg-gray-200 text-gray-600 border border-gray-300"
-          }`}
+            }`}
         >
           {dept.name?.charAt(0)?.toUpperCase() || "?"}
         </div>
@@ -164,9 +164,8 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
 
     return (
       <div
-        className={`w-12 h-12 rounded-full transition-colors duration-200 ${
-          isSelected ? "ring-2 ring-blue-500 ring-offset-2" : ""
-        }`}
+        className={`w-12 h-12 rounded-full transition-colors duration-200 ${isSelected ? "ring-2 ring-blue-500 ring-offset-2" : ""
+          }`}
       >
         <img
           src={dept.avatar}
@@ -176,15 +175,14 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
             // Fallback to initial letter if image fails to load
             e.target.style.display = 'none';
             const fallback = document.createElement('div');
-            fallback.className = `w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold ${
-              isSelected
+            fallback.className = `w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold ${isSelected
                 ? "bg-blue-500 text-white border-2 border-blue-300"
                 : "bg-gray-200 text-gray-600 border border-gray-300"
-            }`;
+              }`;
             fallback.textContent = dept.name?.charAt(0)?.toUpperCase() || "?";
             e.target.parentNode.replaceChild(fallback, e.target);
           }}
-       />
+        />
       </div>
     );
   };

@@ -122,13 +122,38 @@ const Projects = () => {
   };
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsSmallScreen(window.innerWidth < 768);
+    const fetchTotalDepartments = async () => {
+      try {
+        const response = await getDepartments();
+        console.log('Departments API response:', response); // Debug log
+
+        // Handle different response structures
+        let departmentsArray = [];
+
+        if (Array.isArray(response)) {
+          departmentsArray = response;
+        } else if (response && Array.isArray(response.data)) {
+          departmentsArray = response.data;
+        } else if (response && Array.isArray(response.results)) {
+          departmentsArray = response.results;
+          console.log('Departments from results:', departmentsArray);
+        } else if (response && typeof response === 'object') {
+          // If it's an object with departments data, convert to array
+          departmentsArray = Object.values(response);
+        }
+
+        setAllDepartments(departmentsArray);
+        setTotalDepartmentsCount(departmentsArray.length);
+        console.log('Processed departments:', departmentsArray);
+
+      } catch (error) {
+        console.error('Error fetching departments:', error);
+        setAllDepartments([]);
+        setTotalDepartmentsCount(0);
+      }
     };
 
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    fetchTotalDepartments();
   }, []);
 
   useEffect(() => {
@@ -137,7 +162,7 @@ const Projects = () => {
         const response = await getDepartments();
         setTotalDepartmentsCount(response.length);
         setAllDepartments(response);
-        console.log('Total departments from API:', response.length);
+        console.log('Total departments from API:', response.results.length);
       } catch (error) {
         console.error('Error fetching departments:', error);
         setTotalDepartmentsCount(4);
@@ -1139,24 +1164,31 @@ const Projects = () => {
               <Select
                 className="input_Drawer"
                 mode="multiple"
-                placeholder="Select departments"
+                placeholder={allDepartments.length === 0 ? "Loading departments..." : "Select departments"}
                 value={departmentFilter}
                 onChange={setDepartmentFilter}
                 style={{ width: '100%', height: '47px' }}
                 allowClear
+                loading={allDepartments.length === 0}
               >
-                {allDepartments.map(dept => (
-                  <Option key={dept.id} value={dept.id}>
-                    <div className=" flex items-center">
-                      <img
-                        src={dept.photo || allDepartmentsIcon}
-                        alt={dept.name}
-                        className="w-5 h-5 rounded-full mr-2"
-                      />
-                      {dept.name}
-                    </div>
+                {allDepartments.length > 0 ? (
+                  allDepartments.map(dept => (
+                    <Option key={dept.id} value={dept.id}>
+                      <div className="flex items-center">
+                        <img
+                          src={dept.photo || allDepartmentsIcon}
+                          alt={dept.name}
+                          className="w-5 h-5 rounded-full mr-2"
+                        />
+                        {dept.name}
+                      </div>
+                    </Option>
+                  ))
+                ) : (
+                  <Option disabled value="loading">
+                    Loading departments...
                   </Option>
-                ))}
+                )}
               </Select>
             </div>
             {/* {order} */}
@@ -1222,7 +1254,7 @@ const Projects = () => {
         </Drawer>
       </div>
       {/* Tasks Grid - Responsive Grid Layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2" >
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 space-y-2" >
         {displayProjects.length > 0 ? (
           displayProjects.map((project) => (
             <div
