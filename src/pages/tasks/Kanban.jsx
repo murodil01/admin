@@ -524,7 +524,7 @@ const Card = ({
         duration: 0,
       });
 
-      if (file.file || file.url) {                                                            
+      if (file.file || file.url) {
         // File URL mavjud bo'lsa, to'g'ridan-to'g'ri download qilish
         const fileUrl = file.file || file.url;
         const fileName = file.original_name || file.file_name || "download";
@@ -2156,6 +2156,18 @@ const closeImageModal = () => {
                   </div>
                 </div>
 
+                {/* Created By */}
+                <div>
+                  <p className="text-gray-400">Created by</p>
+
+                  <div className="flex items-center gap-3 mt-1">
+                    <img className="w-8 h-8 rounded-full" src={taskData.created_by_image} alt="" />
+                    <p>
+                      {taskData.created_by || "Unknown"}
+                    </p>
+                  </div>
+                </div>
+
                 <div>
                   <p className="text-gray-400">Date</p>
                   <p className="mt-1">
@@ -2499,7 +2511,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
     try {
       const response = await getTaskInstructions(taskId);
       // faqat shu taskga tegishli instructions qolsin
-      const instructionsData = (response.data || []).filter(
+      const instructionsData = (response.results || []).filter(
         (instruction) => instruction.task === taskId
       );
       console.log("Instructions ma'lumotlari:", response);
@@ -2689,7 +2701,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       }));
 
       setAvailableUsers(formattedUsers);
-      setAvailableTags(tagsResponse.data);
+      setAvailableTags(tagsResponse.data.results);
     } catch (error) {
       console.error("Modal ma'lumotlarini yuklashda xatolik:", error);
       message.error("Ma'lumotlarni yuklashda xatolik yuz berdi");
@@ -2705,7 +2717,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       const response = await getTaskFiles();
 
       // Task ID ga mos fayllarni filtrlash
-      const taskFiles = response.data.filter(
+      const taskFiles = response.data.results.filter(
         (file) => file.task === cardData.id
       );
       setUploadedFiles(taskFiles);
