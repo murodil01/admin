@@ -153,11 +153,11 @@ const Activity = ({ onTotalActivitiesChange, currentFilters }) => {
   }
 
   return (
-    <div className="w-full">
+    <section className="w-full">
       {/* Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-6">
         {activity.map((user) => (
-          <div
+          <article
             key={user.id}
             className="bg-white rounded-[24px] shadow-md px-2 pt-3 pb-6 flex flex-col gap-3 items-center hover:shadow-lg transition-shadow"
           >
@@ -208,7 +208,7 @@ const Activity = ({ onTotalActivitiesChange, currentFilters }) => {
                 </div>
               ))}
             </div>
-          </div>
+          </article>
         ))}
       </div>
 
@@ -227,7 +227,7 @@ const Activity = ({ onTotalActivitiesChange, currentFilters }) => {
           </Suspense>
         </div>
       )}
-    </div>
+    </section>
   );
 };
 
