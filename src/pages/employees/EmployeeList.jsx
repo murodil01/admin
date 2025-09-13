@@ -174,15 +174,10 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
                 }}
                 className="flex justify-between items-center lg:hidden">
                 <div className="flex items-center gap-3">
-                    <Image.PreviewGroup
-                        items={emp.profile_picture ? [emp.profile_picture] : []}
-                    >
-                        <Image
-                            width={50}
-                            className="rounded-full object-cover"
-                            src={emp.profile_picture}
-                        />
-                    </Image.PreviewGroup>
+                    <img
+                        className="w-12 h-12 rounded-full object-cover"
+                        src={emp.profile_picture}
+                        alt={emp.first_name} />
                     <div>
                         <p className="text-[#1F2937] font-semibold">
                             <span className="capitalize">{emp.first_name}</span> <span className="capitalize">{emp.last_name}</span>
@@ -237,11 +232,16 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
                             <div className="p-4">
                                 <div className="flex justify-between items-center mb-6">
                                     <div className="flex items-center gap-4">
-                                        <img
-                                            src={emp.profile_picture}
-                                            alt={emp.name}
-                                            className="w-16 h-16 rounded-full object-cover"
-                                        />
+                                        <Image.PreviewGroup
+                                            items={emp.profile_picture ? [emp.profile_picture] : []}
+                                        >
+                                            <Image
+                                                width={50}
+                                                height={50}
+                                                className="rounded-full object-cover"
+                                                src={emp.profile_picture}
+                                            />
+                                        </Image.PreviewGroup>
                                         <div>
                                             <p className="text-lg font-semibold">
                                                 <span className="capitalize">{emp.first_name}</span> <span className="capitalize">{emp.last_name}</span>
