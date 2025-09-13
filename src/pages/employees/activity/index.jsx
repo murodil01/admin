@@ -2,35 +2,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { getActivities } from "../../../api/services/activityService";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { lazy, Suspense } from "react";
-const Pagination = lazy(() => import("antd/es/pagination"));
-import { useMemo } from "react";
-
-// OptimizedImage komponenti
-const OptimizedImage = ({ src, alt, className, fallback = "/default-avatar.webp", width, height }) => {
-  const [imageSrc, setImageSrc] = useState(src || fallback);
-  const [imageError, setImageError] = useState(false);
-
-  const handleError = () => {
-    if (!imageError) {
-      setImageSrc(fallback);
-      setImageError(true);
-    }
-  };
-
-  return (
-    <img
-      src={imageSrc}
-      alt={alt}
-      className={className}
-      width={width}
-      height={height}
-      loading="lazy"
-      decoding="async"
-      onError={handleError}
-    />
-  );
-};
+import { Suspense } from "react";
+import { Pagination } from "antd";
 
 const Activity = ({ onTotalActivitiesChange, currentFilters }) => {
   const [searchParams] = useSearchParams();
@@ -41,45 +14,31 @@ const Activity = ({ onTotalActivitiesChange, currentFilters }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Memoize filtered activities
-  const memoizedActivities = useMemo(() => activity, [activity]);
-
   // Pagination
   const currentPage = parseInt(searchParams.get("page_num") || "1", 10);
   const itemsPerPage = 12;
 
   // Fetch API
   const fetchActivities = useCallback(async (page = 1, filters = null) => {
-    // AbortController for canceling previous requests
-    const abortController = new AbortController();
     try {
       setLoading(true);
       setError(null);
 
-      const res = await getActivities(page, filters, { signal: abortController.signal });
+      const res = await getActivities(page, filters);
+      const activities = res.results || [];
 
-      // Check if component is still mounted
-      if (!abortController.signal.aborted) {
-        const activities = res.results || [];
-        setActivity(activities);
-        setTotalActivities(res.count || 0);
+      setActivity(activities);
+      setTotalActivities(res.count || 0);
 
-        if (onTotalActivitiesChange) {
-          onTotalActivitiesChange(res.count || 0);
-        }
+      if (onTotalActivitiesChange) {
+        onTotalActivitiesChange(res.count || 0);
       }
     } catch (err) {
-      if (err.name !== 'AbortError' && !abortController.signal.aborted) {
-        console.error("Error fetching activities:", err);
-        setError("Failed to load activities. Please try again.");
-      }
+      console.error("Error fetching activities:", err);
+      setError("Failed to load activities. Please try again.");
     } finally {
-      if (!abortController.signal.aborted) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
-
-    return () => abortController.abort();
   }, [onTotalActivitiesChange]);
 
   // useEffect cleanup qo'shish
@@ -194,32 +153,36 @@ const Activity = ({ onTotalActivitiesChange, currentFilters }) => {
   }
 
   return (
-    <section className="w-full">
+    <div className="w-full">
       {/* Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-6">
         {activity.map((user) => (
-          <article
+          <div
             key={user.id}
             className="bg-white rounded-[24px] shadow-md px-2 pt-3 pb-6 flex flex-col gap-3 items-center hover:shadow-lg transition-shadow"
-            aria-labelledby={`user-${user.id}-name`}
           >
             {/* User Info */}
             <div className="bg-[#E3EDFA] py-4 px-4 flex flex-col items-center gap-2 rounded-[24px] w-full">
-              <OptimizedImage
+              <img
                 className="w-[50px] h-[50px] rounded-full object-cover border-2 border-white shadow-sm"
-                src={user.profile_picture}
+                src={user.profile_picture || "/default-avatar.webp"}
                 alt={`${user.first_name} ${user.last_name}`}
                 width="50"
                 height="50"
+                loading="lazy"
+                decoding="async"
+                onError={(e) => {
+                  e.currentTarget.src = "/default-avatar.webp";
+                }}
               />
-              <h2 id={`user-${user.id}-name`} className="font-bold text-[16px] text-[#0A1629] text-center">
+              <h1 className="font-bold text-[16px] text-[#0A1629] text-center">
                 {user.first_name || "N/A"} {user.last_name || ""}
-              </h2>
+              </h1>
               <p className="text-[14px] text-[#0A1629] text-center">
                 {user.profession || "No Profession"}
               </p>
               {user.level && user.level !== "none" && (
-                <span className="font-semibold text-[12px] text-[#5A6472] px-2 py-1 rounded-lg bg-white">
+                <span className="font-semibold text-[12px] text-[#7D8592] px-2 py-1 rounded-lg bg-white">
                   {user.level}
                 </span>
               )}
@@ -245,7 +208,7 @@ const Activity = ({ onTotalActivitiesChange, currentFilters }) => {
                 </div>
               ))}
             </div>
-          </article>
+          </div>
         ))}
       </div>
 
@@ -264,7 +227,7 @@ const Activity = ({ onTotalActivitiesChange, currentFilters }) => {
           </Suspense>
         </div>
       )}
-    </section>
+    </div>
   );
 };
 
