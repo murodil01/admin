@@ -2,8 +2,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { getActivities } from "../../../api/services/activityService";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Suspense } from "react";
-import { Pagination } from "antd";
+import { lazy, Suspense } from "react";
+const Pagination = lazy(() => import("antd/es/pagination"));
 import { useMemo } from "react";
 
 // OptimizedImage komponenti
@@ -81,28 +81,6 @@ const Activity = ({ onTotalActivitiesChange, currentFilters }) => {
 
     return () => abortController.abort();
   }, [onTotalActivitiesChange]);
-
-  const renderTaskStats = useCallback((user) => {
-    return (
-      <div className="w-full flex items-center justify-between gap-2">
-        {[
-          { value: user.active_tasks, label: "Active" },
-          { value: user.tasks_in_review, label: "Review" },
-          { value: user.completed_tasks, label: "Approved" },
-        ].map(({ value, label }) => (
-          <div
-            key={label}
-            className="rounded-2xl p-3 border-[#E3EDFA] border-2 flex-1 min-h-[80px] flex flex-col justify-center text-center"
-          >
-            <p className="font-bold text-[26px] text-[#0A1629]">
-              {value || 0}
-            </p>
-            <h3 className="text-[#4A5568] text-[12px]">{label}</h3>
-          </div>
-        ))}
-      </div>
-    );
-  }, []);
 
   // useEffect cleanup qo'shish
   useEffect(() => {
@@ -219,7 +197,7 @@ const Activity = ({ onTotalActivitiesChange, currentFilters }) => {
     <section className="w-full">
       {/* Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 py-6">
-        {memoizedActivities.map((user) => (
+        {activity.map((user) => (
           <article
             key={user.id}
             className="bg-white rounded-[24px] shadow-md px-2 pt-3 pb-6 flex flex-col gap-3 items-center hover:shadow-lg transition-shadow"
@@ -250,7 +228,23 @@ const Activity = ({ onTotalActivitiesChange, currentFilters }) => {
             <h3 className="font-bold text-[#0A1629]">Tasks</h3>
 
             {/* Task Stats */}
-            {renderTaskStats(user)}
+            <div className="w-full flex items-center justify-between gap-2">
+              {[
+                { value: user.active_tasks, label: "Active" },
+                { value: user.tasks_in_review, label: "Review" },
+                { value: user.completed_tasks, label: "Approved" },
+              ].map(({ value, label }) => (
+                <div
+                  key={label}
+                  className="rounded-2xl p-3 border-[#E3EDFA] border-2 flex-1 min-h-[80px] flex flex-col justify-center text-center"
+                >
+                  <p className="font-bold text-[26px] text-[#0A1629]">
+                    {value || 0}
+                  </p>
+                  <h3 className="text-[#91929E] text-[12px]">{label}</h3>
+                </div>
+              ))}
+            </div>
           </article>
         ))}
       </div>
