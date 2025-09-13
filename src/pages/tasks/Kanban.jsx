@@ -2111,6 +2111,19 @@ const closeImageModal = () => {
 
               {/* Right section */}
               <div className="md:col-span-4 space-y-4 text-sm">
+                {/* Created By */}
+                <div>
+                  <p className="text-gray-400">Created by</p>
+
+                  <div className="flex items-center gap-3 mt-1">
+                    <img className="w-8 h-8 rounded-full" src={taskData.created_by_image} alt="" />
+                    <p>
+                      {taskData.created_by || "Unknown"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Assignee */}
                 <div>
                   <p className="text-gray-400">Assignee by</p>
 
@@ -2153,18 +2166,6 @@ const closeImageModal = () => {
                         </div>
                       );
                     })()}
-                  </div>
-                </div>
-
-                {/* Created By */}
-                <div>
-                  <p className="text-gray-400">Created by</p>
-
-                  <div className="flex items-center gap-3 mt-1">
-                    <img className="w-8 h-8 rounded-full" src={taskData.created_by_image} alt="" />
-                    <p>
-                      {taskData.created_by || "Unknown"}
-                    </p>
                   </div>
                 </div>
 
