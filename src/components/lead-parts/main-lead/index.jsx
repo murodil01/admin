@@ -13,7 +13,6 @@ import {
   MoreVertical,
   Move,
   UploadIcon,
-  Search,
 } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -34,14 +33,16 @@ import {
 import FilterPanel from "../filters/FilterPanel.jsx";
 
 const MainLead = ({
-  showFilterPanel ,
+  showFilterPanel,
   setShowFilterPanel,
   searchQuery,
   setSearchQuery,
   filterBy,
   setFilterBy,
-  showSearchPanel ,
-  setSearchSearchPanel
+  showSearchPanel,
+  setShowSearchPanel,
+  selectedPersonId,     // ✅ Qo'shish
+  setSelectedPersonId   // ✅ Qo'shish
 }) => {
   const { boardId } = useParams();
   const navigate = useNavigate();
@@ -57,15 +58,6 @@ const MainLead = ({
   const [editingGroup, setEditingGroup] = useState(null);
   const [showMoveDropdown, setShowMoveDropdown] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
-// YANGI: Filter states
-// const [searchQuery, setSearchQuery] = useState('');
-// const [filterBy, setFilterBy] = useState({
-//   status: null,
-//   owner: null,
-//   source: null,
-//   dateRange: null
-// });
-// const [showFilterPanel, setShowFilterPanel] = useState(false);
 
 // YANGI: Filtered leads funksiyasi
 const getFilteredLeads = (groupId) => {
@@ -89,6 +81,11 @@ const getFilteredLeads = (groupId) => {
   // Owner bo'yicha filter
   if (filterBy.owner) {
     leads = leads.filter(lead => lead.person_detail?.id === filterBy.owner);
+  }
+
+  // Person filter (navbar person button uchun)
+  if (selectedPersonId) {
+    leads = leads.filter(lead => lead.person_detail?.id === selectedPersonId);
   }
 
   // Source bo'yicha filter
@@ -115,6 +112,18 @@ const getFilteredLeads = (groupId) => {
   return leads;
 };
 
+// YANGI: Filter count hisoblovchi funksiya
+const getActiveFiltersCount = () => {
+  let count = 0;
+  if (searchQuery.trim()) count++;
+  if (filterBy.status) count++;
+  if (filterBy.owner) count++;
+  if (filterBy.source) count++;
+  if (filterBy.dateRange?.start || filterBy.dateRange?.end) count++;
+  // if (selectedPersonId) count++; 
+  return count;
+};
+
 // Filter reset funksiyasi
 const resetFilters = () => {
   setSearchQuery('');
@@ -124,17 +133,7 @@ const resetFilters = () => {
     source: null,
     dateRange: null
   });
-};
-
-// YANGI: Filter count hisoblovchi funksiya
-const getActiveFiltersCount = () => {
-  let count = 0;
-  if (searchQuery.trim()) count++;
-  if (filterBy.status) count++;
-  if (filterBy.owner) count++;
-  if (filterBy.source) count++;
-  if (filterBy.dateRange?.start || filterBy.dateRange?.end) count++;
-  return count;
+  setSelectedPersonId(null); // YANGI
 };
 
   // Boardlarni yuklash
@@ -527,9 +526,9 @@ const getActiveFiltersCount = () => {
   };
 
   // Item tanlash/bekor qilish
-  const toggleSelectItem = (groupId, itemIndex, isSelected, leadId) => {
+  const toggleSelectItem = (groupId, isSelected, leadId) => {
     if (isSelected) {
-      setSelectedItems((prev) => [...prev, { groupId,leadId, itemIndex }]);
+      setSelectedItems((prev) => [...prev, { groupId,leadId }]);
     } else {
       setSelectedItems((prev) =>
         prev.filter(
@@ -724,6 +723,7 @@ useEffect(() => {
           onReset={resetFilters}
           boardId={boardId}
           allLeads={allLeads}
+          // setSelectedPersonId={selectedPersonId}
         />
       )}
 

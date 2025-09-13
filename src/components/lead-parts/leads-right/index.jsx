@@ -7,6 +7,7 @@ function LeadsRight() {
   const [showFilterPanel, setShowFilterPanel] = useState(false);
   const [showSearchPanel, setShowSearchPanel] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPersonId, setSelectedPersonId] = useState(null);
   const [filterBy, setFilterBy] = useState({
     status: null,
     owner: null,
@@ -28,6 +29,7 @@ function LeadsRight() {
     if (filterBy.owner) count++;
     if (filterBy.source) count++;
     if (filterBy.dateRange?.start || filterBy.dateRange?.end) count++;
+    // if (selectedPersonId) count++;
     return count;
   };
 
@@ -41,6 +43,11 @@ function LeadsRight() {
     setShowSearchPanel(!showSearchPanel);
     setShowFilterPanel(false); // Boshqa panelni yopish
   };
+  // Person select handler
+const handlePersonSelect = (person) => {
+  setSelectedPersonId(person ? person.id : null);
+};
+
   return (
     <div className="border-gray-200 rounded-[8px]">
       <LeadNavbar 
@@ -49,6 +56,8 @@ function LeadsRight() {
         activeFiltersCount={getActiveFiltersCount()}
         onToggleSearch={handleToggleSearch}
         searchQuery={searchQuery}
+        onPersonSelect={handlePersonSelect}
+        selectedPersonId={selectedPersonId}
       />
       
       <MainLead 
@@ -61,6 +70,8 @@ function LeadsRight() {
         setFilterBy={setFilterBy}
         showSearchPanel={showSearchPanel}
         setShowSearchPanel={setShowSearchPanel}
+        selectedPersonId={selectedPersonId}
+        setSelectedPersonId={setSelectedPersonId}
       />
     </div>
   );
