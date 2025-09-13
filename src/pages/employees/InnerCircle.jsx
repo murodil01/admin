@@ -54,7 +54,7 @@ const InnerCircle = () => {
                 completedMax: searchParams.get('completed_max') || ''
             }
         };
-        
+
         console.log('Initialized filters from URL:', urlFilters); // Debug log
         return urlFilters;
     };
@@ -67,7 +67,7 @@ const InnerCircle = () => {
 
         // Always set page
         params.set("page_num", page.toString());
-        
+
         // Only set department params if there are selected departments
         if (filters.selectedDepartments.length > 0) {
             // Ensure all department IDs are properly formatted
@@ -77,12 +77,12 @@ const InnerCircle = () => {
                     // Convert to string for URL parameters
                     return String(id);
                 });
-            
+
             if (cleanDepartmentIds.length > 0) {
                 params.set("departments", cleanDepartmentIds.join(','));
             }
         }
-        
+
         if (filters.status) params.set("status", filters.status);
 
         // Set task filter params only if they have values
@@ -105,7 +105,7 @@ const InnerCircle = () => {
     // Enhanced filter handler
     const handleFilter = useCallback((filters) => {
         console.log('Applying filters in InnerCircle:', filters); // Debug log
-        
+
         setCurrentFilters(filters);
         // ALWAYS reset to page 1 when applying new filters
         updateUrlParams(1, filters);

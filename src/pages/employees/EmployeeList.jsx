@@ -151,9 +151,18 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
     // Format phone number for tel: link
     const formatPhoneNumber = (phone) => {
         if (!phone) return null;
-        // Remove all non-digit characters
-        return phone.replace(/\D/g, '+');
+
+        // Remove all non-digit characters except +
+        let cleaned = phone.replace(/[^\d+]/g, '');
+
+        // Ensure it starts with +
+        if (!cleaned.startsWith('+')) {
+            cleaned = '+' + cleaned.replace(/\+/g, '');
+        }
+
+        return cleaned;
     };
+
 
     return (
         <div className="bg-white border border-gray-200 rounded-lg shadow hover:shadow-md transition p-4 grid grid-cols-1 gap-3 lg:grid-cols-17 lg:items-center">
@@ -170,6 +179,7 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
                     >
                         <Image
                             width={50}
+                            className="rounded-full object-cover"
                             src={emp.profile_picture}
                         />
                     </Image.PreviewGroup>
