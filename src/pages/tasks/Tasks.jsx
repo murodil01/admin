@@ -1089,7 +1089,12 @@ const Projects = () => {
               <p className="text-gray-400 font-medium">Created by</p>
               <div className="flex items-center gap-2">
                 {selectedTask.created_by_image && (
-                  <img width={20} height={20} src={selectedTask.created_by_image} alt="" />
+                  <img
+                    width={20}
+                    height={20}
+                    className="rounded-full"
+                    src={selectedTask.created_by_image}
+                    alt="" />
                 )}
                 <p className="text-gray-700 leading-relaxed col-span-2">
                   {selectedTask.created_by || "No creator"}
