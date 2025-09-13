@@ -39,7 +39,6 @@ const endpoints = {
     getTaskInstructionsByTask: (taskId) =>
       `project/task-instructions/${taskId}`,
     getTaskCommentsByTask: (taskId) => `project/task-comments/${taskId}`,
-    // Instructions endpoint larini to'g'irlang
     getTaskInstructions: "project/instructions/",
     createTaskInstructions: "project/instructions/",
     updateInstruction: (id) => `project/instructions/${id}/`,
@@ -74,6 +73,8 @@ const endpoints = {
     getById: (id) => `board/board/${id}/`,    // board detail/list uchun
     update: (id) => `board/board/${id}/`,
     delete: (id) => `board/board/${id}/`,
+    uploadExcel: "board/upload-excel/",
+    exportExcel: "board/export-excel/"
   },
 
   group: {
@@ -91,19 +92,14 @@ const endpoints = {
     // createStatus: (id) => `board/leads/${id}/`,
     update: (groupId, leadId) => `board/leads/${leadId}/?group=${groupId}`,
     delete: (groupId, leadId) => `board/leads/${leadId}/?group=${groupId}`,
+    moveTo: "board/leads/move-to/",
   },
 
   status: {
     getAllstatus: (boardId) => `board/status/${boardId}`,
     create: (boardId) => `board/status/${boardId}`,
-    // getById: (boardId, statusId) =>
-    //   `board/leads/status/${statusId}/?board=${boardId}`,
-
     getAll: (boardId) => `board/status/${boardId}`,
-    // create: (boardId) => `board/status/${boardId}`,
-    getById: (boardId, statusId) =>
-      `board/status/${statusId}/?board=${boardId}`,
-
+    getById: (boardId, statusId) => `board/status/${statusId}/?board=${boardId}`,
     update: (boardId, statusId) => `board/status/${statusId}/?board=${boardId}`,
     delete: (boardId, statusId) => `board/status/${statusId}/?board=${boardId}`,
   },
@@ -122,12 +118,6 @@ const endpoints = {
     getById: "user-activities/{id}/",
     create: "users/",
   },
-
-  // controlData: {
-  //   getByUserId: (userId) => `control-data/?user_id=${userId}/`,
-  //   createForUser: (userId) => `control-data/?user_id=${userId}/`, // Faqat o'sha user uchun yaratish
-  //   update: (userId) => `control-data/?user_id=${userId}`,
-  // },
 
   controlData: {
     getAll: "control-data/",
@@ -157,11 +147,13 @@ const endpoints = {
 
   notifications: {
     getAll: "notifications/",
+    getStats: "notifications/stats/",
     getById: (id) => `notifications/${id}/`,
     create: "notifications/",
     update: (id) => `notifications/${id}/`,
-    updateStatus: (id) => `/notifications/${id}/`,
+    updateStatus: (id) => `notifications/${id}/mark-read/`,
     delete: (id) => `notifications/${id}/`,
+    markAllRead: "notifications/mark-all-read/", // Barcha bildirishnomalarni o'qilgan deb belgilash
   },
 };
 

@@ -58,23 +58,35 @@ const CalendarDay = ({
       {Array.isArray(currentEvent?.departments) &&
         currentEvent.departments.length > 0 && (
           <div className="absolute top-2 right-2 flex -space-x-2">
-            {currentEvent.department.map((dept, index) => (
+            {currentEvent.department.slice(0, 2).map((dept, index) => (
               <div
                 key={dept.id || index}
                 className="w-6 h-6 rounded-full border-2 border-white bg-gray-300 flex items-center justify-center text-white text-[10px] font-semibold overflow-hidden"
                 title={dept.name}
               >
-                {dept.avatar === "M" || !dept.avatar ? (
-                  dept.name?.[0] || "M"
-                ) : (
+                {dept.photo ? (
                   <img
-                    src={dept.avatar}
+                    src={dept.photo}
                     alt={dept.name}
-                    className="w-full h-full object-cover rounded-full"
+                    className="w-full h-full object-cover rounded-full border border-blue-300"
                   />
+                ) : (
+                  dept.name?.[0] || "D"
                 )}
               </div>
             ))}
+
+            {/* Agar 2tadan ko'p department bo'lsa, badge ko'rsatish */}
+            {currentEvent.departments.length > 2 && (
+              <div
+                className="w-6 h-6 rounded-full border-2 border-white bg-blue-500 flex items-center justify-center text-white text-[10px] font-semibold"
+                title={`+${
+                  currentEvent.departments.length - 2
+                } more departments`}
+              >
+                +{currentEvent.departments.length - 2}
+              </div>
+            )}
           </div>
         )}
 
@@ -159,7 +171,8 @@ CalendarDay.propTypes = {
         .isRequired,
       description: PropTypes.string,
       image: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
-      department: PropTypes.arrayOf( // Changed to array
+      department: PropTypes.arrayOf(
+        // Changed to array
         PropTypes.shape({
           id: PropTypes.string,
           name: PropTypes.string,
@@ -178,6 +191,6 @@ CalendarDay.propTypes = {
   onNavigateEvent: PropTypes.func.isRequired,
   isToday: PropTypes.bool,
   isCurrentMonth: PropTypes.bool,
-};  
+};
 
 export default CalendarDay;

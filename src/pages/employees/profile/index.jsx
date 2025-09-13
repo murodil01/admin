@@ -20,6 +20,7 @@ import { ROLES } from "../../../components/constants/roles";
 import dayjs from "dayjs";
 import { DatePicker } from "antd";
 import { RefreshCw } from "lucide-react";
+import { Image } from "antd";
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState(() => {
@@ -45,6 +46,13 @@ const Profile = () => {
 
   const { user, isAuthenticated } = useAuth();
   const isAdmin = [ROLES.FOUNDER, ROLES.MANAGER].includes(user?.role);
+  const isAdminOrHeads = [ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS].includes(user?.role);
+
+  // Check if current user is department manager
+  const isDepartmentManager = user?.role === ROLES.DEP_MANAGER;
+
+  // Check if user can edit department (only FOUNDER and MANAGER can change departments)
+  const canEditDepartment = [ROLES.FOUNDER, ROLES.MANAGER].includes(user?.role);
 
   useEffect(() => {
     const fetchDepartments = async () => {
@@ -90,7 +98,7 @@ const Profile = () => {
         setEmployee({ ...data, department: departmentObj });
         setBirthday(data.birth_date || "");
       } catch (err) {
-        console.error('Error fetching employee:', err); // Debug log
+        console.error('Error fetching employee:', err);
         if (err.response?.status === 404) {
           message.error("Employee not found");
           navigate("/employees");
@@ -119,9 +127,9 @@ const Profile = () => {
           return;
         }
 
-        // Handle department field
+        // Handle department field - only allow if user has permission
         if (key === 'department') {
-          if (value && value.id) {
+          if (value && value.id && canEditDepartment) {
             formData.append('department_id', value.id);
           }
           return;
@@ -190,12 +198,13 @@ const Profile = () => {
             name: "department",
             value: employee.department?.name || "",
             displayValue: employee.department?.name || "",
-            input: true,
+            input: canEditDepartment, // Only show as input if user can edit departments
             options: departments.map(dept => ({
               value: dept.id,
               label: dept.name
             })),
-            isSelect: true
+            isSelect: true,
+            disabled: !canEditDepartment // Add disabled flag
           },
           {
             label: "Status",
@@ -308,19 +317,19 @@ const Profile = () => {
             </div>
           )}
           {/* Add refresh button */}
-            <button
-              onClick={() => setRefreshTrigger(prev => prev + 1)}
-              className="hidden justify-center rounded-[14px] items-center gap-2 text-sm md:text-[16px] font-bold text-[#1F2937] hover:text-[#6b82a8] shadow bg-white w-[40px] md:w-[48px] h-[40px] md:h-[48px] cursor-pointer"
-              title="Refresh data"
-            >
-              <RefreshCw size={16} className="md:size-5" />
-            </button>
+          <button
+            onClick={() => setRefreshTrigger(prev => prev + 1)}
+            className="hidden justify-center rounded-[14px] items-center gap-2 text-sm md:text-[16px] font-bold text-[#1F2937] hover:text-[#6b82a8] shadow bg-white w-[40px] md:w-[48px] h-[40px] md:h-[48px] cursor-pointer"
+            title="Refresh data"
+          >
+            <RefreshCw size={16} className="md:size-5" />
+          </button>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-4 md:gap-6">
           <div className="w-full lg:w-[350px] xl:w-[430px] bg-white border border-gray-100 rounded-[20px] md:rounded-[24px] p-4 md:p-6 shadow-sm relative">
             <div className="absolute top-4 md:top-5 right-4 md:right-5 z-10">
-              <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+              <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS, ROLES.DEP_MANAGER]}>
                 <button
                   id="edit-button"
                   onClick={(e) => {
@@ -356,11 +365,16 @@ const Profile = () => {
               className="flex items-center border-b border-[#E4E6E8] pb-4 md:pb-5 cursor-pointer"
               onClick={() => setShowDetails(!showDetails)}
             >
-              <img
-                src={employee.profile_picture}
-                alt="Profile"
-                className="w-[60px] h-[60px] sm:w-[80px] sm:h-[80px] md:w-[100px] md:h-[100px] rounded-full object-cover ring-2 md:ring-4 ring-gray-100"
-              />
+              <Image.PreviewGroup
+                items={employee.profile_picture ? [employee.profile_picture] : []}
+              >
+                <Image
+                  width={70}
+                  height={70} // bo'yini ham qo'shish kerak
+                  src={employee.profile_picture}
+                  className="rounded-full object-cover" // object-cover shaklni buzmaydi
+                />
+              </Image.PreviewGroup>
               <div className="ml-3 md:ml-4 flex flex-col">
                 <h3 className="text-sm sm:text-[16px] md:text-[18px] lg:text-[20px] font-bold text-[#0061fe] whitespace-nowrap">
                   <span className="capitalize">{employee.first_name}</span> <span className="capitalize">{employee.last_name}</span>
@@ -420,8 +434,12 @@ const Profile = () => {
                       <div key={idx}>
                         <div className="text-xs md:text-[14px] text-[#7D8592] font-bold mb-2 md:mb-3">
                           {item.label}
+                          {/* Show restriction message for department managers */}
+                          {item.name === 'department' && isDepartmentManager && (
+                            <span className="ml-2 text-xs text-orange-600">(Cannot edit)</span>
+                          )}
                         </div>
-                        {item.input ? (
+                        {item.input && !item.disabled ? (
                           isEditing ? (
                             item.isSelect ? (
                               <select
@@ -431,11 +449,14 @@ const Profile = () => {
                                   : employee[item.name] || ""}
                                 onChange={(e) => {
                                   if (item.name === 'department') {
-                                    const selectedDept = departments.find(d => d.id == e.target.value);
-                                    setEmployee(prev => ({
-                                      ...prev,
-                                      department: selectedDept || null
-                                    }));
+                                    // Only allow department change if user has permission
+                                    if (canEditDepartment) {
+                                      const selectedDept = departments.find(d => d.id == e.target.value);
+                                      setEmployee(prev => ({
+                                        ...prev,
+                                        department: selectedDept || null
+                                      }));
+                                    }
                                   } else {
                                     setEmployee(prev => ({
                                       ...prev,
@@ -443,7 +464,9 @@ const Profile = () => {
                                     }));
                                   }
                                 }}
-                                className="w-full h-[40px] md:h-[48px] bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg md:rounded-xl px-3 md:px-4 py-1 md:py-2 font-normal text-xs md:text-[14px] text-[#7D8592] pr-8 md:pr-10"
+                                disabled={item.name === 'department' && !canEditDepartment}
+                                className={`w-full h-[40px] md:h-[48px] bg-[#F9FAFB] border border-[#E5E7EB] rounded-lg md:rounded-xl px-3 md:px-4 py-1 md:py-2 font-normal text-xs md:text-[14px] text-[#7D8592] pr-8 md:pr-10 ${item.name === 'department' && !canEditDepartment ? 'opacity-50 cursor-not-allowed' : ''
+                                  }`}
                               >
                                 <option value="">Select {item.label.toLowerCase()}</option>
                                 {item.options.map((option) => (
@@ -498,7 +521,7 @@ const Profile = () => {
                                   {employee.tg_username}
                                 </a>
                               ) : item.name === "status" && employee.status ? (
-                                  employee.status === "on_leave" ? "On Leave" : employee.status
+                                employee.status === "on_leave" ? "On Leave" : employee.status
                               ) : item.isSelect ? (
                                 item.name === 'department'
                                   ? employee.department?.name || `No ${item.label.toLowerCase()} selected`
@@ -541,8 +564,8 @@ const Profile = () => {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex-1 sm:flex-none px-3 sm:px-4 md:px-6 lg:px-[40px] xl:px-[56px] py-1 md:py-2 text-xs md:text-sm lg:text-base font-medium rounded-full transition-all duration-200 ${activeTab === tab.id
-                        ? "bg-[#0061fe] text-white shadow-sm"
-                        : "text-[#0061fe] hover:bg-gray-200"
+                      ? "bg-[#0061fe] text-white shadow-sm"
+                      : "text-[#0061fe] hover:bg-gray-200"
                       }`}
                   >
                     {tab.label}

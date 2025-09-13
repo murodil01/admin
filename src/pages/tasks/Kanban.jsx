@@ -35,7 +35,7 @@ import {
   Dropdown,
 } from "antd";
 import TextArea from "antd/es/input/TextArea";
-import { MoreVertical } from "lucide-react";
+import { MoreVertical ,X} from "lucide-react";
 import {
   getTaskById,
   updateTaskType,
@@ -461,7 +461,7 @@ const Card = ({
 
   const [showAllChecklist, setShowAllChecklist] = useState(false);
   const [showAllFiles, setShowAllFiles] = useState(false);
-
+   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   // Helper functions
   const getFileIcon = (fileName) => {
     if (!fileName) return "📄";
@@ -1324,6 +1324,15 @@ const Card = ({
       }
     }
   }, [taskData]);
+   const openImageModal = () => {
+    
+
+  setIsImageModalOpen(true);
+};
+
+const closeImageModal = () => {
+  setIsImageModalOpen(false);
+};
 
   return (
     <>
@@ -1343,39 +1352,35 @@ const Card = ({
         {/* New 3 point button */}
         <div className="absolute top-2 right-1">
           <Dropdown
-            open={dropdownOpen} // ✅ Controlled dropdown
-            onOpenChange={setDropdownOpen} // ✅ State bilan boshqarish
+            open={dropdownOpen}
+            onOpenChange={setDropdownOpen}
             menu={{
               items: [
                 {
                   key: "edit",
                   label: (
                     <Permission
-                      anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}
+                      anyOf={[ROLES.FOUNDER, ROLES.DEP_MANAGER, ROLES.MANAGER, ROLES.HEADS]}
                     >
-                      <span
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditCard();
-                        }}
-                      >
-                        Edit
-                      </span>
+                      <span>Edit</span>
                     </Permission>
                   ),
+                  // ✅ onClick ni menu item ichiga ko'chirish
+                  onClick: (e) => {
+                    e.domEvent.stopPropagation(); // DOM event ni to'xtatish
+                    setDropdownOpen(false); // Dropdownni yopish
+                    handleEditCard();
+                  },
                 },
                 {
                   key: "detail",
-                  label: (
-                    <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openViewModal();
-                      }}
-                    >
-                      Detail
-                    </span>
-                  ),
+                  label: <span>Detail</span>,
+                  // ✅ onClick ni menu item ichiga ko'chirish
+                  onClick: (e) => {
+                    e.domEvent.stopPropagation();
+                    setDropdownOpen(false);
+                    openViewModal();
+                  },
                 },
                 {
                   key: "move_to",
@@ -1383,30 +1388,32 @@ const Card = ({
                   children: taskColumns.map((col) => ({
                     key: col.id,
                     label: col.title,
-                    onClick: () => handleMoveToColumn(col.id),
+                    onClick: (e) => {
+                      e.domEvent.stopPropagation();
+                      setDropdownOpen(false);
+                      handleMoveToColumn(col.id);
+                    },
                   })),
                 },
                 {
                   key: "delete",
                   label: (
                     <Permission
-                      anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}
+                      anyOf={[ROLES.FOUNDER, ROLES.DEP_MANAGER, ROLES.MANAGER, ROLES.HEADS]}
                     >
-                      <span
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          showDeleteModal();
-                        }}
-                      >
-                        Delete
-                      </span>
+                      <span>Delete</span>
                     </Permission>
                   ),
+                  // ✅ onClick ni menu item ichiga ko'chirish
+                  onClick: (e) => {
+                    e.domEvent.stopPropagation();
+                    setDropdownOpen(false);
+                    showDeleteModal();
+                  },
                 },
               ],
             }}
             trigger={["click"]}
-            // ✅ Z-index ni modal dan past qilish
             overlayStyle={{ zIndex: 999 }}
           >
             <button
@@ -1476,7 +1483,7 @@ const Card = ({
             top: 30, // px qiymati, modal yuqoriga yaqinlashadi
           }}
           footer={[
-            <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+            <Permission anyOf={[ROLES.FOUNDER, ROLES.DEP_MANAGER, ROLES.MANAGER, ROLES.HEADS]}>
               <Button
                 key="edit"
                 onClick={() => {
@@ -1520,26 +1527,48 @@ const Card = ({
                 {/* Top section */}
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="w-full max-w-5/6 sm:w-[140px] sm:h-[140px] bg-gray-200 flex items-center justify-center rounded-xl">
-                    <span role="img" aria-label="image" className="text-4xl">
-                      {taskData?.task_image ? (
-                        <img
-                          src={taskData.task_image}
-                          alt="task image"
-                          onError={(e) =>
-                            (e.currentTarget.style.display = "none")
-                          }
-                          className="rounded-xl"
-                        />
-                      ) : (
-                        <span>🖼️</span>
-                      )}
-                    </span>
+                   <span role="img" aria-label="image" className="text-4xl">
+                    {taskData?.task_image ? (
+              <img
+  src={taskData.task_image}
+  alt="task image"
+  onError={(e) => (e.currentTarget.style.display = "none")}
+  className="rounded-xl cursor-pointer hover:opacity-80 transition-opacity duration-200 w-full h-full object-cover"
+  onClick={(e) => {
+    e.stopPropagation();
+    openImageModal(); // openModal o'rniga
+  }}
+/>
+            ) : (
+              <span>🖼️</span>
+            )}
+                  </span>
                   </div>
                   <div className="flex-1 text-sm text-gray-700 leading-6 whitespace-pre-wrap">
                     {taskData.description || "No description available"}
                   </div>
                 </div>
-
+               {isImageModalOpen && ( // isModalOpen o'rniga
+  <div
+    className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+    onClick={closeImageModal} // closeModal o'rniga
+  >
+    <div className="relative max-w-4xl max-h-full">
+      <button
+        onClick={closeImageModal} // closeModal o'rniga
+        className="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors"
+      >
+        <X size={32} />
+      </button>
+      <img
+        src={taskData.task_image}
+        alt="task image enlarged"
+        className="max-w-full max-h-[90vh] object-contain rounded-lg"
+        onClick={(e) => e.stopPropagation()}
+      />
+          </div>
+        </div>
+      )}
                 {/* Files */}
                 <div>
                   <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
@@ -1944,6 +1973,7 @@ const Card = ({
                                 {editingCommentId === c.id ? (
                                   // Edit mode
                                   <div className="space-y-2">
+                                  
                                     <textarea
                                       value={editingCommentText}
                                       onChange={(e) =>
@@ -2081,6 +2111,19 @@ const Card = ({
 
               {/* Right section */}
               <div className="md:col-span-4 space-y-4 text-sm">
+                {/* Created By */}
+                <div>
+                  <p className="text-gray-400">Created by</p>
+
+                  <div className="flex items-center gap-3 mt-1">
+                    <img className="w-8 h-8 rounded-full" src={taskData.created_by_image} alt="" />
+                    <p>
+                      {taskData.created_by || "Unknown"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Assignee */}
                 <div>
                   <p className="text-gray-400">Assignee by</p>
 
@@ -2212,20 +2255,20 @@ const Card = ({
           )}
 
           {/* ✅ TUZATILGAN: Checklist Progress */}
-          {cardTotalCount > 0 && (
-            <div className="flex items-center gap-2">
-              <span
-                className={`text-[11px] px-2 py-0.5 rounded flex items-center gap-1 ${
-                  cardProgress > 0
-                    ? "bg-[#64C064] text-white"
-                    : "bg-gray-200 text-gray-600"
-                }`}
-              >
-                <img src={checkList} alt="Checklist" />
-                {cardProgress} / {cardTotalCount}
-              </span>
-            </div>
-          )}
+         {cardTotalCount > 0 && (
+          <div className="flex items-center gap-2">
+            <span
+              className={`text-[11px] px-2 py-0.5 rounded flex items-center gap-1 ${
+                cardProgress === cardTotalCount
+                  ? "bg-[#64C064] text-white"
+                  : "bg-gray-200 text-gray-600"
+              }`}
+            >
+              <img src={checkList} alt="Checklist" />
+              {cardProgress} / {cardTotalCount}
+            </span>
+          </div>
+        )}
         </div>
       </motion.div>
     </>
@@ -2334,7 +2377,7 @@ const AddCard = ({ column, setCards }) => {
       </div>
     </motion.form>
   ) : (
-    <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+    <Permission anyOf={[ROLES.FOUNDER, ROLES.DEP_MANAGER, ROLES.MANAGER, ROLES.HEADS]}>
       <motion.button
         layout
         onClick={() => setAdding(true)}
@@ -2469,7 +2512,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
     try {
       const response = await getTaskInstructions(taskId);
       // faqat shu taskga tegishli instructions qolsin
-      const instructionsData = (response.data || []).filter(
+      const instructionsData = (response.results || []).filter(
         (instruction) => instruction.task === taskId
       );
       console.log("Instructions ma'lumotlari:", response);
@@ -2659,7 +2702,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       }));
 
       setAvailableUsers(formattedUsers);
-      setAvailableTags(tagsResponse.data);
+      setAvailableTags(tagsResponse.data.results);
     } catch (error) {
       console.error("Modal ma'lumotlarini yuklashda xatolik:", error);
       message.error("Ma'lumotlarni yuklashda xatolik yuz berdi");
@@ -2675,7 +2718,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       const response = await getTaskFiles();
 
       // Task ID ga mos fayllarni filtrlash
-      const taskFiles = response.data.filter(
+      const taskFiles = response.data.results.filter(
         (file) => file.task === cardData.id
       );
       setUploadedFiles(taskFiles);
@@ -2943,6 +2986,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
       }
       className="custom-modal"
     >
+    
       <div className="px-5 sm:px-4 py-8">
         {loading ? (
           <div className="flex justify-center items-center h-[400px]">
@@ -2964,7 +3008,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
                   placeholder="Enter task title"
                 />
               </div>
-          
+
               {/* Type */}
               <div>
                 <label className="block text-[14px] font-bold text-[#7D8592] mb-2">

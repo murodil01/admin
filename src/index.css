@@ -3,7 +3,16 @@
 body {
   font-family: "Nunito Sans", sans-serif;
 }
-
+.Drawer{
+  border-radius: 20px;
+  margin: 25px;
+  position: relative;
+  right: 40px;
+  height: 90vh !important;
+}
+.input_Drawer{
+  height: 47px;
+}
 /* Custom scrollbar styles for webkit browsers */
 @layer utilities {
   .scrollbar-thin {
@@ -203,6 +212,17 @@ body {
   border: 10px solid #0061fe;
   animation: prixClipFix 2s infinite linear;
 }
+
+  .custom-select {
+    background: none;     /* orqa fon yo‘q */
+    border: none;         /* border yo‘q */
+    outline: none;        /* tanlaganda ko‘rinadigan chiziq yo‘q */
+    appearance: none;     /* browser default style yo‘q */
+    -webkit-appearance: none; 
+    -moz-appearance: none;
+    padding: 5px;
+    font-size: 16px;
+  }
 
 @keyframes prixClipFix {
   0% {

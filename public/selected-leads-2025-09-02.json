@@ -1,0 +1,26 @@
+[
+  {
+    "id": "59c41e9f-8e26-4046-ad71-e544f6869166",
+    "name": "wedsa",
+    "phone": "ew",
+    "link": "ad",
+    "person": "f31bc1dc-9d0e-4147-8d56-1b3ed96e3239",
+    "person_detail": {
+      "id": "f31bc1dc-9d0e-4147-8d56-1b3ed96e3239",
+      "fullname": "Admin ",
+      "profile_picture": "/media/avatars/avatar.png"
+    },
+    "notes": "erfg",
+    "status": {
+      "id": "0785ded9-7195-40d8-bb59-526076e22fc9",
+      "name": "waders"
+    },
+    "group": "6ed4e63a-7765-4c85-a3fc-d8ebfb6d6e4d",
+    "custom_fields": {},
+    "order": 1,
+    "potential_value": 88,
+    "updated_at": "2025-09-02T15:58:51.899670+05:00",
+    "timeline_start": "2025-08-31",
+    "timeline_end": "2025-08-31"
+  }
+]

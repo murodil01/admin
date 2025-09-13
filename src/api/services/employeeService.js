@@ -10,7 +10,7 @@ export const getEmployees = async (page = 1, filters = null) => {
         if (filters) {
             // Department filter
             if (filters.selectedDepartments && filters.selectedDepartments.length > 0) {
-                params["department__name"] = filters.selectedDepartments.join(",");
+                params["department_name"] = filters.selectedDepartments.join(",");
             }
 
             // Role filter

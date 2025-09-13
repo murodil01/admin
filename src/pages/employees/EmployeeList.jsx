@@ -6,8 +6,18 @@ import EmployeeStatusModal from "./EmployeeStatusModal";
 import { Permission } from "../../components/Permissions";
 import { useAuth } from "../../hooks/useAuth";
 import { ROLES } from "../../components/constants/roles";
+import { Image, Pagination } from 'antd';
 
-const EmployeeList = ({ employees, onDelete, onStatusUpdate }) => {
+const EmployeeList = ({
+    employees,
+    onDelete,
+    onStatusUpdate,
+    // Pagination props
+    currentPage,
+    totalEmployees,
+    itemsPerPage,
+    onPageChange
+}) => {
     const [openDropdown, setOpenDropdown] = useState(null);
     const dropdownRef = useRef(null);
     const navigate = useNavigate();
@@ -91,6 +101,20 @@ const EmployeeList = ({ employees, onDelete, onStatusUpdate }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Pagination */}
+            {totalEmployees > 0 && (
+                <div className="flex justify-center py-6 border-t border-gray-200">
+                    <Pagination
+                        current={currentPage}
+                        total={totalEmployees}
+                        pageSize={itemsPerPage}
+                        onChange={onPageChange}
+                        showSizeChanger={false}
+                        showQuickJumper={false}
+                    />
+                </div>
+            )}
         </div>
     );
 };
@@ -124,21 +148,41 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
         navigate(`/profile/${validId}`);
     };
 
+    // Format phone number for tel: link
+    const formatPhoneNumber = (phone) => {
+        if (!phone) return null;
+
+        // Remove all non-digit characters except +
+        let cleaned = phone.replace(/[^\d+]/g, '');
+
+        // Ensure it starts with +
+        if (!cleaned.startsWith('+')) {
+            cleaned = '+' + cleaned.replace(/\+/g, '');
+        }
+
+        return cleaned;
+    };
+
+
     return (
         <div className="bg-white border border-gray-200 rounded-lg shadow hover:shadow-md transition p-4 grid grid-cols-1 gap-3 lg:grid-cols-17 lg:items-center">
             {/* Mobile View - Top Section */}
             <div
                 onClick={(e) => {
-                        e.stopPropagation();
-                        setIsMobileModalOpen(true);
-                    }}
+                    e.stopPropagation();
+                    setIsMobileModalOpen(true);
+                }}
                 className="flex justify-between items-center lg:hidden">
                 <div className="flex items-center gap-3">
-                    <img
-                        src={emp.profile_picture}
-                        alt={emp.name}
-                        className="w-10 h-10 rounded-full object-cover"
-                    />
+                    <Image.PreviewGroup
+                        items={emp.profile_picture ? [emp.profile_picture] : []}
+                    >
+                        <Image
+                            width={50}
+                            className="rounded-full object-cover"
+                            src={emp.profile_picture}
+                        />
+                    </Image.PreviewGroup>
                     <div>
                         <p className="text-[#1F2937] font-semibold">
                             <span className="capitalize">{emp.first_name}</span> <span className="capitalize">{emp.last_name}</span>
@@ -236,16 +280,18 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
                                                 >
                                                     Edit status
                                                 </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onDelete(emp.id);
-                                                        setOpenDropdown(null);
-                                                    }}
-                                                    className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100"
-                                                >
-                                                    Delete
-                                                </button>
+                                                <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onDelete(emp.id);
+                                                            setOpenDropdown(null);
+                                                        }}
+                                                        className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </Permission>
                                             </div>
                                         )}
                                     </div>
@@ -256,9 +302,16 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
                                     <div className="flex flex-col items-start gap-4">
                                         <div>
                                             <p className="text-xs text-gray-500 mb-1">Phone Number</p>
-                                            <p className="text-sm font-medium">
-                                                {emp.phone_number || <span className="text-gray-400">-</span>}
-                                            </p>
+                                            {emp.phone_number ? (
+                                                <a
+                                                    href={`tel:${formatPhoneNumber(emp.phone_number)}`}
+                                                    className="text-sm font-medium text-blue-500 hover:text-blue-700 hover:underline"
+                                                >
+                                                    {emp.phone_number}
+                                                </a>
+                                            ) : (
+                                                <span className="text-gray-400">-</span>
+                                            )}
                                         </div>
                                         <div>
                                             <p className="text-xs text-gray-500 mb-1">Projects</p>
@@ -307,11 +360,17 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
 
             {/* Desktop View */}
             <div className="hidden lg:flex items-center gap-3 col-span-5">
-                <img
-                    src={emp.profile_picture}
-                    alt={emp.name}
-                    className="w-12 h-12 rounded-full object-cover"
-                />
+                <Image.PreviewGroup
+                    items={emp.profile_picture ? [emp.profile_picture] : []}
+                >
+                    <Image
+                        width={50}
+                        height={50} // bo'yini ham qo'shish kerak
+                        src={emp.profile_picture}
+                        className="rounded-full object-cover" // object-cover shaklni buzmaydi
+                    />
+                </Image.PreviewGroup>
+
                 <div className="min-w-0">
                     <p className="text-[#1F2937] font-semibold truncate max-w-[180px] overflow-hidden">
                         <span className="capitalize">{emp.first_name}</span> <span className="capitalize">{emp.last_name}</span>
@@ -333,8 +392,17 @@ const EmployeeRow = ({ emp, openDropdown, dropdownPosition, toggleDropdown, onDe
                 {emp.department}
             </div>
 
-            <div className="hidden lg:block lg:col-span-4 text-center text-gray-600">
-                {emp.phone_number}
+            <div className="hidden lg:block lg:col-span-4 text-center">
+                {emp.phone_number ? (
+                    <a
+                        href={`tel:${formatPhoneNumber(emp.phone_number)}`}
+                        className="hover:underline"
+                    >
+                        {emp.phone_number}
+                    </a>
+                ) : (
+                    <span className="text-gray-400">-</span>
+                )}
             </div>
 
             <div className="hidden lg:block lg:col-span-2 text-center text-gray-600">
@@ -448,7 +516,7 @@ const EmployeeDropdownMenu = ({
             onClick={(e) => e.stopPropagation()}
         >
             <div className="py-1">
-                <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+                <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS, ROLES.DEP_MANAGER]}>
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
@@ -475,7 +543,7 @@ const EmployeeDropdownMenu = ({
                 </button>
 
                 {/* Founder/Manager only buttons */}
-                <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER]}>
+                <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS, ROLES]}>
                     <button
                         onClick={(e) => {
                             e.stopPropagation();

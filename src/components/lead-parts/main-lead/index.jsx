@@ -1,33 +1,52 @@
 import { useState, useEffect, useRef } from "react";
-import GroupSection from "../group-section";
-import { CiExport } from "react-icons/ci";
+// import GroupSection from "../group-section";
+import GroupSection from "../group-section/GroupSection.jsx";
 import { BiArchiveIn } from "react-icons/bi";
-import { ArrowRight, Trash2, Copy, Plus, X, Edit, ChevronDown, ChevronRight, MoreVertical } from "lucide-react";
+import {
+  Trash2,
+  Copy,
+  Plus,
+  X,
+  Edit,
+  ChevronDown,
+  ChevronRight,
+  MoreVertical,
+  Move,
+  UploadIcon,
+  Search,
+} from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { getBoards, exportExcelFile } from "../../../api/services/boardService";
 import {
   getGroups,
   createGroup,
   deleteGroup,
   updateGroup,
 } from "../../../api/services/groupService";
-import { getBoards } from "../../../api/services/boardService";
 import {
   getLeads,
   createLeads,
   updateLeads,
   deleteLeads,
+  moveLeadsToGroup,
 } from "../../../api/services/leadsService";
+import FilterPanel from "../filters/FilterPanel.jsx";
 
-const STORAGE_KEY_GROUPS = "my-app-groups";
-const STORAGE_KEY_EXPANDED = "my-app-groups-expanded";
-
-const MainLead = () => {
+const MainLead = ({
+  showFilterPanel ,
+  setShowFilterPanel,
+  searchQuery,
+  setSearchQuery,
+  filterBy,
+  setFilterBy,
+  showSearchPanel ,
+  setSearchSearchPanel
+}) => {
   const { boardId } = useParams();
   const navigate = useNavigate();
-  const [tableSelectedRows, setTableSelectedRows] = useState([]);
-  const [showTableView, setShowTableView] = useState(false);
   const [groups, setGroups] = useState([]);
+  const [allLeads, setAllLeads] = useState([]); // Barcha leadlar
   const [expandedGroups, setExpandedGroups] = useState({});
   const [selectedItems, setSelectedItems] = useState([]);
   const [addingGroup, setAddingGroup] = useState(false);
@@ -36,8 +55,87 @@ const MainLead = () => {
   const [availableBoards, setAvailableBoards] = useState([]);
   const [groupMenuOpen, setGroupMenuOpen] = useState({});
   const [editingGroup, setEditingGroup] = useState(null);
+  const [showMoveDropdown, setShowMoveDropdown] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
+// YANGI: Filter states
+// const [searchQuery, setSearchQuery] = useState('');
+// const [filterBy, setFilterBy] = useState({
+//   status: null,
+//   owner: null,
+//   source: null,
+//   dateRange: null
+// });
+// const [showFilterPanel, setShowFilterPanel] = useState(false);
 
-  const toastShownRef = useRef(false);
+// YANGI: Filtered leads funksiyasi
+const getFilteredLeads = (groupId) => {
+  let leads = allLeads.filter(lead => lead.group === groupId);
+  
+  // Search bo'yicha filter
+  if (searchQuery.trim()) {
+    const query = searchQuery.toLowerCase();
+    leads = leads.filter(lead => 
+      (lead.name && lead.name.toLowerCase().includes(query)) ||
+      (lead.phone && lead.phone.toLowerCase().includes(query)) ||
+      (lead.notes && lead.notes.toLowerCase().includes(query))
+    );
+  }
+
+  // Status bo'yicha filter
+  if (filterBy.status) {
+    leads = leads.filter(lead => lead.status?.id === filterBy.status);
+  }
+
+  // Owner bo'yicha filter
+  if (filterBy.owner) {
+    leads = leads.filter(lead => lead.person_detail?.id === filterBy.owner);
+  }
+
+  // Source bo'yicha filter
+  if (filterBy.source) {
+    leads = leads.filter(lead => lead.link === filterBy.source);
+  }
+
+  // Date range bo'yicha filter
+  if (filterBy.dateRange?.start || filterBy.dateRange?.end) {
+    leads = leads.filter(lead => {
+      if (!lead.timeline_start) return false;
+      const leadDate = new Date(lead.timeline_start);
+      
+      if (filterBy.dateRange.start && leadDate < new Date(filterBy.dateRange.start)) {
+        return false;
+      }
+      if (filterBy.dateRange.end && leadDate > new Date(filterBy.dateRange.end)) {
+        return false;
+      }
+      return true;
+    });
+  }
+
+  return leads;
+};
+
+// Filter reset funksiyasi
+const resetFilters = () => {
+  setSearchQuery('');
+  setFilterBy({
+    status: null,
+    owner: null,
+    source: null,
+    dateRange: null
+  });
+};
+
+// YANGI: Filter count hisoblovchi funksiya
+const getActiveFiltersCount = () => {
+  let count = 0;
+  if (searchQuery.trim()) count++;
+  if (filterBy.status) count++;
+  if (filterBy.owner) count++;
+  if (filterBy.source) count++;
+  if (filterBy.dateRange?.start || filterBy.dateRange?.end) count++;
+  return count;
+};
 
   // Boardlarni yuklash
   useEffect(() => {
@@ -53,71 +151,60 @@ const MainLead = () => {
     fetchBoards();
   }, []);
 
-  // BoardId bo'yicha guruhlarni va leadlarni yuklash (2-chi komponentdan olingan versiya)
+  // Groups va Leads ni alohida yuklash
   useEffect(() => {
     if (!boardId) {
       setLoading(false);
       return;
     }
 
-    const fetchGroups = async () => {
+    const fetchGroupsAndLeads = async () => {
       setLoading(true);
       try {
-        const res = await getGroups(boardId); // boardId bilan
-        const formatted = await Promise.all(
-          res.data.map(async (group) => {
-            try {
-              const leadsRes = await getLeads(group.id); // groupId bilan
-              return {
-                id: group.id,
-                title: group.name || "Untitled Group",
-                items: leadsRes.data || [],
-              };
-            } catch {
-              const saved = JSON.parse(
-                localStorage.getItem(STORAGE_KEY_GROUPS) || "[]"
-              );
-              const savedGroup = saved.find((g) => g.id === group.id);
-              return {
-                id: group.id,
-                title: group.name || "Untitled Group",
-                items: savedGroup?.items || [],
-              };
-            }
-          })
-        );
+        // 1. Avval grouplarni olish
+        const groupsRes = await getGroups(boardId);
 
-        setGroups(formatted);
+        // 2. Keyin barcha leadlarni olish
+        const leadsRes = await getLeads();
 
-        if (!toastShownRef.current && formatted.length > 0) {
-          toastShownRef.current = true;
+        console.log("Groups response:", groupsRes.data);
+        console.log("Leads response:", leadsRes.data);
+
+        // Groups ni format qilish
+        const formattedGroups = groupsRes.data || []
+          .filter((group) => group.board === boardId)
+          .map((group) => ({
+            id: group.id,
+            title: group.name || "Untitled Group",
+            boardId: group.board,
+          }));
+        setAllLeads(leadsRes.data || []);
+        setGroups(formattedGroups);
+
+        // Birinchi guruhni avtomatik ochish
+
+        if (formattedGroups.length > 0) {
+          setExpandedGroups({ [formattedGroups[0].id]: true });
         }
       } catch (err) {
-        console.error("getGroups/getLeads xatosi:", err);
-        toast.error("Guruh yoki leadlarni yuklashda xato");
-        const saved = localStorage.getItem(STORAGE_KEY_GROUPS);
-        if (saved) setGroups(JSON.parse(saved));
+        console.error("Ma'lumotlarni yuklashda xato:", err);
+        toast.error("Ma'lumotlarni yuklashda xato");
+        setGroups([]);
+        setAllLeads([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchGroups();
-
-    const savedExpanded = localStorage.getItem(STORAGE_KEY_EXPANDED);
-    if (savedExpanded) setExpandedGroups(JSON.parse(savedExpanded));
+    fetchGroupsAndLeads();
   }, [boardId]);
 
-  // LocalStorage sync (2-chi komponentdan)
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_GROUPS, JSON.stringify(groups));
-  }, [groups]);
+  // Guruh uchun tegishli leadlarni olish funksiyasi
+  const getLeadsForGroup = (groupId) => {
+    return allLeads.filter((lead) => lead.group === groupId);
+  };
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_EXPANDED, JSON.stringify(expandedGroups));
-  }, [expandedGroups]);
-
-  // Guruh qo'shish (2-chi komponentdan olingan versiya)
+  // Guruh qo'shish
   const addGroup = async (title) => {
     const cleanName = String(title || "").trim();
     if (!cleanName || !boardId) {
@@ -127,48 +214,54 @@ const MainLead = () => {
     }
 
     try {
+      console.log("Creating group:", cleanName, "for board:", boardId);
       const res = await createGroup(cleanName, boardId);
       setGroups((prev) => [
         ...prev,
-        { id: res.data.id, title: res.data.name, items: [] },
+        {
+          id: res.data.id,
+          title: res.data.name,
+          boardId: boardId,
+        },
       ]);
       toast.success("Guruh yaratildi");
     } catch (err) {
       console.error("createGroup xatosi:", err.response?.data || err);
       toast.error("Guruh yaratishda xatolik");
-      if (err.response?.status === 400 && err.response.data?.board) {
-        setShowBoardSelector(true);
-      }
     }
 
     setAddingGroup(false);
   };
 
-  // Guruh o'chirish (2-chi komponentdan)
+  // Guruh o'chirish
   const handleDeleteGroup = async (groupId) => {
-    const confirmDelete = window.confirm("Bu guruhni o'chirishni xohlaysizmi? Barcha leadlar ham o'chadi!");
+    const confirmDelete = window.confirm(
+      "Bu guruhni o'chirishni xohlaysizmi? Barcha leadlar ham o'chadi!"
+    );
     if (!confirmDelete) return;
 
     try {
       await deleteGroup(groupId, boardId);
-      
-      // Guruhni o'chirishdan oldin selection larni tozalash
-      setSelectedItems((prev) => prev.filter((s) => s.groupId !== groupId));
-      
+
       // Guruhni state dan o'chirish
       setGroups((prev) => prev.filter((g) => g.id !== groupId));
-      
+
+      // Guruhga tegishli leadlarni olib tashlash
+      setAllLeads((prev) => prev.filter((lead) => lead.group !== groupId));
+
       // Expanded state ni tozalash
       setExpandedGroups((prev) => {
         const copy = { ...prev };
         delete copy[groupId];
-        localStorage.setItem(STORAGE_KEY_EXPANDED, JSON.stringify(copy));
         return copy;
       });
-      
+
+      // Selection larni tozalash
+      setSelectedItems((prev) => prev.filter((s) => s.groupId !== groupId));
+
       // Menu ni yopish
-      setGroupMenuOpen(prev => ({ ...prev, [groupId]: false }));
-      
+      setGroupMenuOpen((prev) => ({ ...prev, [groupId]: false }));
+
       toast.success("Guruh o'chirildi");
     } catch (err) {
       console.error("deleteGroup xatosi:", err.response?.data || err);
@@ -176,7 +269,62 @@ const MainLead = () => {
     }
   };
 
-  // Guruh nomini yangilash (2-chi komponentdan)
+  // Leadlarni boshqa groupga ko'chirish
+  const handleMoveSelected = async (targetGroupId) => {
+    if (selectedItems.length === 0) {
+      toast.error("Hech qanday element tanlanmagan");
+      return;
+    }
+
+    setIsMoving(true);
+
+    try {
+      // Tanlangan itemlardan lead ID larini olish
+      const leadIds = [];
+
+      selectedItems.forEach(({ groupId, itemIndex }) => {
+        const groupLeads = getLeadsForGroup(groupId);
+        const lead = groupLeads[itemIndex];
+        if (lead && lead.id) {
+          leadIds.push(lead.id);
+        }
+      });
+
+      if (leadIds.length === 0) {
+        toast.error("Ko'chirilishi mumkin bo'lgan elementlar topilmadi");
+        return;
+      }
+
+      // Backend ga so'rov yuborish
+      const result = await moveLeadsToGroup(targetGroupId, leadIds);
+
+      // Muvaffaqiyat xabari
+      if (result.message) {
+        toast.success(result.message);
+      } else {
+        toast.success(`${leadIds.length} ta lead muvaffaqiyatli ko'chirildi`);
+      }
+
+      // Ma'lumotlarni qayta yuklash
+      window.location.reload(); // yoki state ni yangilash
+
+      // Selection ni tozalash
+      setSelectedItems([]);
+      setShowMoveDropdown(false);
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Leadlarni ko'chirishda xatolik yuz berdi";
+
+      toast.error(errorMessage);
+      console.error("Move error:", error);
+    } finally {
+      setIsMoving(false);
+    }
+  };
+
+  // Guruh nomini yangilash
   const updateGroupTitle = async (groupId, newTitle) => {
     const cleanTitle = String(newTitle || "").trim();
     if (!cleanTitle) {
@@ -184,103 +332,175 @@ const MainLead = () => {
       return;
     }
 
+    // Optimistic update
     const oldTitle = groups.find((g) => g.id === groupId)?.title;
+
+    setGroups((prev) =>
+      prev.map((g) => (g.id === groupId ? { ...g, title: newTitle } : g))
+    );
 
     try {
       await updateGroup(groupId, { name: newTitle }, boardId);
       toast.success("Guruh nomi yangilandi");
-
-      setGroups((prev) =>
-        prev.map((g) => (g.id === groupId ? { ...g, title: newTitle } : g))
-      );
     } catch (err) {
       console.error("updateGroup xatosi:", err.response?.data || err);
       toast.error("Guruh nomini yangilashda xato");
 
+      // Rollback qilish
       setGroups((prev) =>
         prev.map((g) => (g.id === groupId ? { ...g, title: oldTitle } : g))
       );
     }
   };
 
-  // Lead qo'shish (2-chi komponentdan)
+  // Lead qo'shish - optimallashtirilgan
   const addItemToGroup = async (groupId, newItem) => {
     try {
+      console.log("Adding new lead to group:", groupId, newItem);
       const res = await createLeads({ ...newItem, group: groupId });
-      setGroups((prev) =>
-        prev.map((g) =>
-          g.id === groupId ? { ...g, items: [...g.items, res.data] } : g
-        )
-      );
+
+      // AllLeads ga qo'shish
+      setAllLeads((prev) => [...prev, res.data]);
+
       toast.success("Lead qo'shildi");
+
+      // Response qaytarish (GroupSection uchun)
+      return res;
     } catch (err) {
       console.error("createLeads xatosi:", err);
       toast.error("Lead qo'shishda xato");
+      throw err;
     }
   };
 
-  // Lead yangilash (2-chi komponentdan)
+  // Lead yangilash
+  // ✅ updateItemInGroup - real-time state sync
   const updateItemInGroup = async (groupId, itemIndex, updatedItem) => {
-    const group = groups.find((g) => g.id === groupId);
-    if (!group) {
-      toast.error("Group topilmadi!");
-      return;
-    }
+    const groupLeads = getLeadsForGroup(groupId);
+    const oldItem = groupLeads[itemIndex];
 
-    const oldItem = group.items[itemIndex];
     if (!oldItem) {
       toast.error("Lead topilmadi!");
       return;
     }
 
     const leadId = oldItem.id;
-    const realGroupId = oldItem.group; // backend kutadi
 
+    // ✅ DARHOL allLeads state ni yangilash (optimistic update)
+    setAllLeads((prev) =>
+      prev.map((lead) => {
+        if (lead.id === leadId) {
+          const updatedLead = { ...lead, ...updatedItem };
+          console.log(
+            "🔄 MainLead updating lead:",
+            leadId,
+            updatedItem,
+            "Result:",
+            updatedLead
+          );
+          return updatedLead;
+        }
+        return lead;
+      })
+    );
+
+    // ✅ Backend ga saqlash faqat kerakli fieldlar uchun
     try {
-      const res = await updateLeads(realGroupId, leadId, updatedItem);
-
-      setGroups((prev) =>
-        prev.map((g) =>
-          g.id === groupId
-            ? {
-                ...g,
-                items: g.items.map((item, idx) =>
-                  idx === itemIndex ? res.data : item
-                ),
-              }
-            : g
-        )
+      console.log(
+        "📤 MainLead sending update to backend:",
+        leadId,
+        updatedItem
       );
 
-      toast.success("Lead yangilandi");
+      const updatePayload = {};
+
+      // Har bir fieldni alohida tekshirish va format qilish
+      Object.keys(updatedItem).forEach((key) => {
+        if (key === "status" && updatedItem[key] !== undefined) {
+          // Status uchun - agar object bo'lsa ID ni olish
+          if (updatedItem[key] === null) {
+            updatePayload.status = null;
+          } else if (
+            typeof updatedItem[key] === "object" &&
+            updatedItem[key].id
+          ) {
+            updatePayload.status = updatedItem[key].id;
+          } else {
+            updatePayload.status = updatedItem[key];
+          }
+        } else if (key === "person_detail" && updatedItem[key] !== undefined) {
+          // Person detail uchun - faqat ID yuborish
+          if (updatedItem[key] === null) {
+            updatePayload.person = null;
+          } else if (
+            typeof updatedItem[key] === "object" &&
+            updatedItem[key].id
+          ) {
+            updatePayload.person = updatedItem[key].id;
+          } else {
+            updatePayload.person = updatedItem[key];
+          }
+        } else if (
+          [
+            "timeline_start",
+            "timeline_end",
+            "name",
+            "phone",
+            "link",
+            "notes",
+            "potential_value",
+          ].includes(key)
+        ) {
+          // Boshqa fieldlar uchun to'g'ridan-to'g'ri yuborish
+          updatePayload[key] = updatedItem[key];
+        }
+      });
+
+      console.log("📋 Final backend payload:", updatePayload);
+
+      // Backend ga so'rov yuborish (GroupSection allaqachon yuborib bo'lgani uchun bu ikki marta bo'ladi - bu normal)
+      const res = await updateLeads(leadId, updatePayload);
+
+      console.log("✅ MainLead backend update successful:", res);
+
+      // Server javobini yangilash
+      setAllLeads((prev) =>
+        prev.map((lead) => (lead.id === leadId ? { ...lead, ...res } : lead))
+      );
     } catch (err) {
-      console.error("updateLeads xatosi:", err.response?.data || err);
+      console.error(
+        "❌ MainLead backend update failed:",
+        err.response?.data || err
+      );
       toast.error("Lead yangilashda xato");
+
+      // ✅ ROLLBACK - xatolik bo'lsa eski holatga qaytarish
+      setAllLeads((prev) =>
+        prev.map((lead) => (lead.id === leadId ? oldItem : lead))
+      );
     }
   };
 
-  // Lead o'chirish (2-chi komponentdan)
+  // Lead o'chirish
   const deleteItemFromGroup = async (groupId, itemIndex) => {
-    const group = groups.find((g) => g.id === groupId);
-    if (!group) return;
+    const groupLeads = getLeadsForGroup(groupId);
+    const item = groupLeads[itemIndex];
 
-    const item = group.items[itemIndex];
     if (!item) return;
 
     try {
-      await deleteLeads(item.group, item.id); // item.group va item.id yuboriladi
-      setGroups((prev) =>
-        prev.map((g) =>
-          g.id === groupId
-            ? { ...g, items: g.items.filter((_, idx) => idx !== itemIndex) }
-            : g
-        )
-      );
+      await deleteLeads(item.group, item.id);
+
+      // AllLeads dan o'chirish
+      setAllLeads((prev) => prev.filter((lead) => lead.id !== item.id));
+
+      // Selection dan o'chirish
       setSelectedItems((prev) =>
         prev.filter(
           (s) => !(s.groupId === groupId && s.itemIndex === itemIndex)
         )
       );
+
       toast.success("Lead o'chirildi");
     } catch (err) {
       console.error("deleteLeads xatosi:", err);
@@ -298,16 +518,16 @@ const MainLead = () => {
 
   // Group menu toggle
   const toggleGroupMenu = (groupId) => {
-    setGroupMenuOpen(prev => ({
+    setGroupMenuOpen((prev) => ({
       ...prev,
-      [groupId]: !prev[groupId]
+      [groupId]: !prev[groupId],
     }));
   };
 
   // Edit group name
   const startEditingGroup = (groupId) => {
     setEditingGroup(groupId);
-    setGroupMenuOpen(prev => ({ ...prev, [groupId]: false }));
+    setGroupMenuOpen((prev) => ({ ...prev, [groupId]: false }));
   };
 
   const saveGroupEdit = (groupId, newTitle) => {
@@ -319,7 +539,7 @@ const MainLead = () => {
     setEditingGroup(null);
   };
 
-  // Item tanlash/bekor qilish (2-chi komponentdan)
+  // Item tanlash/bekor qilish
   const toggleSelectItem = (groupId, itemIndex, isSelected) => {
     if (isSelected) {
       setSelectedItems((prev) => [...prev, { groupId, itemIndex }]);
@@ -332,7 +552,7 @@ const MainLead = () => {
     }
   };
 
-  // Tanlangan itemlarni o'chirish (2-chi komponentdan)
+  // Tanlangan itemlarni o'chirish
   const handleDeleteSelected = () => {
     selectedItems.forEach(({ groupId, itemIndex }) =>
       deleteItemFromGroup(groupId, itemIndex)
@@ -342,25 +562,101 @@ const MainLead = () => {
 
   const handleDuplicateSelected = () => {
     selectedItems.forEach(({ groupId, itemIndex }) => {
-      const group = groups.find((g) => g.id === groupId);
-      if (group) {
-        const item = group.items[itemIndex];
+      const groupLeads = getLeadsForGroup(groupId);
+      const item = groupLeads[itemIndex];
+      if (item) {
         addItemToGroup(groupId, { ...item, name: `${item.name} copy` });
       }
     });
     setSelectedItems([]);
   };
 
-  const handleExportSelected = () => {
-    const data = selectedItems
-      .map(({ groupId, itemIndex }) => {
-        const group = groups.find((g) => g.id === groupId);
-        return group ? group.items[itemIndex] : null;
-      })
-      .filter(Boolean);
-    console.log("Exported data:", data);
-    toast.success("Items exported to console");
-    setSelectedItems([]);
+  //  handleExportSelected funksiyasi tanlangan leads ni export qilish uchun
+
+  const handleExportSelected = async () => {
+    if (selectedItems.length === 0) {
+      toast.error("Hech qanday element tanlanmagan");
+      return;
+    }
+
+    try {
+      // Loading toast ko'rsatish
+      toast.loading("Excel fayl tayyorlanmoqda...", { id: "export-loading" });
+
+      // Tanlangan itemlarni group bo'yicha guruhlash
+      const groupedSelections = {};
+
+      selectedItems.forEach(({ groupId, itemIndex }) => {
+        if (!groupedSelections[groupId]) {
+          groupedSelections[groupId] = [];
+        }
+
+        const groupLeads = getLeadsForGroup(groupId);
+        const lead = groupLeads[itemIndex];
+        if (lead && lead.id) {
+          groupedSelections[groupId].push(lead.id);
+        }
+      });
+
+      // Har bir group uchun export qilish
+      const exportPromises = Object.entries(groupedSelections).map(
+        async ([groupId, leadIds]) => {
+          if (leadIds.length === 0) return null;
+
+          return await exportExcelFile(boardId, groupId, leadIds);
+        }
+      );
+
+      const responses = await Promise.all(exportPromises);
+
+      // Fayllarni download qilish
+      responses.forEach((response, index) => {
+        if (!response) return;
+
+        const groupId = Object.keys(groupedSelections)[index];
+        const groupName =
+          groups.find((g) => g.id == groupId)?.title || `Group_${groupId}`;
+
+        // Blob dan fayl yaratish
+        const blob = new Blob([response.data], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+
+        // Fayl nomini yaratish
+        const fileName = `${groupName}_leads_export_${new Date()
+          .toISOString()
+          .slice(0, 10)}.xlsx`;
+
+        // Faylni download qilish
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      });
+
+      toast.dismiss("export-loading");
+      toast.success(
+        `${selectedItems.length} ta element Excel faylga export qilindi`
+      );
+
+      // Selectionni tozalash
+      setSelectedItems([]);
+    } catch (error) {
+      toast.dismiss("export-loading");
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Excel export qilishda xatolik yuz berdi";
+
+      toast.error(errorMessage);
+
+      console.error("Export error:", error);
+    }
   };
 
   const handleArchiveSelected = () => {
@@ -368,24 +664,25 @@ const MainLead = () => {
     setSelectedItems([]);
   };
 
-  const handleMoveTo = () => {
-    toast.success("Moved items");
-    setSelectedItems([]);
+ // Click outside handler for group menus and move dropdown
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    // Group menu uchun
+    if (!event.target.closest(".group-menu-container")) {
+      setGroupMenuOpen({});
+    }
+    
+    // Move dropdown uchun
+    if (showMoveDropdown && !event.target.closest(".move-dropdown-container")) {
+      setShowMoveDropdown(false);
+    }
   };
 
-  // Click outside handler for group menus
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest('.group-menu-container')) {
-        setGroupMenuOpen({});
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => {
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, [showMoveDropdown]); // showMoveDropdown ni dependency ga qo'shing
 
   if (loading) {
     return (
@@ -411,6 +708,36 @@ const MainLead = () => {
 
   return (
     <div className="bg-gray-50 py-2 px-4 sm:px-6 lg:px-8 rounded-b-[8px] overflow-x">
+         {/* YANGI: Filter Panel */}
+         {showFilterPanel && (
+        <FilterPanel 
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          filterBy={filterBy}
+          setFilterBy={setFilterBy}
+          onClose={() => setShowFilterPanel(false)}
+          onReset={resetFilters}
+          boardId={boardId}
+          allLeads={allLeads}
+        />
+      )}
+
+      {/* Active filters indicator */}
+      {getActiveFiltersCount() > 0 && (
+        <div className="mb-4 flex items-center gap-2">
+          <span className="text-sm text-gray-600">
+            {getActiveFiltersCount()} filter(s) active
+          </span>
+          <button
+            onClick={resetFilters}
+            className="text-sm text-blue-600 hover:text-blue-800"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
+
+      {/* Board selector modal */}
       {showBoardSelector && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-md w-full">
@@ -439,7 +766,7 @@ const MainLead = () => {
         </div>
       )}
 
-      <div className="flex flex-col gap-6 overflow-x w-full">
+      <div className="flex flex-col gap-4 overflow-x w-full">
         {groups.length === 0 ? (
           <div className="py-6 text-center">
             <p className="text-gray-500 text-lg mb-4">Hali guruhlar yo'q</p>
@@ -451,107 +778,127 @@ const MainLead = () => {
             </button>
           </div>
         ) : (
-          groups.map((group) => {
-            // Group object ni validate qilish
-            if (!group || typeof group !== 'object') {
-              console.error("Invalid group object:", group);
-              return null;
-            }
+          groups
+          .map((group) => {
+            const groupId = group.id; // BU QATORNI QOSHISH KERAK
+            const groupTitle = String(group.title || "Untitled Group"); // BU HAM
+            
+            const groupLeads = getFilteredLeads(groupId);
+              
+              // Agar filter natijasida lead yo'q bo'lsa, guruhni yashirish
+              if (groupLeads.length === 0 && getActiveFiltersCount() > 0) {
+                return null;
+              }
 
-            const groupId = group.id;
-            const groupTitle = String(group.title || "Untitled Group");
-            const groupItems = Array.isArray(group.items) ? group.items : [];
+              return (
+                <div key={group.id} className="bg-white rounded-lg shadow-sm">
+                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-t-lg">
+                    <div className="flex items-center gap-2 flex-1">
+                      <button
+                        onClick={() => toggleExpanded(groupId)}
+                        className="p-1 hover:bg-gray-200 rounded transition-colors"
+                      >
+                        {expandedGroups[groupId] ? (
+                          <ChevronDown className="w-4 h-4 text-gray-600" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4 text-gray-600" />
+                        )}
+                      </button>
 
-            return (
-              <div key={groupId} className="bg-white rounded-lg shadow-sm ">
-                {/* Group Header/Navbar */}
-                <div className="flex items-center justify-between px-4 py-3  bg-gray-50 rounded-t-lg">
-                  <div className="flex items-center gap-2 flex-1">
-                    <button
-                      onClick={() => toggleExpanded(groupId)}
-                      className="p-1 hover:bg-gray-200 rounded transition-colors"
-                    >
-                      {expandedGroups[groupId] ? 
-                        <ChevronDown className="w-4 h-4 text-gray-600" /> : 
-                        <ChevronRight className="w-4 h-4 text-gray-600" />
-                      }
-                    </button>
-                    
-                    {editingGroup === groupId ? (
-                      <GroupEditInput
-                        initialValue={groupTitle}
-                        onSave={(newTitle) => saveGroupEdit(groupId, newTitle)}
-                        onCancel={cancelGroupEdit}
+                      {editingGroup === groupId ? (
+                        <GroupEditInput
+                          initialValue={groupTitle}
+                          onSave={(newTitle) =>
+                            saveGroupEdit(groupId, newTitle)
+                          }
+                          onCancel={cancelGroupEdit}
+                        />
+                      ) : (
+                        <h3 className="font-semibold text-gray-800 text-lg">
+                          {groupTitle}
+                        </h3>
+                      )}
+
+                      <span className="text-sm text-gray-500 ml-2">
+                        ({groupLeads.length} items)
+                      </span>
+                    </div>
+
+                    <div className="relative group-menu-container">
+                      <button
+                        onClick={() => toggleGroupMenu(groupId)}
+                        className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+                      >
+                        <MoreVertical className="w-4 h-4 text-gray-600" />
+                      </button>
+
+                      {groupMenuOpen[groupId] && (
+                        <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-60 min-w-[120px]">
+                          <button
+                            onClick={() => startEditingGroup(groupId)}
+                            className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-100 text-sm"
+                          >
+                            <Edit className="w-4 h-4" />
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteGroup(groupId)}
+                            className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-red-50 text-red-600 text-sm"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {expandedGroups[group.id] && (
+                    <div className="p-4">
+                      <GroupSection
+                        key={`group-${group.id}-${groupLeads.length}`}
+                        id={group.id}
+                        items={groupLeads}
+                        title={group.title}
+                        expanded={true}
+                        onToggleExpanded={() => {}}
+                        updateTitle={updateGroupTitle}
+                        addItem={addItemToGroup}
+                        updateItem={updateItemInGroup}
+                        deleteItem={deleteItemFromGroup}
+                        deleteGroup={handleDeleteGroup}
+                        boardId={boardId}
+                        selected={selectedItems
+                          .filter((s) => s.groupId === groupId)
+                          .map((s) => s.itemIndex)}
+                        onToggleSelect={(itemIndex, isSelected) =>
+                          toggleSelectItem(groupId, itemIndex, isSelected)
+                        }
                       />
-                    ) : (
-                      <h3 className="font-semibold text-gray-800 text-lg">
-                        {groupTitle}
-                      </h3>
-                    )}
-                    
-                    <span className="text-sm text-gray-500 ml-2">
-                      ({groupItems.length} items)
-                    </span>
-                  </div>
-
-                  <div className="relative group-menu-container">
-                    <button
-                      onClick={() => toggleGroupMenu(groupId)}
-                      className="p-2 hover:bg-gray-200 rounded-full transition-colors"
-                    >
-                      <MoreVertical className="w-4 h-4 text-gray-600" />
-                    </button>
-                    
-                    {groupMenuOpen[groupId] && (
-                      <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10 min-w-[120px]">
-                        <button
-                          onClick={() => startEditingGroup(groupId)}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-100 text-sm"
-                        >
-                          <Edit className="w-4 h-4" />
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteGroup(groupId)}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-red-50 text-red-600 text-sm"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
-
-                {/* Group Content */}
-                {expandedGroups[groupId] && (
-                  <div className="p-4">
-                    <GroupSection
-                      key={`group-${groupId}-${groupItems.length}`}
-                      id={groupId}
-                      items={groupItems}
-                      title={groupTitle}
-                      expanded={true}
-                      onToggleExpanded={() => {}}
-                      updateTitle={updateGroupTitle}
-                      addItem={addItemToGroup}
-                      updateItem={updateItemInGroup}
-                      deleteItem={deleteItemFromGroup}
-                      deleteGroup={handleDeleteGroup}
-                      boardId={boardId} // boardId ni pass qilish
-                      selected={selectedItems
-                        .filter((s) => s.groupId === groupId)
-                        .map((s) => s.itemIndex)}
-                      onToggleSelect={(itemIndex, isSelected) => toggleSelectItem(groupId, itemIndex, isSelected)}
-                    />
-                  </div>
-                )}
-              </div>
-            );
-          }).filter(Boolean)
+              );
+            })
+            .filter(Boolean)
         )}
       </div>
 
+
+        {/* Search va filter tugmasi uchun floating button */}
+        {/* <button
+        onClick={() => setShowFilterPanel(true)}
+        className="fixed bottom-20 right-4 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 z-30"
+      >
+        <Search size={20} />
+        {getActiveFiltersCount() > 0 && (
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+            {getActiveFiltersCount()}
+          </span>
+        )}
+      </button> */}
+
+      {/* Add Group Input */}
       {addingGroup ? (
         <AddGroupInput
           onSave={addGroup}
@@ -560,12 +907,13 @@ const MainLead = () => {
       ) : groups.length > 0 ? (
         <button
           onClick={() => setAddingGroup(true)}
-          className="mt-5 flex items-center justify-center gap-2 bg-[#7D8592] hover:bg-gray-600 text-white px-5 py-[6px] text-[16px] rounded-[8px] font-medium transition-colors"
+          className="my-5  flex items-center justify-center gap-2 bg-[#7D8592] hover:bg-gray-600 text-white px-5 py-[6px] text-[16px] rounded-[8px] font-medium transition-colors"
         >
           <Plus className="w-5 h-5" /> Add new group
         </button>
       ) : null}
 
+      {/* Selected Items Actions Panel */}
       {selectedItems.length > 0 && (
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-40 max-w-[95vw]">
           <div className="bg-white border border-gray-200 shadow-2xl p-4 flex flex-wrap items-center justify-center rounded-lg">
@@ -591,9 +939,69 @@ const MainLead = () => {
                 className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-gray-50 p-2 rounded-md transition-colors"
                 title="Export selected items"
               >
-                <CiExport size={16} />
+                <UploadIcon size={16} />
                 <span className="text-xs sm:text-sm">Export</span>
               </button>
+
+              <div className="relative move-dropdown-container">
+                <button
+                  onClick={() => setShowMoveDropdown(!showMoveDropdown)}
+                  className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-gray-50 p-2 rounded-md transition-colors"
+                  title="Move selected items to another group"
+                  disabled={isMoving}
+                >
+                  <Move size={16} />
+                  <span className="text-xs sm:text-sm">
+                    {isMoving ? "Moving..." : "Move To"}
+                  </span>
+                </button>
+
+                {/* Move Dropdown */}
+                {showMoveDropdown && (
+                  <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-white border border-gray-200 rounded-md shadow-lg z-50 min-w-[180px] max-h-60 overflow-y-auto">
+                    <div className="p-2 text-sm font-medium text-gray-700 border-b">
+                      Select destination group:
+                    </div>
+
+                    {groups
+                      .filter((group) => {
+                        // Faqat boshqa grouplarni ko'rsatish (hozirgi group tanlangan bo'lsa)
+                        const currentGroupIds = selectedItems.map(
+                          (item) => item.groupId
+                        );
+                        return !currentGroupIds.includes(group.id);
+                      })
+                      .map((group) => (
+                        <button
+                          key={group.id}
+                          onClick={() => handleMoveSelected(group.id)}
+                          disabled={isMoving}
+                          className="w-full px-3 py-2 text-left hover:bg-gray-100 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <div className="font-medium">{group.title}</div>
+                          <div className="text-xs text-gray-500">
+                            {getLeadsForGroup(group.id).length} leads
+                          </div>
+                        </button>
+                      ))}
+
+                    {groups.length <= 1 && (
+                      <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                        No other groups available
+                      </div>
+                    )}
+
+                    <div className="border-t p-2">
+                      <button
+                        onClick={() => setShowMoveDropdown(false)}
+                        className="w-full px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <button
                 onClick={handleArchiveSelected}
@@ -612,17 +1020,6 @@ const MainLead = () => {
                 <Trash2 size={16} />
                 <span className="text-xs sm:text-sm">Delete</span>
               </button>
-
-              <button
-                onClick={handleMoveTo}
-                className="flex flex-col items-center gap-1 min-w-[60px] sm:min-w-[80px] hover:bg-gray-50 p-2 rounded-md transition-colors"
-                title="Move selected items"
-              >
-                <ArrowRight size={16} />
-                <span className="text-xs sm:text-sm">Move to</span>
-              </button>
-
-              <div className="hidden sm:block h-7 w-[1px] bg-gray-300 mx-2"></div>
 
               <button
                 onClick={() => setSelectedItems([])}
