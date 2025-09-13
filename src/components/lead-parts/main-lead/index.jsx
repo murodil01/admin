@@ -279,36 +279,24 @@ const getActiveFiltersCount = () => {
     setIsMoving(true);
 
     try {
-      // Tanlangan itemlardan lead ID larini olish
-      const leadIds = [];
+      // To'g'ridan-to'g'ri leadId larni olish
+      const leadIds = selectedItems.map(item => item.leadId);
 
-      selectedItems.forEach(({ groupId, itemIndex }) => {
-        const groupLeads = getLeadsForGroup(groupId);
-        const lead = groupLeads[itemIndex];
-        if (lead && lead.id) {
-          leadIds.push(lead.id);
-        }
-      });
-
-      if (leadIds.length === 0) {
-        toast.error("Ko'chirilishi mumkin bo'lgan elementlar topilmadi");
-        return;
-      }
-
-      // Backend ga so'rov yuborish
       const result = await moveLeadsToGroup(targetGroupId, leadIds);
 
-      // Muvaffaqiyat xabari
       if (result.message) {
         toast.success(result.message);
       } else {
         toast.success(`${leadIds.length} ta lead muvaffaqiyatli ko'chirildi`);
       }
 
-      // Ma'lumotlarni qayta yuklash
-      window.location.reload(); // yoki state ni yangilash
+      // State yangilash
+      setAllLeads(prev => prev.map(lead => 
+        leadIds.includes(lead.id) 
+          ? { ...lead, group: targetGroupId }
+          : lead
+      ));
 
-      // Selection ni tozalash
       setSelectedItems([]);
       setShowMoveDropdown(false);
     } catch (error) {
@@ -318,7 +306,6 @@ const getActiveFiltersCount = () => {
         "Leadlarni ko'chirishda xatolik yuz berdi";
 
       toast.error(errorMessage);
-      console.error("Move error:", error);
     } finally {
       setIsMoving(false);
     }
@@ -540,24 +527,55 @@ const getActiveFiltersCount = () => {
   };
 
   // Item tanlash/bekor qilish
-  const toggleSelectItem = (groupId, itemIndex, isSelected) => {
+  const toggleSelectItem = (groupId, itemIndex, isSelected, leadId) => {
     if (isSelected) {
-      setSelectedItems((prev) => [...prev, { groupId, itemIndex }]);
+      setSelectedItems((prev) => [...prev, { groupId,leadId, itemIndex }]);
     } else {
       setSelectedItems((prev) =>
         prev.filter(
-          (s) => !(s.groupId === groupId && s.itemIndex === itemIndex)
+          (s) => !(s.groupId === groupId && s.leadId === leadId)
         )
       );
     }
   };
 
+   // ✅ TUZATILGAN: Selection check funksiyasi
+   const isItemSelected = (groupId, leadId) => {
+    return selectedItems.some(s => s.groupId === groupId && s.leadId === leadId);
+  };
+
   // Tanlangan itemlarni o'chirish
-  const handleDeleteSelected = () => {
-    selectedItems.forEach(({ groupId, itemIndex }) =>
-      deleteItemFromGroup(groupId, itemIndex)
+  const handleDeleteSelected = async () => {
+    if (selectedItems.length === 0) {
+      toast.error("Hech qanday element tanlanmagan");
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `${selectedItems.length} ta leadni o'chirishni tasdiqlaysizmi?`
     );
-    setSelectedItems([]);
+    
+    if (!confirmDelete) return;
+
+    try {
+      // Har bir lead uchun delete so'rovi
+      const deletePromises = selectedItems.map(async (item) => {
+        return deleteLeads(item.groupId, item.leadId);
+      });
+
+      await Promise.all(deletePromises);
+
+      // State dan o'chirish
+      const leadIdsToDelete = selectedItems.map(item => item.leadId);
+      setAllLeads(prev => prev.filter(lead => !leadIdsToDelete.includes(lead.id)));
+
+      setSelectedItems([]);
+      toast.success(`${selectedItems.length} ta lead o'chirildi`);
+
+    } catch (error) {
+      toast.error("Ba'zi leadlarni o'chirishda xatolik");
+      console.error("Delete error:", error);
+    }
   };
 
   const handleDuplicateSelected = () => {
@@ -580,29 +598,20 @@ const getActiveFiltersCount = () => {
     }
 
     try {
-      // Loading toast ko'rsatish
       toast.loading("Excel fayl tayyorlanmoqda...", { id: "export-loading" });
 
-      // Tanlangan itemlarni group bo'yicha guruhlash
+      // Group bo'yicha guruhlash
       const groupedSelections = {};
-
-      selectedItems.forEach(({ groupId, itemIndex }) => {
+      selectedItems.forEach(({ groupId, leadId }) => {
         if (!groupedSelections[groupId]) {
           groupedSelections[groupId] = [];
         }
-
-        const groupLeads = getLeadsForGroup(groupId);
-        const lead = groupLeads[itemIndex];
-        if (lead && lead.id) {
-          groupedSelections[groupId].push(lead.id);
-        }
+        groupedSelections[groupId].push(leadId);
       });
 
-      // Har bir group uchun export qilish
+      // Export qilish
       const exportPromises = Object.entries(groupedSelections).map(
         async ([groupId, leadIds]) => {
-          if (leadIds.length === 0) return null;
-
           return await exportExcelFile(boardId, groupId, leadIds);
         }
       );
@@ -614,20 +623,16 @@ const getActiveFiltersCount = () => {
         if (!response) return;
 
         const groupId = Object.keys(groupedSelections)[index];
-        const groupName =
-          groups.find((g) => g.id == groupId)?.title || `Group_${groupId}`;
+        const groupName = groups.find((g) => g.id == groupId)?.title || `Group_${groupId}`;
 
-        // Blob dan fayl yaratish
         const blob = new Blob([response.data], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         });
 
-        // Fayl nomini yaratish
-        const fileName = `${groupName}_leads_export_${new Date()
+        const fileName = `${groupName}_filtered_leads_${new Date()
           .toISOString()
           .slice(0, 10)}.xlsx`;
 
-        // Faylni download qilish
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
@@ -863,18 +868,32 @@ useEffect(() => {
                         expanded={true}
                         onToggleExpanded={() => {}}
                         updateTitle={updateGroupTitle}
-                        addItem={addItemToGroup}
-                        updateItem={updateItemInGroup}
+                        // addItem={addItemToGroup}
+                        // updateItem={updateItemInGroup}
                         deleteItem={deleteItemFromGroup}
                         deleteGroup={handleDeleteGroup}
                         boardId={boardId}
-                        selected={selectedItems
-                          .filter((s) => s.groupId === groupId)
-                          .map((s) => s.itemIndex)}
-                        onToggleSelect={(itemIndex, isSelected) =>
-                          toggleSelectItem(groupId, itemIndex, isSelected)
+                      //   selected={selectedItems
+                      //     .filter((s) => s.groupId === groupId)
+                      //     .map((s) => s.itemIndex)}
+                      //   onToggleSelect={(itemIndex, isSelected) =>
+                      //     toggleSelectItem(groupId, itemIndex, isSelected)
+                      //   }
+                      // />
+                      selected={groupLeads
+                        .map((lead, index) => 
+                          isItemSelected(groupId, lead.id) ? index : -1
+                        )
+                        .filter(index => index !== -1)}
+                      onToggleSelect={(itemIndex, isSelected) => {
+                        const lead = groupLeads[itemIndex];
+                        if (lead) {
+                          toggleSelectItem(groupId, itemIndex, isSelected, lead.id);
                         }
-                      />
+                      }}
+                      addItem={addItemToGroup}
+                      updateItem={updateItemInGroup}
+                    />
                     </div>
                   )}
                 </div>
