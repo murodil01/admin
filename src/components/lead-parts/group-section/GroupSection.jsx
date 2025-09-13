@@ -11,35 +11,35 @@ import { Select, Avatar } from "antd";
 // Date ni format qilish uchun utility funksiya
 const formatDateTime = (dateString) => {
   if (!dateString) return "Not updated";
-  
+
   try {
     const date = new Date(dateString);
-    
+
     // Lokal vaqt zonasiga o'tkazish
     const options = {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false // 24 soatlik format
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false, // 24 soatlik format
     };
-    
-    return date.toLocaleString('en-GB', options).replace(',', '');
+
+    return date.toLocaleString("en-GB", options).replace(",", "");
   } catch (error) {
-    console.error('Date formatting error:', error);
+    console.error("Date formatting error:", error);
     return "Invalid date";
   }
 };
 
 const formatDateTimeShort = (dateString) => {
   if (!dateString) return "Not updated";
-  
+
   try {
     const date = new Date(dateString);
     const now = new Date();
     const diffInHours = (now - date) / (1000 * 60 * 60);
-    
+
     if (diffInHours < 1) {
       return "Just now";
     } else if (diffInHours < 24) {
@@ -47,7 +47,7 @@ const formatDateTimeShort = (dateString) => {
     } else if (diffInHours < 24 * 7) {
       return `${Math.floor(diffInHours / 24)}d ago`;
     } else {
-      return date.toLocaleDateString('en-GB');
+      return date.toLocaleDateString("en-GB");
     }
   } catch (error) {
     return "Invalid date";
@@ -78,13 +78,18 @@ const PersonDropdown = ({ value, onChange, onSave, onCancel, taskId }) => {
       try {
         setIsLoading(true);
         let myData = null;
-        
+
         try {
           const meRes = await api.get("/me/");
           if (meRes.data) {
             myData = {
               id: meRes.data.id,
-              name: meRes.data.first_name || `${meRes.data.first_name || ""} ${meRes.data.last_name || ""}`.trim() || "Me",
+              name:
+                meRes.data.first_name ||
+                `${meRes.data.first_name || ""} ${
+                  meRes.data.last_name || ""
+                }`.trim() ||
+                "Me",
               email: meRes.data.email,
               profile_picture: getAbsoluteImageUrl(meRes.data.profile_picture),
               isCurrentUser: true,
@@ -102,7 +107,12 @@ const PersonDropdown = ({ value, onChange, onSave, onCancel, taskId }) => {
             if (firstUser) {
               myData = {
                 id: firstUser.id,
-                name: firstUser.fullname || `${firstUser.first_name || ""} ${firstUser.last_name || ""}`.trim() || "Me",
+                name:
+                  firstUser.fullname ||
+                  `${firstUser.first_name || ""} ${
+                    firstUser.last_name || ""
+                  }`.trim() ||
+                  "Me",
                 email: firstUser.email,
                 profile_picture: getAbsoluteImageUrl(firstUser.profile_picture),
                 isCurrentUser: true,
@@ -115,7 +125,10 @@ const PersonDropdown = ({ value, onChange, onSave, onCancel, taskId }) => {
             .filter((user) => user.id !== myData?.id)
             .map((user) => ({
               id: user.id,
-              name: user.fullname || `${user.first_name || ""} ${user.last_name || ""}`.trim() || "Unknown User",
+              name:
+                user.fullname ||
+                `${user.first_name || ""} ${user.last_name || ""}`.trim() ||
+                "Unknown User",
               email: user.email,
               profile_picture: getAbsoluteImageUrl(user.profile_picture),
               isCurrentUser: false,
@@ -146,17 +159,17 @@ const PersonDropdown = ({ value, onChange, onSave, onCancel, taskId }) => {
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen]);
 
   const handleChange = async (selectedUser) => {
     if (isLoading) return;
-    
+
     setIsLoading(true);
 
     const personDetail = {
@@ -171,11 +184,10 @@ const PersonDropdown = ({ value, onChange, onSave, onCancel, taskId }) => {
         await updateLeads(taskId, { person: selectedUser.id });
         console.log("Lead owner updated successfully:", selectedUser.id);
       }
-      
+
       onChange(personDetail);
       setIsOpen(false);
       onSave();
-      
     } catch (err) {
       console.error("Failed to update lead owner:", err);
     } finally {
@@ -185,16 +197,16 @@ const PersonDropdown = ({ value, onChange, onSave, onCancel, taskId }) => {
 
   const getCurrentUser = () => {
     if (!value) return null;
-    
-    const currentId = typeof value === 'object' ? value.id : value;
-    return userOptions.find(user => user.id === currentId) || null;
+
+    const currentId = typeof value === "object" ? value.id : value;
+    return userOptions.find((user) => user.id === currentId) || null;
   };
 
   const renderOwnerAvatar = (user) => {
     if (user?.profile_picture) {
       return (
-        <img 
-          src={user.profile_picture} 
+        <img
+          src={user.profile_picture}
           alt={user.name}
           className="w-6 h-6 rounded-full object-cover flex-shrink-0"
         />
@@ -202,8 +214,16 @@ const PersonDropdown = ({ value, onChange, onSave, onCancel, taskId }) => {
     } else {
       return (
         <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center flex-shrink-0">
-          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+          <svg
+            className="w-3 h-3 text-white"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+              clipRule="evenodd"
+            />
           </svg>
         </div>
       );
@@ -233,31 +253,50 @@ const PersonDropdown = ({ value, onChange, onSave, onCancel, taskId }) => {
             <>
               {renderOwnerAvatar(currentUser)}
               <span className="text-sm font-medium truncate">
-                {currentUser.isCurrentUser ? `${currentUser.name} (Me)` : currentUser.name}
+                {currentUser.isCurrentUser
+                  ? `${currentUser.name} (Me)`
+                  : currentUser.name}
               </span>
             </>
           ) : (
             <>
               <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
-                <svg className="w-3 h-3 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                <svg
+                  className="w-3 h-3 text-gray-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </div>
-              <span className="text-sm text-gray-500 truncate">Select Owner</span>
+              <span className="text-sm text-gray-500 truncate">
+                Select Owner
+              </span>
             </>
           )}
         </div>
-        
+
         {isLoading ? (
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 flex-shrink-0"></div>
         ) : (
-          <svg 
-            className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} 
-            fill="none" 
-            stroke="currentColor" 
+          <svg
+            className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${
+              isOpen ? "rotate-180" : ""
+            }`}
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         )}
       </div>
@@ -269,25 +308,39 @@ const PersonDropdown = ({ value, onChange, onSave, onCancel, taskId }) => {
             <div
               key={user.id}
               className={`px-3 py-2 hover:bg-gray-100 cursor-pointer transition-colors ${
-                currentUser?.id === user.id ? 'bg-blue-50' : ''
+                currentUser?.id === user.id ? "bg-blue-50" : ""
               }`}
               onClick={() => handleChange(user)}
             >
               <div className="flex items-center gap-2">
                 {renderOwnerAvatar(user)}
                 <div className="flex-1 min-w-0">
-                  <div className={`font-medium text-sm truncate ${
-                    currentUser?.id === user.id ? 'text-blue-600' : 'text-gray-900'
-                  }`}>
+                  <div
+                    className={`font-medium text-sm truncate ${
+                      currentUser?.id === user.id
+                        ? "text-blue-600"
+                        : "text-gray-900"
+                    }`}
+                  >
                     {user.isCurrentUser ? `${user.name} (Me)` : user.name}
                   </div>
                   {user.email && (
-                    <div className="text-xs text-gray-500 truncate">{user.email}</div>
+                    <div className="text-xs text-gray-500 truncate">
+                      {user.email}
+                    </div>
                   )}
                 </div>
                 {currentUser?.id === user.id && (
-                  <svg className="w-4 h-4 text-blue-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  <svg
+                    className="w-4 h-4 text-blue-600 flex-shrink-0"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 )}
               </div>
@@ -300,14 +353,14 @@ const PersonDropdown = ({ value, onChange, onSave, onCancel, taskId }) => {
 };
 
 // ✅ FIXED EnhancedStatusCell - state sync tuzatildi
-const EnhancedStatusCell = ({ 
-  value, 
-  onEdit, 
-  boardId, 
-  itemId, 
+const EnhancedStatusCell = ({
+  value,
+  onEdit,
+  boardId,
+  itemId,
   onChange,
-  isDropdownOpen, 
-  onToggleDropdown 
+  isDropdownOpen,
+  onToggleDropdown,
 }) => {
   const dropdownRef = useRef(null);
 
@@ -335,16 +388,16 @@ const EnhancedStatusCell = ({
   // ✅ STATUS CHANGE - faqat backend muvaffaqiyatli bo'lganda state yangilanadi
   const handleStatusChange = async (newStatus) => {
     console.log("🔄 Status changing to:", newStatus?.name || "No Status");
-    
+
     try {
       // Backend ga saqlash
       if (itemId) {
         const statusValue = newStatus ? String(newStatus.id) : null;
         console.log("📤 Sending status update:", statusValue);
-        
+
         await updateLeads(itemId, { status: statusValue });
         console.log("✅ Status successfully updated in backend");
-        
+
         // ✅ BACKEND SUCCESS DAN KEYINGINA state yangilash
         onChange(newStatus);
       } else {
@@ -357,7 +410,7 @@ const EnhancedStatusCell = ({
       alert("Status yangilashda xatolik. Qaytadan urinib ko'ring.");
       return;
     }
-    
+
     // Dropdown ni yopish
     onToggleDropdown(false);
   };
@@ -369,8 +422,8 @@ const EnhancedStatusCell = ({
     <div className="relative w-full h-full" ref={dropdownRef}>
       <div
         className="w-full h-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-all duration-200 px-3 py-2  font-medium"
-        style={{ 
-          backgroundColor: backgroundColor, 
+        style={{
+          backgroundColor: backgroundColor,
           color: textColor,
           minHeight: "40px",
           border: `2px solid ${backgroundColor}`,
@@ -405,7 +458,7 @@ const EnhancedStatusCell = ({
 };
 
 function getContrastColor(hexColor) {
-  const hex = hexColor.replace('#', '');
+  const hex = hexColor.replace("#", "");
   const r = parseInt(hex.slice(0, 2), 16);
   const g = parseInt(hex.slice(2, 4), 16);
   const b = parseInt(hex.slice(4, 6), 16);
@@ -439,10 +492,19 @@ const SingleDatePickerCell = ({ value = "", onChange, onSave, onCancel }) => {
   );
 };
 
-const DateRangePickerCell = ({ value = { start: null, end: null }, onChange, onSave, onCancel }) => {
+const DateRangePickerCell = ({
+  value = { start: null, end: null },
+  onChange,
+  onSave,
+  onCancel,
+}) => {
   const safeValue = value || { start: null, end: null };
-  const [startDate, setStartDate] = useState(safeValue.start ? new Date(safeValue.start) : null);
-  const [endDate, setEndDate] = useState(safeValue.end ? new Date(safeValue.end) : null);
+  const [startDate, setStartDate] = useState(
+    safeValue.start ? new Date(safeValue.start) : null
+  );
+  const [endDate, setEndDate] = useState(
+    safeValue.end ? new Date(safeValue.end) : null
+  );
 
   const handleChange = (dates) => {
     const [start, end] = dates;
@@ -511,14 +573,24 @@ const LinkDropdown = ({ value, onChange, onSave, onCancel }) => {
       value={value || ""}
       onChange={handleChange}
       onKeyDown={(e) => {
-        if (e.key === "Enter") { e.preventDefault(); onSave(); }
-        if (e.key === "Escape") { e.preventDefault(); onCancel(); }
+        if (e.key === "Enter") {
+          e.preventDefault();
+          onSave();
+        }
+        if (e.key === "Escape") {
+          e.preventDefault();
+          onCancel();
+        }
       }}
       className="w-full h-full text-center focus:outline-none border-none appearance-none bg-transparent cursor-pointer"
       autoFocus
     >
       {linkOptions.map((option) => (
-        <option key={option.value} value={option.value} className="bg-white text-black">
+        <option
+          key={option.value}
+          value={option.value}
+          className="bg-white text-black"
+        >
           {option.label}
         </option>
       ))}
@@ -529,22 +601,28 @@ const LinkDropdown = ({ value, onChange, onSave, onCancel }) => {
 // ✅ Ustunlar kengligi uchun helper function
 const getColumnWidth = (columnKey) => {
   switch (columnKey) {
-    case 'person_detail': // Owner field kengligi oshirildi
+    case "person_detail": // Owner field kengligi oshirildi
       return { width: "200px", minWidth: "200px" };
-    case 'name': // Lead name ham biroz kengaytirildi
+    case "name": // Lead name ham biroz kengaytirildi
       return { width: "180px", minWidth: "180px" };
-    case 'notes': // Notes uchun ham kengaytirildi
+    case "notes": // Notes uchun ham kengaytirildi
       return { width: "200px", minWidth: "200px" };
-    case 'updated_at': 
+    case "updated_at":
       return { width: "180px", minWidth: "180px" };
     default:
       return { width: "160px", minWidth: "160px" };
-
   }
 };
 
 const GroupSection = ({
-  id, items, expanded, addItem, updateItem, selected, onToggleSelect, boardId,
+  id,
+  items,
+  expanded,
+  addItem,
+  updateItem,
+  selected,
+  onToggleSelect,
+  boardId,
   // id, title, items, expanded, onToggleExpanded, updateTitle, addItem, updateItem, deleteGroup, selected, onToggleSelect, boardId,
 }) => {
   // const [editingTitle, setEditingTitle] = useState(false);
@@ -572,10 +650,10 @@ const GroupSection = ({
   ]);
 
   const toggleStatusDropdown = (itemIndex, isOpen) => {
-    setStatusDropdownStates(prev => ({ ...prev, [itemIndex]: isOpen }));
+    setStatusDropdownStates((prev) => ({ ...prev, [itemIndex]: isOpen }));
   };
 
-  // ✅ FIXED useEffect - dependencies to'g'ri sozlandi va format uchun key qo'shildi  
+  // ✅ FIXED useEffect - dependencies to'g'ri sozlandi va format uchun key qo'shildi
   useEffect(() => {
     if (items && Array.isArray(items)) {
       const formattedItems = items.map((item, index) => ({
@@ -584,15 +662,20 @@ const GroupSection = ({
         phone: item.phone || null,
         link: item.link || null,
         person_detail: item.person_detail || null,
-        status: item.status ? {
-          id: item.status.id || item.status,
-          name: item.status.name || "Unknown Status",
-          color: item.status.color || "#808080",
-        } : null,
+        status: item.status
+          ? {
+              id: item.status.id || item.status,
+              name: item.status.name || "Unknown Status",
+              color: item.status.color || "#808080",
+            }
+          : null,
         notes: item.notes || "",
         potential_value: item.potential_value || 0,
         group: item.group || id,
-        timeline: { start: item.timeline_start || null, end: item.timeline_end || null },
+        timeline: {
+          start: item.timeline_start || null,
+          end: item.timeline_end || null,
+        },
         timeline_start: item.timeline_start || null,
         timeline_end: item.timeline_end || null,
         custom_fields: item.custom_fields || {},
@@ -620,7 +703,7 @@ const GroupSection = ({
   }, []);
 
   const startEditCell = (row, field) => {
-    if (field !== 'person_detail' && field !== 'status') {
+    if (field !== "person_detail" && field !== "status") {
       setEditingCell({ row, field });
     }
   };
@@ -640,7 +723,7 @@ const GroupSection = ({
     }
 
     let val = overrideValue !== null ? overrideValue : item[field];
-    
+
     if (field === "potential_value") {
       val = val === "" || val === null ? 0 : parseInt(val, 10) || 0;
     } else if (field === "link") {
@@ -661,7 +744,7 @@ const GroupSection = ({
 
     try {
       await updateLeads(item.id, updateData);
-      
+
       // ✅ Local state yangilash
       setLocalItems((prev) =>
         prev.map((prevItem) =>
@@ -670,7 +753,7 @@ const GroupSection = ({
             : prevItem
         )
       );
-      
+
       // ✅ Parent component ga ham xabar berish
       const changeSet = {};
       if (field === "timeline") {
@@ -680,7 +763,6 @@ const GroupSection = ({
         changeSet[field] = val;
       }
       updateItem(id, row, changeSet);
-
     } catch (err) {
       console.error(`Failed to update ${field}:`, err);
     }
@@ -690,8 +772,11 @@ const GroupSection = ({
 
   // ✅ YAXSHILANGAN handleStatusChange
   const handleStatusChange = (itemIndex, newStatus) => {
-    console.log(`🔄 Status change for item ${itemIndex}:`, newStatus?.name || "No Status");
-    
+    console.log(
+      `🔄 Status change for item ${itemIndex}:`,
+      newStatus?.name || "No Status"
+    );
+
     // ✅ Local state ni yangilash
     setLocalItems((prev) =>
       prev.map((item, idx) => {
@@ -710,13 +795,16 @@ const GroupSection = ({
     }
 
     // Dropdown ni yopish
-    setStatusDropdownStates(prev => ({ ...prev, [itemIndex]: false }));
+    setStatusDropdownStates((prev) => ({ ...prev, [itemIndex]: false }));
   };
 
   // ✅ YAXSHILANGAN handlePersonChange
   const handlePersonChange = (itemIndex, newPerson) => {
-    console.log(`👤 Person change for item ${itemIndex}:`, newPerson?.name || "No Person");
-    
+    console.log(
+      `👤 Person change for item ${itemIndex}:`,
+      newPerson?.name || "No Person"
+    );
+
     // ✅ Local state ni yangilash
     setLocalItems((prev) =>
       prev.map((item, idx) => {
@@ -740,14 +828,28 @@ const GroupSection = ({
     if (!newItemName.trim()) return;
 
     const newItem = {
-      name: newItemName.trim(), phone: null, link: null, person_detail: null, status: undefined,
-      notes: "", potential_value: 0, timeline_start: null, timeline_end: null, group: id,
+      name: newItemName.trim(),
+      phone: null,
+      link: null,
+      person_detail: null,
+      status: undefined,
+      notes: "",
+      potential_value: 0,
+      timeline_start: null,
+      timeline_end: null,
+      group: id,
     };
 
     try {
       const response = await addItem(id, newItem);
       if (response && response.data) {
-        const createdItem = { ...response.data, timeline: { start: response.data.timeline_start, end: response.data.timeline_end } };
+        const createdItem = {
+          ...response.data,
+          timeline: {
+            start: response.data.timeline_start,
+            end: response.data.timeline_end,
+          },
+        };
         setLocalItems((prev) => [...prev, createdItem]);
       }
       setNewItemName("");
@@ -759,8 +861,13 @@ const GroupSection = ({
 
   const addColumn = () => {
     const newKey = `custom_${Date.now()}`;
-    const newLabel = `Custom ${columns.filter((col) => col.isCustom).length + 1}`;
-    setColumns((prev) => [...prev, { key: newKey, label: newLabel, isCustom: true }]);
+    const newLabel = `Custom ${
+      columns.filter((col) => col.isCustom).length + 1
+    }`;
+    setColumns((prev) => [
+      ...prev,
+      { key: newKey, label: newLabel, isCustom: true },
+    ]);
     setLocalItems((prev) => prev.map((item) => ({ ...item, [newKey]: null })));
   };
 
@@ -772,7 +879,11 @@ const GroupSection = ({
   const saveColumnTitle = () => {
     if (editingColumnIndex !== null) {
       const newLabel = columnTitleValue.trim() || "Untitled Column";
-      setColumns((prev) => prev.map((col, idx) => idx === editingColumnIndex ? { ...col, label: newLabel } : col));
+      setColumns((prev) =>
+        prev.map((col, idx) =>
+          idx === editingColumnIndex ? { ...col, label: newLabel } : col
+        )
+      );
       setEditingColumnIndex(null);
       setColumnTitleValue("");
     }
@@ -787,30 +898,45 @@ const GroupSection = ({
     const columnToDelete = columns[index];
     if (columnToDelete.isCustom) {
       setColumns((prev) => prev.filter((_, idx) => idx !== index));
-      setLocalItems((prev) => prev.map((item) => {
-        const newItem = { ...item };
-        delete newItem[columnToDelete.key];
-        return newItem;
-      }));
+      setLocalItems((prev) =>
+        prev.map((item) => {
+          const newItem = { ...item };
+          delete newItem[columnToDelete.key];
+          return newItem;
+        })
+      );
     }
   };
-
 
   return (
     <div className="mb-3 rounded-[8px]">
       {expanded && (
         <div className="bg-white">
-          <div className="px-4 pb-4 mt-2 overflow-x-auto relative" style={{ maxHeight: 'calc(100vh - 250px)', minHeight: '400px' }}>
+          <div
+            className="px-4 pb-4 mt-2 overflow-x-auto relative"
+            style={{ maxHeight: "calc(100vh - 250px)", minHeight: "400px" }}
+          >
             <table className="table-auto absolute border-collapse font-normal border border-gray-300 text-sm">
               <thead className="bg-blue-200 sticky top-0 z-10">
                 <tr>
-                  <th className="border border-gray-400 p-6" style={{ width: "48px", minWidth: "48px" }}></th>
+                  <th
+                    className="border border-gray-400 p-6"
+                    style={{ width: "48px", minWidth: "48px" }}
+                  ></th>
                   {columns.map((col) => (
-                  <th key={col.key} className="border border-gray-400 p-2 text-center relative group" style={getColumnWidth(col.key)}>
+                    <th
+                      key={col.key}
+                      className="border border-gray-400 p-2 text-center relative group"
+                      style={getColumnWidth(col.key)}
+                    >
                       <div className="flex items-center justify-center gap-2">
                         {editingColumnIndex === columns.indexOf(col) ? (
                           <input
-                            autoFocus value={columnTitleValue} onChange={(e) => setColumnTitleValue(e.target.value)}
+                            autoFocus
+                            value={columnTitleValue}
+                            onChange={(e) =>
+                              setColumnTitleValue(e.target.value)
+                            }
                             onBlur={saveColumnTitle}
                             onKeyDown={(e) => {
                               if (e.key === "Enter") saveColumnTitle();
@@ -819,58 +945,111 @@ const GroupSection = ({
                             className="w-full text-center focus:outline-none bg-transparent border-b border-gray-400"
                           />
                         ) : (
-                          <span onDoubleClick={() => startEditColumnTitle(columns.indexOf(col), col.label)} className="cursor-pointer">
+                          <span
+                            onDoubleClick={() =>
+                              startEditColumnTitle(
+                                columns.indexOf(col),
+                                col.label
+                              )
+                            }
+                            className="cursor-pointer"
+                          >
                             {col.label}
                           </span>
                         )}
                         {col.isCustom && (
-                          <button onClick={() => deleteColumn(columns.indexOf(col))} className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 rounded" title="Delete column">
+                          <button
+                            onClick={() => deleteColumn(columns.indexOf(col))}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 rounded"
+                            title="Delete column"
+                          >
                             <X size={12} className="text-red-500" />
                           </button>
                         )}
                       </div>
                     </th>
                   ))}
-                  <th className="border border-gray-300 p-2 text-center cursor-pointer hover:bg-gray-200" style={{ width: "48px", minWidth: "48px" }} onClick={addColumn} title="Add column">+</th>
+                  <th
+                    className="border border-gray-300 p-2 text-center cursor-pointer hover:bg-gray-200"
+                    style={{ width: "48px", minWidth: "48px" }}
+                    onClick={addColumn}
+                    title="Add column"
+                  >
+                    +
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {localItems.map((item, itemIndex) => (
-                  <tr key={item._formattedKey || `${item.id}-${itemIndex}`} className={itemIndex % 2 === 0 ? "bg-gray-50" : ""}>
-                    <td className="border border-gray-300 text-center p-2" style={{ width: "48px", minWidth: "48px" }}>
-                      <input type="checkbox" checked={selected.includes(itemIndex)} onChange={(e) => onToggleSelect(itemIndex, e.target.checked)} />
+                  <tr
+                    key={item._formattedKey || `${item.id}-${itemIndex}`}
+                    className={itemIndex % 2 === 0 ? "bg-gray-50" : ""}
+                  >
+                    <td
+                      className="border border-gray-300 text-center p-2"
+                      style={{ width: "48px", minWidth: "48px" }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected.includes(itemIndex)}
+                        onChange={(e) =>
+                          onToggleSelect(itemIndex, e.target.checked)
+                        }
+                        data-lead-id={item.id}
+                      />
                     </td>
 
                     {columns.map((col) => (
-                     <td key={`${item.id}-${col.key}`} className="border border-gray-300 p-0 text-center" style={getColumnWidth(col.key)}>
+                      <td
+                        key={`${item.id}-${col.key}`}
+                        className="border border-gray-300 p-0 text-center"
+                        style={getColumnWidth(col.key)}
+                      >
                         {col.key === "status" ? (
                           <EnhancedStatusCell
                             value={item.status}
                             onEdit={() => {}}
                             boardId={boardId}
                             itemId={item.id}
-                            onChange={(newStatus) => handleStatusChange(itemIndex, newStatus)}
-                            isDropdownOpen={statusDropdownStates[itemIndex] || false}
-                            onToggleDropdown={(isOpen) => toggleStatusDropdown(itemIndex, isOpen)}
+                            onChange={(newStatus) =>
+                              handleStatusChange(itemIndex, newStatus)
+                            }
+                            isDropdownOpen={
+                              statusDropdownStates[itemIndex] || false
+                            }
+                            onToggleDropdown={(isOpen) =>
+                              toggleStatusDropdown(itemIndex, isOpen)
+                            }
                           />
                         ) : col.key === "person_detail" ? (
-                          <div className="w-full h-full" style={{ minHeight: "36px" }}>
+                          <div
+                            className="w-full h-full"
+                            style={{ minHeight: "36px" }}
+                          >
                             <PersonDropdown
                               value={item[col.key] || null}
                               taskId={item.id}
-                              onChange={(val) => handlePersonChange(itemIndex, val)}
+                              onChange={(val) =>
+                                handlePersonChange(itemIndex, val)
+                              }
                               onSave={() => {}}
                               onCancel={() => {}}
                             />
                           </div>
                         ) : col.key === "timeline" ? (
-                          editingCell?.row === itemIndex && editingCell?.field === col.key ? (
+                          editingCell?.row === itemIndex &&
+                          editingCell?.field === col.key ? (
                             <DateRangePickerCell
-                              value={item.timeline || { start: null, end: null }}
+                              value={
+                                item.timeline || { start: null, end: null }
+                              }
                               onChange={(val) => {
                                 setLocalItems((prev) => {
                                   const copy = [...prev];
-                                  copy[itemIndex] = { ...copy[itemIndex], timeline: val };
+                                  copy[itemIndex] = {
+                                    ...copy[itemIndex],
+                                    timeline: val,
+                                  };
                                   return copy;
                                 });
                               }}
@@ -884,22 +1063,29 @@ const GroupSection = ({
                               onClick={() => startEditCell(itemIndex, col.key)}
                             >
                               {item.timeline?.start || item.timeline?.end
-                                ? `${item.timeline.start || ""} - ${item.timeline.end || ""}`
+                                ? `${item.timeline.start || ""} - ${
+                                    item.timeline.end || ""
+                                  }`
                                 : "Set Timeline"}
                             </div>
                           )
                         ) : col.key === "potential_value" ? (
-                          editingCell?.row === itemIndex && editingCell?.field === col.key ? (
+                          editingCell?.row === itemIndex &&
+                          editingCell?.field === col.key ? (
                             <input
                               autoFocus
                               type="number"
                               value={item[col.key] || ""}
                               onChange={(e) => {
                                 const value = e.target.value;
-                                const newVal = value === "" ? 0 : parseInt(value, 10) || 0;
+                                const newVal =
+                                  value === "" ? 0 : parseInt(value, 10) || 0;
                                 setLocalItems((prev) => {
                                   const copy = [...prev];
-                                  copy[itemIndex] = { ...copy[itemIndex], [col.key]: newVal };
+                                  copy[itemIndex] = {
+                                    ...copy[itemIndex],
+                                    [col.key]: newVal,
+                                  };
                                   return copy;
                                 });
                               }}
@@ -920,28 +1106,37 @@ const GroupSection = ({
                               ${item[col.key] || 0}
                             </div>
                           )
-                        ): col.key === "updated_at" ? (
+                        ) : col.key === "updated_at" ? (
                           // YANGI: Updated at ustuni - faqat ko'rsatish uchun, edit qilinmaydi
                           <div
                             className="w-full h-full flex items-center justify-center text-gray-600 text-xs"
                             style={{ minHeight: "36px" }}
-                            title={item.updated_at ? new Date(item.updated_at).toLocaleString() : "Not updated"}
+                            title={
+                              item.updated_at
+                                ? new Date(item.updated_at).toLocaleString()
+                                : "Not updated"
+                            }
                           >
                             {formatDateTime(item.updated_at)}
                           </div>
-                        )
-                         : col.key === "link" ? (
-                          editingCell?.row === itemIndex && editingCell?.field === col.key ? (
+                        ) : col.key === "link" ? (
+                          editingCell?.row === itemIndex &&
+                          editingCell?.field === col.key ? (
                             <LinkDropdown
                               value={item[col.key] || ""}
                               onChange={(val) => {
                                 setLocalItems((prev) => {
                                   const copy = [...prev];
-                                  copy[itemIndex] = { ...copy[itemIndex], [col.key]: val };
+                                  copy[itemIndex] = {
+                                    ...copy[itemIndex],
+                                    [col.key]: val,
+                                  };
                                   return copy;
                                 });
                               }}
-                              onSave={(overrideValue) => saveEditCell(overrideValue)}
+                              onSave={(overrideValue) =>
+                                saveEditCell(overrideValue)
+                              }
                               onCancel={cancelEditCell}
                             />
                           ) : (
@@ -952,61 +1147,79 @@ const GroupSection = ({
                             >
                               <span className="capitalize">
                                 {item[col.key] ? (
-                                  item[col.key].charAt(0).toUpperCase() + item[col.key].slice(1)
+                                  item[col.key].charAt(0).toUpperCase() +
+                                  item[col.key].slice(1)
                                 ) : (
-                                  <span className="text-gray-400">Select Source</span>
+                                  <span className="text-gray-400">
+                                    Select Source
+                                  </span>
                                 )}
                               </span>
                             </div>
                           )
+                        ) : editingCell?.row === itemIndex &&
+                          editingCell?.field === col.key ? (
+                          <input
+                            autoFocus
+                            value={item[col.key] || ""}
+                            onChange={(e) => {
+                              setLocalItems((prev) => {
+                                const copy = [...prev];
+                                copy[itemIndex] = {
+                                  ...copy[itemIndex],
+                                  [col.key]: e.target.value,
+                                };
+                                return copy;
+                              });
+                            }}
+                            onBlur={saveEditCell}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") saveEditCell();
+                              if (e.key === "Escape") cancelEditCell();
+                            }}
+                            className="w-full text-center focus:outline-none bg-transparent px-2 py-1"
+                            placeholder={col.label}
+                          />
                         ) : (
-                          editingCell?.row === itemIndex && editingCell?.field === col.key ? (
-                            <input
-                              autoFocus
-                              value={item[col.key] || ""}
-                              onChange={(e) => {
-                                setLocalItems((prev) => {
-                                  const copy = [...prev];
-                                  copy[itemIndex] = { ...copy[itemIndex], [col.key]: e.target.value };
-                                  return copy;
-                                });
-                              }}
-                              onBlur={saveEditCell}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") saveEditCell();
-                                if (e.key === "Escape") cancelEditCell();
-                              }}
-                              className="w-full text-center focus:outline-none bg-transparent px-2 py-1"
-                              placeholder={col.label}
-                            />
-                          ) : (
-                            <div
-                              className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-100"
-                              style={{ minHeight: "36px" }}
-                              onClick={() => startEditCell(itemIndex, col.key)}
-                            >
-                              {item[col.key] || `Add ${col.label}`}
-                            </div>
-                          )
+                          <div
+                            className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-100"
+                            style={{ minHeight: "36px" }}
+                            onClick={() => startEditCell(itemIndex, col.key)}
+                          >
+                            {item[col.key] || `Add ${col.label}`}
+                          </div>
                         )}
                       </td>
                     ))}
 
-                    <td className="border border-gray-300 p-2" style={{ width: "48px", minWidth: "48px" }}></td>
+                    <td
+                      className="border border-gray-300 p-2"
+                      style={{ width: "48px", minWidth: "48px" }}
+                    ></td>
                   </tr>
                 ))}
 
                 {addingItem ? (
                   <tr key="new-item">
-                    <td className="border border-gray-300 text-center p-2" style={{ width: "48px", minWidth: "48px" }}>
+                    <td
+                      className="border border-gray-300 text-center p-2"
+                      style={{ width: "48px", minWidth: "48px" }}
+                    >
                       <input type="checkbox" disabled />
                     </td>
-                    <td className="border border-gray-300 p-2 text-center" style={getColumnWidth("name")}>
+                    <td
+                      className="border border-gray-300 p-2 text-center"
+                      style={getColumnWidth("name")}
+                    >
                       <input
                         autoFocus
                         value={newItemName}
                         onChange={(e) => setNewItemName(e.target.value)}
-                        onBlur={() => newItemName.trim() ? saveNewItem() : setAddingItem(false)}
+                        onBlur={() =>
+                          newItemName.trim()
+                            ? saveNewItem()
+                            : setAddingItem(false)
+                        }
                         onKeyDown={(e) => {
                           if (e.key === "Enter") saveNewItem();
                           if (e.key === "Escape") setAddingItem(false);
@@ -1015,12 +1228,23 @@ const GroupSection = ({
                         className="w-full px-2 py-1 rounded-[8px] focus:outline-none text-center bg-transparent"
                       />
                     </td>
-                    {Array(columns.length - 1).fill(null).map((_, idx) => (
-                     <td key={`new-item-placeholder-${idx}`} className="border border-gray-300 p-2 text-center text-gray-400" style={getColumnWidth(columns[idx + 1]?.key || "default")}>
-                        -
-                      </td>
-                    ))}
-                    <td className="border border-gray-300 p-2" style={{ width: "48px", minWidth: "48px" }}></td>
+                    {Array(columns.length - 1)
+                      .fill(null)
+                      .map((_, idx) => (
+                        <td
+                          key={`new-item-placeholder-${idx}`}
+                          className="border border-gray-300 p-2 text-center text-gray-400"
+                          style={getColumnWidth(
+                            columns[idx + 1]?.key || "default"
+                          )}
+                        >
+                          -
+                        </td>
+                      ))}
+                    <td
+                      className="border border-gray-300 p-2"
+                      style={{ width: "48px", minWidth: "48px" }}
+                    ></td>
                   </tr>
                 ) : (
                   <tr key="add-item">
