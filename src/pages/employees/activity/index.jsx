@@ -41,44 +41,9 @@ const Activity = ({ onTotalActivitiesChange, currentFilters }) => {
     }
   }, [onTotalActivitiesChange]);
 
-  // useEffect cleanup qo'shish
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const res = await getActivities(currentPage, currentFilters);
-
-        if (isMounted) {
-          const activities = res.results || [];
-          setActivity(activities);
-          setTotalActivities(res.count || 0);
-
-          if (onTotalActivitiesChange) {
-            onTotalActivitiesChange(res.count || 0);
-          }
-        }
-      } catch (err) {
-        if (isMounted) {
-          console.error("Error fetching activities:", err);
-          setError("Failed to load activities. Please try again.");
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [currentPage, currentFilters, onTotalActivitiesChange]);
+    fetchActivities(currentPage, currentFilters);
+  }, [currentPage, currentFilters, fetchActivities]);
 
   // Handle page change
   const handlePageChange = (page) => {
@@ -172,12 +137,14 @@ const Activity = ({ onTotalActivitiesChange, currentFilters }) => {
                 loading="lazy"
                 decoding="async"
                 onError={(e) => {
+                  e.currentTarget.onerror = null;
                   e.currentTarget.src = "/default-avatar.webp";
                 }}
+
               />
-              <h1 className="font-bold text-[16px] text-[#0A1629] text-center">
+              <h2 className="font-bold text-[16px] text-[#0A1629] text-center">
                 {user.first_name || "N/A"} {user.last_name || ""}
-              </h1>
+              </h2>
               <p className="text-[14px] text-[#0A1629] text-center">
                 {user.profession || "No Profession"}
               </p>
@@ -215,16 +182,14 @@ const Activity = ({ onTotalActivitiesChange, currentFilters }) => {
       {/* Pagination */}
       {totalActivities > itemsPerPage && (
         <div className="flex justify-center py-6 border-t border-gray-200">
-          <Suspense fallback={<div className="h-8"></div>}>
-            <Pagination
-              current={currentPage}
-              total={totalActivities}
-              pageSize={itemsPerPage}
-              onChange={handlePageChange}
-              showSizeChanger={false}
-              showQuickJumper={false}
-            />
-          </Suspense>
+          <Pagination
+            current={currentPage}
+            total={totalActivities}
+            pageSize={itemsPerPage}
+            onChange={handlePageChange}
+            showSizeChanger={false}
+            showQuickJumper={false}
+          />
         </div>
       )}
     </section>
