@@ -6,7 +6,7 @@ import EmployeeStatusModal from "./EmployeeStatusModal";
 import { Permission } from "../../components/Permissions";
 import { useAuth } from "../../hooks/useAuth";
 import { ROLES } from "../../components/constants/roles";
-import { Image, Pagination } from 'antd';
+import { Image, Pagination, Skeleton } from 'antd';
 
 // Constants
 const DROPDOWN_HEIGHT = 120;
@@ -24,15 +24,130 @@ const formatPhoneNumber = (phone) => {
 const calculateDropdownPosition = (buttonRect, tableRect, dropdownHeight = DROPDOWN_HEIGHT) => {
     const spaceBelow = tableRect.bottom - buttonRect.bottom;
     const spaceAbove = buttonRect.top - tableRect.top;
-    
+
     if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
         return spaceAbove >= dropdownHeight ? "top" : "bottom";
     }
     return "bottom";
 };
 
-// Memoized StatusBadge component
-const StatusBadge = memo(({ status, mobile = false }) => {
+// Skeleton Loading Components
+const EmployeeRowSkeleton = memo(({ isMobile = false }) => {
+    if (isMobile) {
+        return (
+            <div className="bg-white border border-gray-200 rounded-lg shadow p-4 lg:hidden">
+                <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-3 flex-1">
+                        <Skeleton.Avatar size={48} />
+                        <div className="flex-1">
+                            <Skeleton.Input active size="small" style={{ width: 120, height: 16, marginBottom: 6 }} />
+                            <div className="flex items-center gap-2">
+                                <Skeleton.Input active size="small" style={{ width: 80, height: 12 }} />
+                                <Skeleton.Button active size="small" style={{ width: 60, height: 20 }} />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="w-[18px] h-[18px] bg-gray-200 rounded animate-pulse"></div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="bg-white border border-gray-200 rounded-lg shadow p-4 hidden lg:grid grid-cols-17 items-center gap-3">
+            {/* Member Info */}
+            <div className="col-span-5 flex items-center gap-3">
+                <Skeleton.Avatar size={50} />
+                <div className="min-w-0 flex-1">
+                    <Skeleton.Input active size="small" style={{ width: 140, height: 16, marginBottom: 4 }} />
+                    <div className="flex items-center gap-2">
+                        <Skeleton.Input active size="small" style={{ width: 90, height: 12 }} />
+                        <Skeleton.Button active size="small" style={{ width: 50, height: 18 }} />
+                    </div>
+                </div>
+            </div>
+            
+            {/* Department */}
+            <div className="col-span-3 text-center">
+                <Skeleton.Input active size="small" style={{ width: 80, height: 14 }} />
+            </div>
+            
+            {/* Phone */}
+            <div className="col-span-4 text-center">
+                <Skeleton.Input active size="small" style={{ width: 100, height: 14 }} />
+            </div>
+            
+            {/* Projects */}
+            <div className="col-span-2 text-center">
+                <Skeleton.Input active size="small" style={{ width: 20, height: 14 }} />
+            </div>
+            
+            {/* Status */}
+            <div className="col-span-2 flex justify-center">
+                <Skeleton.Button active size="small" style={{ width: 90, height: 24 }} />
+            </div>
+            
+            {/* Actions */}
+            <div className="text-right">
+                <div className="w-[20px] h-[20px] bg-gray-200 rounded animate-pulse mx-auto"></div>
+            </div>
+        </div>
+    );
+});
+EmployeeRowSkeleton.displayName = 'EmployeeRowSkeleton';
+
+const EmployeeListSkeleton = memo(({ count = 6 }) => {
+    return (
+        <div className="bg-gray-50 rounded-2xl shadow">
+            <div className="overflow-x-auto p-3">
+                <div className="w-full">
+                    {/* Table Header */}
+                    <div className="hidden lg:grid grid-cols-17 text-gray-500 text-md font-bold py-3 px-4 border-b border-b-gray-200 mb-7 pb-5">
+                        <div className="col-span-5">Members</div>
+                        <div className="col-span-3 text-center">Department</div>
+                        <div className="col-span-4 text-center">Phone number</div>
+                        <div className="col-span-2 text-center">Projects</div>
+                        <div className="col-span-2 text-center">Status</div>
+                        <div></div>
+                    </div>
+
+                    {/* Skeleton Rows */}
+                    <div className="space-y-3 mt-2" role="list" aria-label="Loading employees">
+                        {/* Mobile skeletons */}
+                        <div className="lg:hidden space-y-3">
+                            {Array.from({ length: count }).map((_, index) => (
+                                <EmployeeRowSkeleton key={`mobile-skeleton-${index}`} isMobile />
+                            ))}
+                        </div>
+                        
+                        {/* Desktop skeletons */}
+                        <div className="hidden lg:block space-y-3">
+                            {Array.from({ length: count }).map((_, index) => (
+                                <EmployeeRowSkeleton key={`desktop-skeleton-${index}`} />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Loading indicator */}
+            <div className="flex justify-center items-center py-8 border-t border-gray-200">
+                <div className="flex items-center gap-3">
+                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
+                    <span className="text-gray-600 text-sm">Loading employees...</span>
+                </div>
+            </div>
+        </div>
+    );
+});
+EmployeeListSkeleton.displayName = 'EmployeeListSkeleton';
+
+// Enhanced StatusBadge component with loading state
+const StatusBadge = memo(({ status, loading = false }) => {
+    if (loading) {
+        return <Skeleton.Button active size="small" style={{ width: 90, height: 24 }} />;
+    }
+
     const statusConfig = useMemo(() => {
         const configs = {
             free: { color: "text-green-600 bg-green-100", dot: "bg-green-500" },
@@ -51,7 +166,11 @@ const StatusBadge = memo(({ status, mobile = false }) => {
     );
 
     return (
-        <span className={`flex px-2 w-[90px] py-[6px] rounded-lg text-xs font-medium capitalize items-center gap-1 justify-center ${statusConfig.color}`}>
+        <span 
+            className={`flex px-2 w-[90px] py-[6px] rounded-lg text-xs font-medium capitalize items-center gap-1 justify-center ${statusConfig.color}`}
+            role="status"
+            aria-label={`Employee status: ${formattedStatus}`}
+        >
             <div className={`w-[5px] h-[5px] rounded-full ${statusConfig.dot}`}></div>
             <span className="ml-2">{formattedStatus}</span>
         </span>
@@ -100,12 +219,15 @@ const EmployeeDropdownMenu = memo(({
             }`}
             style={{ right: 0, ...position }}
             onClick={(e) => e.stopPropagation()}
+            role="menu"
         >
             <div className="py-1">
                 <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS, ROLES.DEP_MANAGER]}>
                     <button
                         onClick={handleEditStatus}
-                        className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-green-500 cursor-pointer"
+                        className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-green-500 cursor-pointer focus:ring-2 focus:ring-blue-500 focus:bg-blue-50"
+                        role="menuitem"
+                        aria-label={`Edit status for ${emp.first_name} ${emp.last_name}`}
                     >
                         Edit status
                     </button>
@@ -114,7 +236,9 @@ const EmployeeDropdownMenu = memo(({
                 <button
                     type="button"
                     onClick={handleDetails}
-                    className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-yellow-500 cursor-pointer"
+                    className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-yellow-500 cursor-pointer focus:ring-2 focus:ring-blue-500 focus:bg-blue-50"
+                    role="menuitem"
+                    aria-label={`View details for ${emp.first_name} ${emp.last_name}`}
                 >
                     Details
                 </button>
@@ -122,7 +246,9 @@ const EmployeeDropdownMenu = memo(({
                 <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
                     <button
                         onClick={handleDelete}
-                        className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-red-500 cursor-pointer"
+                        className="w-full text-left px-4 py-2 text-gray-600 hover:bg-blue-50 hover:text-red-500 cursor-pointer focus:ring-2 focus:ring-red-500 focus:bg-red-50"
+                        role="menuitem"
+                        aria-label={`Delete ${emp.first_name} ${emp.last_name}`}
                     >
                         Delete
                     </button>
@@ -133,7 +259,7 @@ const EmployeeDropdownMenu = memo(({
 });
 EmployeeDropdownMenu.displayName = 'EmployeeDropdownMenu';
 
-// Memoized MobileModal component
+// Enhanced MobileModal component
 const MobileModal = memo(({
     emp,
     isOpen,
@@ -151,6 +277,28 @@ const MobileModal = memo(({
         onClose();
     }, [handleNavigateToProfile, emp.id, onClose]);
 
+    const handleKeyDown = useCallback((e) => {
+        if (e.key === 'Escape') {
+            onClose();
+        }
+    }, [onClose]);
+
+    useEffect(() => {
+        if (isOpen) {
+            document.addEventListener('keydown', handleKeyDown);
+            // Prevent body scroll when modal is open
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.removeEventListener('keydown', handleKeyDown);
+            document.body.style.overflow = 'unset';
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen, handleKeyDown]);
+
     if (!isOpen) return null;
 
     return (
@@ -159,20 +307,29 @@ const MobileModal = memo(({
             <div
                 className="fixed inset-0 bg-black/40 z-40 lg:hidden"
                 onClick={onClose}
+                aria-label="Close modal"
             />
 
             {/* Modal */}
-            <div className="fixed top-40 left-0 right-0 z-50 lg:hidden pl-3 pr-5">
+            <div 
+                className="fixed top-40 left-0 right-0 z-50 lg:hidden pl-3 pr-5"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="modal-title"
+            >
                 <div
                     className="bg-white rounded-2xl shadow-lg w-full max-h-[80vh] overflow-y-auto"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Modal Header */}
                     <div className="flex justify-between items-center p-4 pb-0">
-                        <h3 className="text-lg font-semibold">Details</h3>
+                        <h3 id="modal-title" className="text-lg font-semibold">
+                            Employee Details
+                        </h3>
                         <button
                             onClick={onClose}
-                            className="text-gray-500 hover:text-gray-700 p-2 -mr-2"
+                            className="text-gray-500 hover:text-gray-700 p-2 -mr-2 rounded focus:ring-2 focus:ring-blue-500"
+                            aria-label="Close modal"
                         >
                             <AiOutlineClose size={20} />
                         </button>
@@ -190,6 +347,8 @@ const MobileModal = memo(({
                                         height={50}
                                         className="rounded-full object-cover"
                                         src={emp.profile_picture}
+                                        alt={`${emp.first_name} ${emp.last_name} profile picture`}
+                                        loading="lazy"
                                     />
                                 </Image.PreviewGroup>
                                 <div>
@@ -214,7 +373,10 @@ const MobileModal = memo(({
                                         e.stopPropagation();
                                         toggleDropdown(emp.id, e);
                                     }}
-                                    className="text-gray-500 hover:text-gray-700 p-2 more-vertical-button"
+                                    className="text-gray-500 hover:text-gray-700 p-2 more-vertical-button rounded focus:ring-2 focus:ring-blue-500"
+                                    aria-label="More options"
+                                    aria-haspopup="true"
+                                    aria-expanded={openDropdown === emp.id}
                                 >
                                     <MoreVertical size={20} />
                                 </button>
@@ -223,10 +385,12 @@ const MobileModal = memo(({
                                     <div
                                         className="absolute right-0 mt-2 z-50 w-40 bg-white rounded-lg shadow-lg border border-gray-200 dropdown-menu"
                                         onClick={(e) => e.stopPropagation()}
+                                        role="menu"
                                     >
                                         <button
                                             onClick={handleEditStatus}
-                                            className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                                            className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 focus:ring-2 focus:ring-blue-500"
+                                            role="menuitem"
                                         >
                                             Edit status
                                         </button>
@@ -236,7 +400,8 @@ const MobileModal = memo(({
                                                     e.stopPropagation();
                                                     onDelete(emp.id);
                                                 }}
-                                                className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100"
+                                                className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 focus:ring-2 focus:ring-red-500"
+                                                role="menuitem"
                                             >
                                                 Delete
                                             </button>
@@ -254,7 +419,7 @@ const MobileModal = memo(({
                                     {emp.phone_number ? (
                                         <a
                                             href={`tel:${formattedPhone}`}
-                                            className="text-sm font-medium text-black hover:underline"
+                                            className="text-sm font-medium text-black hover:underline focus:ring-2 focus:ring-blue-500 rounded"
                                         >
                                             {emp.phone_number}
                                         </a>
@@ -291,12 +456,12 @@ const MobileModal = memo(({
                     </div>
 
                     {/* Modal Footer */}
-                    <div className="py-5 flex justify-center">
+                    <div className="py-5 flex justify-center border-t border-gray-100">
                         <button
                             onClick={handleModalNavigate}
-                            className="py-1.5 px-10 bg-blue-500 text-white hover:bg-blue-600 rounded-lg shadow-md shadow-blue-300 transition duration-200"
+                            className="py-1.5 px-10 bg-blue-500 text-white hover:bg-blue-600 rounded-lg shadow-md shadow-blue-300 transition duration-200 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                         >
-                            More
+                            More Details
                         </button>
                     </div>
                 </div>
@@ -306,7 +471,7 @@ const MobileModal = memo(({
 });
 MobileModal.displayName = 'MobileModal';
 
-// Memoized EmployeeRow component
+// Enhanced EmployeeRow component
 const EmployeeRow = memo(({
     emp,
     openDropdown,
@@ -315,7 +480,8 @@ const EmployeeRow = memo(({
     onDelete,
     navigate,
     onStatusUpdate,
-    setOpenDropdown
+    setOpenDropdown,
+    loading = false
 }) => {
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
     const [isMobileModalOpen, setIsMobileModalOpen] = useState(false);
@@ -359,19 +525,38 @@ const EmployeeRow = memo(({
         setIsStatusModalOpen(false);
     }, [onStatusUpdate, emp.id]);
 
+    if (loading) {
+        return <EmployeeRowSkeleton />;
+    }
+
     return (
-        <div className="bg-white border border-gray-200 rounded-lg shadow hover:shadow-md transition p-4 grid grid-cols-1 gap-3 lg:grid-cols-17 lg:items-center">
+        <article 
+            className="bg-white border border-gray-200 rounded-lg shadow hover:shadow-md transition p-4 grid grid-cols-1 gap-3 lg:grid-cols-17 lg:items-center"
+            role="listitem"
+        >
             {/* Mobile View - Top Section */}
             <div
                 onClick={handleMobileModalOpen}
-                className="flex justify-between items-center lg:hidden cursor-pointer"
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleMobileModalOpen(e);
+                    }
+                }}
+                className="flex justify-between items-center lg:hidden cursor-pointer focus:ring-2 focus:ring-blue-500 rounded p-2 -m-2"
+                role="button"
+                tabIndex={0}
+                aria-label={`Open details for ${emp.first_name} ${emp.last_name}`}
             >
                 <div className="flex items-center gap-3">
                     <img
                         className="w-12 h-12 rounded-full object-cover"
                         src={emp.profile_picture}
-                        alt={`${emp.first_name} ${emp.last_name}`}
+                        alt={`${emp.first_name} ${emp.last_name} profile picture`}
                         loading="lazy"
+                        onError={(e) => {
+                            e.target.src = '/default-avatar.png';
+                        }}
                     />
                     <div>
                         <p className="text-[#1F2937] font-semibold">
@@ -387,7 +572,7 @@ const EmployeeRow = memo(({
                         </div>
                     </div>
                 </div>
-                <AiOutlineRight size={18} className="text-blue-500" />
+                <AiOutlineRight size={18} className="text-blue-500" aria-hidden="true" />
             </div>
 
             <MobileModal
@@ -412,6 +597,7 @@ const EmployeeRow = memo(({
                         src={emp.profile_picture}
                         className="rounded-full object-cover"
                         loading="lazy"
+                        alt={`${emp.first_name} ${emp.last_name} profile picture`}
                     />
                 </Image.PreviewGroup>
 
@@ -440,7 +626,7 @@ const EmployeeRow = memo(({
                 {emp.phone_number ? (
                     <a
                         href={`tel:${formattedPhone}`}
-                        className="hover:underline text-black"
+                        className="hover:underline text-black focus:ring-2 focus:ring-blue-500 rounded"
                     >
                         {emp.phone_number}
                     </a>
@@ -454,17 +640,19 @@ const EmployeeRow = memo(({
             </div>
 
             <div className="hidden lg:flex lg:col-span-2 justify-center">
-                <StatusBadge status={emp.status} />
+                <StatusBadge status={emp.status} loading={loading} />
             </div>
 
             <div className="hidden lg:block text-right relative dropdown-container">
                 <button
-                    className="cursor-pointer more-vertical-button p-2 hover:bg-gray-100 rounded"
+                    className="cursor-pointer more-vertical-button p-2 hover:bg-gray-100 rounded focus:ring-2 focus:ring-blue-500"
                     onClick={(e) => {
                         e.stopPropagation();
                         toggleDropdown(emp.id, e);
                     }}
-                    aria-label="More options"
+                    aria-label={`More options for ${emp.first_name} ${emp.last_name}`}
+                    aria-haspopup="true"
+                    aria-expanded={openDropdown === emp.id}
                 >
                     <MoreVertical size={20} className="text-[#1F2937]" />
                 </button>
@@ -488,12 +676,12 @@ const EmployeeRow = memo(({
                 onClose={handleStatusModalClose}
                 onSuccess={handleStatusUpdate}
             />
-        </div>
+        </article>
     );
 });
 EmployeeRow.displayName = 'EmployeeRow';
 
-// Main EmployeeList component
+// Main EmployeeList component with loading states
 const EmployeeList = ({
     employees,
     onDelete,
@@ -501,7 +689,9 @@ const EmployeeList = ({
     currentPage,
     totalEmployees,
     itemsPerPage,
-    onPageChange
+    onPageChange,
+    loading = false,
+    error = null
 }) => {
     const [openDropdown, setOpenDropdown] = useState(null);
     const [dropdownPosition, setDropdownPosition] = useState({});
@@ -520,9 +710,9 @@ const EmployeeList = ({
 
         const tableRect = e.currentTarget.getBoundingClientRect();
         const buttonRect = e.currentTarget.getBoundingClientRect();
-        
+
         const position = calculateDropdownPosition(buttonRect, tableRect);
-        
+
         setDropdownPosition(prev => ({ ...prev, [id]: position }));
         setOpenDropdown(id);
     }, [openDropdown]);
@@ -551,22 +741,63 @@ const EmployeeList = ({
                 setOpenDropdown(null);
             }
         };
-        
+
         document.addEventListener('keydown', handleEscape);
         return () => document.removeEventListener('keydown', handleEscape);
     }, []);
 
-    if (!isAuthenticated) {
+    // Loading state
+    if (loading) {
+        return <EmployeeListSkeleton count={itemsPerPage || 6} />;
+    }
+
+    // Error state
+    if (error) {
         return (
-            <div className="flex justify-center items-center h-40 text-gray-500">
-                Please login to view employees
+            <div className="bg-gray-50 rounded-2xl shadow p-8 text-center" role="alert">
+                <div className="text-red-500 mb-4">
+                    <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <h3 className="text-lg font-medium text-red-700 mb-2">Error loading employees</h3>
+                    <p className="text-red-600">{error}</p>
+                </div>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="mt-4 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                >
+                    Try Again
+                </button>
             </div>
         );
     }
 
+    // Authentication check
+    if (!isAuthenticated) {
+        return (
+            <div
+                className="flex justify-center items-center h-40 text-gray-500"
+                role="alert"
+                aria-live="polite"
+            >
+                <div className="text-center">
+                    <svg className="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 15v2m-6 0h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                    <p>Please login to view employees</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Empty state
     if (employees.length === 0) {
         return (
-            <div className="bg-gray-50 rounded-2xl shadow p-8 text-center">
+            <div
+                className="bg-gray-50 rounded-2xl shadow p-8 text-center"
+                role="region"
+                aria-label="No employees found"
+            >
                 <div className="text-gray-500">
                     <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
@@ -579,7 +810,11 @@ const EmployeeList = ({
     }
 
     return (
-        <div className="bg-gray-50 rounded-2xl shadow">
+        <div
+            className="bg-gray-50 rounded-2xl shadow"
+            role="region"
+            aria-label="Employee list"
+        >
             <div className="overflow-x-auto p-3">
                 <div className="w-full">
                     {/* Table Header */}
@@ -589,11 +824,16 @@ const EmployeeList = ({
                         <div className="col-span-4 text-center">Phone number</div>
                         <div className="col-span-2 text-center">Projects</div>
                         <div className="col-span-2 text-center">Status</div>
-                        <div></div>
+                        <div className="text-center">Actions</div>
                     </div>
 
-                    {/* Rows */}
-                    <div className="space-y-3 mt-2" role="list">
+                    {/* Employee Rows */}
+                    <div
+                        className="space-y-3 mt-2"
+                        role="list"
+                        aria-label={`${employees.length} employees`}
+                        aria-live="polite"
+                    >
                         {employees.map((emp) => (
                             <EmployeeRow
                                 key={emp.id}
@@ -606,6 +846,7 @@ const EmployeeList = ({
                                 navigate={navigate}
                                 onStatusUpdate={onStatusUpdate}
                                 setOpenDropdown={setOpenDropdown}
+                                loading={loading}
                             />
                         ))}
                     </div>
@@ -624,6 +865,9 @@ const EmployeeList = ({
                         showQuickJumper={false}
                         showTitle={false}
                         aria-label="Employee list pagination"
+                        showTotal={(total, range) =>
+                            `${range[0]}-${range[1]} of ${total} employees`
+                        }
                     />
                 </div>
             )}
