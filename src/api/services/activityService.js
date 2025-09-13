@@ -8,25 +8,15 @@ export const getActivities = async (page = 1, filters = {}) => {
             page_num: page,  // Changed back to page_num to match your URL structure
         };
 
-        console.log('Building API params. Page:', page, 'Filters:', filters); // Debug log
-
         if (filters) {
             // Department filter - Send as department IDs
             if (filters.selectedDepartments && filters.selectedDepartments.length > 0) {
-                params["departments"] = filters.selectedDepartments.join(",");
-                console.log('Adding department filter:', params["departments"]);
-            }
-
-            // Status filter
-            if (filters.status && filters.status !== '') {
-                params.status = filters.status;
-                console.log('Adding status filter:', params.status);
+                params["department_name"] = filters.selectedDepartments.join(",");
             }
 
             // Task count filters - Server-side filtering for ALL pages
             if (filters.taskFilters) {
                 const { taskFilters } = filters;
-                console.log('Processing task filters:', taskFilters);
 
                 // Active tasks filter
                 if (taskFilters.activeMin !== '' && taskFilters.activeMin !== null && !isNaN(taskFilters.activeMin)) {
@@ -54,13 +44,10 @@ export const getActivities = async (page = 1, filters = {}) => {
             }
         }
 
-        console.log('Final API params:', params); // Debug log
-
         const res = await api.get(endpoints.activities.getAll, {
             params: params
         });
 
-        console.log('API Response:', res.data); // Debug log
         return res.data;
     } catch (error) {
         console.error('Error fetching activities:', error);

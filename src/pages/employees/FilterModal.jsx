@@ -192,14 +192,15 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
 
                     {/* Content */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-6">
-                        {/* Departments Filter */}
+                        {/* Departments Filter - Using index-based approach */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-800 mb-3">
                                 Departments
                             </label>
                             <div className={`space-y-2 transition-all duration-300 ease-in-out ${showAllDepartments ? 'max-h-60' : 'max-h-40'} overflow-y-auto`}>
                                 {visibleDepartments.map((dept, index) => {
-                                    const deptIndex = index + 1; // start from 1
+                                    // Use index + 1 as department identifier (1, 2, 3...)
+                                    const deptIndex = index + 1;
                                     const isSelected = filters.selectedDepartments.includes(deptIndex);
                                     return (
                                         <label
@@ -262,29 +263,31 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
                         </div>
 
                         {/* Status Filter */}
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-800 mb-3">
-                                Status
-                            </label>
-                            <div className="relative">
-                                <select
-                                    value={filters.status}
-                                    onChange={(e) => handleStatusChange(e.target.value)}
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-sm appearance-none cursor-pointer font-medium text-gray-700"
-                                >
-                                    {statusOptions.map(option => (
-                                        <option key={option.value} value={option.value}>
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                    </svg>
+                        {!showTaskFilters && (
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-800 mb-3">
+                                    Status
+                                </label>
+                                <div className="relative">
+                                    <select
+                                        value={filters.status}
+                                        onChange={(e) => handleStatusChange(e.target.value)}
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-white text-sm appearance-none cursor-pointer font-medium text-gray-700"
+                                    >
+                                        {statusOptions.map(option => (
+                                            <option key={option.value} value={option.value}>
+                                                {option.label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Task Filters - Only show if showTaskFilters is true */}
                         {showTaskFilters && (
@@ -306,8 +309,6 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
                                                 onChange={(e) => handleTaskFilterChange('activeMin', e.target.value)}
                                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
                                                 min="0"
-                                                // Add key to force re-render without losing focus
-                                                key={`activeMin-${filters.taskFilters.activeMin}`}
                                             />
                                             <span className="text-gray-400">-</span>
                                             <input
@@ -317,7 +318,6 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
                                                 onChange={(e) => handleTaskFilterChange('activeMax', e.target.value)}
                                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
                                                 min="0"
-                                                key={`activeMax-${filters.taskFilters.activeMax}`}
                                             />
                                         </div>
                                     </div>
@@ -335,7 +335,6 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
                                                 onChange={(e) => handleTaskFilterChange('reviewMin', e.target.value)}
                                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
                                                 min="0"
-                                                key={`reviewMin-${filters.taskFilters.reviewMin}`}
                                             />
                                             <span className="text-gray-400">-</span>
                                             <input
@@ -345,7 +344,6 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
                                                 onChange={(e) => handleTaskFilterChange('reviewMax', e.target.value)}
                                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
                                                 min="0"
-                                                key={`reviewMax-${filters.taskFilters.reviewMax}`}
                                             />
                                         </div>
                                     </div>
@@ -363,7 +361,6 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
                                                 onChange={(e) => handleTaskFilterChange('completedMin', e.target.value)}
                                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
                                                 min="0"
-                                                key={`completedMin-${filters.taskFilters.completedMin}`}
                                             />
                                             <span className="text-gray-400">-</span>
                                             <input
@@ -373,7 +370,6 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
                                                 onChange={(e) => handleTaskFilterChange('completedMax', e.target.value)}
                                                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
                                                 min="0"
-                                                key={`completedMax-${filters.taskFilters.completedMax}`}
                                             />
                                         </div>
                                     </div>
@@ -430,7 +426,7 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
             {/* Mobile Filter Button */}
             <button
                 onClick={() => setIsModalOpen(true)}
-                className={`lg:hidden fixed bottom-6 left-5 w-14 h-14 rounded-full text-white flex items-center justify-center shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasActiveFilters() ? 'bg-blue-500' : 'bg-blue-600'
+                className={`lg:hidden fixed z-[999] bottom-6 left-5 w-14 h-14 rounded-full text-white flex items-center justify-center shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasActiveFilters() ? 'bg-blue-500' : 'bg-blue-600'
                     }`}
                 aria-label={`Open filters ${hasActiveFilters() ? `(${getActiveFilterCount()} active)` : ''}`}
             >
