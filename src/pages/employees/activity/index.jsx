@@ -2,8 +2,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { getActivities } from "../../../api/services/activityService";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { lazy, Suspense } from "react";
-const Pagination = lazy(() => import("antd/es/pagination"));
+import { Suspense } from "react";
+import { Pagination } from "antd";
 import { useMemo } from "react";
 
 // OptimizedImage komponenti
