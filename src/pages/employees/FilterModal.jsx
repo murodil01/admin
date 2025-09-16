@@ -408,13 +408,13 @@ const FilterModal = ({ onFilter, onClearFilters, currentFilters, showTaskFilters
             <div className="hidden lg:block">
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className={`p-3 bg-white rounded-lg shadow-md flex items-center gap-1.5 transition-all duration-200 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasActiveFilters()
+                    className={`p-3 bg-white rounded-[14px] shadow-md flex items-center gap-1.5 transition-all duration-200 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${hasActiveFilters()
                         ? 'border-blue-500 bg-blue-50 text-blue-700'
                         : 'border-gray-300 text-gray-700'
                         }`}
                     aria-label={`Open filters ${hasActiveFilters() ? `(${getActiveFilterCount()} active)` : ''}`}
                 >
-                    <HiOutlineFilter size={24} />
+                    <HiOutlineFilter size={23} />
                     {hasActiveFilters() && (
                         <span className="ml-0.5 px-1.5 py-0.5 bg-blue-600 text-white text-xs rounded-full min-w-[16px] text-center">
                             {getActiveFilterCount()}
