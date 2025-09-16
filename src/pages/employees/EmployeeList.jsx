@@ -855,6 +855,7 @@ const EmployeeList = ({
 
            {/* Pagination */}
             {showPagination && (
+
             <div className="flex flex-col items-center py-6 border-t border-gray-200">
                 <Pagination
                 current={currentPage}
