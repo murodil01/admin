@@ -865,9 +865,6 @@ const EmployeeList = ({
                         showQuickJumper={false}
                         showTitle={false}
                         aria-label="Employee list pagination"
-                        showTotal={(total, range) =>
-                            `${range[0]}-${range[1]} of ${total} employees`
-                        }
                     />
                 </div>
             )}
