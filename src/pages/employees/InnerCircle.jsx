@@ -71,13 +71,13 @@ const AddButton = memo(({ onClick, loading }) => (
 ));
 AddButton.displayName = 'AddButton';
 
-// // Memoized LoadingSpinner component
-// const LoadingSpinner = memo(() => (
-//     <div className="flex justify-center items-center h-[100vh]">
-//         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0061fe]"></div>
-//     </div>
-// ));
-// LoadingSpinner.displayName = 'LoadingSpinner';
+// Memoized LoadingSpinner component
+const LoadingSpinner = memo(() => (
+    <div className="flex justify-center items-center h-[100vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0061fe]"></div>
+    </div>
+));
+LoadingSpinner.displayName = 'LoadingSpinner';
 
 // Utility functions
 const parseFiltersFromUrl = (searchParams) => {
