@@ -523,10 +523,11 @@ const EmployeeRow = memo(({
         onStatusUpdate(emp.id, newStatus);
         setIsStatusModalOpen(false);
     }, [onStatusUpdate, emp.id]);
-
-    if (loading) {
+    
+     if (loading || !emp) {
         return <EmployeeRowSkeleton />;
     }
+   
 
     return (
         <article 
