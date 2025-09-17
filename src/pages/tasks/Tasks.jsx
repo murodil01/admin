@@ -391,40 +391,43 @@ const Projects = () => {
     setSelectedImage(null);
   };
 
-  const handleActionOpen = (task, type) => {
-    setSelectedTask(task);
-    setModalType(type);
-    setIsActionModalOpen(true);
-    setOpenDropdownId(null);
+ const handleActionOpen = (task, type) => {
+  setSelectedTask(task);
+  setModalType(type);
+  setIsActionModalOpen(true);
+  setOpenDropdownId(null);
 
-    if (type === "edit") {
-      setTaskName(task.name);
-      setDescription(task.description || "");
-      setSelectedImage(task.image || null);
+  if (type === "edit") {
+    setTaskName(task.name);
+    setDescription(task.description || "");
+    setSelectedImage(task.image || null);
 
-      if (task.captain) {
-        // Agar captain object bo'lsa, undan ID ni olamiz
-        const captainId = typeof task.captain === 'object' ? task.captain.id : task.captain;
-        setSelectedCaptainName([captainId]);
-      } else {
-        setSelectedCaptainName([]);
+    // FIXED: Captain initialization - simplified
+    let captainId = null;
+    if (task.captain) {
+      if (typeof task.captain === 'string') {
+        captainId = task.captain;
+      } else if (typeof task.captain === 'object' && task.captain.id) {
+        captainId = task.captain.id;
       }
-
-      if (task.deadline) {
-        const deadlineDate = new Date(task.deadline);
-        const formattedDeadline = deadlineDate.toISOString().split('T')[0];
-        setDeadline(formattedDeadline);
-      } else {
-        setDeadline("");
-      }
-
-      const deptIds = task.departments?.map(dept => dept.id) || [];
-      setSelectedDepartments(deptIds);
-
-      const assignedUserIds = task.assigned?.map(user => user.id || user) || [];
-      setSelectedUsers(assignedUserIds);
     }
-  };
+    setSelectedCaptainName(captainId ? [captainId] : []);
+
+    if (task.deadline) {
+      const deadlineDate = new Date(task.deadline);
+      const formattedDeadline = deadlineDate.toISOString().split('T')[0];
+      setDeadline(formattedDeadline);
+    } else {
+      setDeadline("");
+    }
+
+    const deptIds = task.departments?.map(dept => dept.id) || [];
+    setSelectedDepartments(deptIds);
+
+    const assignedUserIds = task.assigned?.map(user => user.id || user) || [];
+    setSelectedUsers(assignedUserIds);
+  }
+};
 
   const handleActionClose = () => {
     setIsActionModalOpen(false);
@@ -654,73 +657,80 @@ const Projects = () => {
     }
   };
 
-  const handleEditTask = async () => {
-    if (!taskName.trim()) {
-      return message.error("Task name kiritilishi kerak!");
+ const handleEditTask = async () => {
+  if (!taskName.trim()) {
+    return message.error("Task name kiritilishi kerak!");
+  }
+
+  if (selectedDepartments.length === 0) {
+    return message.error("Kamida bitta department tanlang!");
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append("name", taskName);
+    formData.append("description", description);
+
+    if (deadline) {
+      formData.append("deadline", deadline);
+    } else if (selectedTask.deadline && !deadline) {
+      // Agar deadline o'chirilgan bo'lsa
+      formData.append("deadline", "");
     }
 
-    if (selectedDepartments.length === 0) {
-      return message.error("Kamida bitta department tanlang!");
+    // FIXED: Captain handling - only append if captain is selected
+    if (selectedCaptainName.length > 0) {
+      formData.append("captain", selectedCaptainName[0]);
+    }
+    // Don't append captain field at all if no captain is selected
+    // This allows the backend to handle it properly (either keep existing or remove)
+
+    const isAllDepartmentsSelected = selectedDepartments.includes("all") ||
+      (selectedDepartments.length === allDepartments.length && !selectedDepartments.includes("none"));
+
+    formData.append("is_all_departments", isAllDepartmentsSelected);
+
+    if (selectedDepartments.includes("all")) {
+      allDepartments.forEach((dept) => {
+        formData.append("department_ids", dept.id);
+      });
+    } else if (!selectedDepartments.includes("none")) {
+      selectedDepartments.forEach((id) => {
+        if (id !== "none" && id !== "all") {
+          formData.append("department_ids", id);
+        }
+      });
     }
 
-    try {
-      const formData = new FormData();
-      formData.append("name", taskName);
-      formData.append("description", description);
+    // Faqat tanlangan userlarni yuborish
+    selectedUsers.forEach((id) => formData.append("assigned", id));
 
-      if (deadline) {
-        formData.append("deadline", deadline);
-      }
-
-      if (selectedCaptainName.length > 0) {
-        formData.append("captain", selectedCaptainName[0]);
-      }
-
-      const isAllDepartmentsSelected = selectedDepartments.includes("all") ||
-        (selectedDepartments.length === allDepartments.length && !selectedDepartments.includes("none"));
-
-      formData.append("is_all_departments", isAllDepartmentsSelected);
-
-      if (selectedDepartments.includes("all")) {
-        allDepartments.forEach((dept) => {
-          formData.append("department_ids", dept.id);
-        });
-      } else if (!selectedDepartments.includes("none")) {
-        selectedDepartments.forEach((id) => {
-          if (id !== "none" && id !== "all") {
-            formData.append("department_ids", id);
-          }
-        });
-      }
-
-      const allSelectedUserIds = [...new Set([...selectedUsers])];
-      allSelectedUserIds.forEach((id) => formData.append("assigned", id));
-
-      if (imageFile) {
-        formData.append("image", imageFile);
-      }
-
-      await updateProject(selectedTask.id, formData);
-      message.success("✅ Task updated successfully");
-
-      await loadProjects(currentPage);
-      handleActionClose();
-
-      console.log("Captain data:", selectedCaptainName);
-      console.log("FormData contents:");
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
-    } catch (error) {
-      const backendMessage =
-        error.response?.data?.message ||
-        error.response?.data?.detail ||
-        error.message ||
-        "Error during updating project";
-
-      message.error(backendMessage);
+    if (imageFile) {
+      formData.append("image", imageFile);
     }
-  };
+
+    // Debug maqsadida
+    console.log("FormData contents:");
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
+
+    await updateProject(selectedTask.id, formData);
+    message.success("✅ Task updated successfully");
+
+    await loadProjects(currentPage);
+    handleActionClose();
+  } catch (error) {
+    console.error("Error details:", error.response?.data);
+    const backendMessage =
+      error.response?.data?.message ||
+      error.response?.data?.detail ||
+      error.message ||
+      "Error during updating project";
+
+    message.error(backendMessage);
+  }
+};
 
   const handleDeleteTask = async () => {
     try {
@@ -952,48 +962,47 @@ const Projects = () => {
 
               {captainRender()}
 
-              {selectedDepartments.length > 0 && filteredUsers.length > 0 && (
-                <div>
-                  <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
-                    Change Captain
-                  </label>
-                  <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-[14px] p-3">
-                    {filteredUsers.map((user) => (
-                      <label
-                        key={user.id}
-                        className="flex items-center gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded"
-                      >
-                        {/* Radio button ishlatamiz, checkbox emas */}
-                        <input
-                          type="radio"
-                          name="captain"
-                          checked={selectedCaptainName.includes(user.id)}
-                          onChange={() => toggleCaptainSelection(user.id)}
-                          className="w-4 h-4 accent-blue-600"
-                        />
-                        <div className="flex items-center gap-2">
-                          {user.profile_picture ? (
-                            <img
-                              src={user.profile_picture}
-                              alt={`${user.first_name} ${user.last_name}`}
-                              className="w-8 h-8 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                              <span className="text-xs font-medium">
-                                {user.first_name?.[0] || "U"}
-                              </span>
-                            </div>
-                          )}
-                          <span className="text-sm font-medium">
-                            {user.first_name} {user.last_name}
-                          </span>
-                        </div>
-                      </label>
-                    ))}
+                  {selectedDepartments.length > 0 && filteredUsers.length > 0 && (
+      <div>
+        <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
+          Change Captain
+        </label>
+        <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-[14px] p-3">
+          {filteredUsers.map((user) => (
+            <label
+              key={user.id}
+              className="flex items-center gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded"
+            >
+              <input
+                type="radio"
+                name="captain"
+                checked={selectedCaptainName.includes(user.id)}
+                onChange={() => toggleCaptainSelection(user.id)}
+                className="w-4 h-4 accent-blue-600"
+              />
+              <div className="flex items-center gap-2">
+                {user.profile_picture ? (
+                  <img
+                    src={user.profile_picture}
+                    alt={`${user.first_name} ${user.last_name}`}
+                    className="w-8 h-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                    <span className="text-xs font-medium">
+                      {user.first_name?.[0] || "U"}
+                    </span>
                   </div>
-                </div>
-              )}
+                )}
+                <span className="text-sm font-medium">
+                  {user.first_name} {user.last_name}
+                </span>
+              </div>
+            </label>
+          ))}
+        </div>
+      </div>
+    )}
 
               {/* Deadline */}
               <div>
@@ -1194,7 +1203,7 @@ const Projects = () => {
   const getModalTitle = () => {
     switch (modalType) {
       case "edit":
-        return "Edit Project";
+        return "Edit Projects";
       case "delete":
         return "Delete Project";
       default:
@@ -1825,7 +1834,7 @@ const Projects = () => {
                               <span className="text-xs font-medium">
                                 {user.first_name?.[0] || "U"}
                               </span>
-                            </div>
+                          </div>
                           )}
                           <span className="text-sm font-medium">
                             {user.first_name} {user.last_name}
