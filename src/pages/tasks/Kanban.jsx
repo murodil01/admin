@@ -73,9 +73,9 @@ const NotionKanban = ({ cards, setCards, assignees, getAssigneeName }) => {
     <div className="flex flex-col gap-5 relative">
       <button
         onClick={() => window.history.back()}
-        className="flex items-center gap-2 w-fit px-4 py-2 text-white rounded-xl shadow shadow-blue-400 bg-blue-600 hover:bg-blue-700 active:scale-95 transition cursor-pointer"
+        className="flex justify-center rounded-[14px] items-center gap-2 text-sm md:text-[16px] font-bold text-[#1F2937] hover:text-[#6b82a8] shadow bg-white w-[100px] md:w-[133px] h-[40px] md:h-[48px] cursor-pointer"
       >
-        <ArrowLeft size={18} /> Back
+        <ArrowLeft size={18} /> Go Back
       </button>
 
       <div className="flex gap-5 mt-[20px] w-full overflow-x-auto hide-scrollbar">
