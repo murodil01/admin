@@ -101,7 +101,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
 
   return (
     <div  onClick={onClose} className="fixed inset-0 bg-[#0D1B42]/40 backdrop-blur-xs flex items-center justify-center z-50 px-5">
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div  onClick={(e) => e.stopPropagation()} className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">Add Event</h2>
           <button

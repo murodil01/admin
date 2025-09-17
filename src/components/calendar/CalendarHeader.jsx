@@ -49,7 +49,7 @@ const CalendarHeader = ({ currentDate, onNavigate, onAddEvent }) => {
             </button>
           </div>
         </div>
-        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+        <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS, ROLES.DEP_MANAGER]}>
         <div className="flex items-center space-x-4">
           <button
             onClick={onAddEvent}

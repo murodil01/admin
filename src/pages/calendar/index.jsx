@@ -220,7 +220,7 @@ function CalendarPage() {
         </div>
       </div>
 
-      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+      <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS, ROLES.DEP_MANAGER]}>
         <AddEventModal
           isOpen={showAddModal}
           onClose={handleCloseAddModal}

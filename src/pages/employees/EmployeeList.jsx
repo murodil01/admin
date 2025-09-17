@@ -48,7 +48,7 @@ const StatusBadge = memo(({ status, loading = false }) => {
         return configs[status] || configs.default;
     }, [status]);
 
-    const formattedStatus = useMemo(() => 
+    const formattedStatus = useMemo(() =>
         status?.toLowerCase() === "on_leave" ? "On Leave" : status,
         [status]
     );

@@ -120,7 +120,9 @@ const Messenger = () => {
     () => localStorage.getItem("departments") || "list"
   );
   const [showModal, setShowModal] = useState(false);
-  const [showMore, setShowMore] = useState(false);
+  // Har bir card uchun alohida showMore state
+  const [showMoreCompany, setShowMoreCompany] = useState(false);
+  const [showMoreFounder, setShowMoreFounder] = useState(false);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -150,7 +152,7 @@ const Messenger = () => {
               <div>
                 <blockquote className="text-xs sm:text-sm md:text-base text-left text-gray-600">
                   <span className="text-[20px] font-normal"></span>{" "}
-                  {showMore ? (
+                  {showMoreCompany ? (
                     <>
                       M Company is not just a workplace - it is a system. We build
                       automation, sales, and growth engines for businesses across
@@ -191,7 +193,7 @@ const Messenger = () => {
                       </span>
                       All members must join this group.{" "}
                       <span
-                        onClick={() => setShowMore(false)}
+                        onClick={() => setShowMoreCompany(false)}
                         className="text-blue-600 hover:underline text-[16px] cursor-pointer"
                       >
                         Show Less
@@ -203,7 +205,7 @@ const Messenger = () => {
                       automation, sales, and growth engines for businesses across
                       Uzbekistan{" "}
                       <span
-                        onClick={() => setShowMore(true)}
+                        onClick={() => setShowMoreCompany(true)}
                         className="text-blue-600 text-[20px] cursor-pointer"
                       >
                         ....
@@ -242,7 +244,7 @@ const Messenger = () => {
                 </p>
               </span>
               <p className="text-xs text-left sm:text-sm md:text-base text-gray-600 leading-relaxed">
-                {showMore ? (
+                {showMoreFounder ? (
                   <>
                     Founder of M Company, Falco, and multiple other ventures.{" "}
                     <br />
@@ -280,7 +282,7 @@ const Messenger = () => {
                     fulfills their role with excellence, together we create
                     something far greater than ourselves." - H{" "}
                     <span
-                      onClick={() => setShowMore(false)}
+                      onClick={() => setShowMoreFounder(false)}
                       className="text-blue-600 hover:underline cursor-pointer"
                     >
                       Show Less
@@ -303,7 +305,7 @@ const Messenger = () => {
                     Automation Company, uniting Sales, Marketing, and Technology
                     into one system that transforms the way businesses grow.{" "}
                     <span
-                      onClick={() => setShowMore(true)}
+                      onClick={() => setShowMoreFounder(true)}
                       className="text-blue-600 text-[20px] cursor-pointer"
                     >
                       ...
@@ -371,3 +373,4 @@ const Messenger = () => {
 };
 
 export default Messenger;
+
