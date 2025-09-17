@@ -99,7 +99,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
 
   return (
     <div  onClick={onClose} className="fixed inset-0  bg-[#0D1B42]/40 backdrop-blur-xs flex items-center justify-center z-50 px-5">
-      <div className="relative bg-white rounded-2xl max-w-2xl w-full">
+      <div  onClick={(e) => e.stopPropagation()} className="relative bg-white rounded-2xl max-w-2xl w-full">
         <div className="p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold w-full">
@@ -531,7 +531,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
               </>
             ) : (
               <>
-                <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+                <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS, ROLES.DEP_MANAGER]}>
                   <button
                     onClick={handleEditClick}
                     className="px-5 py-2  max-[420px]:px-3  max-[420px]:py-2 max-sm:text-sm text-gray-700 border border-gray-300 rounded-[14px] hover:bg-gray-50 flex items-center space-x-2"
@@ -540,7 +540,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onEdit, onDelete }) => {
                     <Edit2 className="w-4 h-4" />
                   </button>
                 </Permission>
-                <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS]}>
+                <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS, ROLES.DEP_MANAGER]}>
                   <button
                     onClick={handleDeleteClick}
                     className="px-5 py-2 max-[420px]:px-3  max-[420px]:py-2 max-sm:text-sm text-red-600 border border-red-300 rounded-[14px] hover:bg-red-50 flex items-center space-x-2"
