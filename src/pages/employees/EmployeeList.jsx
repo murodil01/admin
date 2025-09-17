@@ -30,117 +30,6 @@ const calculateDropdownPosition = (buttonRect, tableRect, dropdownHeight = DROPD
     return "bottom";
 };
 
-// Skeleton Loading Components
-const EmployeeRowSkeleton = memo(({ isMobile = false }) => {
-    if (isMobile) {
-        return (
-            <div className="bg-white border border-gray-200 rounded-lg shadow p-4 lg:hidden">
-                <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-3 flex-1">
-                        <Skeleton.Avatar size={48} />
-                        <div className="flex-1">
-                            <Skeleton.Input active size="small" style={{ width: 120, height: 16, marginBottom: 6 }} />
-                            <div className="flex items-center gap-2">
-                                <Skeleton.Input active size="small" style={{ width: 80, height: 12 }} />
-                                <Skeleton.Button active size="small" style={{ width: 60, height: 20 }} />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="w-[18px] h-[18px] bg-gray-200 rounded animate-pulse"></div>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="bg-white border border-gray-200 rounded-lg shadow p-4 hidden lg:grid grid-cols-17 items-center gap-3">
-            {/* Member Info */}
-            <div className="col-span-5 flex items-center gap-3">
-                <Skeleton.Avatar size={50} />
-                <div className="min-w-0 flex-1">
-                    <Skeleton.Input active size="small" style={{ width: 140, height: 16, marginBottom: 4 }} />
-                    <div className="flex items-center gap-2">
-                        <Skeleton.Input active size="small" style={{ width: 90, height: 12 }} />
-                        <Skeleton.Button active size="small" style={{ width: 50, height: 18 }} />
-                    </div>
-                </div>
-            </div>
-            
-            {/* Department */}
-            <div className="col-span-3 text-center">
-                <Skeleton.Input active size="small" style={{ width: 80, height: 14 }} />
-            </div>
-            
-            {/* Phone */}
-            <div className="col-span-4 text-center">
-                <Skeleton.Input active size="small" style={{ width: 100, height: 14 }} />
-            </div>
-            
-            {/* Projects */}
-            <div className="col-span-2 text-center">
-                <Skeleton.Input active size="small" style={{ width: 20, height: 14 }} />
-            </div>
-            
-            {/* Status */}
-            <div className="col-span-2 flex justify-center">
-                <Skeleton.Button active size="small" style={{ width: 90, height: 24 }} />
-            </div>
-            
-            {/* Actions */}
-            <div className="text-right">
-                <div className="w-[20px] h-[20px] bg-gray-200 rounded animate-pulse mx-auto"></div>
-            </div>
-        </div>
-    );
-});
-EmployeeRowSkeleton.displayName = 'EmployeeRowSkeleton';
-
-const EmployeeListSkeleton = memo(({ count = 6 }) => {
-    return (
-        <div className="bg-gray-50 rounded-2xl shadow">
-            <div className="overflow-x-auto p-3">
-                <div className="w-full">
-                    {/* Table Header */}
-                    <div className="hidden lg:grid grid-cols-17 text-gray-500 text-md font-bold py-3 px-4 border-b border-b-gray-200 mb-7 pb-5">
-                        <div className="col-span-5">Members</div>
-                        <div className="col-span-3 text-center">Department</div>
-                        <div className="col-span-4 text-center">Phone number</div>
-                        <div className="col-span-2 text-center">Projects</div>
-                        <div className="col-span-2 text-center">Status</div>
-                        <div></div>
-                    </div>
-
-                    {/* Skeleton Rows */}
-                    <div className="space-y-3 mt-2" role="list" aria-label="Loading employees">
-                        {/* Mobile skeletons */}
-                        <div className="lg:hidden space-y-3">
-                            {Array.from({ length: count }).map((_, index) => (
-                                <EmployeeRowSkeleton key={`mobile-skeleton-${index}`} isMobile />
-                            ))}
-                        </div>
-                        
-                        {/* Desktop skeletons */}
-                        <div className="hidden lg:block space-y-3">
-                            {Array.from({ length: count }).map((_, index) => (
-                                <EmployeeRowSkeleton key={`desktop-skeleton-${index}`} />
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Loading indicator */}
-            <div className="flex justify-center items-center py-8 border-t border-gray-200">
-                <div className="flex items-center gap-3">
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
-                    <span className="text-gray-600 text-sm"></span>
-                </div>
-            </div>
-        </div>
-    );
-});
-EmployeeListSkeleton.displayName = 'EmployeeListSkeleton';
-
 // Enhanced StatusBadge component with loading state
 const StatusBadge = memo(({ status, loading = false }) => {
     if (loading) {
@@ -165,7 +54,7 @@ const StatusBadge = memo(({ status, loading = false }) => {
     );
 
     return (
-        <span 
+        <span
             className={`flex px-2 w-[90px] py-[6px] rounded-lg text-xs font-medium capitalize items-center gap-1 justify-center ${statusConfig.color}`}
             role="status"
             aria-label={`Employee status: ${formattedStatus}`}
@@ -214,7 +103,7 @@ const EmployeeDropdownMenu = memo(({
     return (
         <div
             className={`fixed z-[9999] w-40 bg-white rounded-lg shadow border border-gray-300 dropdown-menu ${
-                dropdownPosition[emp.id] === "top" ? "bottom-full mb-" : "mt-2"
+                dropdownPosition[emp.id] === "top" ? "bottom-full mb-2" : "mt-2"
             }`}
             style={{ right: 0, ...position }}
             onClick={(e) => e.stopPropagation()}
@@ -480,7 +369,6 @@ const EmployeeRow = memo(({
     navigate,
     onStatusUpdate,
     setOpenDropdown,
-    loading = false
 }) => {
     const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
     const [isMobileModalOpen, setIsMobileModalOpen] = useState(false);
@@ -523,14 +411,9 @@ const EmployeeRow = memo(({
         onStatusUpdate(emp.id, newStatus);
         setIsStatusModalOpen(false);
     }, [onStatusUpdate, emp.id]);
-    
-     if (loading || !emp) {
-        return <EmployeeRowSkeleton />;
-    }
-   
 
     return (
-        <article 
+        <article
             className="bg-white border border-gray-200 rounded-lg shadow hover:shadow-md transition p-4 grid grid-cols-1 gap-3 lg:grid-cols-17 lg:items-center"
             role="listitem"
         >
@@ -640,7 +523,7 @@ const EmployeeRow = memo(({
             </div>
 
             <div className="hidden lg:flex lg:col-span-2 justify-center">
-                <StatusBadge status={emp.status} loading={loading} />
+                <StatusBadge status={emp.status} />
             </div>
 
             <div className="hidden lg:block text-right relative dropdown-container">
@@ -695,10 +578,12 @@ const EmployeeList = ({
 }) => {
     const [openDropdown, setOpenDropdown] = useState(null);
     const [dropdownPosition, setDropdownPosition] = useState({});
-    const dropdownRef = useRef(null);
     const navigate = useNavigate();
-
     const { isAuthenticated } = useAuth();
+
+    if (loading) {
+        return <EmployeeListSkeleton count={itemsPerPage || 12} />;
+    }
 
     const toggleDropdown = useCallback((id, e) => {
         e.stopPropagation();
@@ -746,11 +631,6 @@ const EmployeeList = ({
         return () => document.removeEventListener('keydown', handleEscape);
     }, []);
 
-    // Loading state
-    if (loading) {
-        return <EmployeeListSkeleton count={itemsPerPage || 6} />;
-    }
-
     // Error state
     if (error) {
         return (
@@ -791,7 +671,7 @@ const EmployeeList = ({
     }
 
     // Empty state
-    if (employees.length === 0) {
+    if (!loading && employees.length === 0) {
         return (
             <div
                 className="bg-gray-50 rounded-2xl shadow p-8 text-center"
@@ -835,26 +715,23 @@ const EmployeeList = ({
                         aria-live="polite"
                     >
                         {employees.map((emp) => (
-                            
                             <EmployeeRow
                                 key={emp.id}
                                 emp={emp}
                                 openDropdown={openDropdown}
                                 dropdownPosition={dropdownPosition}
-                                dropdownRef={dropdownRef}
                                 toggleDropdown={toggleDropdown}
                                 onDelete={onDelete}
                                 navigate={navigate}
                                 onStatusUpdate={onStatusUpdate}
                                 setOpenDropdown={setOpenDropdown}
-                                loading={loading}
                             />
                         ))}
                     </div>
                 </div>
             </div>
 
-           {/* Pagination */}
+            {/* Pagination */}
             {showPagination && (
 
             <div className="flex flex-col items-center py-6 border-t border-gray-200">
@@ -868,15 +745,8 @@ const EmployeeList = ({
                 showTitle={false}
                 aria-label="Employee list pagination"
                 />
-                <div className="mt-2 text-gray-600 text-sm">
-                {`${(currentPage - 1) * itemsPerPage + 1}-${
-                    Math.min(currentPage * itemsPerPage, totalEmployees)
-                } of ${totalEmployees}`}
-                </div>
             </div>
             )}
-
-        
         </div>
     );
 };
