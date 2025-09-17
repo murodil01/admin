@@ -25,69 +25,169 @@
 // export default Home;
 
 import {
+  BsFillArchiveFill,
+  BsFillGrid3X3GapFill,
+  BsPeopleFill,
+  BsFillBellFill,
+} from "react-icons/bs";
+import {
   BarChart,
   Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
+  LineChart,
+  Line,
 } from "recharts";
 
-const data = [
-  { name: "Yanvar", sales: 4000, profit: 2400 },
-  { name: "Fevral", sales: 3000, profit: 1398 },
-  { name: "Mart", sales: 2000, profit: 9800 },
-  { name: "Aprel", sales: 2780, profit: 3908 },
-  { name: "May", sales: 1890, profit: 4800 },
-  { name: "Iyun", sales: 2390, profit: 3800 },
-  { name: "Iyul", sales: 3490, profit: 4300 },
-];
+function Home() {
+  const data = [
+    {
+      name: "Page A",
+      uv: 4000,
+      pv: 2400,
+      ov: 5000,
+      amt: 2400,
+    },
+    {
+      name: "Page B",
+      uv: 3000,
+      pv: 1398,
+      ov: 4000,
+      amt: 2210,
+    },
+    {
+      name: "Page C",
+      uv: 2000,
+      pv: 9800,
+      ov: 2000,
+      amt: 2290,
+    },
+    {
+      name: "Page D",
+      uv: 2780,
+      pv: 3908,
+      ov: 8000,
+      amt: 2000,
+    },
+    {
+      name: "Page E",
+      uv: 1890,
+      pv: 4800,
+      ov: 5000,
+      amt: 2181,
+    },
+    {
+      name: "Page F",
+      uv: 2390,
+      pv: 3800,
+      ov: 3500,
+      amt: 2500,
+    },
+    {
+      name: "Page G",
+      uv: 3490,
+      pv: 4300,
+      ov: 9000,
+      amt: 2100,
+    },
+  ];
 
-const Home = () => {
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-6">📊 Statistika</h2>
+    <main className="main-container">
+      <div className="main-title">
+        <h3 className="text-[#1F2937] font-bold text-[36px]">DASHBOARD</h3>
+      </div>
 
-      {/* Bar Chart */}
-      <div className="w-full h-[400px]">
-        <ResponsiveContainer>
-          <BarChart data={data}>
+      <div className="main-cards">
+        <div className="card">
+          <div className="card-inner">
+            <h3>PRODUCTS</h3>
+            <BsFillArchiveFill className="card_icon" />
+          </div>
+          <h3>300</h3>
+        </div>
+        <div className="card">
+          <div className="card-inner">
+            <h3>CATEGORIES</h3>
+            <BsFillGrid3X3GapFill className="card_icon" />
+          </div>
+          <h1>12</h1>
+        </div>
+        <div className="card">
+          <div className="card-inner">
+            <h3>CUSTOMERS</h3>
+            <BsPeopleFill className="card_icon" />
+          </div>
+          <h1>33</h1>
+        </div>
+        <div className="card">
+          <div className="card-inner">
+            <h3>ALERTS</h3>
+            <BsFillBellFill className="card_icon" />
+          </div>
+          <h1>42</h1>
+        </div>
+      </div>
+
+      <div className="charts">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            width={500}
+            height={300}
+            data={data}
+            margin={{
+              top: 5,
+              right: 30,
+              left: 20,
+              bottom: 5,
+            }}
+          >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" />
             <YAxis />
             <Tooltip />
             <Legend />
-            <Bar dataKey="sales" fill="#8884d8" />
-            <Bar dataKey="profit" fill="#82ca9d" />
+            <Bar dataKey="pv" fill="#8884d8" />
+            <Bar dataKey="uv" fill="#82ca9d" />
+            <Bar dataKey="ov" fill="#ff6d00" />
           </BarChart>
         </ResponsiveContainer>
-      </div>
 
-      {/* Statistikalar */}
-      <div className="mt-8 grid grid-cols-3 gap-4">
-        <div className="p-4 bg-blue-100 rounded-xl shadow">
-          <h3 className="text-lg font-semibold">Umumiy savdo</h3>
-          <p className="text-2xl font-bold text-blue-700">
-            {data.reduce((acc, cur) => acc + cur.sales, 0)} $
-          </p>
-        </div>
-        <div className="p-4 bg-green-100 rounded-xl shadow">
-          <h3 className="text-lg font-semibold">Umumiy foyda</h3>
-          <p className="text-2xl font-bold text-green-700">
-            {data.reduce((acc, cur) => acc + cur.profit, 0)} $
-          </p>
-        </div>
-        <div className="p-4 bg-yellow-100 rounded-xl shadow">
-          <h3 className="text-lg font-semibold">Oylar soni</h3>
-          <p className="text-2xl font-bold text-yellow-700">{data.length}</p>
-        </div>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            width={500}
+            height={300}
+            data={data}
+            margin={{
+              top: 5,
+              right: 30,
+              left: 20,
+              bottom: 5,
+            }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey="pv"
+              stroke="#8884d8"
+              activeDot={{ r: 8 }}
+            />
+            <Line type="monotone" dataKey="uv" stroke="#82ca9d" />
+            <Line type="monotone" dataKey="ov" stroke="#ff6d00" />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
-    </div>
+    </main>
   );
-};
+}
 
 export default Home;
-
-

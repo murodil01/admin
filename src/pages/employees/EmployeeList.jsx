@@ -7,7 +7,6 @@ import { Permission } from "../../components/Permissions";
 import { useAuth } from "../../hooks/useAuth";
 import { ROLES } from "../../components/constants/roles";
 import { Image, Pagination, Skeleton } from 'antd';
-
 // Constants
 const DROPDOWN_HEIGHT = 120;
 
@@ -134,7 +133,7 @@ const EmployeeListSkeleton = memo(({ count = 6 }) => {
             <div className="flex justify-center items-center py-8 border-t border-gray-200">
                 <div className="flex items-center gap-3">
                     <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
-                    <span className="text-gray-600 text-sm">Loading employees...</span>
+                    <span className="text-gray-600 text-sm"></span>
                 </div>
             </div>
         </div>
@@ -524,10 +523,11 @@ const EmployeeRow = memo(({
         onStatusUpdate(emp.id, newStatus);
         setIsStatusModalOpen(false);
     }, [onStatusUpdate, emp.id]);
-
-    if (loading) {
+    
+     if (loading || !emp) {
         return <EmployeeRowSkeleton />;
     }
+   
 
     return (
         <article 
@@ -835,6 +835,7 @@ const EmployeeList = ({
                         aria-live="polite"
                     >
                         {employees.map((emp) => (
+                            
                             <EmployeeRow
                                 key={emp.id}
                                 emp={emp}
@@ -853,24 +854,29 @@ const EmployeeList = ({
                 </div>
             </div>
 
-            {/* Pagination */}
+           {/* Pagination */}
             {showPagination && (
-                <div className="flex justify-center py-6 border-t border-gray-200">
-                    <Pagination
-                        current={currentPage}
-                        total={totalEmployees}
-                        pageSize={itemsPerPage}
-                        onChange={onPageChange}
-                        showSizeChanger={false}
-                        showQuickJumper={false}
-                        showTitle={false}
-                        aria-label="Employee list pagination"
-                        showTotal={(total, range) =>
-                            `${range[0]}-${range[1]} of ${total} employees`
-                        }
-                    />
+
+            <div className="flex flex-col items-center py-6 border-t border-gray-200">
+                <Pagination
+                current={currentPage}
+                total={totalEmployees}
+                pageSize={itemsPerPage}
+                onChange={onPageChange}
+                showSizeChanger={false}
+                showQuickJumper={false}
+                showTitle={false}
+                aria-label="Employee list pagination"
+                />
+                <div className="mt-2 text-gray-600 text-sm">
+                {`${(currentPage - 1) * itemsPerPage + 1}-${
+                    Math.min(currentPage * itemsPerPage, totalEmployees)
+                } of ${totalEmployees}`}
                 </div>
+            </div>
             )}
+
+        
         </div>
     );
 };

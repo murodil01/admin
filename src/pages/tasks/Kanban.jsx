@@ -66,17 +66,26 @@ import {
 import { ArrowBigUpDashIcon } from "lucide-react";
 import { ChevronDown } from "lucide-react";
 import { ChevronUp } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 const NotionKanban = ({ cards, setCards, assignees, getAssigneeName }) => {
   return (
-    <div className="flex gap-5 absolute top-0 right-0 left-0 pb-4 w-full overflow-x-auto hide-scrollbar">
-      <Board
-        cards={cards}
-        setCards={setCards}
-        assignees={assignees}
-        getAssigneeName={getAssigneeName}
-      />
-      {/* <Board cards={cards} setCards={setCards} /> */}
+    <div className="flex flex-col gap-5 relative">
+      <button
+        onClick={() => window.history.back()}
+        className="flex justify-center rounded-[14px] items-center gap-2 text-sm md:text-[16px] font-bold text-[#1F2937] hover:text-[#6b82a8] shadow bg-white w-[100px] md:w-[133px] h-[40px] md:h-[48px] cursor-pointer"
+      >
+        <ArrowLeft size={18} /> Go Back
+      </button>
+
+      <div className="flex gap-5 mt-[20px] w-full overflow-x-auto hide-scrollbar">
+        <Board
+          cards={cards}
+          setCards={setCards}
+          assignees={assignees}
+          getAssigneeName={getAssigneeName}
+        />
+      </div>
     </div>
   );
 };
@@ -2125,7 +2134,7 @@ const closeImageModal = () => {
 
                 {/* Assignee */}
                 <div>
-                  <p className="text-gray-400">Assignee by</p>
+                  <p className="text-gray-400">Assigned to</p>
 
                   <div className="flex items-center gap-2 mt-1">
                     {(() => {
