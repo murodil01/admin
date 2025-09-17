@@ -1043,7 +1043,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
     console.log("Instructions ma'lumotlari:", response);
     
     // ✅ TUZATISH: response.data ni ishlatish kerak
-    const instructionsData = response.data || [];
+    const instructionsData = response.data?.results || [];
     
     // API dan kelgan ma'lumotlarni checklist formatiga o'zgartirish
     const formattedChecklist = instructionsData.map(instruction => ({

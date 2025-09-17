@@ -2521,7 +2521,7 @@ const EditCardModal = ({ visible, onClose, cardData, onUpdate }) => {
     try {
       const response = await getTaskInstructions(taskId);
       // faqat shu taskga tegishli instructions qolsin
-      const instructionsData = (response.results || []).filter(
+      const instructionsData = (response.data?.results || []).filter(
         (instruction) => instruction.task === taskId
       );
       console.log("Instructions ma'lumotlari:", response);
