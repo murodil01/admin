@@ -391,43 +391,43 @@ const Projects = () => {
     setSelectedImage(null);
   };
 
- const handleActionOpen = (task, type) => {
-  setSelectedTask(task);
-  setModalType(type);
-  setIsActionModalOpen(true);
-  setOpenDropdownId(null);
+  const handleActionOpen = (task, type) => {
+    setSelectedTask(task);
+    setModalType(type);
+    setIsActionModalOpen(true);
+    setOpenDropdownId(null);
 
-  if (type === "edit") {
-    setTaskName(task.name);
-    setDescription(task.description || "");
-    setSelectedImage(task.image || null);
+    if (type === "edit") {
+      setTaskName(task.name);
+      setDescription(task.description || "");
+      setSelectedImage(task.image || null);
 
-    // FIXED: Captain initialization - simplified
-    let captainId = null;
-    if (task.captain) {
-      if (typeof task.captain === 'string') {
-        captainId = task.captain;
-      } else if (typeof task.captain === 'object' && task.captain.id) {
-        captainId = task.captain.id;
+      // FIXED: Captain initialization - simplified
+      let captainId = null;
+      if (task.captain) {
+        if (typeof task.captain === 'string') {
+          captainId = task.captain;
+        } else if (typeof task.captain === 'object' && task.captain.id) {
+          captainId = task.captain.id;
+        }
       }
+      setSelectedCaptainName(captainId ? [captainId] : []);
+
+      if (task.deadline) {
+        const deadlineDate = new Date(task.deadline);
+        const formattedDeadline = deadlineDate.toISOString().split('T')[0];
+        setDeadline(formattedDeadline);
+      } else {
+        setDeadline("");
+      }
+
+      const deptIds = task.departments?.map(dept => dept.id) || [];
+      setSelectedDepartments(deptIds);
+
+      const assignedUserIds = task.assigned?.map(user => user.id || user) || [];
+      setSelectedUsers(assignedUserIds);
     }
-    setSelectedCaptainName(captainId ? [captainId] : []);
-
-    if (task.deadline) {
-      const deadlineDate = new Date(task.deadline);
-      const formattedDeadline = deadlineDate.toISOString().split('T')[0];
-      setDeadline(formattedDeadline);
-    } else {
-      setDeadline("");
-    }
-
-    const deptIds = task.departments?.map(dept => dept.id) || [];
-    setSelectedDepartments(deptIds);
-
-    const assignedUserIds = task.assigned?.map(user => user.id || user) || [];
-    setSelectedUsers(assignedUserIds);
-  }
-};
+  };
 
   const handleActionClose = () => {
     setIsActionModalOpen(false);
@@ -657,80 +657,80 @@ const Projects = () => {
     }
   };
 
- const handleEditTask = async () => {
-  if (!taskName.trim()) {
-    return message.error("Task name kiritilishi kerak!");
-  }
-
-  if (selectedDepartments.length === 0) {
-    return message.error("Kamida bitta department tanlang!");
-  }
-
-  try {
-    const formData = new FormData();
-    formData.append("name", taskName);
-    formData.append("description", description);
-
-    if (deadline) {
-      formData.append("deadline", deadline);
-    } else if (selectedTask.deadline && !deadline) {
-      // Agar deadline o'chirilgan bo'lsa
-      formData.append("deadline", "");
+  const handleEditTask = async () => {
+    if (!taskName.trim()) {
+      return message.error("Task name kiritilishi kerak!");
     }
 
-    // FIXED: Captain handling - only append if captain is selected
-    if (selectedCaptainName.length > 0) {
-      formData.append("captain", selectedCaptainName[0]);
+    if (selectedDepartments.length === 0) {
+      return message.error("Kamida bitta department tanlang!");
     }
-    // Don't append captain field at all if no captain is selected
-    // This allows the backend to handle it properly (either keep existing or remove)
 
-    const isAllDepartmentsSelected = selectedDepartments.includes("all") ||
-      (selectedDepartments.length === allDepartments.length && !selectedDepartments.includes("none"));
+    try {
+      const formData = new FormData();
+      formData.append("name", taskName);
+      formData.append("description", description);
 
-    formData.append("is_all_departments", isAllDepartmentsSelected);
+      if (deadline) {
+        formData.append("deadline", deadline);
+      } else if (selectedTask.deadline && !deadline) {
+        formData.append("deadline", "");
+      }
 
-    if (selectedDepartments.includes("all")) {
-      allDepartments.forEach((dept) => {
-        formData.append("department_ids", dept.id);
-      });
-    } else if (!selectedDepartments.includes("none")) {
-      selectedDepartments.forEach((id) => {
-        if (id !== "none" && id !== "all") {
-          formData.append("department_ids", id);
+      // UPDATED: Only send captain data if user made a change
+      const captainSection = document.getElementById('captain-selection-section');
+      const captainSectionVisible = captainSection && captainSection.style.display !== 'none';
+
+      // If captain section was shown (user wanted to change) or there was no original captain
+      if (captainSectionVisible || !selectedTask.captain) {
+        if (selectedCaptainName.length > 0) {
+          formData.append("captain", selectedCaptainName[0]);
+        } else {
+          // User explicitly selected "No Captain"
+          formData.append("captain", "");
         }
-      });
+      }
+      // If captain section was hidden, don't send captain field (keep existing)
+
+      const isAllDepartmentsSelected = selectedDepartments.includes("all") ||
+        (selectedDepartments.length === allDepartments.length && !selectedDepartments.includes("none"));
+
+      formData.append("is_all_departments", isAllDepartmentsSelected);
+
+      if (selectedDepartments.includes("all")) {
+        allDepartments.forEach((dept) => {
+          formData.append("department_ids", dept.id);
+        });
+      } else if (!selectedDepartments.includes("none")) {
+        selectedDepartments.forEach((id) => {
+          if (id !== "none" && id !== "all") {
+            formData.append("department_ids", id);
+          }
+        });
+      }
+
+      selectedUsers.forEach((id) => formData.append("assigned", id));
+
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
+
+      await updateProject(selectedTask.id, formData);
+      message.success("✅ Task updated successfully");
+
+      await loadProjects(currentPage);
+      handleActionClose();
+    } catch (error) {
+      console.error("Error details:", error.response?.data);
+      const backendMessage =
+        error.response?.data?.message ||
+        error.response?.data?.detail ||
+        error.message ||
+        "Error during updating project";
+
+      message.error(backendMessage);
     }
-
-    // Faqat tanlangan userlarni yuborish
-    selectedUsers.forEach((id) => formData.append("assigned", id));
-
-    if (imageFile) {
-      formData.append("image", imageFile);
-    }
-
-    // Debug maqsadida
-    console.log("FormData contents:");
-    for (let [key, value] of formData.entries()) {
-      console.log(key, value);
-    }
-
-    await updateProject(selectedTask.id, formData);
-    message.success("✅ Task updated successfully");
-
-    await loadProjects(currentPage);
-    handleActionClose();
-  } catch (error) {
-    console.error("Error details:", error.response?.data);
-    const backendMessage =
-      error.response?.data?.message ||
-      error.response?.data?.detail ||
-      error.message ||
-      "Error during updating project";
-
-    message.error(backendMessage);
-  }
-};
+  };
 
   const handleDeleteTask = async () => {
     try {
@@ -962,47 +962,47 @@ const Projects = () => {
 
               {captainRender()}
 
-                  {selectedDepartments.length > 0 && filteredUsers.length > 0 && (
-      <div>
-        <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
-          Change Captain
-        </label>
-        <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-[14px] p-3">
-          {filteredUsers.map((user) => (
-            <label
-              key={user.id}
-              className="flex items-center gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded"
-            >
-              <input
-                type="radio"
-                name="captain"
-                checked={selectedCaptainName.includes(user.id)}
-                onChange={() => toggleCaptainSelection(user.id)}
-                className="w-4 h-4 accent-blue-600"
-              />
-              <div className="flex items-center gap-2">
-                {user.profile_picture ? (
-                  <img
-                    src={user.profile_picture}
-                    alt={`${user.first_name} ${user.last_name}`}
-                    className="w-8 h-8 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                    <span className="text-xs font-medium">
-                      {user.first_name?.[0] || "U"}
-                    </span>
+              {selectedDepartments.length > 0 && filteredUsers.length > 0 && (
+                <div>
+                  <label className="block text-[14px] font-bold text-[#7D8592] mb-2">
+                    Change Captain
+                  </label>
+                  <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-[14px] p-3">
+                    {filteredUsers.map((user) => (
+                      <label
+                        key={user.id}
+                        className="flex items-center gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded"
+                      >
+                        <input
+                          type="radio"
+                          name="captain"
+                          checked={selectedCaptainName.includes(user.id)}
+                          onChange={() => toggleCaptainSelection(user.id)}
+                          className="w-4 h-4 accent-blue-600"
+                        />
+                        <div className="flex items-center gap-2">
+                          {user.profile_picture ? (
+                            <img
+                              src={user.profile_picture}
+                              alt={`${user.first_name} ${user.last_name}`}
+                              className="w-8 h-8 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                              <span className="text-xs font-medium">
+                                {user.first_name?.[0] || "U"}
+                              </span>
+                            </div>
+                          )}
+                          <span className="text-sm font-medium">
+                            {user.first_name} {user.last_name}
+                          </span>
+                        </div>
+                      </label>
+                    ))}
                   </div>
-                )}
-                <span className="text-sm font-medium">
-                  {user.first_name} {user.last_name}
-                </span>
-              </div>
-            </label>
-          ))}
-        </div>
-      </div>
-    )}
+                </div>
+              )}
 
               {/* Deadline */}
               <div>
@@ -1808,40 +1808,78 @@ const Projects = () => {
                   Captain (only one)
                 </label>
                 {selectedDepartments.length > 0 && filteredUsers.length > 0 && (
-                  <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-[14px] p-3 mt-2">
-                    {filteredUsers.map((user) => (
-                      <label
-                        key={user.id}
-                        className="flex items-center gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded"
-                      >
-                        {/* Radio button ishlatamiz, checkbox emas */}
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-[14px] font-bold text-[#7D8592]">
+                        {selectedTask?.captain ? "Change Captain (Optional)" : "Select Captain (Optional)"}
+                      </label>
+                      {selectedTask?.captain && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            // Toggle captain selection visibility
+                            const captainSection = document.getElementById('captain-selection-section');
+                            if (captainSection) {
+                              captainSection.style.display = captainSection.style.display === 'none' ? 'block' : 'none';
+                            }
+                          }}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        >
+                          {document.getElementById('captain-selection-section')?.style.display === 'none' ? 'Change Captain' : 'Cancel Change'}
+                        </button>
+                      )}
+                    </div>
+
+                    <div
+                      id="captain-selection-section"
+                      style={{ display: selectedTask?.captain ? 'none' : 'block' }}
+                      className="max-h-40 overflow-y-auto border border-gray-300 rounded-[14px] p-3"
+                    >
+                      {/* Add "No Captain" option */}
+                      <label className="flex items-center gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded">
                         <input
                           type="radio"
                           name="captain"
-                          checked={selectedCaptainName.includes(user.id)}
-                          onChange={() => toggleCaptainSelection(user.id)}
+                          checked={selectedCaptainName.length === 0}
+                          onChange={() => setSelectedCaptainName([])}
                           className="w-4 h-4 accent-blue-600"
                         />
-                        <div className="flex items-center gap-2">
-                          {user.profile_picture ? (
-                            <img
-                              src={user.profile_picture}
-                              alt={`${user.first_name} ${user.last_name}`}
-                              className="w-8 h-8 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                              <span className="text-xs font-medium">
-                                {user.first_name?.[0] || "U"}
-                              </span>
-                          </div>
-                          )}
-                          <span className="text-sm font-medium">
-                            {user.first_name} {user.last_name}
-                          </span>
-                        </div>
+                        <span className="text-sm font-medium text-gray-600">No Captain</span>
                       </label>
-                    ))}
+
+                      {filteredUsers.map((user) => (
+                        <label
+                          key={user.id}
+                          className="flex items-center gap-3 py-2 cursor-pointer hover:bg-gray-50 rounded"
+                        >
+                          <input
+                            type="radio"
+                            name="captain"
+                            checked={selectedCaptainName.includes(user.id)}
+                            onChange={() => toggleCaptainSelection(user.id)}
+                            className="w-4 h-4 accent-blue-600"
+                          />
+                          <div className="flex items-center gap-2">
+                            {user.profile_picture ? (
+                              <img
+                                src={user.profile_picture}
+                                alt={`${user.first_name} ${user.last_name}`}
+                                className="w-8 h-8 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                                <span className="text-xs font-medium">
+                                  {user.first_name?.[0] || "U"}
+                                </span>
+                              </div>
+                            )}
+                            <span className="text-sm font-medium">
+                              {user.first_name} {user.last_name}
+                            </span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 )}
                 {selectedCaptainName.length > 0 && (
