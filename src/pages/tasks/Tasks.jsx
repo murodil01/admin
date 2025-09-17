@@ -368,14 +368,68 @@ const Projects = () => {
     const filters = getAPIFilters();
     loadProjects(1, filters);
     setIsFilterModalOpen(false);
-  };
+  }; 
 
-  if (isLoading)
-    return (
-      <div className="flex justify-center items-center h-[100vh]">
-        <span className="loader"></span>
+  // ProjectLoadingSkeleton component
+const ProjectLoadingSkeleton = ({ count = 8 }) => {
+  const skeletonCards = Array.from({ length: count }, (_, index) => (
+    <div
+      key={index}
+      className="border-2 border-[#EFEFEF] rounded-[14px] p-3 bg-white relative group flex flex-col gap-3 animate-pulse"
+    >
+      {/* Image skeleton */}
+      <div className="h-[134px] w-full rounded-[14px] bg-gray-200"></div>
+      
+      {/* Progress bar skeleton */}
+      <div className="flex items-center gap-1 mb-2">
+        <div className="w-8 h-4 bg-gray-200 rounded"></div>
+        <div className="flex-1 h-2 bg-gray-200 rounded">
+          <div className="h-full bg-gray-300 rounded w-1/3"></div>
+        </div>
       </div>
-    );
+      
+      {/* Title and department section */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1 flex-1 min-w-0">
+          {/* Department avatars skeleton */}
+          <div className="flex items-center relative w-auto h-8 flex-shrink-0">
+            <div className="flex items-center -space-x-2">
+              <div className="w-7 h-7 rounded-full bg-gray-200 border-2 border-white shadow-sm"></div>
+              <div className="w-7 h-7 rounded-full bg-gray-200 border-2 border-white shadow-sm"></div>
+            </div>
+          </div>
+          
+          {/* Project title skeleton */}
+          <div className="font-bold ml-3 text-lg flex-1">
+            <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+          </div>
+        </div>
+        
+        {/* More options skeleton */}
+        <div className="flex-shrink-0 p-1">
+          <div className="w-5 h-5 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+      
+      {/* Dates skeleton */}
+      <div className="flex mt-1 justify-between text-sm gap-2">
+        <div className="flex-1">
+          <div className="h-4 bg-gray-200 rounded w-16"></div>
+        </div>
+        <div className="flex-1 text-right">
+          <div className="h-4 bg-gray-200 rounded w-16 ml-auto"></div>
+        </div>
+      </div>
+    </div>
+  ));
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 space-y-2">
+      {skeletonCards}
+    </div>
+  );
+};
+
 
   const handleAddOpen = () => setIsAddModalOpen(true);
 
@@ -472,6 +526,7 @@ const Projects = () => {
 
   const renderAssignedUsers = () => {
     if (modalType !== "edit" || !selectedTask?.assigned) return null;
+
 
     return (
       <div className="mb-4">
@@ -1421,9 +1476,13 @@ const Projects = () => {
         </Drawer>
       </div>
       {/* Tasks Grid - Responsive Grid Layout */}
+      {isLoading ? (
+     <ProjectLoadingSkeleton count={projectsData.results.length } />
+     ) : (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2 space-y-2" >
         {displayProjects.length > 0 ? (
           displayProjects.map((project) => (
+            
             <div
               key={project.id}
               className="border-2 border-[#EFEFEF] rounded-[14px] p-3 bg-white relative group flex flex-col gap-3 cursor-pointer hover:shadow-lg transition-shadow duration-200"
@@ -1599,7 +1658,7 @@ const Projects = () => {
           </div>
         )}
       </div>
-
+     )}
       {/* Pagination */}
       {projectsData.count > pageSize && !isFilterActive && (
         <div className="flex justify-center mt-10 mb-10">
