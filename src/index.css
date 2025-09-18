@@ -4,6 +4,9 @@ body {
   font-family: "Nunito Sans", sans-serif;
 }
 
+.input_Drawer{
+  height: 47px;
+}
 .Drawer{
   border-radius: 20px;
   margin: 25px;
@@ -11,11 +14,15 @@ body {
   right: 40px;
   height: 90vh !important;
 }
-
-.input_Drawer{
-  height: 47px;
+@media (max-width: 400px) {
+  .Drawer{
+    border-radius: 20px;
+    margin: 0px;
+    position: relative;
+    right: 0px;
+    height: 100vh !important;
+  }
 }
-
 /* Custom scrollbar styles for webkit browsers */
 @layer utilities {
   .scrollbar-thin {
