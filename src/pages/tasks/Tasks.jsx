@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { message, Modal, Input, Dropdown, Pagination, Drawer, Select, DatePicker, Slider } from "antd";
-import { Archive, Filter, MoreVertical, Paperclip, Search, ChevronDown } from "lucide-react";
+import { Archive, Filter, MoreVertical, Paperclip, Search, ChevronDown, X } from "lucide-react";
 import pencil from "../../assets/icons/pencil.svg";
 import info from "../../assets/icons/info.svg";
 import trash from "../../assets/icons/trash.svg";
@@ -1352,17 +1352,25 @@ const ProjectLoadingSkeleton = ({ count = 8 }) => {
           </Permission>
         </div>
       </div>
-
       {/* Filter Modal */}
       <div className="">
         <Drawer
-          title="Filter Projects"
-          placement="right"
-          onClose={() => setIsFilterModalOpen(false)}
-          open={isFilterModalOpen}
-          width={400}    // margin o'rniga top bilan boshqar
-          className="Drawer"
+            title="Filter Projects"
+            placement="right"
+            onClose={() => setIsFilterModalOpen(false)}
+            open={isFilterModalOpen}
+            width={400}
+            className="Drawer"
+            closable={false}
+           
         >
+          <button
+          onClick={() => setIsFilterModalOpen(false)}
+          aria-label="Close"
+          className="absolute top-3 right-4 z-50 p-2 rounded-md hover:bg-gray-100"
+        >
+          <X size={18} />
+        </button>
           <div className="space-y-6 ">
             {/* Name Filter */}
             <div>
@@ -1458,7 +1466,7 @@ const ProjectLoadingSkeleton = ({ count = 8 }) => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-2 mt-8">
+            <div className="flex gap-2 mt-64">
               <button
                 className="flex-1 py-2 bg-gray-200 rounded-md text-gray-700 hover:bg-gray-300"
                 onClick={resetFilters}
