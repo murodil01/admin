@@ -15,6 +15,7 @@ import { Permission } from "../../components/Permissions";
 import { useAuth } from "../../hooks/useAuth";
 import { ROLES } from "../../components/constants/roles";
 import { message, Modal } from "antd";
+import EmployeeListSkeleton from "./EmployeeListSkeleton";
 
 // Constants
 const ITEMS_PER_PAGE = 12;
@@ -70,13 +71,13 @@ const AddButton = memo(({ onClick, loading }) => (
 ));
 AddButton.displayName = 'AddButton';
 
-// // Memoized LoadingSpinner component
-// const LoadingSpinner = memo(() => (
-//     <div className="flex justify-center items-center h-[100vh]">
-//         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0061fe]"></div>
-//     </div>
-// ));
-// LoadingSpinner.displayName = 'LoadingSpinner';
+// Memoized LoadingSpinner component
+const LoadingSpinner = memo(() => (
+    <div className="flex justify-center items-center h-[100vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0061fe]"></div>
+    </div>
+));
+LoadingSpinner.displayName = 'LoadingSpinner';
 
 // Utility functions
 const parseFiltersFromUrl = (searchParams) => {
@@ -122,6 +123,8 @@ const InnerCircle = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedId, setSelectedId] = useState(null);
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
+    const [isFetching, setIsFetching] = useState(false);
 
     // Refs for preventing multiple API calls
     const fetchingRef = useRef(false);
@@ -129,19 +132,19 @@ const InnerCircle = () => {
 
     // Memoized values
     const isLoading = useMemo(() => authLoading || dataLoading, [authLoading, dataLoading]);
-    const currentPage = useMemo(() => 
-        parseInt(searchParams.get("page_num") || "1", 10), 
+    const currentPage = useMemo(() =>
+        parseInt(searchParams.get("page_num") || "1", 10),
         [searchParams]
     );
 
     // Initialize filters from URL
-    const [currentFilters, setCurrentFilters] = useState(() => 
+    const [currentFilters, setCurrentFilters] = useState(() =>
         parseFiltersFromUrl(searchParams)
     );
 
     // Memoized total count
-    const totalCount = useMemo(() => 
-        activeTab === "list" ? totalEmployees : totalActivities, 
+    const totalCount = useMemo(() =>
+        activeTab === "list" ? totalEmployees : totalActivities,
         [activeTab, totalEmployees, totalActivities]
     );
 
@@ -221,7 +224,8 @@ const InnerCircle = () => {
             }
         } finally {
             fetchingRef.current = false;
-            setLoading(false);
+            setIsFetching(false);
+            setIsInitialLoading(false);
         }
     }, [currentFilters, departments, updateUrlParams]);
 
@@ -336,7 +340,7 @@ const InnerCircle = () => {
             setLoading(true);
 
             const form = new FormData();
-            
+
             // Required fields
             form.append("first_name", employeeData.first_name);
             form.append("last_name", employeeData.last_name);
@@ -421,7 +425,7 @@ const InnerCircle = () => {
     useEffect(() => {
         const urlFilters = parseFiltersFromUrl(searchParams);
         const filtersChanged = JSON.stringify(urlFilters) !== JSON.stringify(currentFilters);
-        
+
         if (filtersChanged && !fetchingRef.current) {
             setCurrentFilters(urlFilters);
             fetchEmployees(currentPage, urlFilters, false);
@@ -437,9 +441,14 @@ const InnerCircle = () => {
         };
     }, []);
 
-    // if (isLoading) {
-    //     return <LoadingSpinner />;
-    // }
+    if (isLoading) {
+        return activeTab === "list" ? (
+            <EmployeeListSkeleton count={ITEMS_PER_PAGE} />
+        ) : (
+            <LoadingSpinner />
+        );
+    }
+
 
     return (
         <div className="w-full max-w-screen-2xl mx-auto">
@@ -451,13 +460,13 @@ const InnerCircle = () => {
 
                 {/* Tabs */}
                 <div className="flex items-center bg-[#DBDBDB] rounded-4xl w-full md:w-[280px] xl:w-[350px] overflow-hidden p-1">
-                    <TabButton 
+                    <TabButton
                         active={activeTab === "list"}
                         onClick={() => handleTabClick("list")}
                     >
                         List
                     </TabButton>
-                    <TabButton 
+                    <TabButton
                         active={activeTab === "activity"}
                         onClick={() => handleTabClick("activity")}
                     >
@@ -474,17 +483,17 @@ const InnerCircle = () => {
                             showTaskFilters={activeTab === "activity"}
                         />
                     </div>
-                    
-                    <Permission anyOf={[ROLES.EMPLOYEE, ROLES.MANAGER]}>
+
+                    <Permission anyOf={[ROLES.EMPLOYEE, ROLES.MANAGER, ROLES.DEP_MANAGER, ROLES.HEADS]}>
                         <div className="hidden justify-center lg:justify-end w-[240px]"></div>
                     </Permission>
 
                     <Permission anyOf={[ROLES.FOUNDER, ROLES.MANAGER, ROLES.HEADS, ROLES.DEP_MANAGER]}>
-                        {!loading && (
+                        {!isLoading && (
                             <div className="flex justify-center lg:justify-end">
-                                <AddButton 
+                                <AddButton
                                     onClick={() => setIsAddModalOpen(true)}
-                                    loading={loading}
+                                    loading={isFetching}
                                 />
                             </div>
                         )}
@@ -496,7 +505,7 @@ const InnerCircle = () => {
             {activeTab === "list" && (
                 <EmployeeList
                     employees={employees}
-                    loading={loading}
+                    loading={isFetching || isInitialLoading}
                     onDelete={showDeleteModal}
                     onStatusUpdate={handleStatusUpdate}
                     currentPage={currentPage}

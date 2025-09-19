@@ -70,16 +70,37 @@ const SkeletonLoader = memo(() => (
   <div className="w-full py-6">
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {Array.from({ length: 8 }, (_, i) => (
-        <div
-          key={i}
-          className="bg-gray-200 rounded-[24px] h-[300px] animate-pulse"
-        />
+        <div key={i} className="bg-gray-200 rounded-[24px] p-4 animate-pulse">
+          {/* User Info Placeholder */}
+          <div className="bg-[#E3EDFA] py-4 px-4 flex flex-col items-center gap-2 rounded-[24px] w-full h-43">
+            <div className="w-[50px] h-[100px] bg-gray-300 rounded-full mb-4"></div>
+            <div className="w-3/4 h-6 bg-gray-300 rounded mb-2"></div>
+            <div className="w-1/2 h-4 bg-gray-300 rounded mb-2"></div>
+            <div className="w-1/4 h-4 bg-gray-300 rounded mb-2"></div>
+          </div>
+
+          {/* Tasks Section */}
+          <h3 className="w-1/2 h-4 flex justify-center items-center bg-gray-300 rounded my-2 mx-auto"></h3>
+
+          {/* Task Stats Placeholders */}
+          <div className="w-full flex items-center justify-between gap-2">
+            {Array.from({ length: 3 }, (_, j) => (
+              <div
+                key={j}
+                className="rounded-2xl p-3 border-[#E3EDFA] border-2 flex-1 min-h-[80px] flex flex-col justify-center text-center mx-auto"
+              >
+                <div className="w-1/2 h-6 bg-gray-300 rounded mb-2 flex justify-center mx-auto"></div>
+                <div className="w-2/3 h-4 bg-gray-300 rounded mb-2 flex justify-center mx-auto"></div>
+              </div>
+            ))}
+          </div>
+        </div>
       ))}
     </div>
   </div>
 ));
 
-SkeletonLoader.displayName = 'SkeletonLoader';
+SkeletonLoader.displayName = "SkeletonLoader";
 
 // Memoized ErrorState component
 const ErrorState = memo(({ error, onRetry }) => (

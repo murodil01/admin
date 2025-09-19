@@ -25,6 +25,7 @@ import dayjs from "dayjs";
 import { Permission } from "../../components/Permissions";
 import { useAuth } from "../../hooks/useAuth";
 import { ROLES } from "../../components/constants/roles";
+import { ArrowLeft } from "lucide-react";
 
 const { TextArea } = Input;
 
@@ -371,9 +372,18 @@ const TaskDetails = ({ tagOptionsFromApi = [] }) => {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7">
-        <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
+      <div className=" flex items-center gap-5">
+            <button
+        onClick={() => window.history.back()}
+        className="flex justify-center rounded-[14px] items-center gap-2 text-sm md:text-[16px] font-bold text-[#1F2937] hover:text-[#6b82a8] shadow bg-white w-[100px] md:w-[133px] h-[40px] md:h-[48px] cursor-pointer"
+      >
+        <ArrowLeft size={18} /> Go Back
+      </button>
+       <h3 className="text-[#0A1629] text-[28px] sm:text-[36px] font-bold">
           {projectName || "Loading..."}
+       
         </h3>
+      </div>
         <Permission anyOf={[ROLES.FOUNDER, ROLES.DEP_MANAGER, ROLES.MANAGER, ROLES.HEADS]}>
           <button
             onClick={showModal}
