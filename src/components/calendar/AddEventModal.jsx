@@ -4,6 +4,7 @@ import { X, Paperclip, ChevronDown, FileUp } from "lucide-react";
 import { getDepartments } from "../../api/services/departmentService";
 import DepartmentsSelector from "./DepartmentsSelector";
 import { toLocalDateInputValue, fromLocalDateInputValue } from '../../utils/dateUtils';
+import { useAuth } from "../../hooks/useAuth";
 
 const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
   const [formData, setFormData] = useState({
@@ -18,29 +19,46 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
     viewOption: "chosen",
   });
   const [availableDepartments, setAvailableDepartments] = useState([]);
+  const { user, isAuthenticated } = useAuth();
+   // Check if current user is a department manager or heads (both can only add to their department)
+   const isDepartmentRestricted = user?.role === 'dep_manager' || user?.role === 'heads';
+
    // Fetch departments when modal opens
    useEffect(() => {
     const fetchDepartments = async () => {
       try {
         const departments = await getDepartments();
-        setAvailableDepartments(departments.map(dept => ({
+        let processedDepartments = departments.map(dept => ({
           id: dept.id,
           name: dept.name,
           avatar: dept.photo || '/default-avatar.png',
           description: dept.description,
           head: dept.head
-        })));
+        }));
+  
+        // Bo'lim cheklash logikasi
+        if (isDepartmentRestricted && user) {
+          const userDepartmentId = user.department?.id || user.department;
+          processedDepartments = processedDepartments.filter(d => 
+            d.id === userDepartmentId || d.id == userDepartmentId
+          );
+          
+          console.log('User department ID:', userDepartmentId);
+          console.log('Filtered departments:', processedDepartments);
+        }
+  
+        setAvailableDepartments(processedDepartments);
       } catch (error) {
         console.error('Failed to fetch departments:', error);
       }
     };
-
+  
     if (isOpen) {
       fetchDepartments();
     }
-  }, [isOpen]);
+  }, [isOpen, isDepartmentRestricted, user]);
 
-  // Formni har safar selectedDate o‘zgarsa sync qilish
+  // Formni har safar selectedDate oâ€˜zgarsa sync qilish
   useEffect(() => {
     setFormData((prev) => ({ ...prev, date: selectedDate || new Date() }));
   }, [selectedDate]);
@@ -191,11 +209,15 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
                       className="w-full px-3 pr-10 py-2 border border-gray-300 rounded-[14px] focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
                     >
                       <option>Select Time</option>
-                      <option>5 minutes before</option>
-                      <option>15 minutes before</option>
-                      <option>30 minutes before</option>
+                      <option>Now</option>
                       <option>1 hour before</option>
+                      <option>3 hour before</option>
+                      <option>6 hour before</option>
+                      <option>12 hour before</option>
                       <option>1 day before</option>
+                      <option>1.5 day before</option>
+                      <option>2 day before</option>
+                      <option>4 day before</option>
                     </select>
                     <div className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2">
                       <ChevronDown className="w-4 h-4" />
@@ -352,6 +374,7 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
 
               {/* Department buttons */}
               <DepartmentsSelector
+               departments={availableDepartments} 
                  selectedIds={
                   Array.isArray(formData.departments) 
                     ? formData.departments.map(d => d.id)
@@ -365,8 +388,8 @@ const AddEventModal = ({ isOpen, onClose, onSave, selectedDate }) => {
                     ...prev,
                     // department:
                     //   selectedDepartments.length === 1
-                    //     ? selectedDepartments[0] // 1 ta bo‘lsa object sifatida
-                    //     : selectedDepartments, // ko‘p bo‘lsa array sifatida
+                    //     ? selectedDepartments[0] // 1 ta boâ€˜lsa object sifatida
+                    //     : selectedDepartments, // koâ€˜p boâ€˜lsa array sifatida
 
                     departments: selectedDepartments,
 

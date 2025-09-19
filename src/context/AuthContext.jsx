@@ -178,7 +178,6 @@ export const AuthProvider = ({ children }) => {
           role: data.role?.toLowerCase() || "user",
           ...data,
         };
-
         console.log("✅ User data normalized:", userData);
 
         setAuthState({
