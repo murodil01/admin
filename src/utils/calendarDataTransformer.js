@@ -84,12 +84,15 @@ export const transformApiEventToFrontend = async (apiEvent) => {
 // Notification time mapping
 const mapNotificationTimeToString = (minutes) => {
   const notificationMap = {
-    0: "No notification",
-    5: "5 minutes before",
-    15: "15 minutes before",
-    30: "30 minutes before",
     60: "1 hour before",
+    180: "3 hour before",
+    360: "6 hour before",
+    720: "12 hour before",
     1440: "1 day before",
+    2160: "1.5 day before",
+    2880: "2 days before",
+    4320: "4 days before",
+    0: "Now",
   };
   return notificationMap[minutes] || "Select Time";
 };
@@ -97,12 +100,16 @@ const mapNotificationTimeToString = (minutes) => {
 const mapNotificationStringToMinutes = (notificationString) => {
   const timeMap = {
     "No notification": 0,
-    "5 minutes before": 5,
-    "15 minutes before": 15,
-    "30 minutes before": 30,
-    "1 hour before": 60,
-    "1 day before": 1440,
     "Select Time": 0,
+     "1 hour before":60,
+     "3 hour before":180,
+     "6 hour before":360,
+     "12 hour before":720,
+     "1 day before":1440,
+     "1.5 day before":2160,
+     "2 days before":2880,
+     "4 days before":4320,
+     "Now":0,
   };
   return timeMap[notificationString] || 0;
 };

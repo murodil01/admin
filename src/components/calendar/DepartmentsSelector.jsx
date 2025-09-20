@@ -1,46 +1,53 @@
 import { useState, useEffect } from "react";
 import { getDepartments } from "../../api/services/departmentService";
-import { Permission } from "../../components/Permissions";
 import { useAuth } from "../../hooks/useAuth";
-import { ROLES } from "../../components/constants/roles";
 
-const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
+const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded,  departments: propDepartments, restrictToUserDepartment = false }) => {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user, loading: authLoading } = useAuth();
-
   // Combined loading state
   const isLoading = authLoading || loading;
+  const isDepartmentRestricted = user?.role === 'dep_manager' || user?.role === 'heads';
 
   // Fetch departments from API
   useEffect(() => {
-    const fetchDepartments = async () => {
+    const processDepartments = async () => {
       try {
-        const apiResponse = await getDepartments();
-        console.log("Fetched departments:", apiResponse);
-
-        // Handle different response structures
         let apiDepartments = [];
 
-        if (Array.isArray(apiResponse)) {
-          apiDepartments = apiResponse;
-        } else if (apiResponse && Array.isArray(apiResponse.data)) {
-          apiDepartments = apiResponse.data;
-        } else if (apiResponse && Array.isArray(apiResponse)) {
-          apiDepartments = apiResponse;
-        } else if (apiResponse && typeof apiResponse === 'object') {
-          // If it's an object, try to extract the array from common properties
-          if (apiResponse.departments && Array.isArray(apiResponse.departments)) {
-            apiDepartments = apiResponse.departments;
-          } else if (apiResponse.items && Array.isArray(apiResponse.items)) {
-            apiDepartments = apiResponse.items;
-          } else {
-            // Convert object values to array if it's an object of departments
-            apiDepartments = Object.values(apiResponse);
+        // Agar parent dan departments kelsa, ularni ishlatish
+        if (propDepartments && Array.isArray(propDepartments)) {
+          apiDepartments = propDepartments;
+        } else {
+          const apiResponse = await getDepartments();
+          
+          // ... sizning mavjud API processing logikangiz
+          if (Array.isArray(apiResponse)) {
+            apiDepartments = apiResponse;
+          } else if (apiResponse && Array.isArray(apiResponse.data)) {
+            apiDepartments = apiResponse.data;
+          } else if (apiResponse && Array.isArray(apiResponse)) {
+            apiDepartments = apiResponse;
+          } else if (apiResponse && typeof apiResponse === 'object') {
+            if (apiResponse.departments && Array.isArray(apiResponse.departments)) {
+              apiDepartments = apiResponse.departments;
+            } else if (apiResponse.items && Array.isArray(apiResponse.items)) {
+              apiDepartments = apiResponse.items;
+            } else {
+              apiDepartments = Object.values(apiResponse);
+            }
+          }
+          console.log('All departments from API:', apiDepartments);
+          // Faqat restrictToUserDepartment = true bo'lsa cheklash
+          if (restrictToUserDepartment && isDepartmentRestricted && user) {
+            const userDepartmentId = user.department?.id || user.department;
+            apiDepartments = apiDepartments.filter(d => {
+              console.log(`Comparing dept ${d.id} with user dept ${userDepartmentId}`);
+              return d.id === userDepartmentId || d.id == userDepartmentId; // == ham tekshirish
+            });
           }
         }
-
-        console.log('Processed departments:', apiDepartments); // Debug log
 
         let fetched = apiDepartments.map((d) => ({
           id: d.id,
@@ -53,7 +60,6 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
 
         setDepartments(fetched);
 
-        // Notify parent component with data (excluding special options)
         if (onDataLoaded) {
           const regularDepartments = fetched.filter(
             (d) => d.id !== "none" && d.id !== "all"
@@ -68,9 +74,9 @@ const DepartmentsSelector = ({ selectedIds, onChange, onDataLoaded }) => {
     };
 
     if (!authLoading) {
-      fetchDepartments();
+      processDepartments();
     }
-  }, [selectedIds, authLoading, user]);
+  }, [selectedIds, authLoading, user, propDepartments, restrictToUserDepartment]);
 
   const toggleDepartment = (id) => {
     let updated;

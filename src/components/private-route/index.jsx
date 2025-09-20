@@ -1,25 +1,25 @@
-// components/private-route.js
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import useTokenManager from '../../hooks/useTokenManager';
-import TokenExpiredScreen from '../../components/TokenExpiredScreen';
+import { useAuth } from '../../hooks/useAuth';
 
 const PrivateRoute = () => {
-  // Global token management - barcha protected routes uchun
-  const { tokenExpired, redirecting } = useTokenManager();
+  const { user, loading, isAuthenticated } = useAuth();
 
-  // Token eskirgan bo'lsa qizil ekran
-  if (tokenExpired || redirecting) {
-    return <TokenExpiredScreen />;
+  // Loading holatida
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
   }
 
-  // Token yo'q bo'lsa login'ga yo'naltirish
-  const token = localStorage.getItem('token');
-  if (!token) {
+  // User yo'q bo'lsa login'ga yo'naltirish
+  if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
   }
 
-  // Token bor va hali eskirmaganida - child components render qilish
+  // User bor bo'lsa child components render qilish
   return <Outlet />;
 };
 
