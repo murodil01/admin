@@ -1,9 +1,9 @@
 const endpoints = {
   auth: {
-    login: "/auth/login",
-    register: "/auth/register",
-    me: "/auth/me",
-    logout: "/auth/logout", // Added logout endpoint
+    login: "token/",
+    me: "me/",
+    logout: "logout/", // Added logout endpoint
+    refresh: "token/refresh/", 
   },
 
   users: {
