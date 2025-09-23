@@ -526,7 +526,7 @@ const resetFilters = () => {
   };
 
   // Item tanlash/bekor qilish
-  const toggleSelectItem = (groupId, isSelected, leadId) => {
+  const toggleSelectItem = (groupId, itemIndex, isSelected, leadId) => {
     if (isSelected) {
       setSelectedItems((prev) => [...prev, { groupId,leadId }]);
     } else {
@@ -868,8 +868,6 @@ useEffect(() => {
                         expanded={true}
                         onToggleExpanded={() => {}}
                         updateTitle={updateGroupTitle}
-                        // addItem={addItemToGroup}
-                        // updateItem={updateItemInGroup}
                         deleteItem={deleteItemFromGroup}
                         deleteGroup={handleDeleteGroup}
                         boardId={boardId}
