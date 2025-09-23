@@ -623,7 +623,8 @@ const GroupSection = ({
   selected,
   onToggleSelect,
   boardId,
-  // id, title, items, expanded, onToggleExpanded, updateTitle, addItem, updateItem, deleteGroup, selected, onToggleSelect, boardId,
+  // title,
+  // id, , items, expanded, onToggleExpanded, updateTitle, addItem, updateItem, deleteGroup, selected, onToggleSelect, boardId,
 }) => {
   // const [editingTitle, setEditingTitle] = useState(false);
   // const [titleValue, setTitleValue] = useState(title);

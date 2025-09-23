@@ -170,7 +170,7 @@ const resetFilters = () => {
         console.log("Leads response:", leadsRes.data);
 
         // Groups ni format qilish
-        const formattedGroups = groupsRes.data || []
+        const formattedGroups = (groupsRes.data || [])
           .filter((group) => group.board === boardId)
           .map((group) => ({
             id: group.id,
@@ -786,7 +786,7 @@ useEffect(() => {
           groups
           .map((group) => {
             const groupId = group.id; // BU QATORNI QOSHISH KERAK
-            const groupTitle = String(group.title || "Untitled Group"); // BU HAM
+            const groupTitle = String(group.title  || "Untitled Group"); // BU HAM
             
             const groupLeads = getFilteredLeads(groupId);
               
