@@ -997,6 +997,7 @@ const GroupSection = ({
                           onToggleSelect(itemIndex, e.target.checked)
                         }
                         data-lead-id={item.id}
+                        className="w-4 h-4"
                       />
                     </td>
 
