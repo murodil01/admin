@@ -12,7 +12,7 @@ const ChiefOfficers = () => {
   const professionsData = useMemo(() => ({
     "GM": {
       title: "General Manager",
-      description: "The Master Coordinator of Operations. Unifies all departments under one strategy, ensuring flawless execution across the company.Balances vision with discipline, transforming plans into results and systems into momentum.The bridge between high command and frontline execution."},
+      description: "The Master Coordinator of Operations.Unifies all departments under one strategy, ensuring flawless execution across the company.Balances vision with discipline, transforming plans into results and systems into momentum.The bridge between high command and frontline execution."},
     "CMO": {
       title: "Chief Marketing Officer",
       description: "Guardian of Growth, and Influence. Commands marketing strategy, creative direction, and public image.Designs campaigns that dominate attention, expand market reach, and forge unshakable client loyalty.The shield and spear of M Company's influence in every arena."

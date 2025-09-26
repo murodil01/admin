@@ -343,4 +343,4 @@ const Departments = () => {
     )
 }
 
-export default Departments
+export default Departments;
