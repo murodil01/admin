@@ -119,11 +119,11 @@ const DepartmentSkeleton = () => (
         <div className='w-3/4 h-6 bg-gray-300 rounded mt-5'></div>
         <div className='w-full h-4 bg-gray-200 rounded mt-2'></div>
         <div className='w-5/6 h-4 bg-gray-200 rounded mt-1'></div>
-        <div className='space-y-2 mt-4 w-full'>
+        {/* <div className='space-y-2 mt-4 w-full'>
             <div className='w-full h-3 bg-gray-200 rounded'></div>
             <div className='w-full h-3 bg-gray-200 rounded'></div>
             <div className='w-3/4 h-3 bg-gray-200 rounded'></div>
-        </div>
+        </div> */}
         <div className='w-full h-10 bg-gray-300 rounded-lg mt-4'></div>
     </div>
 )
@@ -233,11 +233,11 @@ const LoadingSkeleton = () => {
     const getSkeletonCount = () => {
         if (typeof window !== 'undefined') {
             const width = window.innerWidth;
-            if (width < 640) return 1; // Mobile: 1 skeleton
-            if (width < 1024) return 2; // Tablet: 2 skeletons
-            return 3; // Desktop: 3 skeletons
+            if (width < 640) return 1;
+            if (width < 1024) return 2; 
+            return 3; 
         }
-        return 3; // Default fallback
+        return 3; 
     };
 
     const [skeletonCount, setSkeletonCount] = useState(getSkeletonCount);
