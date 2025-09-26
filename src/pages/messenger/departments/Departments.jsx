@@ -114,7 +114,7 @@ const departmentEnhancedData = {
 }
 
 const DepartmentSkeleton = () => (
-    <div className='flex flex-col items-center p-5 bg-white shadow-md rounded-xl animate-pulse max-w-[350px] w-full'>
+    <div className='flex flex-col items-center p-5 bg-white shadow-md rounded-xl animate-pulse w-full max-w-[300px]'>
         <div className='w-full h-48 bg-gray-300 rounded-[10px]'></div>
         <div className='w-3/4 h-6 bg-gray-300 rounded mt-5'></div>
         <div className='w-full h-4 bg-gray-200 rounded mt-2'></div>
@@ -228,6 +228,42 @@ const DepartmentCard = React.memo(({ user }) => {
 
 DepartmentCard.displayName = 'DepartmentCard'
 
+const LoadingSkeleton = () => {
+    // Responsive skeleton count based on screen size
+    const getSkeletonCount = () => {
+        if (typeof window !== 'undefined') {
+            const width = window.innerWidth;
+            if (width < 640) return 1; // Mobile: 1 skeleton
+            if (width < 1024) return 2; // Tablet: 2 skeletons
+            return 3; // Desktop: 3 skeletons
+        }
+        return 3; // Default fallback
+    };
+
+    const [skeletonCount, setSkeletonCount] = useState(getSkeletonCount);
+
+    useEffect(() => {
+        const handleResize = () => {
+            setSkeletonCount(getSkeletonCount());
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    return (
+        <div className='p-4'>
+            <div className='flex flex-wrap justify-center gap-6'>
+                {Array.from({ length: skeletonCount }).map((_, i) => (
+                    <div key={i} className='flex-shrink-0 w-full sm:w-[45%] lg:w-[30%] flex justify-center'>
+                        <DepartmentSkeleton />
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 const Departments = () => {
     const [users, setUsers] = useState([])
     const [loading, setLoading] = useState(true)
@@ -253,37 +289,40 @@ const Departments = () => {
             setLoading(false)
         }
     }, [])
+    
     useEffect(() => {
         fetchUsers()
     }, [fetchUsers])
+    
     if (loading) {
+        return <LoadingSkeleton />
+    }
+    
+    if (error) {
         return (
-            <div className='p-4 flex flex-wrap justify-center gap-6'>
-                {Array.from({ length: 6 }).map((_, i) => (
-                    <DepartmentSkeleton key={i} />
-                ))}
+            <div className='p-4'>
+                <ErrorState onRetry={fetchUsers} />
             </div>
         )
-    }
-    if (error) {
-        return <ErrorState onRetry={fetchUsers} />
     }
 
     if (!users.length) {
         return (
-            <div className='flex flex-col items-center justify-center p-8 text-center'>
-                <div className='text-gray-400 text-6xl mb-4'>📂</div>
-                <h3 className='text-lg font-semibold text-gray-700 mb-2'>
-                    No departments available yet
-                </h3>
-                <p className='text-gray-500 mb-4'>New departments will be added soon</p>
-                <button
-                    onClick={fetchUsers}
-                    className='px-6 py-2 bg-blue-600 text-white font-medium rounded-lg 
-                     hover:bg-blue-700 transition-colors duration-200'
-                >
-                    Refresh
-                </button>
+            <div className='p-4'>
+                <div className='flex flex-col items-center justify-center p-8 text-center'>
+                    <div className='text-gray-400 text-6xl mb-4'>📂</div>
+                    <h3 className='text-lg font-semibold text-gray-700 mb-2'>
+                        No departments available yet
+                    </h3>
+                    <p className='text-gray-500 mb-4'>New departments will be added soon</p>
+                    <button
+                        onClick={fetchUsers}
+                        className='px-6 py-2 bg-blue-600 text-white font-medium rounded-lg 
+                         hover:bg-blue-700 transition-colors duration-200'
+                    >
+                        Refresh
+                    </button>
+                </div>
             </div>
         )
     }
@@ -294,7 +333,7 @@ const Departments = () => {
                 {users.map((user, index) => (
                     <div
                         key={user?.id || index}
-                        className='flex-shrink-0 w-full sm:w-[45%] lg:w-[30%]'
+                        className='flex-shrink-0 w-full sm:w-[45%] lg:w-[30%] flex justify-center'
                     >
                         <DepartmentCard user={user} />
                     </div>
@@ -305,5 +344,3 @@ const Departments = () => {
 }
 
 export default Departments
-
-
