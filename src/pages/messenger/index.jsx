@@ -39,7 +39,6 @@ const AddMessageModal = ({ onClose }) => {
     } catch (error) {
       console.error("Error sending SOS:", error.response?.data || error);
 
-      // Error toast
       toast.error("There was an error sending the message.", {
         position: "top-right",
         autoClose: 4000,
@@ -116,11 +115,8 @@ const AddMessageModal = ({ onClose }) => {
 };
 
 const Messenger = () => {
-  const [activeTab, setActiveTab] = useState(
-    () => localStorage.getItem("departments") || "list"
-  );
+  const [activeTab, setActiveTab] = useState("list");
   const [showModal, setShowModal] = useState(false);
-  // Har bir card uchun alohida showMore state
   const [showMoreCompany, setShowMoreCompany] = useState(false);
   const [showMoreFounder, setShowMoreFounder] = useState(false);
 
@@ -354,7 +350,6 @@ const Messenger = () => {
         {showModal && <AddMessageModal onClose={() => setShowModal(false)} />}
       </header>
 
-      {/* ToastContainer - bu juda muhim! */}
       <ToastContainer
         position="top-right"
         autoClose={3000}
@@ -373,4 +368,3 @@ const Messenger = () => {
 };
 
 export default Messenger;
-
