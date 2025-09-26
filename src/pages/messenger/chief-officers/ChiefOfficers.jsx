@@ -173,7 +173,7 @@ const OfficerCard = ({ officer, professionsData }) => {
     }
 
     return {
-      title: officer.profession || "Unknown profession",
+      title: officer.profession || "Unknown profession!",
       description: "No description available for this position."
     };
   };

@@ -22,8 +22,8 @@ const AddMessageModal = ({ onClose }) => {
         body: description,
       });
 
-      // Success toast
-      toast.success("SOS message sent successfully!", {
+      //  toast
+      toast.success(" SOS message sent successfully! ", {
         position: "top-right",
         autoClose: 3000,
         hideProgressBar: false,
